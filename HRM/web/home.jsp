@@ -7,110 +7,263 @@
 
 <style>
     :root {
-        --primary-hrm: #0B2447; 
-        --secondary-hrm: #19376D;
-        --accent-hrm: #576CBC; 
-        --highlight: #A5D7E8;
+        /* Tông màu sáng, trong trẻo như Ticketbox */
+        --bg-main: #f8f9ff;
+        --aura-1: #e0c3fc; /* Tím nhẹ */
+        --aura-2: #8ec5fc; /* Xanh nhạt */
+        --aura-3: #fbc2eb; /* Hồng phấn */
+    }
+    /* Navbar phong cách kính mờ xuyên thấu */
+    .navbar-custom {
+        background: rgba(255, 255, 255, 0.6) !important;
+        backdrop-filter: blur(15px); /* Hiệu ứng mờ nền */
+        -webkit-backdrop-filter: blur(15px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    /* Logo chữ Gradient */
+    .navbar-brand {
+        font-weight: 800 !important;
+        font-size: 1.5rem;
+        background: linear-gradient(135deg, #764ba2 0%, #a18cd1 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* Link menu mềm mại */
+    .nav-link {
+        color: #555 !important;
+        font-weight: 500;
+        margin: 0 10px;
+        transition: 0.3s;
+        position: relative;
+    }
+    .nav-link:hover {
+        color: #764ba2 !important;
+    }
+    /* Hiệu ứng gạch chân khi hover */
+    .nav-link::after {
+        content: '';
+        position: absolute;
+        width: 0;
+        height: 2px;
+        bottom: 0;
+        left: 50%;
+        background: #a18cd1;
+        transition: 0.3s;
+        transform: translateX(-50%);
+    }
+    .nav-link:hover::after {
+        width: 80%;
+    }
+
+    /* Nút Đăng nhập - Kiểu chữ thanh thoát */
+    .btn-login {
+        color: #764ba2 !important;
+        font-weight: 600;
+        border: none;
+        background: transparent;
+        transition: 0.3s;
+    }
+    .btn-login:hover {
+        opacity: 0.7;
+    }
+
+    /* Nút Đăng ký - Cùng tông với nút Tìm kiếm */
+    .btn-register {
+        background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+        color: white !important;
+        font-weight: 600;
+        border-radius: 50px;
+        padding: 8px 25px !important;
+        border: none;
+        box-shadow: 0 4px 15px rgba(161, 140, 209, 0.2);
+        transition: 0.3s;
+    }
+    .btn-register:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(161, 140, 209, 0.4);
+        color: white !important;
     }
     .hero-section {
-        background: linear-gradient(135deg, var(--primary-hrm) 0%, var(--secondary-hrm) 100%);
-        padding: 120px 0 80px 0;
+        background-color: var(--bg-main);
+        background-image: 
+            radial-gradient(at 0% 0%, var(--aura-1) 0, transparent 50%), 
+            radial-gradient(at 50% 0%, var(--aura-2) 0, transparent 50%),
+            radial-gradient(at 100% 0%, var(--aura-3) 0, transparent 50%);
+        min-height: 100vh;
         position: relative;
         overflow: hidden;
+        display: flex;
+        align-items: center;
     }
-    /* Các khối sáng lơ lửng tạo chiều sâu */
-    .glow-blob-1 {
-        position: absolute; top: -10%; left: -5%; width: 400px; height: 400px;
-        background: var(--accent-hrm); filter: blur(120px); opacity: 0.6; border-radius: 50%; z-index: 0;
-    }
-    .glow-blob-2 {
-        position: absolute; bottom: -20%; right: -5%; width: 500px; height: 500px;
-        background: var(--highlight); filter: blur(150px); opacity: 0.3; border-radius: 50%; z-index: 0;
-    }
-    /* Glassmorphism dành riêng cho nền tối */
-    .hero-glass {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-    }
-    .btn-gradient-hrm {
-        background: linear-gradient(to right, var(--accent-hrm), #6a82d6);
-        color: white; border: none; font-weight: 600;
-    }
-    .btn-gradient-hrm:hover { opacity: 0.9; color: white; transform: translateY(-1px); }
-    .hover-lift-card {
-        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-        border: 1px solid rgba(0,0,0,0.05);
-        background: #ffffff;
-    }
-    .hover-lift-card:hover {
-        transform: translateY(-12px);
-        box-shadow: 0 20px 40px rgba(11, 36, 71, 0.08) !important;
-        border-color: rgba(87, 108, 188, 0.2);
-    }
-    .icon-box {
-        transition: all 0.4s ease;
-    }
-    /* Đổi màu icon khi di chuột vào thẻ */
-    .hover-lift-card:hover .icon-box {
-        background: var(--primary-hrm);
-        color: white;
-        transform: scale(1.1) rotate(5deg);
-    }
-</style>
 
-<section class="hero-section position-relative overflow-hidden">
-    <div class="glow-blob-1"></div>
-    <div class="glow-blob-2"></div>
+    /* Bong bóng 3D có đổ bóng và vết sáng */
+    .bubble {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.4);
+        /* Tạo độ khối 3D cho bong bóng */
+        box-shadow: 
+            inset -10px -10px 15px rgba(0, 0, 0, 0.05), 
+            inset 10px 10px 15px rgba(255, 255, 255, 0.8),
+            0 20px 30px rgba(0, 0, 0, 0.05);
+        backdrop-filter: blur(2px);
+        animation: floatUp 15s linear infinite;
+        z-index: 1;
+    }
+
+    /* Thêm vết sáng trắng trên bong bóng cho thật */
+    .bubble::after {
+        content: '';
+        position: absolute;
+        top: 20%;
+        left: 25%;
+        width: 25%;
+        height: 20%;
+        background: rgba(255, 255, 255, 0.6);
+        border-radius: 50%;
+        transform: rotate(-30deg);
+    }
+
+    /* Ngôi sao lấp lánh nhiểu kiểu dáng */
+    .sparkle {
+        position: absolute;
+        color: #fff;
+        text-shadow: 0 0 10px #fff;
+        animation: twinkle 2s infinite ease-in-out;
+        z-index: 2;
+    }
+
+    @keyframes floatUp {
+        0% { transform: translateY(110vh) translateX(0); opacity: 0; }
+        10% { opacity: 0.8; }
+        90% { opacity: 0.8; }
+        100% { transform: translateY(-20vh) translateX(50px); opacity: 0; }
+    }
+
+    @keyframes twinkle {
+        0%, 100% { opacity: 0.2; transform: scale(0.8); }
+        50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    /* Text & Content style sáng sủa */
+    .hero-content {
+        position: relative;
+        z-index: 10;
+        text-align: center;
+    }
+    .main-title {
+        font-size: 4rem;
+        font-weight: 800;
+        color: #3a3a3a;
+        letter-spacing: -2px;
+    }
+    .gradient-text {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
     
-    <div class="container position-relative" style="z-index: 10;">
-        <div class="row justify-content-center text-center">
-            <div class="col-lg-8">
-                <div class="d-inline-flex align-items-center gap-2 hero-glass px-4 py-2 rounded-pill mb-4 text-white">
-                    <i class="fas fa-check-circle" style="color: var(--highlight);"></i>
-                    <span class="fw-medium small">Nền tảng Quản trị Nhân sự Toàn diện</span>
-                </div>
+    /* Search Bar mềm mại kiểu Ticketbox */
+    .search-box {
+        background: white;
+        border-radius: 50px;
+        padding: 5px; /* Giảm padding để nút ôm sát hơn */
+        box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+        display: flex;
+        max-width: 600px;
+        margin: 0 auto;
+        border: 1px solid rgba(0,0,0,0.05); /* Thêm viền mờ cho sang */
+    }
 
-                <h1 class="display-4 fw-bold mb-4 text-white">
-                    <span>Tối ưu hóa nguồn lực</span> <br>
-                    <span style="color: var(--highlight);">Bứt phá hiệu suất</span>
-                </h1>
+    .search-box input {
+        border: none;
+        padding-left: 25px;
+        border-radius: 50px;
+        background: transparent;
+    }
 
-                <p class="lead mb-5" style="color: rgba(255, 255, 255, 0.8);">
-                    Giải pháp quản lý hồ sơ, tự động hóa chấm công và tính lương thông minh dành riêng cho doanh nghiệp hiện đại.
-                </p>
+    .search-box button {
+        border-radius: 50% !important; /* Ép nút thành hình tròn */
+        background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+        border: none;
+        color: white;
+        font-size: 1.1rem;
+        transition: 0.3s all;
+    }
 
-                <div class="hero-glass p-3 rounded-4 mb-5 mx-auto" style="max-width: 700px;">
-                    <form action="directory" method="get" class="d-flex flex-column flex-sm-row gap-2">
-                        <div class="flex-grow-1 d-flex align-items-center bg-white rounded-3 px-3 py-2">
-                            <i class="fas fa-search text-muted me-2"></i>
-                            <input type="text" name="keyword" class="form-control border-0 shadow-none bg-transparent" 
-                                   placeholder="Tra cứu danh bạ nhân viên, phòng ban...">
-                        </div>
-                        <button type="submit" class="btn btn-gradient-hrm rounded-3 px-4 py-2">
-                            <i class="fas fa-search me-2"></i>Tìm kiếm
-                        </button>
-                    </form>
-                </div>
+    .search-box button:hover {
+        transform: rotate(15deg) scale(1.1); /* Xoay nhẹ kính lúp khi di chuột vào */
+        box-shadow: 0 5px 15px rgba(161, 140, 209, 0.4);
+    }
+    
+</style>
+<nav class="navbar navbar-expand-lg navbar-light fixed-top navbar-custom">
+    <div class="container">
+        <a class="navbar-brand" href="home">
+            <i class="fas fa-users-cog me-2"></i>Group4 HRM
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-                <div class="d-flex justify-content-center gap-4 gap-md-5 flex-wrap mt-4">
-                    <div class="text-center">
-                        <h2 class="fw-bold mb-0 text-white">150+</h2>
-                        <div class="small" style="color: rgba(255, 255, 255, 0.7);">Nhân sự</div>
-                    </div>
-                    <div class="text-center">
-                        <h2 class="fw-bold mb-0 text-white">12</h2>
-                        <div class="small" style="color: rgba(255, 255, 255, 0.7);">Phòng ban</div>
-                    </div>
-                    <div class="text-center">
-                        <h2 class="fw-bold mb-0 text-white">5</h2>
-                        <div class="small" style="color: rgba(255, 255, 255, 0.7);">Chi nhánh</div>
-                    </div>
-                </div>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav mx-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="home">Trang chủ</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#features">Tính năng</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#about">Về chúng tôi</a>
+                </li>
+            </ul>
+
+            <div class="d-flex align-items-center gap-3">
+                <a href="login" class="btn btn-login">Đăng nhập</a>
+                <a href="register" class="btn btn-register">Đăng ký</a>
             </div>
         </div>
+    </div>
+</nav>
+<section class="hero-section">
+    <div class="bubble" style="width: 100px; height: 100px; left: 5%; animation-duration: 18s;"></div>
+    <div class="bubble" style="width: 60px; height: 60px; left: 15%; animation-duration: 12s; animation-delay: 2s;"></div>
+    <div class="bubble" style="width: 150px; height: 150px; left: 30%; animation-duration: 25s; animation-delay: 5s;"></div>
+    <div class="bubble" style="width: 80px; height: 80px; right: 10%; animation-duration: 15s; animation-delay: 1s;"></div>
+    <div class="bubble" style="width: 120px; height: 120px; right: 25%; animation-duration: 20s; animation-delay: 8s;"></div>
+    <div class="bubble" style="width: 40px; height: 40px; right: 40%; animation-duration: 10s; animation-delay: 3s;"></div>
+
+    <span class="sparkle" style="top: 15%; left: 10%; font-size: 20px;">✦</span>
+    <span class="sparkle" style="top: 30%; right: 15%; font-size: 15px; animation-delay: 0.5s;">✧</span>
+    <span class="sparkle" style="bottom: 20%; left: 40%; font-size: 25px; animation-delay: 1s;">✦</span>
+
+    <div class="container hero-content">
+        <div class="badge rounded-pill px-4 py-2 mb-4" style="background: white; color: #764ba2; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+             Nền tảng Quản trị Nhân sự Thế hệ mới
+        </div>
+        
+        <h1 class="main-title mb-4">
+            Tối ưu hóa <span class="gradient-text">Nguồn lực</span> <br>
+            Bứt phá <span class="gradient-text">Hiệu suất</span>
+        </h1>
+        
+        <p class="text-muted lead mb-5">
+            Sáng tạo không giới hạn với hệ thống quản lý thông minh, <br> mang lại trải nghiệm làm việc hạnh phúc cho doanh nghiệp.
+        </p>
+
+        <div class="search-box">
+    <input type="text" class="form-control shadow-none" placeholder="Tìm kiếm...">
+    
+    <button class="btn btn-primary d-flex align-items-center justify-content-center" 
+            style="width: 50px; height: 50px; padding: 0; min-width: 50px;">
+        <i class="fas fa-search"></i>
+    </button>
+</div>
     </div>
 </section>
 
