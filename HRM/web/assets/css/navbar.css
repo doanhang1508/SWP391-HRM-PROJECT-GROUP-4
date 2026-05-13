@@ -1,0 +1,90 @@
+/*
+Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/CascadeStyleSheet.css to edit this template
+*/
+/* 
+    Created on : May 13, 2026, 11:57:14 AM
+    Author     : Thanh Hang
+*/
+
+/* =========================================
+   NAVBAR.CSS - Kiểu dáng cho thanh điều hướng
+   ========================================= */
+
+.navbar-custom {
+    background: rgba(255, 255, 255, 0.75) !important; /* Tăng độ đục lên một chút để tách biệt với nền */
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08); /* Đổi viền sang tối mờ cho sắc nét */
+    transition: all 0.3s ease;
+}
+
+/* Logo chữ Gradient - Chỉnh màu tím đậm hơn */
+.navbar-brand {
+    font-weight: 800 !important;
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, #5b328a 0%, #8569bf 100%); 
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Link menu mềm mại - Chữ đen rõ nét */
+.nav-link {
+    color: #222 !important; /* Đổi từ #555 sang #222 cho đậm hẳn */
+    font-weight: 600; /* Tăng độ dày chữ */
+    margin: 0 10px;
+    transition: 0.3s;
+    position: relative;
+}
+
+.nav-link:hover {
+    color: #5b328a !important; /* Tím đậm */
+}
+
+/* Hiệu ứng gạch chân khi hover */
+.nav-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 50%;
+    background: #8569bf;
+    transition: 0.3s;
+    transform: translateX(-50%);
+}
+
+.nav-link:hover::after {
+    width: 80%;
+}
+
+/* Nút Đăng nhập - Kiểu chữ thanh thoát */
+.btn-login {
+    color: #5b328a !important; /* Tím đậm */
+    font-weight: 700;
+    border: none;
+    background: transparent;
+    transition: 0.3s;
+}
+
+.btn-login:hover {
+    opacity: 0.7;
+}
+
+/* Nút Đăng ký */
+.btn-register {
+    background: linear-gradient(135deg, #8569bf 0%, #d87bbd 100%); /* Tông màu đậm và sâu hơn */
+    color: white !important;
+    font-weight: 600;
+    border-radius: 50px;
+    padding: 8px 25px !important;
+    border: none;
+    box-shadow: 0 4px 15px rgba(133, 105, 191, 0.3);
+    transition: 0.3s;
+}
+
+.btn-register:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(133, 105, 191, 0.5);
+    color: white !important;
+}

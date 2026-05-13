@@ -5,231 +5,6 @@
 <c:set var="pageTitle" value="Trang chủ - Group4 HRM" scope="request" />
 <jsp:include page="header.jsp" />
 
-<style>
-    :root {
-        /* Tông màu sáng, trong trẻo như Ticketbox */
-        --bg-main: #f8f9ff;
-        --aura-1: #e0c3fc; /* Tím nhẹ */
-        --aura-2: #8ec5fc; /* Xanh nhạt */
-        --aura-3: #fbc2eb; /* Hồng phấn */
-    }
-    /* Navbar phong cách kính mờ xuyên thấu */
-    .navbar-custom {
-        background: rgba(255, 255, 255, 0.6) !important;
-        backdrop-filter: blur(15px); /* Hiệu ứng mờ nền */
-        -webkit-backdrop-filter: blur(15px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-        transition: all 0.3s ease;
-    }
-
-    /* Logo chữ Gradient */
-    .navbar-brand {
-        font-weight: 800 !important;
-        font-size: 1.5rem;
-        background: linear-gradient(135deg, #764ba2 0%, #a18cd1 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-
-    /* Link menu mềm mại */
-    .nav-link {
-        color: #555 !important;
-        font-weight: 500;
-        margin: 0 10px;
-        transition: 0.3s;
-        position: relative;
-    }
-    .nav-link:hover {
-        color: #764ba2 !important;
-    }
-    /* Hiệu ứng gạch chân khi hover */
-    .nav-link::after {
-        content: '';
-        position: absolute;
-        width: 0;
-        height: 2px;
-        bottom: 0;
-        left: 50%;
-        background: #a18cd1;
-        transition: 0.3s;
-        transform: translateX(-50%);
-    }
-    .nav-link:hover::after {
-        width: 80%;
-    }
-
-    /* Nút Đăng nhập - Kiểu chữ thanh thoát */
-    .btn-login {
-        color: #764ba2 !important;
-        font-weight: 600;
-        border: none;
-        background: transparent;
-        transition: 0.3s;
-    }
-    .btn-login:hover {
-        opacity: 0.7;
-    }
-
-    /* Nút Đăng ký - Cùng tông với nút Tìm kiếm */
-    .btn-register {
-        background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
-        color: white !important;
-        font-weight: 600;
-        border-radius: 50px;
-        padding: 8px 25px !important;
-        border: none;
-        box-shadow: 0 4px 15px rgba(161, 140, 209, 0.2);
-        transition: 0.3s;
-    }
-    .btn-register:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(161, 140, 209, 0.4);
-        color: white !important;
-    }
-    .hero-section {
-        background-color: var(--bg-main);
-        background-image: 
-            radial-gradient(at 0% 0%, var(--aura-1) 0, transparent 50%), 
-            radial-gradient(at 50% 0%, var(--aura-2) 0, transparent 50%),
-            radial-gradient(at 100% 0%, var(--aura-3) 0, transparent 50%);
-        min-height: 100vh;
-        position: relative;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-    }
-
-    /* Bong bóng 3D có đổ bóng và vết sáng */
-    .bubble {
-        position: absolute;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.4);
-        /* Tạo độ khối 3D cho bong bóng */
-        box-shadow: 
-            inset -10px -10px 15px rgba(0, 0, 0, 0.05), 
-            inset 10px 10px 15px rgba(255, 255, 255, 0.8),
-            0 20px 30px rgba(0, 0, 0, 0.05);
-        backdrop-filter: blur(2px);
-        animation: floatUp 15s linear infinite;
-        z-index: 1;
-    }
-
-    /* Thêm vết sáng trắng trên bong bóng cho thật */
-    .bubble::after {
-        content: '';
-        position: absolute;
-        top: 20%;
-        left: 25%;
-        width: 25%;
-        height: 20%;
-        background: rgba(255, 255, 255, 0.6);
-        border-radius: 50%;
-        transform: rotate(-30deg);
-    }
-
-    /* Ngôi sao lấp lánh nhiểu kiểu dáng */
-    .sparkle {
-        position: absolute;
-        color: #fff;
-        text-shadow: 0 0 10px #fff;
-        animation: twinkle 2s infinite ease-in-out;
-        z-index: 2;
-    }
-
-    @keyframes floatUp {
-        0% { transform: translateY(110vh) translateX(0); opacity: 0; }
-        10% { opacity: 0.8; }
-        90% { opacity: 0.8; }
-        100% { transform: translateY(-20vh) translateX(50px); opacity: 0; }
-    }
-
-    @keyframes twinkle {
-        0%, 100% { opacity: 0.2; transform: scale(0.8); }
-        50% { opacity: 1; transform: scale(1.2); }
-    }
-
-    /* Text & Content style sáng sủa */
-    .hero-content {
-        position: relative;
-        z-index: 10;
-        text-align: center;
-    }
-    .main-title {
-        font-size: 4rem;
-        font-weight: 800;
-        color: #3a3a3a;
-        letter-spacing: -2px;
-    }
-    .gradient-text {
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    
-    /* Search Bar mềm mại kiểu Ticketbox */
-    .search-box {
-        background: white;
-        border-radius: 50px;
-        padding: 5px; /* Giảm padding để nút ôm sát hơn */
-        box-shadow: 0 15px 35px rgba(0,0,0,0.05);
-        display: flex;
-        max-width: 600px;
-        margin: 0 auto;
-        border: 1px solid rgba(0,0,0,0.05); /* Thêm viền mờ cho sang */
-    }
-
-    .search-box input {
-        border: none;
-        padding-left: 25px;
-        border-radius: 50px;
-        background: transparent;
-    }
-
-    .search-box button {
-        border-radius: 50% !important; /* Ép nút thành hình tròn */
-        background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
-        border: none;
-        color: white;
-        font-size: 1.1rem;
-        transition: 0.3s all;
-    }
-
-    .search-box button:hover {
-        transform: rotate(15deg) scale(1.1); /* Xoay nhẹ kính lúp khi di chuột vào */
-        box-shadow: 0 5px 15px rgba(161, 140, 209, 0.4);
-    }
-    
-</style>
-<nav class="navbar navbar-expand-lg navbar-light fixed-top navbar-custom">
-    <div class="container">
-        <a class="navbar-brand" href="home">
-            <i class="fas fa-users-cog me-2"></i>Group4 HRM
-        </a>
-        
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav mx-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="home">Trang chủ</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#features">Tính năng</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#about">Về chúng tôi</a>
-                </li>
-            </ul>
-
-            <div class="d-flex align-items-center gap-3">
-                <a href="login" class="btn btn-login">Đăng nhập</a>
-                <a href="register" class="btn btn-register">Đăng ký</a>
-            </div>
-        </div>
-    </div>
-</nav>
 <section class="hero-section">
     <div class="bubble" style="width: 100px; height: 100px; left: 5%; animation-duration: 18s;"></div>
     <div class="bubble" style="width: 60px; height: 60px; left: 15%; animation-duration: 12s; animation-delay: 2s;"></div>
@@ -267,92 +42,157 @@
     </div>
 </section>
 
-<section class="py-5 bg-white">
+<section class="py-5" style="background-color: transparent; position: relative; z-index: 2;">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="fw-bold mb-1" style="color: var(--primary-hrm);">
-                <i class="fas fa-th-large me-2"></i>Tiện ích nội bộ
-            </h2>
-            <p class="text-muted mb-0">Truy cập nhanh các chức năng nghiệp vụ thường dùng</p>
+            <h2 class="fw-bold" style="color: #1a1a1a;">Giải pháp <span class="gradient-text">Toàn diện</span></h2>
+            <p class="text-muted" style="font-weight: 500;">Mọi công cụ bạn cần để xây dựng đội ngũ vững mạnh</p>
         </div>
 
-        <div class="row g-4 text-center">
-            <div class="col-6 col-md-3">
-                <a href="profile" class="text-decoration-none">
-                    <div class="hover-lift-card p-4 rounded-4 shadow-sm h-100">
-                        <div class="icon-box mx-auto"><i class="fas fa-id-badge"></i></div>
-                        <h5 class="text-dark fw-bold mt-3">Hồ sơ cá nhân</h5>
-                        <small class="text-muted">Cập nhật thông tin, CV</small>
-                    </div>
-                </a>
+        <div class="row g-4">
+    <div class="col-md-4">
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-clock"></i></div>
+            <h4 class="fw-bold">Chấm công tự động</h4>
+            <p class="text-muted">Quản lý thời gian nhân viên chính xác, tự động hóa 100%.</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+            <h4 class="fw-bold">Tính lương nhanh</h4>
+            <p class="text-muted">Tính lương chính xác, xuất phiếu lương chỉ trong vài giây.</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="feature-card">
+            <div class="feature-icon"><i class="fas fa-user-shield"></i></div>
+            <h4 class="fw-bold">Bảo mật tối đa</h4>
+            <p class="text-muted">Dữ liệu doanh nghiệp được mã hóa an toàn tuyệt đối.</p>
+        </div>
+    </div>
+</div>
+    </div>
+</section>
+<section class="py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h2 class="fw-bold mb-4">Giải pháp HRM tối ưu cho <span class="gradient-text">Doanh nghiệp</span></h2>
+                <p class="text-muted mb-4">Không còn nỗi lo quản lý thủ công. Hệ thống giúp bạn số hóa toàn bộ quy trình nhân sự, tiết kiệm 70% thời gian hành chính để tập trung vào tăng trưởng kinh doanh.</p>
+                <ul class="list-unstyled">
+                    <li class="mb-3"><i class="fas fa-check-circle text-primary me-2"></i> Thiết lập nhanh chóng, không cần hạ tầng phức tạp</li>
+                    <li class="mb-3"><i class="fas fa-check-circle text-primary me-2"></i> Giao diện thân thiện, nhân viên sử dụng ngay không cần đào tạo</li>
+                    <li class="mb-3"><i class="fas fa-check-circle text-primary me-2"></i> Chi phí tối ưu, phù hợp với quy mô doanh nghiệp vừa và nhỏ</li>
+                </ul>
             </div>
-            <div class="col-6 col-md-3">
-                <a href="attendance" class="text-decoration-none">
-                    <div class="hover-lift-card p-4 rounded-4 shadow-sm h-100">
-                        <div class="icon-box mx-auto"><i class="fas fa-clock"></i></div>
-                        <h5 class="text-dark fw-bold mt-3">Chấm công</h5>
-                        <small class="text-muted">Lịch sử check-in/out</small>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-3">
-                <a href="leave" class="text-decoration-none">
-                    <div class="hover-lift-card p-4 rounded-4 shadow-sm h-100">
-                        <div class="icon-box mx-auto"><i class="fas fa-calendar-minus"></i></div>
-                        <h5 class="text-dark fw-bold mt-3">Nghỉ phép</h5>
-                        <small class="text-muted">Gửi và duyệt đơn từ</small>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-3">
-                <a href="payroll" class="text-decoration-none">
-                    <div class="hover-lift-card p-4 rounded-4 shadow-sm h-100">
-                        <div class="icon-box mx-auto"><i class="fas fa-file-invoice-dollar"></i></div>
-                        <h5 class="text-dark fw-bold mt-3">Phiếu lương</h5>
-                        <small class="text-muted">Xem lương & phụ cấp</small>
-                    </div>
-                </a>
+            <div class="col-lg-6">
+                <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=800" class="img-fluid rounded-4 shadow-lg" alt="HRM Solution">
             </div>
         </div>
     </div>
 </section>
-
-<section class="py-5" style="background-color: #f8fbff;">
+<section class="py-5 bg-light border-top border-bottom">
     <div class="container">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h2 class="fw-bold mb-1">
-                    <i class="fas fa-bullhorn text-danger me-2"></i>Bảng tin nội bộ
-                </h2>
-                <p class="text-muted mb-0">Cập nhật tin tức và quyết định mới nhất từ Ban giám đốc</p>
+        <div class="text-center mb-5">
+            <h2 class="fw-bold mb-2" style="color: #1a1a1a; letter-spacing: -1px;">
+                Đồng hành cùng sự <span class="gradient-text">Thành công</span> của bạn
+            </h2>
+            <div class="mx-auto" style="width: 60px; height: 4px; background: linear-gradient(90deg, #8569bf, #d87bbd); border-radius: 2px;"></div>
+            <p class="text-muted mt-3 fw-medium">Hệ thống tin dùng bởi các tập đoàn và doanh nghiệp dẫn đầu</p>
+        </div>
+
+        <div class="row g-4 justify-content-center align-items-center logo-trust-row mb-5">
+            <div class="col-6 col-md-auto px-4">
+                <div class="d-flex align-items-center gap-2 brand-item">
+                    <i class="fab fa-fort-awesome fa-2x text-primary"></i>
+                    <span class="fw-bold fs-5 text-muted">FPT CORP</span>
+                </div>
             </div>
-            <a href="news" class="text-decoration-none fw-bold d-inline-flex align-items-center gap-2" style="color: var(--primary-hrm);">
-                Xem tất cả <i class="fas fa-arrow-right"></i>
-            </a>
+            <div class="col-6 col-md-auto px-4">
+                <div class="d-flex align-items-center gap-2 brand-item">
+                    <i class="fas fa-broadcast-tower fa-2x text-danger"></i>
+                    <span class="fw-bold fs-5 text-muted">VIETTEL</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-auto px-4">
+                <div class="d-flex align-items-center gap-2 brand-item">
+                    <i class="fas fa-building fa-2x text-info"></i>
+                    <span class="fw-bold fs-5 text-muted">VINGROUP</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-auto px-4">
+                <div class="d-flex align-items-center gap-2 brand-item">
+                    <i class="fas fa-university fa-2x text-warning"></i>
+                    <span class="fw-bold fs-5 text-muted">TPBANK</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-auto px-4">
+                <div class="d-flex align-items-center gap-2 brand-item">
+                    <i class="fas fa-shield-alt fa-2x text-success"></i>
+                    <span class="fw-bold fs-5 text-muted">MBBANK</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 justify-content-center text-center my-5 counter-section">
+            <div class="col-6 col-md-2">
+                <h3 class="fw-800 gradient-text mb-0">500+</h3>
+                <p class="text-muted x-small fw-bold">Doanh nghiệp</p>
+            </div>
+            <div class="col-6 col-md-2">
+                <h3 class="fw-800 gradient-text mb-0">10.000+</h3>
+                <p class="text-muted x-small fw-bold">Nhân viên</p>
+            </div>
+            <div class="col-6 col-md-2">
+                <h3 class="fw-800 gradient-text mb-0">99%</h3>
+                <p class="text-muted x-small fw-bold">Hài lòng</p>
+            </div>
+            <div class="col-6 col-md-2">
+                <h3 class="fw-800 gradient-text mb-0">24/7</h3>
+                <p class="text-muted x-small fw-bold">Hỗ trợ</p>
+            </div>
         </div>
 
         <div class="row g-4">
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600" class="card-img-top" alt="News">
-                    <div class="card-body p-4">
-                        <span class="badge bg-danger mb-2">QUYẾT ĐỊNH</span>
-                        <h5 class="fw-bold mb-3"><a href="#" class="text-dark text-decoration-none">Bổ nhiệm Trưởng phòng Kỹ thuật mới</a></h5>
-                        <p class="text-muted small mb-0"><i class="far fa-calendar-alt me-2"></i>12/05/2026</p>
+            <div class="col-md-6">
+                <div class="testimonial-card p-4 rounded-4 shadow-sm bg-white border-0 h-100">
+                    <div class="d-flex text-warning mb-3">
+                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                    </div>
+                    <p class="italic text-secondary mb-4" style="font-size: 0.95rem; line-height: 1.7;">"Grupo4 HRM đã thay đổi hoàn toàn cách chúng tôi quản lý nhân sự. Hệ thống tự động hóa giúp tiết kiệm hàng chục giờ làm việc mỗi tháng."</p>
+                    <div class="d-flex align-items-center gap-3 border-top pt-3">
+                        <img src="https://ui-avatars.com/api/?name=An+Nguyen&background=8569bf&color=fff" class="rounded-circle shadow-sm" width="45">
+                        <div>
+                            <h6 class="mb-0 fw-bold">Nguyễn Văn An</h6>
+                            <small class="text-muted">HR Director - Tech Corp</small>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=600" class="card-img-top" alt="News">
-                    <div class="card-body p-4">
-                        <span class="badge bg-info mb-2">SỰ KIỆN</span>
-                        <h5 class="fw-bold mb-3"><a href="#" class="text-dark text-decoration-none">Khám sức khỏe định kỳ năm 2026 cho toàn bộ nhân viên</a></h5>
-                        <p class="text-muted small mb-0"><i class="far fa-calendar-alt me-2"></i>10/05/2026</p>
+            <div class="col-md-6">
+                <div class="testimonial-card p-4 rounded-4 shadow-sm bg-white border-0 h-100">
+                    <div class="d-flex text-warning mb-3">
+                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                    </div>
+                    <p class="italic text-secondary mb-4" style="font-size: 0.95rem; line-height: 1.7;">"Giải pháp tối ưu cho doanh nghiệp vừa và nhỏ. Chi phí hợp lý nhưng tính năng cực kỳ mạnh mẽ và bảo mật tuyệt đối."</p>
+                    <div class="d-flex align-items-center gap-3 border-top pt-3">
+                        <img src="https://ui-avatars.com/api/?name=Hang+Tran&background=d87bbd&color=fff" class="rounded-circle shadow-sm" width="45">
+                        <div>
+                            <h6 class="mb-0 fw-bold">Trần Minh Hằng</h6>
+                            <small class="text-muted">CEO - Green Logistics</small>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+</section>
+<section class="py-5 text-center" style="background: linear-gradient(135deg, #5b328a 0%, #8569bf 100%); color: white;">
+    <div class="container py-4">
+        <h2 class="fw-bold mb-3">Sẵn sàng nâng tầm quản trị nhân sự?</h2>
+        <p class="mb-4">Hơn 500+ doanh nghiệp đã tin dùng Group4 HRM. Đăng ký dùng thử miễn phí ngay hôm nay!</p>
+        <a href="register" class="btn btn-light btn-lg rounded-pill px-5 fw-bold text-primary">Đăng ký trải nghiệm</a>
     </div>
 </section>
 
