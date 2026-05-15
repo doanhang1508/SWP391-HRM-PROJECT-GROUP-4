@@ -1,0 +1,17 @@
+CREATE TABLE Users (
+
+    UserID INT PRIMARY KEY IDENTITY(1,1),
+
+    FullName NVARCHAR(100),
+
+    Email NVARCHAR(100),
+
+    Password NVARCHAR(100),
+
+    Role NVARCHAR(50),
+
+    Department NVARCHAR(100),
+
+    Status BIT
+);
+SELECT * FROM Users
