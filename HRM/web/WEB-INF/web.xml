@@ -8,4 +8,24 @@
         <servlet-name>homeController</servlet-name>
         <url-pattern>/home</url-pattern>
     </servlet-mapping>
+
+    <!-- Chức năng 16: Active/Deactive Role -->
+    <servlet>
+        <servlet-name>ActiveDeactiveRoleController</servlet-name>
+        <servlet-class>controller.ActiveDeactiveRoleController</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ActiveDeactiveRoleController</servlet-name>
+        <url-pattern>/activeDeactiveRole</url-pattern>
+    </servlet-mapping>
+
+    <!-- Chức năng 17: Edit Role Permission -->
+    <servlet>
+        <servlet-name>EditRolePermissionController</servlet-name>
+        <servlet-class>controller.EditRolePermissionController</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>EditRolePermissionController</servlet-name>
+        <url-pattern>/editRolePermission</url-pattern>
+    </servlet-mapping>
 </web-app>
