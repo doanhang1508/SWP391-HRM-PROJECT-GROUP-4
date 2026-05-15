@@ -1,106 +1,161 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%@taglib prefix="c" uri="jakarta.tags.core" %>
+<%@page contentType="text/html" pageEncoding="UTF-8" %>
+    <%@taglib prefix="c" uri="jakarta.tags.core" %>
 
-    </main>
-    
-    <footer class="mt-auto bg-white border-top pt-5">
-        <div class="container pb-4">
-            <div class="row g-4">
-                <div class="col-lg-4">
-                    <div class="d-flex align-items-center gap-2 mb-3">
-                        <div class="rounded-3 d-flex align-items-center justify-content-center text-white bg-gradient-hrm" style="width: 40px; height: 40px;">
-                            <i class="fas fa-users-cog"></i>
+        </main>
+
+        <footer style="background:#0a2540;color:#fff">
+            <div style="height:1px;background:rgba(255,255,255,.08)"></div>
+
+            <div class="container py-5">
+                <div class="row g-5">
+                    <!-- Brand -->
+                    <div class="col-lg-4">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+                            <i class="fas fa-industry" style="color:#63b3ed;font-size:1.4rem"></i>
+                            <span
+                                style="font-family:'Be Vietnam Pro',sans-serif;font-weight:800;font-size:1.2rem;letter-spacing:-.5px">TẬP
+                                ĐOÀN HRM</span>
                         </div>
-                        <span class="fw-bold fs-5 text-gradient-hrm">Grupo4 HRM</span>
-                    </div>
-                    <p class="text-muted small mb-4" style="max-width: 280px;">
-                        Nền tảng Quản trị Nhân sự toàn diện. Tối ưu hóa quy trình chấm công, tính lương và phát triển nguồn nhân lực cho doanh nghiệp.
-                    </p>
-                    <div class="d-flex gap-2">
-                        <a href="#" class="btn btn-sm btn-light rounded-circle" style="width:35px;height:35px;"><i class="fab fa-linkedin-in text-primary"></i></a>
-                        <a href="#" class="btn btn-sm btn-light rounded-circle" style="width:35px;height:35px;"><i class="fab fa-facebook-f text-primary"></i></a>
-                        <a href="#" class="btn btn-sm btn-light rounded-circle" style="width:35px;height:35px;"><i class="fas fa-globe text-primary"></i></a>
-                    </div>
-                </div>
-                
-                <div class="col-6 col-lg-3">
-                    <h6 class="fw-bold mb-3 text-dark">Phân hệ chức năng</h6>
-                    <ul class="list-unstyled small">
-                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none hover-primary"><i class="fas fa-users me-2"></i>Quản lý nhân sự</a></li>
-                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none hover-primary"><i class="fas fa-clock me-2"></i>Chấm công tự động</a></li>
-                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none hover-primary"><i class="fas fa-file-invoice-dollar me-2"></i>Xử lý bảng lương</a></li>
-                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none hover-primary"><i class="fas fa-chart-bar me-2"></i>Báo cáo thống kê</a></li>
-                    </ul>
-                </div>
-                
-                <div class="col-6 col-lg-2">
-                    <h6 class="fw-bold mb-3 text-dark">Dành cho nhân viên</h6>
-                    <ul class="list-unstyled small">
-                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none hover-primary">Sổ tay nhân viên</a></li>
-                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none hover-primary">Quy định công ty</a></li>
-                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none hover-primary">Biểu mẫu xin nghỉ</a></li>
-                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none hover-primary">Cổng Helpdesk IT</a></li>
-                    </ul>
-                </div>
-                
-                <div class="col-12 col-lg-3">
-                    <h6 class="fw-bold mb-3 text-dark">Trung tâm hỗ trợ</h6>
-                    <ul class="list-unstyled small">
-                        <li class="mb-3">
-                            <a href="mailto:admin@grupo4.com" class="text-muted text-decoration-none d-flex align-items-center gap-2 hover-primary">
-                                <i class="fas fa-envelope text-primary"></i>admin@group4.com
+                        <p
+                            style="color:rgba(255,255,255,.5);font-size:.88rem;line-height:1.7;max-width:280px;margin-bottom:25px">
+                            Hệ thống Quản trị Nhân lực toàn diện — số hóa mọi quy trình từ chấm công, tính lương đến
+                            phát triển năng lực đội ngũ.
+                        </p>
+                        <div style="display:flex;gap:12px">
+                            <a href="#"
+                                style="width:36px;height:36px;border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);text-decoration:none;transition:all .3s"
+                                onmouseover="this.style.borderColor='#63b3ed';this.style.color='#63b3ed'"
+                                onmouseout="this.style.borderColor='rgba(255,255,255,.15)';this.style.color='rgba(255,255,255,.5)'">
+                                <i class="fab fa-linkedin-in" style="font-size:.85rem"></i>
                             </a>
-                        </li>
-                        <li class="mb-3">
-                            <span class="text-muted d-flex align-items-center gap-2">
-                                <i class="fas fa-headset text-primary"></i>Hotline IT: 1900 1008
-                            </span>
-                        </li>
-                        <li>
-                            <span class="text-muted d-flex align-items-start gap-2">
-                                <i class="fas fa-map-marker-alt text-primary mt-1"></i>
-                                <span>Khu CNC Hòa Lạc, Thạch Thất, Hà Nội</span>
-                            </span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            
-            <hr class="my-4 text-muted">
-            
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-                <p class="small text-muted mb-0">&copy; <%= java.time.Year.now().getValue() %> Nhóm 4 - Dự án SWP391 ĐH FPT. All rights reserved.</p>
-                <div class="d-flex gap-3">
-                    <a href="#" class="small text-muted text-decoration-none hover-primary">Chính sách bảo mật nội bộ</a>
-                </div>
-            </div>
-        </div>
-    </footer>
+                            <a href="#"
+                                style="width:36px;height:36px;border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);text-decoration:none;transition:all .3s"
+                                onmouseover="this.style.borderColor='#63b3ed';this.style.color='#63b3ed'"
+                                onmouseout="this.style.borderColor='rgba(255,255,255,.15)';this.style.color='rgba(255,255,255,.5)'">
+                                <i class="fab fa-facebook-f" style="font-size:.85rem"></i>
+                            </a>
+                        </div>
+                    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+                    <!-- Links 1 -->
+                    <div class="col-6 col-lg-2">
+                        <h6
+                            style="font-size:.75rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:20px">
+                            Phân hệ</h6>
+                        <ul style="list-style:none;padding:0;margin:0">
+                            <li style="margin-bottom:14px"><a href="#"
+                                    style="color:rgba(255,255,255,.6);text-decoration:none;font-size:.88rem;transition:color .2s"
+                                    onmouseover="this.style.color='#fff'"
+                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">Hồ sơ nhân sự</a></li>
+                            <li style="margin-bottom:14px"><a href="#"
+                                    style="color:rgba(255,255,255,.6);text-decoration:none;font-size:.88rem;transition:color .2s"
+                                    onmouseover="this.style.color='#fff'"
+                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">Chấm công ca kíp</a></li>
+                            <li style="margin-bottom:14px"><a href="#"
+                                    style="color:rgba(255,255,255,.6);text-decoration:none;font-size:.88rem;transition:color .2s"
+                                    onmouseover="this.style.color='#fff'"
+                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">Bảng lương & C&B</a></li>
+                            <li style="margin-bottom:14px"><a href="#"
+                                    style="color:rgba(255,255,255,.6);text-decoration:none;font-size:.88rem;transition:color .2s"
+                                    onmouseover="this.style.color='#fff'"
+                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">Báo cáo & KPI</a></li>
+                        </ul>
+                    </div>
 
-    <c:if test="${not empty sessionScope.account}">
-    <div id="chatWidget" style="position:fixed;bottom:24px;right:24px;z-index:9999;">
-        <button onclick="document.getElementById('chatWindow').style.display='block'" class="btn rounded-circle shadow-lg text-white" 
-            style="width:60px;height:60px;background:var(--primary-hrm);border:none;position:relative;">
-            <i class="fas fa-headset fa-lg"></i>
-        </button>
-        <div id="chatWindow" class="shadow-lg rounded-4 overflow-hidden" 
-            style="display:none;position:absolute;bottom:75px;right:0;width:350px;background:#fff;border:1px solid rgba(0,0,0,0.1);">
-            <div class="d-flex align-items-center justify-content-between p-3 bg-gradient-hrm text-white">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="fas fa-laptop-medical"></i>
-                    <strong class="small">Hỗ trợ IT Nội bộ</strong>
+                    <!-- Links 2 -->
+                    <div class="col-6 col-lg-2">
+                        <h6
+                            style="font-size:.75rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:20px">
+                            Nhân viên</h6>
+                        <ul style="list-style:none;padding:0;margin:0">
+                            <li style="margin-bottom:14px"><a href="#"
+                                    style="color:rgba(255,255,255,.6);text-decoration:none;font-size:.88rem"
+                                    onmouseover="this.style.color='#fff'"
+                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">Sổ tay nhân viên</a></li>
+                            <li style="margin-bottom:14px"><a href="#"
+                                    style="color:rgba(255,255,255,.6);text-decoration:none;font-size:.88rem"
+                                    onmouseover="this.style.color='#fff'"
+                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">Quy định công ty</a></li>
+                            <li style="margin-bottom:14px"><a href="#"
+                                    style="color:rgba(255,255,255,.6);text-decoration:none;font-size:.88rem"
+                                    onmouseover="this.style.color='#fff'"
+                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">Biểu mẫu xin nghỉ</a></li>
+                            <li style="margin-bottom:14px"><a href="#"
+                                    style="color:rgba(255,255,255,.6);text-decoration:none;font-size:.88rem"
+                                    onmouseover="this.style.color='#fff'"
+                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">Cổng Helpdesk IT</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- Contact -->
+                    <div class="col-lg-4">
+                        <h6
+                            style="font-size:.75rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:20px">
+                            Liên hệ</h6>
+                        <ul style="list-style:none;padding:0;margin:0">
+                            <li style="margin-bottom:16px;display:flex;align-items:center;gap:12px">
+                                <i class="fas fa-envelope" style="color:#63b3ed;width:16px"></i>
+                                <a href="mailto:admin@grupo4.com"
+                                    style="color:rgba(255,255,255,.6);text-decoration:none;font-size:.88rem"
+                                    onmouseover="this.style.color='#fff'"
+                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">admin@group4.com</a>
+                            </li>
+                            <li style="margin-bottom:16px;display:flex;align-items:center;gap:12px">
+                                <i class="fas fa-headset" style="color:#63b3ed;width:16px"></i>
+                                <span style="color:rgba(255,255,255,.6);font-size:.88rem">Hotline IT: 1900 1008</span>
+                            </li>
+                            <li style="display:flex;align-items:flex-start;gap:12px">
+                                <i class="fas fa-map-marker-alt" style="color:#63b3ed;width:16px;margin-top:3px"></i>
+                                <span style="color:rgba(255,255,255,.6);font-size:.88rem">Khu CNC Hòa Lạc, Thạch Thất,
+                                    Hà Nội</span>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
-                <button onclick="document.getElementById('chatWindow').style.display='none'" class="btn btn-sm p-0 text-white"><i class="fas fa-times"></i></button>
             </div>
-            <div class="p-4 text-center" style="height:250px; background:#f8fbff;">
-                <i class="fas fa-tools fa-3x mb-3 text-muted opacity-50"></i>
-                <p class="small text-muted">Xin chào <b>${sessionScope.account.fullName}</b>,<br>Bạn đang gặp sự cố về máy tính hay tài khoản phần mềm?</p>
-                <button class="btn btn-sm btn-outline-primary rounded-pill mt-2">Tạo Ticket Hỗ trợ</button>
+
+            <div style="border-top:1px solid rgba(255,255,255,.08)">
+                <div class="container py-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <p style="color:rgba(255,255,255,.3);font-size:.8rem;margin:0">
+                        &copy; <%= java.time.Year.now().getValue() %> Nhóm 4 — Dự án SWP391 ĐH FPT. All rights reserved.
+                    </p>
+                    <a href="#" style="color:rgba(255,255,255,.3);font-size:.8rem;text-decoration:none"
+                        onmouseover="this.style.color='rgba(255,255,255,.6)'"
+                        onmouseout="this.style.color='rgba(255,255,255,.3)'">Chính sách bảo mật nội bộ</a>
+                </div>
             </div>
-        </div>
-    </div>
-    </c:if>
-</body>
-</html>
+        </footer>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+        <c:if test="${not empty sessionScope.currentUser}">
+            <div id="chatWidget" style="position:fixed;bottom:24px;right:24px;z-index:9999;">
+                <button onclick="document.getElementById('chatWindow').style.display='block'"
+                    style="width:54px;height:54px;background:#0a2540;border:1px solid rgba(255,255,255,.2);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-headset"></i>
+                </button>
+                <div id="chatWindow"
+                    style="display:none;position:absolute;bottom:65px;right:0;width:320px;background:#fff;border:1px solid #e2e8f0;box-shadow:0 8px 30px rgba(0,0,0,.1);">
+                    <div
+                        style="background:#0a2540;padding:16px 20px;display:flex;align-items:center;justify-content:space-between">
+                        <span style="color:#fff;font-weight:700;font-size:.9rem"><i
+                                class="fas fa-laptop-medical me-2"></i>Hỗ trợ IT Nội bộ</span>
+                        <button onclick="document.getElementById('chatWindow').style.display='none'"
+                            style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer"><i
+                                class="fas fa-times"></i></button>
+                    </div>
+                    <div style="padding:30px 20px;text-align:center">
+                        <i class="fas fa-tools fa-2x text-muted mb-3 d-block" style="opacity:.4"></i>
+                        <p style="font-size:.85rem;color:#4a5568">Xin chào
+                            <b>${sessionScope.currentUser.fullName}</b>,<br>Bạn đang gặp sự cố về máy tính hay tài khoản
+                            phần mềm?</p>
+                        <button
+                            style="background:#0a2540;color:#fff;border:none;padding:8px 24px;font-size:.85rem;font-weight:600;cursor:pointer;margin-top:8px">Tạo
+                            Ticket Hỗ trợ</button>
+                    </div>
+                </div>
+            </div>
+        </c:if>
+        </body>
+
+        </html>

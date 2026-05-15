@@ -1,0 +1,156 @@
+package util;
+
+import com.cloudinary.Cloudinary;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ * CloudinaryUtil — Wrapper for Cloudinary SDK.
+ *
+ * SETUP REQUIRED:
+ * 1. JARs already in WEB-INF/lib/ (cloudinary-core, cloudinary-http45, httpclient, httpcore, httpmime, commons-*)
+ * 2. Create WEB-INF/cloudinary.properties with your credentials:
+ *    cloudinary.cloud_name=your_cloud_name
+ *    cloudinary.api_key=your_api_key
+ *    cloudinary.api_secret=your_api_secret
+ */
+public class CloudinaryUtil {
+
+    private static final Logger LOGGER = Logger.getLogger(CloudinaryUtil.class.getName());
+    private static CloudinaryUtil instance;
+    private Cloudinary cloudinary;
+    private boolean configured = false;
+
+    private CloudinaryUtil() {
+        loadConfig();
+    }
+
+    public static synchronized CloudinaryUtil getInstance() {
+        if (instance == null) {
+            instance = new CloudinaryUtil();
+        }
+        return instance;
+    }
+
+    private void loadConfig() {
+        try (InputStream is = getClass().getClassLoader()
+                .getResourceAsStream("cloudinary.properties")) {
+            if (is != null) {
+                Properties props = new Properties();
+                props.load(is);
+
+                String cloudName = resolveProperty(props, "cloudinary.cloud_name", "CLOUDINARY_CLOUD_NAME");
+                String apiKey = resolveProperty(props, "cloudinary.api_key", "CLOUDINARY_API_KEY");
+                String apiSecret = resolveProperty(props, "cloudinary.api_secret", "CLOUDINARY_API_SECRET");
+                String secure = props.getProperty("cloudinary.secure", "true");
+
+                if (isValidCredential(cloudName) && isValidCredential(apiKey) && isValidCredential(apiSecret)) {
+                    Map<String, String> config = new HashMap<>();
+                    config.put("cloud_name", cloudName);
+                    config.put("api_key", apiKey);
+                    config.put("api_secret", apiSecret);
+                    config.put("secure", secure);
+                    this.cloudinary = new Cloudinary(config);
+                    this.configured = true;
+                    LOGGER.log(Level.INFO, "Cloudinary configured for cloud: {0}", cloudName);
+                } else {
+                    LOGGER.warning("Cloudinary credentials are missing/placeholder. Fill cloudinary.properties or env vars.");
+                }
+            } else {
+                LOGGER.warning("cloudinary.properties not found in classpath.");
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Failed to load Cloudinary config", e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> upload(byte[] fileBytes, String folder, String fileName) {
+        if (!configured) {
+            LOGGER.warning("Cloudinary is not configured. Fill cloudinary.properties or env vars first.");
+            return null;
+        }
+        try {
+            Map<String, Object> options = new HashMap<>();
+            options.put("folder", folder);
+            options.put("resource_type", "auto");
+
+            Map<String, Object> result = cloudinary.uploader().upload(fileBytes, options);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("url", result.get("secure_url"));
+            response.put("public_id", result.get("public_id"));
+            response.put("width", result.get("width"));
+            response.put("height", result.get("height"));
+            response.put("bytes", result.get("bytes"));
+            response.put("format", result.get("format"));
+            return response;
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Cloudinary upload failed", e);
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public boolean delete(String publicId) {
+        if (!configured) return false;
+        try {
+            Map<String, Object> result = cloudinary.uploader().destroy(publicId, new HashMap<>());
+            return "ok".equals(result.get("result"));
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Cloudinary delete failed", e);
+            return false;
+        }
+    }
+
+    public static String transformUrl(String originalUrl, int width, int height) {
+        if (originalUrl == null || originalUrl.isEmpty()) return originalUrl;
+        if (!originalUrl.contains("/upload/")) return originalUrl;
+
+        StringBuilder transform = new StringBuilder("c_fill,w_").append(width);
+        if (height > 0) transform.append(",h_").append(height);
+        transform.append(",q_auto,f_auto");
+
+        return originalUrl.replace("/upload/", "/upload/" + transform + "/");
+    }
+
+    public static String thumbnailUrl(String originalUrl) {
+        return transformUrl(originalUrl, 400, 225);
+    }
+
+    public static String bannerUrl(String originalUrl) {
+        return transformUrl(originalUrl, 1200, 0);
+    }
+
+    public static String avatarUrl(String originalUrl) {
+        if (originalUrl == null || originalUrl.isEmpty()) return originalUrl;
+        if (!originalUrl.contains("/upload/")) return originalUrl;
+        return originalUrl.replace("/upload/", "/upload/c_fill,w_150,h_150,g_face,q_auto,f_auto/");
+    }
+
+    public boolean isConfigured() { return configured; }
+
+    private String resolveProperty(Properties props, String key, String envKey) {
+        String value = props.getProperty(key, "").trim();
+        if (value.isEmpty()) {
+            String env = System.getenv(envKey);
+            if (env != null) {
+                value = env.trim();
+            }
+        }
+        return value;
+    }
+
+    private boolean isValidCredential(String value) {
+        if (value == null || value.isEmpty()) {
+            return false;
+        }
+        String normalized = value.toUpperCase();
+        return !(normalized.startsWith("YOUR_") || normalized.startsWith("CHANGE_ME"));
+    }
+}
+
