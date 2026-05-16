@@ -5,64 +5,97 @@
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
                              https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd">
  
-    <!-- ── Servlet Declarations ── -->
+    <!-- GoogleOAuthController dùng @WebServlet annotation:
+         urlPatterns = {"/auth/google", "/auth/google/callback"}
+         → KHÔNG khai báo ở đây để tránh conflict -->
+ 
+    <!-- ══════════════════════════════════════════════════════
+         SERVLET DECLARATIONS
+    ══════════════════════════════════════════════════════ -->
+ 
     <servlet>
         <servlet-name>homeController</servlet-name>
         <servlet-class>controller.homeController</servlet-class>
     </servlet>
+ 
     <servlet>
         <servlet-name>loginController</servlet-name>
         <servlet-class>controller.loginController</servlet-class>
     </servlet>
+ 
     <servlet>
         <servlet-name>logoutController</servlet-name>
         <servlet-class>controller.logoutController</servlet-class>
     </servlet>
+ 
     <servlet>
         <servlet-name>changePasswordController</servlet-name>
         <servlet-class>controller.changePasswordController</servlet-class>
     </servlet>
+ 
     <servlet>
         <servlet-name>notificationController</servlet-name>
         <servlet-class>controller.notificationController</servlet-class>
     </servlet>
  
-    <!-- FIX: Thêm mapping cho forgot-password (trước đây bị thiếu → 404) -->
     <servlet>
         <servlet-name>ForgotPasswordController</servlet-name>
         <servlet-class>controller.ForgotPasswordController</servlet-class>
     </servlet>
  
-    <!-- GoogleOAuthController dùng @WebServlet annotation:
-         urlPatterns = {"/auth/google", "/auth/google/callback"}
-         → KHÔNG khai báo ở đây để tránh conflict -->
+    <servlet>
+        <servlet-name>ActiveDeactiveRoleController</servlet-name>
+        <servlet-class>controller.ActiveDeactiveRoleController</servlet-class>
+    </servlet>
  
-    <!-- ── URL Mappings ── -->
+    <servlet>
+        <servlet-name>EditRolePermissionController</servlet-name>
+        <servlet-class>controller.EditRolePermissionController</servlet-class>
+    </servlet>
+ 
+    <!-- ══════════════════════════════════════════════════════
+         URL MAPPINGS
+    ══════════════════════════════════════════════════════ -->
+ 
     <servlet-mapping>
         <servlet-name>homeController</servlet-name>
         <url-pattern>/home</url-pattern>
     </servlet-mapping>
+ 
     <servlet-mapping>
         <servlet-name>loginController</servlet-name>
         <url-pattern>/login</url-pattern>
     </servlet-mapping>
+ 
     <servlet-mapping>
         <servlet-name>logoutController</servlet-name>
         <url-pattern>/logout</url-pattern>
     </servlet-mapping>
+ 
     <servlet-mapping>
         <servlet-name>changePasswordController</servlet-name>
         <url-pattern>/changePassword</url-pattern>
     </servlet-mapping>
+ 
     <servlet-mapping>
         <servlet-name>notificationController</servlet-name>
         <url-pattern>/notification</url-pattern>
     </servlet-mapping>
  
-    <!-- FIX: URL mapping cho forgot-password -->
     <servlet-mapping>
         <servlet-name>ForgotPasswordController</servlet-name>
         <url-pattern>/forgot-password</url-pattern>
     </servlet-mapping>
  
+    <servlet-mapping>
+        <servlet-name>ActiveDeactiveRoleController</servlet-name>
+        <url-pattern>/activeDeactiveRole</url-pattern>
+    </servlet-mapping>
+ 
+    <servlet-mapping>
+        <servlet-name>EditRolePermissionController</servlet-name>
+        <url-pattern>/editRolePermission</url-pattern>
+    </servlet-mapping>
+ 
 </web-app>
+ 

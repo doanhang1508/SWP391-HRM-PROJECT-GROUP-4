@@ -2,10 +2,12 @@ package model;
 
 public class Role {
     
+  
     private int roleId;
     private String roleName;
     private String description;
-    private int status;
+    private int status; // 1: Active, 0: Deactive
+
 
     public Role() {
     }
@@ -47,5 +49,10 @@ public class Role {
 
     public void setStatus(int status) {
         this.status = status;
+    }
+
+
+    public boolean isActive() {
+        return this.status == 1;
     }
 }

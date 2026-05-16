@@ -1,0 +1,21 @@
+<component name="libraryTable">
+  <library name="lib2">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/HRM/web/WEB-INF/lib/httpclient-4.5.14.jar!/" />
+      <root url="jar://$PROJECT_DIR$/HRM/web/WEB-INF/lib/jbcrypt-0.4.jar!/" />
+      <root url="jar://$PROJECT_DIR$/HRM/web/WEB-INF/lib/jakarta.servlet.jsp-api-3.1.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/HRM/web/WEB-INF/lib/jakarta.servlet.jsp.jstl-3.0.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/HRM/web/WEB-INF/lib/commons-logging-1.2.jar!/" />
+      <root url="jar://$PROJECT_DIR$/HRM/web/WEB-INF/lib/commons-codec-1.16.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/HRM/web/WEB-INF/lib/jakarta.servlet-api-6.0.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/HRM/web/WEB-INF/lib/cloudinary-core-1.39.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/HRM/web/WEB-INF/lib/jakarta.servlet.jsp.jstl-api-3.0.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/HRM/web/WEB-INF/lib/httpmime-4.5.14.jar!/" />
+      <root url="jar://$PROJECT_DIR$/HRM/web/WEB-INF/lib/mssql-jdbc-12.4.2.jre11.jar!/" />
+      <root url="jar://$PROJECT_DIR$/HRM/web/WEB-INF/lib/cloudinary-http45-1.39.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/HRM/web/WEB-INF/lib/httpcore-4.4.16.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
