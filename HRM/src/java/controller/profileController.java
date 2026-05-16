@@ -25,7 +25,21 @@ public class profileController extends HttpServlet {
             return;
         }
 
-        // Đẩy dữ liệu sang JSP
+        // Admin có thể xem profile của user khác bằng ?userId=...
+        String userIdParam = request.getParameter("userId");
+        if (userIdParam != null && currentUser.getRoleId() == 1) {
+            try {
+                int targetUserId = Integer.parseInt(userIdParam);
+                UserDAO userDAO = new UserDAO();
+                User targetUser = userDAO.getUserById(targetUserId);
+                if (targetUser != null) {
+                    request.setAttribute("viewUser", targetUser);
+                }
+            } catch (NumberFormatException e) {
+                // ignore
+            }
+        }
+
         request.getRequestDispatcher("profile.jsp").forward(request, response);
     }
 
@@ -47,15 +61,32 @@ public class profileController extends HttpServlet {
         if ("update_profile".equals(action)) {
             String fullName = request.getParameter("fullName");
             String phone = request.getParameter("phone");
+            String targetUserIdParam = request.getParameter("targetUserId");
 
-            if (userDAO.updateProfile(currentUser.getUserId(), fullName, phone)) {
-                // Cập nhật lại Session
-                currentUser.setFullName(fullName);
-                currentUser.setPhone(phone);
-                session.setAttribute("currentUser", currentUser);
+            // Detect: admin editing another user, or user editing their own
+            int editUserId = currentUser.getUserId();
+            if (targetUserIdParam != null && currentUser.getRoleId() == 1) {
+                try {
+                    editUserId = Integer.parseInt(targetUserIdParam);
+                } catch (NumberFormatException e) { /* ignore */ }
+            }
+
+            if (userDAO.updateProfile(editUserId, fullName, phone)) {
+                if (editUserId == currentUser.getUserId()) {
+                    // Update session if editing own profile
+                    currentUser.setFullName(fullName);
+                    currentUser.setPhone(phone);
+                    session.setAttribute("currentUser", currentUser);
+                }
                 request.setAttribute("msgSuccess", "Cập nhật thông tin thành công!");
             } else {
                 request.setAttribute("msgError", "Lỗi cập nhật thông tin!");
+            }
+
+            // Reload user data for admin viewing others
+            if (editUserId != currentUser.getUserId()) {
+                User reloaded = userDAO.getUserById(editUserId);
+                request.setAttribute("viewUser", reloaded);
             }
         }
 

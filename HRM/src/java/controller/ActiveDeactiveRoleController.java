@@ -31,7 +31,7 @@ public class ActiveDeactiveRoleController extends HttpServlet {
         
         // Kiểm tra xem người dùng đã đăng nhập và có quyền quản trị hay chưa
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("user") == null) {
+        if (session == null || session.getAttribute("currentUser") == null) {
             response.sendRedirect("login.jsp");
             return;
         }
@@ -73,7 +73,7 @@ public class ActiveDeactiveRoleController extends HttpServlet {
         
         // Check if user is logged in and is Admin
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("user") == null) {
+        if (session == null || session.getAttribute("currentUser") == null) {
             response.sendRedirect("login.jsp");
             return;
         }
@@ -115,10 +115,18 @@ public class ActiveDeactiveRoleController extends HttpServlet {
                 statusMessage = "Role+'" + currentRole.getRoleName() + "'+has+been+" + newStatus;
             }
 
+            String source = request.getParameter("source");
+            String redirectUrl = "activeDeactiveRole";
+            if ("roleList".equals(source)) {
+                redirectUrl = "role?action=list";
+            } else if ("dashboard".equals(source)) {
+                redirectUrl = "admin/dashboard";
+            }
+
             if (success) {
-                response.sendRedirect("activeDeactiveRole?message=" + statusMessage);
+                response.sendRedirect(redirectUrl + (redirectUrl.contains("?") ? "&" : "?") + "message=" + statusMessage);
             } else {
-                response.sendRedirect("activeDeactiveRole?error=Failed+to+update+role+status");
+                response.sendRedirect(redirectUrl + (redirectUrl.contains("?") ? "&" : "?") + "error=Failed+to+update+role+status");
             }
 
         } catch (NumberFormatException e) {

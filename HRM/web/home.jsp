@@ -25,12 +25,10 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
 .hero-title em{color:#63b3ed;font-style:normal}
 .hero-subtitle{color:rgba(255,255,255,.65);font-size:.9rem;line-height:1.7;max-width:400px;position:relative;z-index:2;margin-bottom:30px}
 .hero-cta-row{display:flex;align-items:center;gap:30px;position:relative;z-index:2}
-.btn-hero{display:inline-flex;align-items:center;gap:12px;background:#fff;color:#0a2540;padding:18px 36px;font-weight:700;font-size:.95rem;text-decoration:none;letter-spacing:.5px;transition:all .3s;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 50%,calc(100% - 16px) 100%,0 100%);padding-right:50px}
-.btn-hero:hover{background:#63b3ed;color:#fff}
 .hero-scroll-hint{color:rgba(255,255,255,.35);font-size:.8rem;letter-spacing:1px}
 
 .hero-right{background:#f0ede8;display:flex;flex-direction:column;justify-content:space-between;padding:0;overflow:hidden}
-.hero-img-wrap{flex:1;overflow:hidden;position:relative;background:url('https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?q=80&w=1200&auto=format&fit=crop') center/cover no-repeat}
+.hero-img-wrap{flex:1;overflow:hidden;position:relative;background:url('https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?q=80&w=1200&auto=format&fit=crop') center/cover no-repeat;transition:background-size .6s}
 .hero-img-wrap:hover{background-size:105%}
 .hero-img-label{position:absolute;bottom:24px;right:24px;background:#0a2540;color:#fff;font-size:.75rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:10px 20px}
 .hero-stats-bar{display:flex;background:#fff;border-top:3px solid #0a2540}
@@ -39,22 +37,19 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
 .hstat-n{font-family:'Be Vietnam Pro',sans-serif;font-size:1.5rem;font-weight:800;color:#0a2540;letter-spacing:-1px}
 .hstat-l{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#718096;margin-top:4px}
 
-/* ── BRAND STRIP ── */
-.brand-strip{background:#fff;border-bottom:1px solid #e2e8f0;padding:20px 0;display:flex;align-items:center;overflow:hidden}
-.brand-strip-inner{display:flex;gap:80px;animation:slide 20s linear infinite}
-.brand-strip-inner img,.brand-logo-text{opacity:.4;transition:opacity .3s;filter:grayscale(1)}
-.brand-logo-text{font-family:'Be Vietnam Pro',sans-serif;font-weight:800;font-size:1.2rem;color:#0a2540;white-space:nowrap}
-.brand-logo-text:hover{opacity:.8}
+/* ── VALUES STRIP ── */
+.values-strip{background:#fff;border-bottom:1px solid #e2e8f0;padding:20px 0;display:flex;align-items:center;overflow:hidden}
+.values-strip-inner{display:flex;gap:80px;animation:slide 25s linear infinite}
+.values-text{font-family:'Be Vietnam Pro',sans-serif;font-weight:800;font-size:1.1rem;color:#0a2540;white-space:nowrap;opacity:.35;transition:opacity .3s}
+.values-text:hover{opacity:.8}
 @keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
 /* ── MANIFESTO ── */
 .manifesto{background:#0a2540;padding:70px 0;text-align:center;position:relative;overflow:hidden}
-.manifesto::before{content:'HRM';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Be Vietnam Pro',sans-serif;font-size:20rem;font-weight:800;color:rgba(255,255,255,.02);pointer-events:none;letter-spacing:-10px}
+.manifesto::before{content:'GROUP4';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Be Vietnam Pro',sans-serif;font-size:16rem;font-weight:800;color:rgba(255,255,255,.02);pointer-events:none;letter-spacing:-10px}
 .manifesto-sub{font-size:.85rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#63b3ed;margin-bottom:30px}
 .manifesto-text{font-family:'Be Vietnam Pro',sans-serif;font-size:clamp(1.5rem,2.5vw,2.5rem);font-weight:800;color:#fff;line-height:1.25;letter-spacing:-.5px;max-width:800px;margin:0 auto 40px}
 .manifesto-text span{color:#63b3ed}
-.manifesto-link{color:#fff;text-decoration:none;font-size:1.1rem;font-weight:600;border-bottom:2px solid #2b6cb0;padding-bottom:6px;transition:border-color .3s}
-.manifesto-link:hover{border-bottom-color:#63b3ed;color:#63b3ed}
 
 /* ── FEATURES BAND ── */
 .features-band{padding:70px 0;background:#f0ede8}
@@ -122,12 +117,12 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
 <!-- TICKER -->
 <div class="ticker">
     <div class="ticker-track">
-        <span>Chấm công tự động</span><span>Bảng lương số hóa</span>
-        <span>Quản lý ca kíp</span><span>Đánh giá KPI</span>
-        <span>Nghỉ phép trực tuyến</span><span>Hồ sơ nhân sự</span>
-        <span>Chấm công tự động</span><span>Bảng lương số hóa</span>
-        <span>Quản lý ca kíp</span><span>Đánh giá KPI</span>
-        <span>Nghỉ phép trực tuyến</span><span>Hồ sơ nhân sự</span>
+        <span>Công ty CP Sản Xuất & Thương Mại Group4</span><span>Chất lượng — Uy tín — Phát triển bền vững</span>
+        <span>Tuyển dụng nhân tài</span><span>ISO 9001:2015</span>
+        <span>An toàn lao động là trên hết</span><span>Đồng hành cùng phát triển</span>
+        <span>Công ty CP Sản Xuất & Thương Mại Group4</span><span>Chất lượng — Uy tín — Phát triển bền vững</span>
+        <span>Tuyển dụng nhân tài</span><span>ISO 9001:2015</span>
+        <span>An toàn lao động là trên hết</span><span>Đồng hành cùng phát triển</span>
     </div>
 </div>
 
@@ -135,28 +130,25 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
 <section class="hero-split">
     <div class="hero-left">
         <div class="hero-left-bg"></div>
-        <span class="hero-year">Est. 2010 &nbsp;/&nbsp; HRM SYSTEM v3.0</span>
-        <h1 class="hero-title">Quản Trị<br><em>Vượt Trội.</em></h1>
-        <p class="hero-subtitle">Hệ thống Quản trị Nhân lực toàn diện cho doanh nghiệp sản xuất — từ dây chuyền đến ban lãnh đạo, tất cả trên một nền tảng thống nhất.</p>
+        <span class="hero-year">Thành lập 2010 &nbsp;/&nbsp; Group4 Corp.</span>
+        <h1 class="hero-title">Cổng Thông Tin<br><em>Nội Bộ.</em></h1>
+        <p class="hero-subtitle">Chào mừng bạn đến với hệ thống quản trị nhân sự của Công ty CP Sản Xuất & Thương Mại Group4 — nơi kết nối toàn bộ cán bộ công nhân viên trên một nền tảng duy nhất.</p>
         <div class="hero-cta-row">
-            <a href="${pageContext.request.contextPath}/login" class="btn-hero">
-                Đăng nhập Nội bộ <i class="fas fa-arrow-right"></i>
-            </a>
-            <span class="hero-scroll-hint">↓ Cuộn để khám phá</span>
+            <span class="hero-scroll-hint">↓ Cuộn để tìm hiểu thêm về công ty</span>
         </div>
     </div>
     <div class="hero-right">
         <div class="hero-img-wrap">
-            <div class="hero-img-label">Nhà máy — Bắc Ninh</div>
+            <div class="hero-img-label">Nhà máy — KCN Bắc Ninh</div>
         </div>
         <div class="hero-stats-bar">
             <div class="hstat">
-                <div class="hstat-n">10K+</div>
+                <div class="hstat-n">500+</div>
                 <div class="hstat-l">Nhân sự</div>
             </div>
             <div class="hstat">
-                <div class="hstat-n">03</div>
-                <div class="hstat-l">Nhà máy</div>
+                <div class="hstat-n">08</div>
+                <div class="hstat-l">Phòng ban</div>
             </div>
             <div class="hstat">
                 <div class="hstat-n">15+</div>
@@ -166,36 +158,33 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
     </div>
 </section>
 
-<!-- BRAND STRIP -->
-<div class="brand-strip">
-    <div style="padding:0 40px;font-size:.75rem;font-weight:700;letter-spacing:2px;color:#aaa;white-space:nowrap">ĐỐI TÁC</div>
-    <div class="brand-strip-inner">
-        <span class="brand-logo-text">SAMSUNG</span>
-        <span class="brand-logo-text">TOYOTA</span>
-        <span class="brand-logo-text">HONDA</span>
-        <span class="brand-logo-text">LG ELECTRONICS</span>
-        <span class="brand-logo-text">BOSCH</span>
-        <span class="brand-logo-text">PANASONIC</span>
-        <span class="brand-logo-text">SAMSUNG</span>
-        <span class="brand-logo-text">TOYOTA</span>
-        <span class="brand-logo-text">HONDA</span>
-        <span class="brand-logo-text">LG ELECTRONICS</span>
-        <span class="brand-logo-text">BOSCH</span>
-        <span class="brand-logo-text">PANASONIC</span>
+<!-- VALUES STRIP -->
+<div class="values-strip">
+    <div style="padding:0 40px;font-size:.75rem;font-weight:700;letter-spacing:2px;color:#aaa;white-space:nowrap">GIÁ TRỊ CỐT LÕI</div>
+    <div class="values-strip-inner">
+        <span class="values-text">CHÍNH TRỰC</span>
+        <span class="values-text">SÁNG TẠO</span>
+        <span class="values-text">CHẤT LƯỢNG</span>
+        <span class="values-text">ĐOÀN KẾT</span>
+        <span class="values-text">TRÁCH NHIỆM</span>
+        <span class="values-text">PHÁT TRIỂN BỀN VỮNG</span>
+        <span class="values-text">CHÍNH TRỰC</span>
+        <span class="values-text">SÁNG TẠO</span>
+        <span class="values-text">CHẤT LƯỢNG</span>
+        <span class="values-text">ĐOÀN KẾT</span>
+        <span class="values-text">TRÁCH NHIỆM</span>
+        <span class="values-text">PHÁT TRIỂN BỀN VỮNG</span>
     </div>
 </div>
 
 <!-- MANIFESTO -->
 <section class="manifesto">
     <div class="container">
-        <p class="manifesto-sub">Tầm nhìn doanh nghiệp</p>
+        <p class="manifesto-sub">Sứ mệnh của chúng tôi</p>
         <h2 class="manifesto-text">
-            Con người là <span>tài sản lớn nhất</span>.<br>
-            Quản trị thông minh là <span>lợi thế cạnh tranh</span>.
+            Xây dựng môi trường làm việc <span>chuyên nghiệp, an toàn</span>,<br>
+            nơi mỗi nhân viên được <span>tôn trọng và phát triển</span>.
         </h2>
-        <a href="${pageContext.request.contextPath}/login" class="manifesto-link">
-            Vào Hệ thống ngay &rarr;
-        </a>
     </div>
 </section>
 
@@ -203,16 +192,16 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
 <section class="features-band">
     <div class="container">
         <div class="features-header">
-            <h2>Phân hệ<br>chức năng</h2>
+            <h2>Dịch vụ<br>dành cho<br>nhân viên</h2>
             <span class="feat-count">06</span>
         </div>
         <div class="feat-list">
             <div class="feat-item">
                 <span class="feat-num">01</span>
-                <div class="feat-icon-wrap"><i class="fas fa-user-tie"></i></div>
+                <div class="feat-icon-wrap"><i class="fas fa-id-card"></i></div>
                 <div class="feat-info">
-                    <h3>Hồ sơ & Hợp đồng Nhân sự</h3>
-                    <p>Số hóa toàn bộ hồ sơ CBCNV — từ bằng cấp, chứng chỉ nghề đến lịch sử phân công tại các phân xưởng.</p>
+                    <h3>Hồ sơ Nhân sự Cá nhân</h3>
+                    <p>Xem và cập nhật thông tin cá nhân, hợp đồng lao động, lịch sử công tác trực tiếp trên hệ thống.</p>
                 </div>
                 <span class="feat-arrow">&rarr;</span>
             </div>
@@ -220,8 +209,8 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
                 <span class="feat-num">02</span>
                 <div class="feat-icon-wrap"><i class="fas fa-fingerprint"></i></div>
                 <div class="feat-info">
-                    <h3>Chấm công & Quản lý Ca kíp</h3>
-                    <p>Tích hợp thiết bị vân tay, nhận diện khuôn mặt. Quản lý 3 ca sản xuất 24/7 tự động, không sai sót.</p>
+                    <h3>Chấm công & Ca kíp</h3>
+                    <p>Chấm công trực tuyến, theo dõi lịch phân ca 3 ca sản xuất, xem lịch sử chấm công chi tiết.</p>
                 </div>
                 <span class="feat-arrow">&rarr;</span>
             </div>
@@ -229,35 +218,35 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
                 <span class="feat-num">03</span>
                 <div class="feat-icon-wrap"><i class="fas fa-money-check-alt"></i></div>
                 <div class="feat-info">
-                    <h3>Tính lương & C&B Tự động</h3>
-                    <p>Tổng hợp lương cơ bản, phụ cấp độc hại, tăng ca, BHXH — xuất bảng lương chính xác trong 15 phút.</p>
+                    <h3>Phiếu lương & Thu nhập</h3>
+                    <p>Tra cứu phiếu lương hàng tháng: lương cơ bản, phụ cấp, tăng ca, các khoản trích BHXH, thuế TNCN.</p>
                 </div>
                 <span class="feat-arrow">&rarr;</span>
             </div>
             <div class="feat-item">
                 <span class="feat-num">04</span>
-                <div class="feat-icon-wrap"><i class="fas fa-calendar-check"></i></div>
+                <div class="feat-icon-wrap"><i class="fas fa-paper-plane"></i></div>
                 <div class="feat-info">
-                    <h3>Nghỉ phép & Phúc lợi</h3>
-                    <p>Duyệt phép qua ứng dụng, theo dõi quota realtime, tích hợp bảo hiểm sức khỏe ngoại trú nội trú.</p>
+                    <h3>Đơn Nghỉ phép Trực tuyến</h3>
+                    <p>Gửi đơn xin nghỉ phép, theo dõi trạng thái duyệt, kiểm tra số ngày phép còn lại trong năm.</p>
                 </div>
                 <span class="feat-arrow">&rarr;</span>
             </div>
             <div class="feat-item">
                 <span class="feat-num">05</span>
-                <div class="feat-icon-wrap"><i class="fas fa-chart-bar"></i></div>
+                <div class="feat-icon-wrap"><i class="fas fa-bullhorn"></i></div>
                 <div class="feat-info">
-                    <h3>KPI & Đánh giá Hiệu suất</h3>
-                    <p>Dashboard theo dõi năng suất theo phân xưởng, cá nhân. Tự động xếp hạng và kết nối thưởng KPI.</p>
+                    <h3>Thông báo Nội bộ</h3>
+                    <p>Nhận thông báo từ Ban Giám đốc, phòng HCNS về chính sách mới, lịch nghỉ lễ, sự kiện công ty.</p>
                 </div>
                 <span class="feat-arrow">&rarr;</span>
             </div>
             <div class="feat-item">
                 <span class="feat-num">06</span>
-                <div class="feat-icon-wrap"><i class="fas fa-graduation-cap"></i></div>
+                <div class="feat-icon-wrap"><i class="fas fa-shield-alt"></i></div>
                 <div class="feat-info">
-                    <h3>Đào tạo & ATVSLĐ</h3>
-                    <p>Quản lý chứng chỉ an toàn lao động bắt buộc, lịch đào tạo nghề, nhắc gia hạn tự động.</p>
+                    <h3>An toàn Lao động & Đào tạo</h3>
+                    <p>Tra cứu chứng chỉ ATLĐ, lịch huấn luyện định kỳ, nội quy nhà máy và quy trình ứng phó sự cố.</p>
                 </div>
                 <span class="feat-arrow">&rarr;</span>
             </div>
@@ -273,19 +262,19 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
     </div>
     <div class="photo-cell">
         <img src="https://images.unsplash.com/photo-1581092160562-40aa08e78837?q=80&w=600&auto=format&fit=crop" alt="Kỹ sư">
-        <div class="photo-cell-label">Đội ngũ kỹ sư</div>
+        <div class="photo-cell-label">Đội ngũ kỹ thuật</div>
     </div>
     <div class="photo-cell">
         <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=600&auto=format&fit=crop" alt="Văn phòng">
-        <div class="photo-cell-label">Trung tâm quản lý</div>
+        <div class="photo-cell-label">Văn phòng công ty</div>
     </div>
     <div class="photo-cell">
-        <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=600&auto=format&fit=crop" alt="Nhân viên">
-        <div class="photo-cell-label">Bộ phận HR</div>
+        <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=600&auto=format&fit=crop" alt="Phòng HCNS">
+        <div class="photo-cell-label">Phòng Hành chính Nhân sự</div>
     </div>
     <div class="photo-cell">
-        <img src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=600&auto=format&fit=crop" alt="Teamwork">
-        <div class="photo-cell-label">Đội nhóm xuất sắc</div>
+        <img src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=600&auto=format&fit=crop" alt="Team">
+        <div class="photo-cell-label">Hoạt động Team Building</div>
     </div>
 </div>
 
@@ -293,26 +282,26 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
 <section class="news-section">
     <div class="container">
         <div class="news-header">
-            <h2>Bản tin<br>Nội bộ</h2>
+            <h2>Thông báo<br>Công ty</h2>
             <a href="#">Xem tất cả &rarr;</a>
         </div>
         <div class="news-grid">
             <div class="news-card">
                 <span class="news-tag2">Phúc lợi</span>
                 <span class="news-date2">10 tháng 05, 2026</span>
-                <h3 class="news-title2">Nâng cấp Bảo hiểm Sức khỏe Đặc biệt cho toàn thể CBCNV khối Sản xuất</h3>
+                <h3 class="news-title2">Nâng mức hỗ trợ bữa ăn ca và phụ cấp xăng xe cho CBCNV từ tháng 06/2026</h3>
                 <span class="news-arrow2">&rarr;</span>
             </div>
             <div class="news-card">
                 <span class="news-tag2">Sức khỏe</span>
                 <span class="news-date2">02 tháng 05, 2026</span>
-                <h3 class="news-title2">Lịch Khám sức khỏe định kỳ Quý II — Bắt buộc 100% nhân sự đăng ký</h3>
+                <h3 class="news-title2">Lịch khám sức khỏe định kỳ Quý II — Bắt buộc 100% nhân sự đăng ký trước 20/05</h3>
                 <span class="news-arrow2">&rarr;</span>
             </div>
             <div class="news-card" style="background:#0a2540">
-                <span class="news-tag2" style="color:#63b3ed">🔥 Tuyển dụng</span>
+                <span class="news-tag2" style="color:#63b3ed">🔥 Tuyển dụng nội bộ</span>
                 <span class="news-date2" style="color:rgba(255,255,255,.5)">Đang tuyển</span>
-                <h3 class="news-title2" style="color:#fff">Tuyển 50 Kỹ sư Tự động hoá & Vận hành CNC — KCN Bắc Ninh</h3>
+                <h3 class="news-title2" style="color:#fff">Tuyển 05 Trưởng ca & 10 Kỹ thuật viên QC cho nhà máy mới tại KCN Bắc Ninh</h3>
                 <span class="news-arrow2" style="color:#63b3ed">&rarr;</span>
             </div>
         </div>
@@ -322,7 +311,7 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
 <!-- FINAL CTA -->
 <section class="final-cta">
     <div class="final-cta-inner">
-        <h2>Bạn là<br><em>nhân viên</em><br>của chúng tôi?</h2>
+        <h2>Bạn là<br><em>nhân viên</em><br>Group4?</h2>
         <a href="${pageContext.request.contextPath}/login" class="btn-final">
             <i class="fas fa-lock-open"></i> ĐĂNG NHẬP HỆ THỐNG NỘI BỘ
         </a>

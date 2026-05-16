@@ -1,7 +1,7 @@
 package controller;
 
 import dao.RoleDAO;
-import dao.RolePermissionDAO;
+import dao.PermissionDAO;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +21,7 @@ import model.Role;
 public class EditRolePermissionController extends HttpServlet {
 
     private final RoleDAO roleDAO = new RoleDAO();
-    private final RolePermissionDAO rolePermissionDAO = new RolePermissionDAO();
+    private final PermissionDAO rolePermissionDAO = new PermissionDAO();
 
     /**
      * 
@@ -35,7 +35,7 @@ public class EditRolePermissionController extends HttpServlet {
             throws ServletException, IOException {
         
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("user") == null) {
+        if (session == null || session.getAttribute("currentUser") == null) {
             response.sendRedirect("login.jsp");
             return;
         }
@@ -46,7 +46,7 @@ public class EditRolePermissionController extends HttpServlet {
             // Không cung cấp roleId → hiển thị danh sách tất cả các vai trò để lựa chọn
             List<Role> roleList = roleDAO.getAllRoles();
             request.setAttribute("roleList", roleList);
-            request.getRequestDispatcher("selectRoleForPermission.jsp").forward(request, response);
+            request.getRequestDispatcher("admin/selectRoleForPermission.jsp").forward(request, response);
             return;
         }
 
@@ -80,7 +80,7 @@ public class EditRolePermissionController extends HttpServlet {
                 request.setAttribute("error", error);
             }
 
-            request.getRequestDispatcher("editRolePermission.jsp").forward(request, response);
+            request.getRequestDispatcher("admin/editRolePermission.jsp").forward(request, response);
 
         } catch (NumberFormatException e) {
             response.sendRedirect("editRolePermission?error=Invalid+Role+ID");
@@ -100,7 +100,7 @@ public class EditRolePermissionController extends HttpServlet {
         
         // Kiểm tra xem người dùng đã đăng nhập và có quyền quản trị hay chưa.
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("user") == null) {
+        if (session == null || session.getAttribute("currentUser") == null) {
             response.sendRedirect("login.jsp");
             return;
         }

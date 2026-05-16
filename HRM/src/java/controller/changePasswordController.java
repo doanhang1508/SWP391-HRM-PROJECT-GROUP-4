@@ -16,7 +16,6 @@ import jakarta.servlet.http.HttpSession;
  * URL: /change-password (POST)
  * @author Thanh Hang
  */
-@WebServlet(name = "ChangePasswordController", urlPatterns = {"/change-password"})
 public class changePasswordController extends HttpServlet {
 
     @Override

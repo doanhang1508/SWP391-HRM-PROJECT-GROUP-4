@@ -75,6 +75,17 @@ public class loginController extends HttpServlet {
             request.setAttribute("rememberChecked", "checked");
         }
 
+        String error = request.getParameter("error");
+        if ("pending".equals(error)) {
+            request.setAttribute("errorMsg", "Tài khoản của bạn đang chờ phê duyệt. Vui lòng liên hệ bộ phận HCNS.");
+        } else if ("invalid_state".equals(error)) {
+            request.setAttribute("errorMsg", "Phiên đăng nhập không hợp lệ, vui lòng thử lại.");
+        } else if ("google_denied".equals(error)) {
+            request.setAttribute("errorMsg", "Bạn đã từ chối cấp quyền truy cập Google.");
+        } else if ("token_error".equals(error) || "userinfo_error".equals(error) || "db_error".equals(error)) {
+            request.setAttribute("errorMsg", "Có lỗi xảy ra khi kết nối với Google. Vui lòng thử lại.");
+        }
+
         request.getRequestDispatcher("login.jsp").forward(request, response);
     }
 
@@ -110,8 +121,8 @@ public class loginController extends HttpServlet {
         }
 
         if (user.getStatus() == 0) {
-            // Tài khoản bị khóa
-            request.setAttribute("errorMsg", "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Admin.");
+            // Tài khoản bị khóa hoặc đang chờ duyệt
+            request.setAttribute("errorMsg", "Tài khoản của bạn đang bị khóa hoặc chưa được phê duyệt. Vui lòng liên hệ bộ phận HCNS.");
             request.getRequestDispatcher("login.jsp").forward(request, response);
             return;
         }
@@ -131,7 +142,7 @@ public class loginController extends HttpServlet {
             case 2 ->
                 "/manager/dashboard";
             default ->
-                "employee/dashboard";
+                "/employee/dashboard";
         };
         response.sendRedirect(request.getContextPath() + redirect);
     }

@@ -148,6 +148,12 @@ public class GoogleOAuthController extends HttpServlet {
             return;
         }
 
+        // Chặn nếu tài khoản chưa được duyệt hoặc bị khóa
+        if (user.getStatus() == 0) {
+            response.sendRedirect(request.getContextPath() + "/login?error=pending");
+            return;
+        }
+
         // Đăng nhập thành công → set session → redirect dashboard
         session.setAttribute("currentUser", user);
        

@@ -2,6 +2,9 @@
 <%@taglib prefix="c" uri="jakarta.tags.core" %>
 <%@taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 
+<!-- Determine which user to display: viewUser (admin viewing another) or currentUser -->
+<c:set var="displayUser" value="${not empty viewUser ? viewUser : sessionScope.currentUser}" />
+
 <jsp:include page="header.jsp" />
 
 <style>
@@ -61,20 +64,26 @@
 </script>
 <script>
     function toggleEdit() {
-        // Lấy danh sách tất cả các ô input/select trong form
-        const inputs = document.querySelectorAll('#info input, #info select');
+        const inputs = document.querySelectorAll('#info input[name], #info select[name]');
         const saveBtn = document.getElementById('saveBtn');
+        const editBtn = document.getElementById('editBtn');
         
-        // Duyệt qua từng ô để bỏ hoặc thêm lại thuộc tính disabled
         inputs.forEach(input => {
-            input.disabled = !input.disabled;
+            if (input.hasAttribute('readonly')) {
+                input.removeAttribute('readonly');
+                input.style.backgroundColor = '#fff';
+            } else {
+                input.setAttribute('readonly', true);
+                input.style.backgroundColor = '#f8f9fa';
+            }
         });
 
-        // Hiện hoặc ẩn nút Lưu thay đổi
         if (saveBtn.classList.contains('d-none')) {
-            saveBtn.classList.remove('d-none'); // Hiện nút Lưu
+            saveBtn.classList.remove('d-none');
+            editBtn.innerHTML = '<i class="fas fa-times me-1"></i> Hủy';
         } else {
-            saveBtn.classList.add('d-none'); // Ẩn nút Lưu
+            saveBtn.classList.add('d-none');
+            editBtn.innerHTML = '<i class="fas fa-edit me-1"></i> Chỉnh sửa';
         }
     }
 </script>
@@ -95,7 +104,7 @@
         <div class="col-lg-3">
             <div class="glass-card p-4 text-center sticky-top" style="top: 100px;">
                 <div class="position-relative d-inline-block mb-3">
-    <img src="${sessionScope.currentUser.avatarUrl != null ? sessionScope.currentUser.avatarUrl : 'assets/img/default-avatar.png'}" 
+    <img src="${displayUser.avatarUrl != null ? displayUser.avatarUrl : 'assets/img/default-avatar.png'}" 
          id="profileAvatar"
          class="rounded-circle border border-3 border-white shadow-sm" 
          width="120" height="120" style="object-fit: cover;">
@@ -107,9 +116,9 @@
     
     <input type="file" id="avatarUpload" class="d-none" accept="image/*" onchange="previewImage(event)">
 </div>
-                <h5 class="fw-bold mb-1">${sessionScope.currentUser.fullName}</h5>
+                <h5 class="fw-bold mb-1">${displayUser.fullName}</h5>
                 <p class="text-muted small">
-                    ${sessionScope.currentUser.roleId == 1 ? 'Quản trị viên' : (sessionScope.currentUser.roleId == 2 ? 'Quản lý' : 'Nhân viên')}
+                    ${displayUser.roleId == 1 ? 'Quản trị viên' : (displayUser.roleId == 2 ? 'Quản lý' : 'Nhân viên')}
                 </p>
                 
             </div>
@@ -129,7 +138,7 @@
                     <div class="tab-pane fade show active" id="info">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h5 class="fw-bold mb-0">Thông tin cá nhân</h5>
-        <button class="btn btn-outline-primary btn-sm rounded-pill px-3" onclick="toggleEdit()">
+        <button class="btn btn-outline-primary btn-sm rounded-pill px-3" onclick="toggleEdit()" id="editBtn">
             <i class="fas fa-edit me-1"></i> Chỉnh sửa
         </button>
     </div>
@@ -137,12 +146,15 @@
     
     <form action="${pageContext.request.contextPath}/profile" method="POST">
         <input type="hidden" name="action" value="update_profile">
+        <c:if test="${not empty viewUser}">
+            <input type="hidden" name="targetUserId" value="${viewUser.userId}">
+        </c:if>
         <div class="row g-3">
             <div class="col-md-6">
                 <label class="small fw-bold mb-1">Họ và tên</label>
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0"><i class="fas fa-user text-primary"></i></span>
-                    <input type="text" class="form-control border-start-0 ps-0" name="fullName" value="${sessionScope.currentUser.fullName}" disabled id="input-fullName">
+                    <input type="text" class="form-control border-start-0 ps-0" name="fullName" value="${displayUser.fullName}" readonly id="input-fullName" style="background-color: #f8f9fa;">
                 </div>
             </div>
             <div class="col-md-6">
@@ -150,7 +162,7 @@
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0"><i class="fas fa-envelope text-primary"></i></span>
                     <!-- Email không cho phép sửa -->
-                    <input type="email" class="form-control border-start-0 ps-0" value="${sessionScope.currentUser.email}" disabled>
+                    <input type="email" class="form-control border-start-0 ps-0" value="${displayUser.email}" disabled>
                 </div>
                
             </div>
@@ -158,7 +170,7 @@
                 <label class="small fw-bold mb-1">Số điện thoại</label>
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0"><i class="fas fa-phone text-primary"></i></span>
-                    <input type="tel" class="form-control border-start-0 ps-0" name="phone" value="${sessionScope.currentUser.phone}" disabled id="input-phone">
+                    <input type="tel" class="form-control border-start-0 ps-0" name="phone" value="${displayUser.phone}" readonly id="input-phone" style="background-color: #f8f9fa;">
                 </div>
             </div>
             <!-- Đã loại bỏ ngày sinh và giới tính do chưa có trong Database -->

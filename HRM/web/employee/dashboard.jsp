@@ -8,12 +8,18 @@
 <style>
     body { background-color: #f0f4f8; }
 
-    .dashboard-container {
-        margin-top: 80px;
-        padding-bottom: 60px;
+    /* ── Layout wrapper ── */
+    .emp-layout {
+        display: flex;
+        min-height: calc(100vh - 64px);
+    }
+    .emp-content {
+        flex: 1;
+        padding: 30px;
+        overflow-y: auto;
     }
 
-    /* Welcome Banner */
+    /* ── Welcome Banner ── */
     .welcome-banner {
         background: linear-gradient(135deg, #0a2540 0%, #1a3a6b 100%);
         color: white;
@@ -35,35 +41,19 @@
     .welcome-banner h2 { font-size: 1.4rem; font-weight: 700; margin: 0 0 6px; }
     .welcome-banner p  { margin: 0; opacity: 0.72; font-size: 0.9rem; }
 
-    /* Row uses stretch so all col cards align bottom */
-    .dashboard-row {
-        display: flex;
-        gap: 20px;
-        align-items: stretch;
-    }
-    .dashboard-col {
-        flex: 1 1 0;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-    }
-
-    /* Card */
-    .card {
+    /* ── Card ── */
+    .emp-card {
         background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 14px;
         padding: 22px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         transition: box-shadow 0.2s;
+        height: 100%;
     }
-    .card:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.07); }
+    .emp-card:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.07); }
 
-    /* Card that fills remaining height */
-    .card-fill { flex: 1; }
-
-    .card-header {
+    .emp-card-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -72,7 +62,7 @@
         padding-bottom: 12px;
         border-bottom: 1px solid #edf2f7;
     }
-    .card-header-title {
+    .emp-card-title {
         display: flex;
         align-items: center;
         gap: 8px;
@@ -221,191 +211,193 @@
 
     /* ── Responsive ── */
     @media (max-width: 991px) {
-        .dashboard-row { flex-direction: column; }
+        .emp-layout { flex-direction: column; }
+        .emp-content { padding: 20px; }
     }
 </style>
 
-<div class="container dashboard-container">
+<div class="emp-layout">
+    <!-- Sidebar -->
+    <jsp:include page="sidebar.jsp">
+        <jsp:param name="activeMenu" value="dashboard" />
+    </jsp:include>
 
-    <!-- Welcome Banner -->
-    <div class="welcome-banner">
-        <h2>Chào buổi sáng, ${sessionScope.currentUser != null ? sessionScope.currentUser.fullName : 'Nhân viên'}!</h2>
-        <p>Chúc bạn một ca làm việc năng suất và an toàn. Kiểm tra các thông báo mới nhất bên dưới.</p>
-    </div>
+    <!-- Main Content -->
+    <div class="emp-content">
 
-    <!-- Main 3-column grid -->
-    <div class="dashboard-row">
+        <!-- Welcome Banner -->
+        <div class="welcome-banner">
+            <h2>Chào buổi sáng, ${sessionScope.currentUser != null ? sessionScope.currentUser.fullName : 'Nhân viên'}!</h2>
+            <p>Chúc bạn một ca làm việc năng suất và an toàn. Kiểm tra các thông báo mới nhất bên dưới.</p>
+        </div>
 
-        <!-- ══ CỘT 1: Chấm công + Thống kê ══ -->
-        <div class="dashboard-col">
-
+        <!-- Row 1: Clock + Stats -->
+        <div class="row g-4 mb-4">
             <!-- Chấm công -->
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-header-title">
-                        <i class="fas fa-fingerprint text-primary"></i>
-                        Chấm công Self-Service
-                    </span>
-                </div>
-                <div class="clock-wrap">
-                    <div class="clock-time" id="clockDisplay">00:00:00</div>
-                    <div class="clock-date"  id="dateDisplay">—</div>
-                    <button class="btn-checkin">
-                        <i class="fas fa-sign-in-alt me-2"></i>CHẤM CÔNG VÀO
-                    </button>
-                    <div class="clock-location">
-                        <i class="fas fa-map-marker-alt text-success me-1"></i>
-                        Đã kết nối định vị (Nhà máy Khu B)
+            <div class="col-lg-5">
+                <div class="emp-card">
+                    <div class="emp-card-header">
+                        <span class="emp-card-title">
+                            <i class="fas fa-fingerprint text-primary"></i>
+                            Chấm công Self-Service
+                        </span>
+                    </div>
+                    <div class="clock-wrap">
+                        <div class="clock-time" id="clockDisplay">00:00:00</div>
+                        <div class="clock-date" id="dateDisplay">—</div>
+                        <button class="btn-checkin">
+                            <i class="fas fa-sign-in-alt me-2"></i>CHẤM CÔNG VÀO
+                        </button>
+                        <div class="clock-location">
+                            <i class="fas fa-map-marker-alt text-success me-1"></i>
+                            Đã kết nối định vị (Nhà máy Khu B)
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Thống kê cá nhân -->
-            <div class="card card-fill">
-                <div class="card-header">
-                    <span class="card-header-title">
-                        <i class="fas fa-chart-pie text-success"></i>
-                        Thống kê cá nhân (Tháng này)
-                    </span>
-                </div>
+            <div class="col-lg-7">
+                <div class="emp-card">
+                    <div class="emp-card-header">
+                        <span class="emp-card-title">
+                            <i class="fas fa-chart-pie text-success"></i>
+                            Thống kê cá nhân (Tháng này)
+                        </span>
+                    </div>
 
-                <div class="stat-row">
-                    <div class="stat-icon blue"><i class="fas fa-calendar-check"></i></div>
-                    <div class="stat-content">
-                        <h5>22 / 24</h5>
-                        <span>Ngày công tiêu chuẩn</span>
+                    <div class="stat-row">
+                        <div class="stat-icon blue"><i class="fas fa-calendar-check"></i></div>
+                        <div class="stat-content">
+                            <h5>22 / 24</h5>
+                            <span>Ngày công tiêu chuẩn</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-row">
+                        <div class="stat-icon orange"><i class="fas fa-business-time"></i></div>
+                        <div class="stat-content">
+                            <h5>12.5h</h5>
+                            <span>Giờ tăng ca (OT)</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-row">
+                        <div class="stat-icon green"><i class="fas fa-umbrella-beach"></i></div>
+                        <div class="stat-content">
+                            <h5>10 ngày</h5>
+                            <span>Phép năm còn lại</span>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <div class="stat-row">
-                    <div class="stat-icon orange"><i class="fas fa-business-time"></i></div>
-                    <div class="stat-content">
-                        <h5>12.5h</h5>
-                        <span>Giờ tăng ca (OT)</span>
+        <!-- Row 2: News + Schedule -->
+        <div class="row g-4">
+            <!-- Bảng tin -->
+            <div class="col-lg-7">
+                <div class="emp-card">
+                    <div class="emp-card-header">
+                        <span class="emp-card-title">
+                            <i class="fas fa-bullhorn text-warning"></i>
+                            Bảng tin & Thông báo nội bộ
+                        </span>
+                        <a href="#" class="btn-all">Xem tất cả</a>
                     </div>
-                </div>
 
-                <div class="stat-row">
-                    <div class="stat-icon green"><i class="fas fa-umbrella-beach"></i></div>
-                    <div class="stat-content">
-                        <h5>10 ngày</h5>
-                        <span>Phép năm còn lại</span>
+                    <div class="news-item">
+                        <div class="news-icon" style="background:#e53e3e;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="news-content">
+                            <h6>Nhắc nhở: Tuân thủ An toàn Lao động & Bảo hộ</h6>
+                            <p>HSE yêu cầu toàn bộ CNVC khối Sản xuất mặc đầy đủ thiết bị bảo hộ khi vào xưởng lắp ráp.</p>
+                            <span class="news-date"><i class="far fa-clock me-1"></i>Hôm qua, 15:30 · HSE Dept</span>
+                        </div>
+                    </div>
+
+                    <div class="news-item">
+                        <div class="news-icon" style="background:#3182ce;">
+                            <i class="fas fa-gift"></i>
+                        </div>
+                        <div class="news-content">
+                            <h6>Thông báo Chuyển lương & Thưởng KPI tháng trước</h6>
+                            <p>Phòng Kế toán đã hoàn tất chuyển lương. Vui lòng kiểm tra "Phiếu lương" trong hệ thống.</p>
+                            <span class="news-date"><i class="far fa-clock me-1"></i>12/05/2026 · Finance Dept</span>
+                        </div>
+                    </div>
+
+                    <div class="news-item">
+                        <div class="news-icon" style="background:#38a169;">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="news-content">
+                            <h6>Khảo sát Môi trường làm việc Quý 2</h6>
+                            <p>Đề nghị toàn bộ CBCNV dành 5 phút hoàn thành form khảo sát chất lượng bữa ăn ca.</p>
+                            <span class="news-date"><i class="far fa-clock me-1"></i>10/05/2026 · HR Dept</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-        </div>
-        <!-- ══ END CỘT 1 ══ -->
+            <!-- Lịch phân ca -->
+            <div class="col-lg-5">
+                <div class="emp-card">
+                    <div class="emp-card-header">
+                        <span class="emp-card-title">
+                            <i class="fas fa-calendar-alt text-info"></i>
+                            Lịch Phân Ca (Tuần này)
+                        </span>
+                    </div>
 
+                    <div class="shift-item past">
+                        <span class="shift-day">Thứ 2 (Hôm qua)</span>
+                        <span class="shift-time">
+                            <span class="badge bg-secondary">Hành chính</span>08:00 – 17:00
+                        </span>
+                    </div>
 
-        <!-- ══ CỘT 2: Bảng tin ══ -->
-        <div class="dashboard-col">
-            <div class="card card-fill">
-                <div class="card-header">
-                    <span class="card-header-title">
-                        <i class="fas fa-bullhorn text-warning"></i>
-                        Bảng tin & Thông báo nội bộ
-                    </span>
-                    <a href="#" class="btn-all">Xem tất cả</a>
+                    <div class="shift-item today">
+                        <span class="shift-day">Thứ 3 (Hôm nay)</span>
+                        <span class="shift-time">
+                            <span class="badge bg-primary">Hành chính</span>08:00 – 17:00
+                        </span>
+                    </div>
+
+                    <div class="shift-item future">
+                        <span class="shift-day">Thứ 4 (Ngày mai)</span>
+                        <span class="shift-time">
+                            <span class="badge bg-success">Ca Đêm</span>22:00 – 06:00
+                        </span>
+                    </div>
+
+                    <div class="shift-item future">
+                        <span class="shift-day">Thứ 5</span>
+                        <span class="shift-time">
+                            <span class="badge bg-success">Ca Đêm</span>22:00 – 06:00
+                        </span>
+                    </div>
+
+                    <div class="shift-item future">
+                        <span class="shift-day">Thứ 6</span>
+                        <span class="shift-time">
+                            <span class="badge bg-success">Ca Đêm</span>22:00 – 06:00
+                        </span>
+                    </div>
+
+                    <div class="shift-item off">
+                        <span class="shift-day">Thứ 7 & Chủ Nhật</span>
+                        <span class="shift-time text-muted">
+                            <i class="fas fa-bed me-1"></i>Nghỉ tuần
+                        </span>
+                    </div>
                 </div>
-
-                <div class="news-item">
-                    <div class="news-icon" style="background:#e53e3e;">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <div class="news-content">
-                        <h6>Nhắc nhở: Tuân thủ An toàn Lao động & Bảo hộ</h6>
-                        <p>HSE yêu cầu toàn bộ CNVC khối Sản xuất mặc đầy đủ thiết bị bảo hộ khi vào xưởng lắp ráp.</p>
-                        <span class="news-date"><i class="far fa-clock me-1"></i>Hôm qua, 15:30 · HSE Dept</span>
-                    </div>
-                </div>
-
-                <div class="news-item">
-                    <div class="news-icon" style="background:#3182ce;">
-                        <i class="fas fa-gift"></i>
-                    </div>
-                    <div class="news-content">
-                        <h6>Thông báo Chuyển lương & Thưởng KPI tháng trước</h6>
-                        <p>Phòng Kế toán đã hoàn tất chuyển lương. Vui lòng kiểm tra "Phiếu lương" trong hệ thống.</p>
-                        <span class="news-date"><i class="far fa-clock me-1"></i>12/05/2026 · Finance Dept</span>
-                    </div>
-                </div>
-
-                <div class="news-item">
-                    <div class="news-icon" style="background:#38a169;">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div class="news-content">
-                        <h6>Khảo sát Môi trường làm việc Quý 2</h6>
-                        <p>Đề nghị toàn bộ CBCNV dành 5 phút hoàn thành form khảo sát chất lượng bữa ăn ca.</p>
-                        <span class="news-date"><i class="far fa-clock me-1"></i>10/05/2026 · HR Dept</span>
-                    </div>
-                </div>
-
             </div>
         </div>
-        <!-- ══ END CỘT 2 ══ -->
 
-
-        <!-- ══ CỘT 3: Lịch phân ca ══ -->
-        <div class="dashboard-col">
-            <div class="card card-fill">
-                <div class="card-header">
-                    <span class="card-header-title">
-                        <i class="fas fa-calendar-alt text-info"></i>
-                        Lịch Phân Ca (Tuần này)
-                    </span>
-                </div>
-
-                <div class="shift-item past">
-                    <span class="shift-day">Thứ 2 (Hôm qua)</span>
-                    <span class="shift-time">
-                        <span class="badge bg-secondary">Hành chính</span>08:00 – 17:00
-                    </span>
-                </div>
-
-                <div class="shift-item today">
-                    <span class="shift-day">Thứ 3 (Hôm nay)</span>
-                    <span class="shift-time">
-                        <span class="badge bg-primary">Hành chính</span>08:00 – 17:00
-                    </span>
-                </div>
-
-                <div class="shift-item future">
-                    <span class="shift-day">Thứ 4 (Ngày mai)</span>
-                    <span class="shift-time">
-                        <span class="badge bg-success">Ca Đêm</span>22:00 – 06:00
-                    </span>
-                </div>
-
-                <div class="shift-item future">
-                    <span class="shift-day">Thứ 5</span>
-                    <span class="shift-time">
-                        <span class="badge bg-success">Ca Đêm</span>22:00 – 06:00
-                    </span>
-                </div>
-
-                <div class="shift-item future">
-                    <span class="shift-day">Thứ 6</span>
-                    <span class="shift-time">
-                        <span class="badge bg-success">Ca Đêm</span>22:00 – 06:00
-                    </span>
-                </div>
-
-                <div class="shift-item off">
-                    <span class="shift-day">Thứ 7 & Chủ Nhật</span>
-                    <span class="shift-time text-muted">
-                        <i class="fas fa-bed me-1"></i>Nghỉ tuần
-                    </span>
-                </div>
-
-            </div>
-        </div>
-        <!-- ══ END CỘT 3 ══ -->
-
-    </div><!-- end .dashboard-row -->
-
-</div><!-- end .dashboard-container -->
+    </div><!-- end .emp-content -->
+</div><!-- end .emp-layout -->
 
 <script>
     function updateClock() {

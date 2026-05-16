@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import dao.UserDAO;
+import dao.RoleDAO;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpSession;
 import model.User;
@@ -45,6 +46,11 @@ public class adminDashboardController extends HttpServlet {
         int activeUsers = userDAO.getActiveUsers();
         int totalRoles = userDAO.getTotalRoles();
         
+        // 2b. Lấy danh sách người dùng và vai trò để hiển thị trang quản trị hợp nhất
+        java.util.List<model.User> users = userDAO.getAllUsers();
+        RoleDAO roleDAO = new RoleDAO();
+        java.util.List<model.Role> roles = roleDAO.getAllRoles();
+        
         // Giả lập số phòng ban và số đơn nghỉ phép chờ duyệt (Chưa có bảng trong DB)
         int totalDepartments = 5; 
         int pendingLeaves = 12;
@@ -53,6 +59,8 @@ public class adminDashboardController extends HttpServlet {
         request.setAttribute("totalUsers", totalUsers);
         request.setAttribute("activeUsers", activeUsers);
         request.setAttribute("totalRoles", totalRoles);
+        request.setAttribute("users", users);
+        request.setAttribute("roles", roles);
         request.setAttribute("totalDepartments", totalDepartments);
         request.setAttribute("pendingLeaves", pendingLeaves);
 
@@ -63,6 +71,99 @@ public class adminDashboardController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
     throws ServletException, IOException {
+        // Xử lý các thao tác quản trị trên user: toggle status, update role
+        HttpSession session = request.getSession(false);
+        model.User currentUser = session != null ? (model.User) session.getAttribute("currentUser") : null;
+        if (currentUser == null || currentUser.getRoleId() != 1) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        request.setCharacterEncoding("UTF-8");
+        String action = request.getParameter("action");
+        UserDAO userDAO = new UserDAO();
+
+        if ("toggleStatus".equals(action)) {
+            String userIdRaw = request.getParameter("userId");
+            try {
+                int userId = Integer.parseInt(userIdRaw);
+                model.User target = userDAO.getUserById(userId);
+                if (target != null) {
+                    int newStatus = target.getStatus() == 1 ? 0 : 1;
+                    boolean ok = userDAO.updateUserStatus(userId, newStatus);
+                    if (ok) {
+                        response.sendRedirect(request.getContextPath() + "/admin/dashboard?message=User+status+updated");
+                        return;
+                    }
+                }
+            } catch (NumberFormatException e) {
+                // ignore
+            }
+            response.sendRedirect(request.getContextPath() + "/admin/dashboard?error=Failed+to+update+status");
+            return;
+        } else if ("updateRole".equals(action)) {
+            String userIdRaw = request.getParameter("userId");
+            String roleIdRaw = request.getParameter("roleId");
+            try {
+                int userId = Integer.parseInt(userIdRaw);
+                int roleId = Integer.parseInt(roleIdRaw);
+                boolean ok = userDAO.updateUserRole(userId, roleId);
+                if (ok) {
+                    response.sendRedirect(request.getContextPath() + "/admin/dashboard?message=User+role+updated");
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                // ignore
+            }
+            response.sendRedirect(request.getContextPath() + "/admin/dashboard?error=Failed+to+update+role");
+            return;
+        } else if ("addUser".equals(action)) {
+            String password = request.getParameter("password");
+            String fullName = request.getParameter("fullName");
+            String email = request.getParameter("email");
+            String phone = request.getParameter("phone");
+            String roleIdRaw = request.getParameter("roleId");
+
+            if (email == null || email.trim().isEmpty()) {
+                response.sendRedirect(request.getContextPath() + "/admin/dashboard?error=Email+is+required");
+                return;
+            }
+            
+            // Auto-generate username from email
+            String username = email.contains("@") ? email.split("@")[0] : email;
+
+            // Kiểm tra trùng lặp
+            if (userDAO.isUserExists(username, email)) {
+                response.sendRedirect(request.getContextPath() + "/admin/dashboard?error=Email+already+exists");
+                return;
+            }
+
+            try {
+                int roleId = Integer.parseInt(roleIdRaw);
+                model.User newUser = new model.User();
+                newUser.setUsername(username.trim());
+                newUser.setPassword(password != null && !password.isEmpty() ? password : "@123456");
+                newUser.setFullName(fullName);
+                newUser.setEmail(email.trim());
+                newUser.setPhone(phone);
+                newUser.setRoleId(roleId);
+                newUser.setStatus(1); // Active default
+
+                boolean ok = userDAO.addUser(newUser);
+                if (ok) {
+                    response.sendRedirect(request.getContextPath() + "/admin/dashboard?message=User+added+successfully");
+                    return;
+                } else {
+                    response.sendRedirect(request.getContextPath() + "/admin/dashboard?error=Failed+to+add+user");
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                response.sendRedirect(request.getContextPath() + "/admin/dashboard?error=Invalid+Role+ID");
+                return;
+            }
+        }
+
+        // Fallback: delegate to GET to re-render page
         doGet(request, response);
     }
 }

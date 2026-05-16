@@ -145,7 +145,7 @@ public class UserDAO {
             return existing;
         }
         String sql = "INSERT INTO users (username, password, full_name, email, avatar_url, status, role_id) " +
-                     "VALUES (?, '', ?, ?, ?, 1, 3)";
+                     "VALUES (?, '', ?, ?, ?, 0, 3)";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
@@ -204,5 +204,107 @@ public class UserDAO {
         user.setCreatedAt(rs.getTimestamp("created_at"));
         user.setUpdatedAt(rs.getTimestamp("updated_at"));
         return user;
+    }
+
+    // ── Lấy danh sách tất cả người dùng (Admin view) ──
+    public java.util.List<User> getAllUsers() {
+        java.util.List<User> list = new java.util.ArrayList<>();
+        String sql = "SELECT * FROM users ORDER BY user_id";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapResultSetToUser(rs));
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi getAllUsers: " + e.getMessage());
+        }
+        return list;
+    }
+
+    // ── Lấy user theo ID ──
+    public User getUserById(int userId) {
+        String sql = "SELECT * FROM users WHERE user_id = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapResultSetToUser(rs);
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi getUserById: " + e.getMessage());
+        }
+        return null;
+    }
+
+    // ── Cập nhật trạng thái (active = 1 / inactive = 0) ──
+    public boolean updateUserStatus(int userId, int status) {
+        String sql = "UPDATE users SET status = ? WHERE user_id = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, status);
+            ps.setInt(2, userId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi updateUserStatus: " + e.getMessage());
+        }
+        return false;
+    }
+
+    // ── Cập nhật role của user ──
+    public boolean updateUserRole(int userId, int roleId) {
+        String sql = "UPDATE users SET role_id = ? WHERE user_id = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, roleId);
+            ps.setInt(2, userId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi updateUserRole: " + e.getMessage());
+        }
+        return false;
+    }
+
+    // ── Kiểm tra username hoặc email đã tồn tại ──
+    public boolean isUserExists(String username, String email) {
+        String sql = "SELECT 1 FROM users WHERE username = ? OR email = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, username);
+            ps.setString(2, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi isUserExists: " + e.getMessage());
+        }
+        return false;
+    }
+
+    // ── Thêm người dùng mới ──
+    public boolean addUser(User user) {
+        String sql = "INSERT INTO users (username, password, full_name, email, phone, role_id, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, user.getUsername());
+            // Mã hóa mật khẩu trước khi chèn vào database
+            String hashedPassword = PasswordUtil.hashPassword(user.getPassword());
+            ps.setString(2, hashedPassword);
+            ps.setString(3, user.getFullName());
+            ps.setString(4, user.getEmail());
+            ps.setString(5, user.getPhone());
+            ps.setInt(6, user.getRoleId());
+            ps.setInt(7, user.getStatus());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi addUser: " + e.getMessage());
+        }
+        return false;
     }
 }
