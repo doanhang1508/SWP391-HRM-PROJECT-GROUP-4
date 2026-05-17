@@ -137,6 +137,16 @@
             </a>
         </li>
         <li class="sidebar-item">
+            <a href="${pageContext.request.contextPath}/work-history" class="sidebar-link ${param.activeMenu eq 'work-history' ? 'active' : ''}">
+                <i class="fas fa-briefcase"></i> Lịch sử công tác
+            </a>
+        </li>
+        <li class="sidebar-item">
+            <a href="${pageContext.request.contextPath}/settings" class="sidebar-link ${param.activeMenu eq 'settings' ? 'active' : ''}">
+                <i class="fas fa-cog"></i> Cài đặt bảo mật
+            </a>
+        </li>
+        <li class="sidebar-item">
             <a href="${pageContext.request.contextPath}/logout" class="sidebar-link" style="color: #e53e3e;" onclick="return confirm('Bạn có chắc chắn muốn đăng xuất không?');">
                 <i class="fas fa-sign-out-alt" style="color: #e53e3e;"></i> Đăng xuất
             </a>

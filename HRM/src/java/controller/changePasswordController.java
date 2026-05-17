@@ -38,21 +38,21 @@ public class changePasswordController extends HttpServlet {
         // 2. Kiểm tra mật khẩu cũ có đúng không (hỗ trợ cả plain-text lẫn BCrypt)
         if (!PasswordUtil.checkPassword(oldPassword, currentUser.getPasswordHash())) {
             request.setAttribute("msgError", "Mật khẩu cũ không chính xác!");
-            request.getRequestDispatcher("profile.jsp").forward(request, response);
+            request.getRequestDispatcher("settings.jsp").forward(request, response);
             return;
         }
 
         // 3. Kiểm tra 2 ô mật khẩu mới có khớp nhau không
         if (!newPassword.equals(confirmPassword)) {
             request.setAttribute("msgError", "Xác nhận mật khẩu mới không khớp!");
-            request.getRequestDispatcher("profile.jsp").forward(request, response);
+            request.getRequestDispatcher("settings.jsp").forward(request, response);
             return;
         }
 
         // 4. Kiểm tra độ dài tối thiểu
         if (newPassword.length() < 6) {
             request.setAttribute("msgError", "Mật khẩu mới phải có ít nhất 6 ký tự!");
-            request.getRequestDispatcher("profile.jsp").forward(request, response);
+            request.getRequestDispatcher("settings.jsp").forward(request, response);
             return;
         }
 
@@ -69,14 +69,14 @@ public class changePasswordController extends HttpServlet {
             request.setAttribute("msgError", "Có lỗi xảy ra khi lưu mật khẩu. Vui lòng thử lại!");
         }
 
-        request.getRequestDispatcher("profile.jsp").forward(request, response);
+        request.getRequestDispatcher("settings.jsp").forward(request, response);
     }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Truy cập GET thì chuyển về trang hồ sơ
-        response.sendRedirect(request.getContextPath() + "/profile");
+        // Truy cập GET thì chuyển về trang cài đặt bảo mật
+        response.sendRedirect(request.getContextPath() + "/settings");
     }
 }
 
