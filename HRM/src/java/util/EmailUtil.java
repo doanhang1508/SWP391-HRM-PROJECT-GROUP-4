@@ -47,7 +47,7 @@ public class EmailUtil {
              + "<p style='color:#334155;font-size:16px'>Bạn vừa yêu cầu đặt lại mật khẩu. Mã OTP của bạn là:</p>"
              + "<div style='background:#f1f5f9;border-radius:8px;padding:20px;text-align:center;margin:20px 0'>"
              + "<span style='font-size:36px;font-weight:800;color:#0f172a;letter-spacing:8px'>" + otp + "</span></div>"
-             + "<p style='color:#64748b;font-size:14px'>Mã OTP có hiệu lực trong <strong>10 phút</strong>. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>"
+             + "<p style='color:#64748b;font-size:14px'>Mã OTP có hiệu lực trong <strong>1 phút</strong>. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>"
              + "<p style='color:#94a3b8;font-size:12px'>Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email này.</p>"
              + "</div></div>";
     }

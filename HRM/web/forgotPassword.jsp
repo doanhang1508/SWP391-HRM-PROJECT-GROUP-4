@@ -36,6 +36,7 @@
         .icon-circle.blue   { background: #e0f2fe; color: #0284c7; }
         .icon-circle.yellow { background: #fef9c3; color: #ca8a04; }
         .icon-circle.green  { background: #dcfce7; color: #16a34a; }
+        .icon-circle.purple { background: #f3e8ff; color: #7c3aed; }
         .form-control-hrm {
             border: 1.5px solid #e2e8f0; border-radius: 10px;
             padding: 12px 16px; font-size: 15px;
@@ -56,6 +57,12 @@
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(30,41,59,0.3);
         }
+        .btn-primary-hrm:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
         .otp-input {
             letter-spacing: 8px; font-size: 22px; font-weight: 800;
             text-align: center;
@@ -68,6 +75,32 @@
         a.back-link { color: #64748b; text-decoration: none; font-size: 14px; }
         a.back-link:hover { color: #1e293b; }
         label { font-weight: 600; font-size: 14px; margin-bottom: 6px; display: block; }
+
+        /* Timer countdown styles */
+        .timer-container {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .timer-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .timer-badge.active {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .timer-badge.expired {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .timer-badge i {
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -86,13 +119,13 @@
         </a>
     </c:if>
 
-    <%-- ══ BƯỚC 2: NHẬP OTP + MẬT KHẨU MỚI ══ --%>
-    <c:if test="${step == 'verify_otp'}">
-        <div class="icon-circle yellow"><i class="fas fa-envelope-open-text"></i></div>
-        <div class="step-badge">Bước 2 / 2</div>
-        <h5 class="fw-bold text-center mb-1">Kiểm tra Email của bạn</h5>
+    <%-- ══ BƯỚC 3: NHẬP MẬT KHẨU MỚI (sau khi OTP đã xác minh) ══ --%>
+    <c:if test="${step == 'new_password'}">
+        <div class="icon-circle purple"><i class="fas fa-key"></i></div>
+        <div class="step-badge">Bước 3 / 3</div>
+        <h5 class="fw-bold text-center mb-1">Đặt mật khẩu mới</h5>
         <p class="text-center text-muted small mb-4">
-            Mã OTP 6 chữ số đã được gửi tới<br>
+            OTP đã xác minh thành công cho<br>
             <strong class="text-dark">${otpEmail}</strong>
         </p>
 
@@ -103,21 +136,13 @@
         </c:if>
 
         <form action="${pageContext.request.contextPath}/forgot-password" method="POST">
-            <input type="hidden" name="step" value="verify_otp">
-
-            <div class="mb-3">
-                <label>Nhập mã OTP</label>
-                <input type="text" name="otpCode"
-                       class="form-control form-control-hrm otp-input"
-                       placeholder="000000" maxlength="6" required autofocus
-                       autocomplete="one-time-code">
-            </div>
+            <input type="hidden" name="step" value="reset_password">
 
             <div class="mb-3">
                 <label>Mật khẩu mới</label>
                 <input type="password" name="newPassword"
                        class="form-control form-control-hrm"
-                       placeholder="Tối thiểu 6 ký tự" required minlength="6">
+                       placeholder="Tối thiểu 6 ký tự" required minlength="6" autofocus>
             </div>
 
             <div class="mb-4">
@@ -128,7 +153,48 @@
             </div>
 
             <button type="submit" class="btn-primary-hrm">
-                <i class="fas fa-key me-2"></i> Xác nhận & Đặt lại mật khẩu
+                <i class="fas fa-check-circle me-2"></i> Đặt lại mật khẩu
+            </button>
+        </form>
+    </c:if>
+
+    <%-- ══ BƯỚC 2: NHẬP OTP (chỉ xác minh OTP, chưa nhập mật khẩu) ══ --%>
+    <c:if test="${step == 'verify_otp'}">
+        <div class="icon-circle yellow"><i class="fas fa-envelope-open-text"></i></div>
+        <div class="step-badge">Bước 2 / 3</div>
+        <h5 class="fw-bold text-center mb-1">Xác minh mã OTP</h5>
+        <p class="text-center text-muted small mb-3">
+            Mã OTP 6 chữ số đã được gửi tới<br>
+            <strong class="text-dark">${otpEmail}</strong>
+        </p>
+
+        <%-- Timer đếm ngược --%>
+        <div class="timer-container">
+            <div class="timer-badge active" id="timerBadge">
+                <i class="fas fa-clock"></i>
+                <span id="timerText">Còn lại: 1:00</span>
+            </div>
+        </div>
+
+        <c:if test="${not empty msgError}">
+            <div class="alert alert-danger py-2 small">
+                <i class="fas fa-exclamation-triangle me-2"></i>${msgError}
+            </div>
+        </c:if>
+
+        <form action="${pageContext.request.contextPath}/forgot-password" method="POST" id="otpForm">
+            <input type="hidden" name="step" value="verify_otp">
+
+            <div class="mb-4">
+                <label>Nhập mã OTP</label>
+                <input type="text" name="otpCode"
+                       class="form-control form-control-hrm otp-input"
+                       placeholder="000000" maxlength="6" required autofocus
+                       autocomplete="one-time-code" id="otpInput">
+            </div>
+
+            <button type="submit" class="btn-primary-hrm" id="verifyBtn">
+                <i class="fas fa-shield-alt me-2"></i> Xác minh OTP
             </button>
         </form>
 
@@ -137,12 +203,39 @@
                 <i class="fas fa-redo me-1"></i> Gửi lại mã OTP
             </a>
         </div>
+
+        <script>
+            (function() {
+                // Timer 60 giây (1 phút)
+                var totalSeconds = 60;
+                var timerBadge = document.getElementById('timerBadge');
+                var timerText = document.getElementById('timerText');
+                var verifyBtn = document.getElementById('verifyBtn');
+                var otpInput = document.getElementById('otpInput');
+
+                var countdown = setInterval(function() {
+                    totalSeconds--;
+                    var minutes = Math.floor(totalSeconds / 60);
+                    var seconds = totalSeconds % 60;
+                    timerText.textContent = 'Còn lại: ' + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+
+                    if (totalSeconds <= 0) {
+                        clearInterval(countdown);
+                        timerBadge.classList.remove('active');
+                        timerBadge.classList.add('expired');
+                        timerText.textContent = 'Mã OTP đã hết hạn!';
+                        verifyBtn.disabled = true;
+                        otpInput.disabled = true;
+                    }
+                }, 1000);
+            })();
+        </script>
     </c:if>
 
     <%-- ══ BƯỚC 1: NHẬP EMAIL (Mặc định) ══ --%>
     <c:if test="${empty step or step == 'enter_email'}">
         <div class="icon-circle blue"><i class="fas fa-lock"></i></div>
-        <div class="step-badge">Bước 1 / 2</div>
+        <div class="step-badge">Bước 1 / 3</div>
         <h5 class="fw-bold text-center mb-1">Quên mật khẩu?</h5>
         <p class="text-center text-muted small mb-4">
             Nhập email công việc để nhận mã OTP đặt lại mật khẩu.
