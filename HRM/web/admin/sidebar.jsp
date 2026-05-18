@@ -143,7 +143,7 @@
         </li>
         <li class="sidebar-item">
             <a href="${pageContext.request.contextPath}/settings" class="sidebar-link ${param.activeMenu eq 'settings' ? 'active' : ''}">
-                <i class="fas fa-cog"></i> Cài đặt bảo mật
+                <i class="fas fa-cog"></i> Cài đặt
             </a>
         </li>
         <li class="sidebar-item">
