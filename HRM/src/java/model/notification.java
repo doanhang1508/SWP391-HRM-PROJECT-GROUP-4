@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
  */
 public class notification {
      private int           id;
-    private int           employeeId;   // FK → users.user_id
+    private int           userId;   
     private String        type;         // "attendance" | "leave" | "overtime" | "payroll"
                                         // "kpi" | "training" | "system" | "announcement" | "shift"
     private String        title;
@@ -28,8 +28,8 @@ public class notification {
  
     public notification() {}
  
-    public notification(int employeeId, String type, String title, String body, String link) {
-        this.employeeId = employeeId;
+    public notification(int userId, String type, String title, String body, String link) {
+        this.userId = userId;
         this.type       = type;
         this.title      = title;
         this.body       = body;
@@ -45,11 +45,11 @@ public class notification {
         this.id = id;
     }
  
-    public int getEmployeeId() {
-        return employeeId;
+    public int getUserId() {
+        return userId;
     }
-    public void setEmployeeId(int employeeId) {
-        this.employeeId = employeeId;
+    public void setUserId(int userId) {
+        this.userId = userId;
     }
  
     public String getType() {
@@ -107,7 +107,7 @@ public class notification {
     public String toString() {
         return "Notification{" +
                 "id=" + id +
-                ", employeeId=" + employeeId +
+                ", userId=" + userId +
                 ", type='" + type + '\'' +
                 ", title='" + title + '\'' +
                 ", isRead=" + isRead +

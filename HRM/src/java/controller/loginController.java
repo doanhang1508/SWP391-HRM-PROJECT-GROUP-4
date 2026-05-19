@@ -135,6 +135,11 @@ public class loginController extends HttpServlet {
         // --- Gửi thông báo đăng nhập thành công ---
         sendLoginNotification(user, request);
 
+        // --- Flash message hiện toast Góc dưới màn hình ---
+        String displayName = (user.getFullName() != null && !user.getFullName().isBlank())
+                ? user.getFullName() : user.getEmail();
+        session.setAttribute("toastSuccess", "Đăng nhập thành công! Chào mừng, " + displayName + ".");
+
         // --- Redirect theo role ---
         String redirect = switch (user.getRoleId()) {
             case 1 ->
@@ -174,7 +179,7 @@ public class loginController extends HttpServlet {
                     .format(DateTimeFormatter.ofPattern("HH:mm - dd/MM/yyyy"));
 
             notification notif = new notification();
-            notif.setEmployeeId(user.getUserId());
+            notif.setUserId(user.getUserId());
             notif.setType("system");
             notif.setTitle("Đăng nhập thành công");
             notif.setBody(String.format(

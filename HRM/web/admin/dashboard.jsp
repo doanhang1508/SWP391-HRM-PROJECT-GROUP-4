@@ -13,38 +13,35 @@
 
 <style>
     :root {
-        --primary-color: #4361ee;
-        --secondary-color: #3f37c9;
-        --success-color: #4cc9f0;
-        --danger-color: #f72585;
-        --warning-color: #f8961e;
-        --info-color: #4895ef;
-        --dark-bg: #f4f7fe;
+        --primary-color: #3b82f6;
+        --primary-light: #eff6ff;
+        --secondary-color: #64748b;
+        --success-color: #10b981;
+        --danger-color: #ef4444;
+        --warning-color: #f59e0b;
+        --bg-body: #f8fafc;
         --card-bg: #ffffff;
-        --text-main: #2b2b2b;
-        --text-muted: #8f9fbc;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
         --sidebar-width: 260px;
     }
 
     body {
-        background-color: var(--dark-bg);
+        background-color: var(--bg-body);
         font-family: 'Inter', sans-serif;
+        color: var(--text-main);
     }
 
     /* Layout */
     .dashboard-wrapper {
         display: flex;
-        min-height: calc(100vh - 64px); /* Subtract header height */
+        min-height: calc(100vh - 64px);
     }
 
-    .sidebar-link:hover i, .sidebar-link.active i {
-        color: var(--primary-color);
-    }
-
-    /* Main Content */
     .main-content {
         flex: 1;
-        padding: 30px;
+        padding: 40px;
         width: calc(100% - var(--sidebar-width));
     }
 
@@ -52,243 +49,324 @@
     .page-header {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
+        align-items: flex-end;
+        margin-bottom: 35px;
     }
 
     .page-title {
-        font-size: 1.5rem;
-        font-weight: 700;
+        font-size: 1.75rem;
+        font-weight: 800;
         color: var(--text-main);
-        margin: 0;
+        margin: 0 0 8px 0;
+        letter-spacing: -0.5px;
     }
 
     .breadcrumb {
-        font-size: 0.85rem;
+        font-size: 0.9rem;
         color: var(--text-muted);
         margin-bottom: 0;
+        font-weight: 500;
     }
     .breadcrumb a {
         color: var(--primary-color);
         text-decoration: none;
+        transition: color 0.2s;
     }
+    .breadcrumb a:hover { color: #2563eb; }
 
-    /* Stat Cards (Colorful style like CodeAstro) */
-    .stat-card-wrapper {
-        margin-bottom: 25px;
-    }
-    
+    /* Stat Cards (Premium Minimalist Style) */
     .stat-card {
-        border-radius: 12px;
+        background: var(--card-bg);
+        border-radius: 20px;
         padding: 24px;
-        color: white;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(226, 232, 240, 0.8);
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         height: 100%;
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        justify-content: space-between;
     }
 
     .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
     }
 
-    .stat-card::after {
-        content: '';
-        position: absolute;
-        top: -20px;
-        right: -20px;
-        width: 100px;
-        height: 100px;
-        background: rgba(255,255,255,0.1);
-        border-radius: 50%;
+    .stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
     }
 
-    .stat-card-icon {
-        position: absolute;
-        right: 20px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 3.5rem;
-        opacity: 0.2;
-    }
-
-    .stat-card-value {
-        font-size: 2.2rem;
-        font-weight: 800;
-        margin-bottom: 5px;
-        line-height: 1;
-        z-index: 1;
-    }
-
-    .stat-card-title {
-        font-size: 1rem;
+    .stat-title {
+        font-size: 0.95rem;
         font-weight: 600;
-        opacity: 0.9;
-        margin-bottom: 15px;
-        z-index: 1;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 0;
     }
 
-    .stat-card-link {
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .icon-blue { background: #eff6ff; color: #3b82f6; }
+    .icon-green { background: #f0fdf4; color: #10b981; }
+    .icon-orange { background: #fff7ed; color: #f97316; }
+    .icon-purple { background: #faf5ff; color: #a855f7; }
+
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--text-main);
+        line-height: 1;
+        margin-bottom: 12px;
+        letter-spacing: -1px;
+    }
+
+    .stat-footer {
         font-size: 0.85rem;
-        color: rgba(255,255,255,0.8);
+        font-weight: 500;
+    }
+    
+    .stat-footer a {
+        color: var(--primary-color);
         text-decoration: none;
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        z-index: 1;
-        transition: color 0.2s;
+        gap: 6px;
+        transition: gap 0.2s;
     }
-    .stat-card-link:hover {
-        color: white;
+    .stat-footer a:hover {
+        gap: 10px;
     }
-
-    .bg-purple { background: linear-gradient(135deg, #7209b7, #3a0ca3); }
-    .bg-blue { background: linear-gradient(135deg, #4361ee, #4895ef); }
-    .bg-orange { background: linear-gradient(135deg, #f77f00, #f8961e); }
-    .bg-green { background: linear-gradient(135deg, #2b9348, #55a630); }
-    .bg-red { background: linear-gradient(135deg, #d00000, #9d0208); }
-    .bg-dark-purple { background: linear-gradient(135deg, #3c096c, #240046); }
 
     /* Panels */
     .admin-panel {
         background: var(--card-bg);
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.02);
-        margin-bottom: 25px;
-        border: 1px solid rgba(0,0,0,0.04);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        margin-bottom: 24px;
     }
 
     .panel-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        border-bottom: 1px solid #f1f5f9;
+        margin-bottom: 24px;
     }
 
     .panel-title {
-        font-size: 1.15rem;
+        font-size: 1.25rem;
         font-weight: 700;
         color: var(--text-main);
         margin: 0;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
+        letter-spacing: -0.3px;
+    }
+    
+    .panel-title-icon {
+        width: 32px; height: 32px;
+        background: var(--bg-body);
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        color: var(--secondary-color);
+        font-size: 0.9rem;
     }
 
     /* Table Styles */
+    .table-responsive {
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+    }
+
     .table-custom {
         width: 100%;
-        border-collapse: separate;
-        border-spacing: 0 8px;
+        margin-bottom: 0;
+        border-collapse: collapse;
     }
 
     .table-custom th {
-        background: transparent;
+        background: var(--bg-body);
         color: var(--text-muted);
         font-weight: 600;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        padding: 12px 15px;
-        border: none;
+        letter-spacing: 0.8px;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border-color);
     }
 
     .table-custom td {
-        background: #fff;
-        padding: 15px;
+        background: var(--card-bg);
+        padding: 16px 20px;
         vertical-align: middle;
-        color: #4a5568;
-        font-size: 0.9rem;
-        border-top: 1px solid #f1f5f9;
-        border-bottom: 1px solid #f1f5f9;
+        color: var(--text-main);
+        font-size: 0.95rem;
+        border-bottom: 1px solid var(--border-color);
+        transition: background 0.2s;
     }
 
-    .table-custom tr td:first-child {
-        border-left: 1px solid #f1f5f9;
-        border-radius: 8px 0 0 8px;
-    }
-
-    .table-custom tr td:last-child {
-        border-right: 1px solid #f1f5f9;
-        border-radius: 0 8px 8px 0;
-    }
-
-    .table-custom tr:hover td {
-        background: #f8fafc;
-    }
+    .table-custom tbody tr:last-child td { border-bottom: none; }
+    .table-custom tbody tr:hover td { background: #f8fafc; }
 
     .user-info {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 16px;
     }
 
     .avatar-sm {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
-        color: #fff;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: var(--primary-light);
+        color: var(--primary-color);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: bold;
+        font-weight: 700;
         font-size: 1.1rem;
     }
 
     .badge-soft {
         padding: 6px 12px;
-        border-radius: 6px;
+        border-radius: 20px;
         font-weight: 600;
         font-size: 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
     }
-    .badge-soft-success { background: rgba(76, 201, 240, 0.1); color: #00b4d8; }
-    .badge-soft-danger { background: rgba(247, 37, 133, 0.1); color: #f72585; }
+    .badge-soft-success { background: #dcfce7; color: #16a34a; }
+    .badge-soft-danger { background: #fee2e2; color: #dc2626; }
+    .badge-soft-gray { background: #f1f5f9; color: #64748b; }
 
     /* Custom Form Elements */
     .form-select-sm {
-        border-radius: 6px;
-        border: 1px solid #e2e8f0;
-        padding: 6px 30px 6px 12px;
-        font-size: 0.85rem;
-        color: #4a5568;
-        background-color: #f8fafc;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        padding: 8px 30px 8px 14px;
+        font-size: 0.9rem;
+        color: var(--text-main);
+        background-color: var(--card-bg);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
     }
     .form-select-sm:focus {
         border-color: var(--primary-color);
-        box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.15);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        outline: none;
     }
 
     .btn-action {
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 36px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        border-radius: 8px;
+        border-radius: 10px;
         transition: all 0.2s;
-        border: none;
-        color: #fff;
+        border: 1px solid transparent;
+        color: var(--text-muted);
+        background: var(--bg-body);
+        cursor: pointer;
     }
-    .btn-save { background: var(--success-color); }
-    .btn-save:hover { background: #00b4d8; transform: scale(1.05); }
-    
-    .btn-toggle-on { background: #fca311; }
-    .btn-toggle-off { background: #14213d; }
-    .btn-view { background: var(--info-color); }
-    
     .btn-action:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        background: var(--card-bg);
+        border-color: var(--border-color);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        color: var(--primary-color);
     }
+    
+    .btn-save { color: var(--success-color); }
+    .btn-save:hover { color: var(--success-color); border-color: #dcfce7; background: #f0fdf4; }
+    
+    .btn-toggle-on { color: var(--warning-color); }
+    .btn-toggle-on:hover { color: var(--warning-color); border-color: #fef3c7; background: #fffbeb; }
+    
+    .btn-view { color: var(--info-color); }
+
+    .btn-primary-custom {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 24px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+        box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+    }
+    .btn-primary-custom:hover {
+        background: #2563eb;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.3);
+    }
+
+    /* Activity Feed */
+    .activity-feed {
+        position: relative;
+        padding-left: 20px;
+    }
+    .activity-feed::before {
+        content: '';
+        position: absolute;
+        top: 0; bottom: 0; left: 25px;
+        width: 2px;
+        background: var(--border-color);
+    }
+    .activity-item {
+        position: relative;
+        padding-left: 35px;
+        margin-bottom: 24px;
+    }
+    .activity-item:last-child { margin-bottom: 0; }
+    
+    .activity-dot {
+        position: absolute;
+        left: -1px;
+        top: 4px;
+        width: 12px; height: 12px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        border: 2px solid var(--card-bg);
+        box-shadow: 0 0 0 3px var(--primary-light);
+    }
+    .activity-dot.success { background: var(--success-color); box-shadow: 0 0 0 3px #dcfce7; }
+    .activity-dot.warning { background: var(--warning-color); box-shadow: 0 0 0 3px #fef3c7; }
+    
+    .activity-time {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        font-weight: 600;
+        margin-bottom: 4px;
+        display: block;
+    }
+    .activity-text {
+        font-size: 0.9rem;
+        color: var(--text-main);
+        margin: 0;
+        line-height: 1.5;
+    }
+    .activity-user { font-weight: 600; color: #0f172a; }
 
 </style>
 
@@ -302,27 +380,27 @@
     <div class="main-content">
         <div class="page-header">
             <div>
-                <h1 class="page-title">Dashboard</h1>
                 <p class="breadcrumb">
-                    <a href="${pageContext.request.contextPath}/home">Home</a> &nbsp;>&nbsp; Dashboard
+                    <a href="${pageContext.request.contextPath}/home">Home</a> &nbsp;/&nbsp; <span style="color: var(--text-main);">Dashboard</span>
                 </p>
+                <h1 class="page-title">Admin Dashboard</h1>
             </div>
             <div>
-                <button class="btn btn-primary" style="background: var(--primary-color); border: none; border-radius: 8px; padding: 10px 20px; font-weight: 500;">
-                    <i class="fas fa-plus me-2"></i> Thêm mới
+                <button class="btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                    <i class="fas fa-plus me-2"></i> Thêm Người Dùng
                 </button>
             </div>
         </div>
 
         <!-- System Alerts -->
         <c:if test="${not empty param.message}">
-            <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert" style="border-radius: 10px; background: #d1fae5; color: #065f46;">
+            <div class="alert alert-success alert-dismissible fade show shadow-sm border-0" role="alert" style="border-radius: 12px; background: #f0fdf4; color: #16a34a; border-left: 4px solid #16a34a !important;">
                 <i class="fas fa-check-circle me-2"></i> ${param.message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         </c:if>
         <c:if test="${not empty param.error}">
-            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert" style="border-radius: 10px; background: #fee2e2; color: #991b1b;">
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0" role="alert" style="border-radius: 12px; background: #fef2f2; color: #dc2626; border-left: 4px solid #dc2626 !important;">
                 <i class="fas fa-exclamation-circle me-2"></i> ${param.error}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
@@ -331,58 +409,80 @@
         <!-- Stat Cards Grid -->
         <div class="row g-4 mb-4">
             <div class="col-xl-3 col-lg-6 col-md-6">
-                <div class="stat-card bg-purple">
-                    <i class="fas fa-users stat-card-icon"></i>
-                    <div class="stat-card-value">${totalUsers}</div>
-                    <div class="stat-card-title">Tổng Nhân Sự</div>
-                    <a href="#users" class="stat-card-link">View Details <i class="fas fa-arrow-right ms-1"></i></a>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3 class="stat-title">Tổng Nhân Sự</h3>
+                        <div class="stat-icon icon-blue"><i class="fas fa-users"></i></div>
+                    </div>
+                    <div>
+                        <div class="stat-value">${totalUsers}</div>
+                        <div class="stat-footer">
+                            <a href="#users">Xem danh sách <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                    </div>
                 </div>
             </div>
             
             <div class="col-xl-3 col-lg-6 col-md-6">
-                <div class="stat-card bg-blue">
-                    <i class="fas fa-envelope-open-text stat-card-icon"></i>
-                    <div class="stat-card-value">${pendingLeaves}</div>
-                    <div class="stat-card-title">Yêu Cầu Nghỉ Phép</div>
-                    <a href="#" class="stat-card-link">View Details <i class="fas fa-arrow-right ms-1"></i></a>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3 class="stat-title">Yêu Cầu Nghỉ Phép</h3>
+                        <div class="stat-icon icon-orange"><i class="fas fa-envelope-open-text"></i></div>
+                    </div>
+                    <div>
+                        <div class="stat-value">${pendingLeaves}</div>
+                        <div class="stat-footer">
+                            <a href="#" style="color: var(--warning-color);">Xử lý yêu cầu <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="col-xl-3 col-lg-6 col-md-6">
-                <div class="stat-card bg-orange">
-                    <i class="fas fa-building stat-card-icon"></i>
-                    <div class="stat-card-value">${totalDepartments}</div>
-                    <div class="stat-card-title">Phòng Ban</div>
-                    <a href="#" class="stat-card-link">View Details <i class="fas fa-arrow-right ms-1"></i></a>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3 class="stat-title">Phòng Ban</h3>
+                        <div class="stat-icon icon-green"><i class="fas fa-building"></i></div>
+                    </div>
+                    <div>
+                        <div class="stat-value">${totalDepartments}</div>
+                        <div class="stat-footer">
+                            <a href="#" style="color: var(--success-color);">Quản lý phòng ban <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="col-xl-3 col-lg-6 col-md-6">
-                <div class="stat-card bg-green">
-                    <i class="fas fa-user-shield stat-card-icon"></i>
-                    <div class="stat-card-value">${totalRoles}</div>
-                    <div class="stat-card-title">Vai Trò Hệ Thống</div>
-                    <a href="${pageContext.request.contextPath}/role?action=list" class="stat-card-link">View Details <i class="fas fa-arrow-right ms-1"></i></a>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <h3 class="stat-title">Vai Trò Hệ Thống</h3>
+                        <div class="stat-icon icon-purple"><i class="fas fa-user-shield"></i></div>
+                    </div>
+                    <div>
+                        <div class="stat-value">${totalRoles}</div>
+                        <div class="stat-footer">
+                            <a href="${pageContext.request.contextPath}/role?action=list" style="color: #a855f7;">Quản lý phân quyền <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="row g-4">
             <!-- Left Column: User Management -->
-            <div class="col-xl-12 col-lg-12">
-                <div class="admin-panel h-100" id="users">
+            <div class="col-xl-8 col-lg-12">
+                <div class="admin-panel h-100 mb-0" id="users">
                     <div class="panel-header">
                         <h3 class="panel-title">
-                            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(67, 97, 238, 0.1); color: var(--primary-color); display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-users-cog"></i>
-                            </div>
-                            Quản lý Người Dùng 
+                            <div class="panel-title-icon"><i class="fas fa-users-cog"></i></div>
+                            Danh Sách Người Dùng
                         </h3>
-                        <div class="d-flex gap-2">
-                            <input type="text" class="form-control form-control-sm" placeholder="Tìm kiếm nhân viên..." style="border-radius: 8px; width: 200px;">
-                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addUserModal" style="border-radius: 8px; background: var(--primary-color); border: none; font-weight: 500; padding: 0 15px;">
-                                <i class="fas fa-plus me-1"></i> Thêm Người Dùng
-                            </button>
+                        <div>
+                            <div class="input-group" style="width: 250px;">
+                                <span class="input-group-text bg-body border-end-0 text-muted" style="border-radius: 8px 0 0 8px;"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control border-start-0 ps-0" placeholder="Tìm kiếm nhân viên..." style="border-radius: 0 8px 8px 0; background: var(--bg-body); box-shadow: none;">
+                            </div>
                         </div>
                     </div>
 
@@ -391,7 +491,7 @@
                             <thead>
                                 <tr>
                                     <th>Nhân viên</th>
-                                    <th>Vai trò (Role)</th>
+                                    <th>Vai trò</th>
                                     <th>Trạng thái</th>
                                     <th class="text-end">Hành động</th>
                                 </tr>
@@ -405,8 +505,8 @@
                                                     ${u.fullName.substring(0,1)}
                                                 </div>
                                                 <div>
-                                                    <div class="fw-bold text-dark">${u.fullName}</div>
-                                                    <div class="small text-muted">${u.email}</div>
+                                                    <div class="fw-bold" style="color: #0f172a; font-size: 0.95rem;">${u.fullName}</div>
+                                                    <div class="text-muted" style="font-size: 0.85rem;">${u.email}</div>
                                                 </div>
                                             </div>
                                         </td>
@@ -414,7 +514,7 @@
                                             <form method="post" action="${pageContext.request.contextPath}/admin/dashboard" class="d-flex align-items-center gap-2 m-0">
                                                 <input type="hidden" name="action" value="updateRole" />
                                                 <input type="hidden" name="userId" value="${u.userId}" />
-                                                <select name="roleId" class="form-select form-select-sm" style="width: 140px;">
+                                                <select name="roleId" class="form-select-sm" style="width: 140px;">
                                                     <c:forEach var="r" items="${roles}">
                                                         <option value="${r.roleId}" ${r.roleId == u.roleId ? 'selected' : ''}>${r.roleName}</option>
                                                     </c:forEach>
@@ -427,15 +527,15 @@
                                         <td>
                                             <c:choose>
                                                 <c:when test="${u.status == 1}">
-                                                    <span class="badge-soft badge-soft-success"><i class="fas fa-circle me-1" style="font-size: 6px; vertical-align: middle;"></i> Active</span>
+                                                    <span class="badge-soft badge-soft-success"><i class="fas fa-circle" style="font-size: 8px;"></i> Hoạt động</span>
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <span class="badge-soft badge-soft-danger"><i class="fas fa-circle me-1" style="font-size: 6px; vertical-align: middle;"></i> Inactive</span>
+                                                    <span class="badge-soft badge-soft-danger"><i class="fas fa-circle" style="font-size: 8px;"></i> Đã khóa</span>
                                                 </c:otherwise>
                                             </c:choose>
                                         </td>
                                         <td class="text-end">
-                                            <div class="d-flex justify-content-end gap-2">
+                                            <div class="d-flex justify-content-end gap-1">
                                                 <form method="post" action="${pageContext.request.contextPath}/admin/dashboard" class="m-0" onsubmit="return confirm('Bạn có chắc chắn muốn ${u.status == 1 ? 'KHÓA' : 'MỞ KHÓA'} tài khoản của ${u.fullName} không?');">
                                                     <input type="hidden" name="action" value="toggleStatus" />
                                                     <input type="hidden" name="userId" value="${u.userId}" />
@@ -456,18 +556,72 @@
                 </div>
             </div>
 
-            <!-- Role Management Panel (Feature 13-16) -->
-            <div class="col-8 mt-4">
-                <div class="admin-panel h-100" id="roles">
+            <!-- Right Column: Charts & Logs -->
+            <div class="col-xl-4 col-lg-12">
+                <!-- Activity Log Panel -->
+                <div class="admin-panel mb-4">
+                    <div class="panel-header mb-4">
+                        <h3 class="panel-title">
+                            <div class="panel-title-icon"><i class="fas fa-bolt"></i></div>
+                            Hoạt Động Gần Đây
+                        </h3>
+                    </div>
+                    
+                    <div class="activity-feed">
+                        <div class="activity-item">
+                            <div class="activity-dot"></div>
+                            <span class="activity-time">Vừa xong</span>
+                            <p class="activity-text"><span class="activity-user">Bạn</span> đã cập nhật phân quyền cho Role Manager.</p>
+                        </div>
+                        
+                        <div class="activity-item">
+                            <div class="activity-dot success"></div>
+                            <span class="activity-time">2 giờ trước</span>
+                            <p class="activity-text"><span class="activity-user">Hệ Thống</span> tự động sao lưu Database thành công.</p>
+                        </div>
+
+                        <div class="activity-item">
+                            <div class="activity-dot warning"></div>
+                            <span class="activity-time">Hôm qua, 15:30</span>
+                            <p class="activity-text"><span class="activity-user">manager@hrm.com</span> đã duyệt 3 đơn xin nghỉ phép.</p>
+                        </div>
+                        
+                        <div class="activity-item">
+                            <div class="activity-dot"></div>
+                            <span class="activity-time">Hôm qua, 09:15</span>
+                            <p class="activity-text"><span class="activity-user">Nguyễn Văn A</span> đã đăng nhập hệ thống lần đầu.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <a href="#" class="text-decoration-none" style="font-size: 0.9rem; font-weight: 600; color: var(--primary-color);">Xem tất cả hoạt động</a>
+                    </div>
+                </div>
+
+                <!-- Chart Panel -->
+                <div class="admin-panel mb-0">
+                    <div class="panel-header border-0 pb-0">
+                        <h3 class="panel-title">
+                            <div class="panel-title-icon"><i class="fas fa-chart-line"></i></div>
+                            Tỉ Lệ Đi Làm
+                        </h3>
+                    </div>
+                    <div style="height: 220px; position: relative; margin-top: 15px;">
+                        <canvas id="attendanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Roles Table (Full Width Bottom) -->
+            <div class="col-12 mt-4">
+                <div class="admin-panel mb-0" id="roles">
                     <div class="panel-header">
                         <h3 class="panel-title">
-                            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(76, 201, 240, 0.1); color: var(--success-color); display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-user-shield"></i>
-                            </div>
-                            Quản Lý Vai Trò 
+                            <div class="panel-title-icon"><i class="fas fa-user-shield"></i></div>
+                            Quản Lý Vai Trò Hệ Thống
                         </h3>
                         <div>
-                            <a href="${pageContext.request.contextPath}/editRolePermission" class="btn btn-outline-primary btn-sm" style="border-radius: 8px; font-weight: 500;">
+                            <a href="${pageContext.request.contextPath}/editRolePermission" class="btn btn-outline-secondary btn-sm" style="border-radius: 8px; font-weight: 600; border-color: var(--border-color); color: var(--text-main);">
                                 <i class="fas fa-key me-1"></i> Phân Quyền Chi Tiết
                             </a>
                         </div>
@@ -477,7 +631,7 @@
                         <table class="table-custom">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th style="width: 80px;">ID</th>
                                     <th>Tên Vai Trò</th>
                                     <th>Mô Tả</th>
                                     <th>Trạng Thái</th>
@@ -487,37 +641,34 @@
                             <tbody>
                                 <c:forEach var="r" items="${roles}">
                                     <tr>
-                                        <td class="fw-bold text-dark">#${r.roleId}</td>
+                                        <td class="text-muted fw-bold">#${r.roleId}</td>
                                         <td>
-                                            <span class="fw-bold" style="color: var(--primary-color);">${r.roleName}</span>
+                                            <span class="fw-bold" style="color: var(--text-main); font-size: 0.95rem;">${r.roleName}</span>
                                         </td>
-                                        <td class="text-muted">${r.description}</td>
+                                        <td class="text-muted" style="font-size: 0.9rem;">${r.description}</td>
                                         <td>
                                             <c:choose>
                                                 <c:when test="${r.status == 1}">
-                                                    <span class="badge-soft badge-soft-success"><i class="fas fa-circle me-1" style="font-size: 6px; vertical-align: middle;"></i> Active</span>
+                                                    <span class="badge-soft badge-soft-success"><i class="fas fa-circle" style="font-size: 8px;"></i> Đang bật</span>
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <span class="badge-soft badge-soft-danger"><i class="fas fa-circle me-1" style="font-size: 6px; vertical-align: middle;"></i> Deactive</span>
+                                                    <span class="badge-soft badge-soft-gray"><i class="fas fa-circle" style="font-size: 8px;"></i> Đã tắt</span>
                                                 </c:otherwise>
                                             </c:choose>
                                         </td>
                                         <td class="text-end">
                                             <div class="d-flex justify-content-end gap-1">
-                                                <!-- Feature 13: View Role Permissions -->
-                                                <a href="${pageContext.request.contextPath}/editRolePermission?roleId=${r.roleId}" class="btn-action btn-view" title="Xem & Sửa quyền (Feature 13 & 16)" style="width: 32px; padding: 0;">
+                                                <a href="${pageContext.request.contextPath}/editRolePermission?roleId=${r.roleId}" class="btn-action btn-view" title="Phân quyền">
                                                     <i class="fas fa-key"></i>
                                                 </a>
-                                                <!-- Feature 14: Update Role Information -->
-                                                <a href="${pageContext.request.contextPath}/role?action=update&roleId=${r.roleId}" class="btn-action btn-update" title="Sửa thông tin vai trò (Feature 14)" style="width: 32px; padding: 0;">
+                                                <a href="${pageContext.request.contextPath}/role?action=update&roleId=${r.roleId}" class="btn-action btn-view" title="Sửa thông tin">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
-                                                <!-- Feature 15: Active/Deactive Role -->
                                                 <form method="post" action="${pageContext.request.contextPath}/activeDeactiveRole" class="m-0" onsubmit="return confirm('Bạn có chắc chắn muốn ${r.status == 1 ? 'VÔ HIỆU HÓA' : 'KÍCH HOẠT'} vai trò ${r.roleName} không?');">
                                                     <input type="hidden" name="action" value="toggle" />
                                                     <input type="hidden" name="roleId" value="${r.roleId}" />
                                                     <input type="hidden" name="source" value="dashboard" />
-                                                    <button type="submit" class="btn-action ${r.status == 1 ? 'btn-toggle-on' : 'btn-toggle-off'}" title="${r.status == 1 ? 'Vô hiệu hóa (Feature 15)' : 'Kích hoạt (Feature 15)'}">
+                                                    <button type="submit" class="btn-action ${r.status == 1 ? 'btn-toggle-on' : ''}" title="${r.status == 1 ? 'Vô hiệu hóa' : 'Kích hoạt'}">
                                                         <i class="fas ${r.status == 1 ? 'fa-lock' : 'fa-unlock'}"></i>
                                                     </button>
                                                 </form>
@@ -530,86 +681,19 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Right Column: Charts & Logs -->
-            <div class="col-xl-4 col-lg-12">
-                <!-- Chart Panel -->
-                <div class="admin-panel mb-4">
-                    <div class="panel-header border-0 pb-0">
-                        <h3 class="panel-title">
-                            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(76, 201, 240, 0.1); color: var(--success-color); display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-chart-bar"></i>
-                            </div>
-                            Tỉ Lệ Chấm Công
-                        </h3>
-                    </div>
-                    <div style="height: 250px; position: relative;">
-                        <canvas id="attendanceChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Activity Log Panel -->
-                <div class="admin-panel">
-                    <div class="panel-header">
-                        <h3 class="panel-title">
-                            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(248, 150, 30, 0.1); color: var(--warning-color); display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-history"></i>
-                            </div>
-                            Lịch Sử Hoạt Động
-                        </h3>
-                    </div>
-                    
-                    <div class="activity-feed">
-                        <div class="d-flex mb-3">
-                            <div class="me-3 mt-1">
-                                <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--primary-color);"></div>
-                                <div style="width: 2px; height: 40px; background: #e2e8f0; margin: 5px auto;"></div>
-                            </div>
-                            <div>
-                                <h6 class="mb-1" style="font-size: 0.9rem; font-weight: 600;">admin@hrm.com</h6>
-                                <p class="mb-0 text-muted small">Cập nhật phân quyền cho Role Manager.</p>
-                                <span class="small" style="color: #cbd5e1;">10 phút trước</span>
-                            </div>
-                        </div>
-                        
-                        <div class="d-flex mb-3">
-                            <div class="me-3 mt-1">
-                                <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--success-color);"></div>
-                                <div style="width: 2px; height: 40px; background: #e2e8f0; margin: 5px auto;"></div>
-                            </div>
-                            <div>
-                                <h6 class="mb-1" style="font-size: 0.9rem; font-weight: 600;">Hệ Thống</h6>
-                                <p class="mb-0 text-muted small">Tự động sao lưu Database thành công.</p>
-                                <span class="small" style="color: #cbd5e1;">02:00 AM</span>
-                            </div>
-                        </div>
-
-                        <div class="d-flex">
-                            <div class="me-3 mt-1">
-                                <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--danger-color);"></div>
-                            </div>
-                            <div>
-                                <h6 class="mb-1" style="font-size: 0.9rem; font-weight: 600;">manager@hrm.com</h6>
-                                <p class="mb-0 text-muted small">Duyệt 3 đơn xin nghỉ phép.</p>
-                                <span class="small" style="color: #cbd5e1;">Hôm qua</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
         </div>
     </div>
 </div>
 
-<!-- Cấu hình Chart.js -->
+<!-- Chart.js Setup -->
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const ctx = document.getElementById('attendanceChart').getContext('2d');
         
-        // Dữ liệu giả lập
         const labels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-        const dataPresent = [240, 245, 238, 242, 248, 120, 10]; // Số người đi làm
-        const dataAbsent = [8, 3, 10, 6, 0, 128, 238];          // Số người vắng/nghỉ
+        const dataPresent = [240, 245, 238, 242, 248, 120, 10]; 
+        const dataAbsent = [8, 3, 10, 6, 0, 128, 238];          
 
         new Chart(ctx, {
             type: 'bar',
@@ -619,16 +703,16 @@
                     {
                         label: 'Đi làm',
                         data: dataPresent,
-                        backgroundColor: '#4361ee',
-                        borderRadius: 6,
-                        barPercentage: 0.6
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 4,
+                        barPercentage: 0.5
                     },
                     {
-                        label: 'Vắng mặt',
+                        label: 'Vắng/Nghỉ',
                         data: dataAbsent,
                         backgroundColor: '#e2e8f0',
-                        borderRadius: 6,
-                        barPercentage: 0.6
+                        borderRadius: 4,
+                        barPercentage: 0.5
                     }
                 ]
             },
@@ -638,25 +722,27 @@
                 scales: {
                     x: {
                         stacked: true,
-                        grid: { display: false }
+                        grid: { display: false },
+                        border: { display: false },
+                        ticks: { font: { family: 'Inter', size: 11 }, color: '#64748b' }
                     },
                     y: {
                         stacked: true,
                         beginAtZero: true,
-                        grid: { borderDash: [5, 5], color: '#f1f5f9' },
-                        border: { display: false }
+                        grid: { color: '#f1f5f9' },
+                        border: { display: false },
+                        ticks: { font: { family: 'Inter', size: 11 }, color: '#94a3b8' }
                     }
                 },
                 plugins: {
-                    legend: {
-                        display: false
-                    },
+                    legend: { display: false },
                     tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        backgroundColor: '#0f172a',
                         padding: 12,
-                        titleFont: { size: 13 },
-                        bodyFont: { size: 13 },
-                        cornerRadius: 8
+                        titleFont: { family: 'Inter', size: 13, weight: '600' },
+                        bodyFont: { family: 'Inter', size: 12 },
+                        cornerRadius: 8,
+                        boxPadding: 4
                     }
                 }
             }
@@ -665,51 +751,48 @@
 </script>
 
 <!-- Add User Modal -->
-<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow" style="border-radius: 16px;">
-            <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title fw-bold text-dark" id="addUserModalLabel">
-                    <i class="fas fa-user-plus text-primary me-2"></i> Thêm Mới Người Dùng
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold" style="font-size: 1.25rem;">
+                    Thêm Mới Người Dùng
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="${pageContext.request.contextPath}/admin/dashboard" method="post">
                 <input type="hidden" name="action" value="addUser">
-                <div class="modal-body">
+                <div class="modal-body px-4 pt-3">
                     <div class="mb-3">
-                        <label for="password" class="form-label fw-bold small text-muted mb-1">Mật khẩu (Password) <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="password" name="password" required value="@123456" placeholder="Nhập mật khẩu" style="border-radius: 8px;">
-                        <div class="form-text small mt-1">Mặc định là <strong class="text-dark">@123456</strong>, bạn có thể đổi nếu muốn.</div>
+                        <label class="form-label fw-semibold small text-muted mb-1">Mật khẩu khởi tạo</label>
+                        <input type="text" class="form-control" name="password" required value="@123456" style="border-radius: 10px; padding: 10px 15px; border-color: #e2e8f0; font-weight: 500;">
                     </div>
                     <div class="mb-3">
-                        <label for="fullName" class="form-label fw-bold small text-muted mb-1">Họ và Tên (Full Name) <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="fullName" name="fullName" required placeholder="Nhập họ và tên đầy đủ" style="border-radius: 8px;">
+                        <label class="form-label fw-semibold small text-muted mb-1">Họ và Tên <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="fullName" required placeholder="Ví dụ: Nguyễn Văn A" style="border-radius: 10px; padding: 10px 15px; border-color: #e2e8f0;">
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="email" class="form-label fw-bold small text-muted mb-1">Email <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" id="email" name="email" required placeholder="Nhập địa chỉ email" style="border-radius: 8px;">
+                            <label class="form-label fw-semibold small text-muted mb-1">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" name="email" required placeholder="name@company.com" style="border-radius: 10px; padding: 10px 15px; border-color: #e2e8f0;">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="phone" class="form-label fw-bold small text-muted mb-1">Số điện thoại</label>
-                            <input type="text" class="form-control" id="phone" name="phone" placeholder="Nhập số điện thoại" style="border-radius: 8px;">
+                            <label class="form-label fw-semibold small text-muted mb-1">Số điện thoại</label>
+                            <input type="text" class="form-control" name="phone" placeholder="09xxxxxxx" style="border-radius: 10px; padding: 10px 15px; border-color: #e2e8f0;">
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="roleId" class="form-label fw-bold small text-muted mb-1">Vai trò (Role) <span class="text-danger">*</span></label>
-                        <select class="form-select" id="roleId" name="roleId" style="border-radius: 8px;">
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold small text-muted mb-1">Cấp quyền ban đầu <span class="text-danger">*</span></label>
+                        <select class="form-select" name="roleId" style="border-radius: 10px; padding: 10px 15px; border-color: #e2e8f0; font-weight: 500;">
                             <c:forEach var="r" items="${roles}">
                                 <option value="${r.roleId}" ${r.roleId == 3 ? 'selected' : ''}>${r.roleName}</option>
                             </c:forEach>
                         </select>
                     </div>
                 </div>
-                <div class="modal-footer border-top-0 pt-0">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius: 8px; font-weight: 500;">Hủy Bỏ</button>
-                    <button type="submit" class="btn btn-primary" style="border-radius: 8px; font-weight: 500; background: var(--primary-color); border: none;">
-                        <i class="fas fa-save me-1"></i> Lưu Người Dùng
-                    </button>
+                <div class="modal-footer border-top-0 pt-0 pb-4 px-4">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius: 10px; font-weight: 600; padding: 10px 20px; color: #64748b; background: #f1f5f9; border: none;">Hủy</button>
+                    <button type="submit" class="btn-primary-custom" style="padding: 10px 24px;">Tạo Tài Khoản</button>
                 </div>
             </form>
         </div>

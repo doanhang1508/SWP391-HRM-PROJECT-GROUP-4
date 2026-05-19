@@ -79,7 +79,7 @@
  
     <servlet-mapping>
         <servlet-name>notificationController</servlet-name>
-        <url-pattern>/notification</url-pattern>
+        <url-pattern>/notifications/*</url-pattern>
     </servlet-mapping>
  
     <servlet-mapping>

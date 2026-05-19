@@ -761,13 +761,148 @@
 
                 <div style="height:64px"></div>
 
-                <c:if test="${not empty sessionScope.toastMessage}">
-                    <script>
-                        document.addEventListener('DOMContentLoaded', function () {
-                            alert("${fn:escapeXml(sessionScope.toastMessage)}");
-                        });
-                    </script>
-                    <% session.removeAttribute("toastMessage"); session.removeAttribute("toastType"); %>
+                <%-- ═══════════════════════════════════════════════════
+                     TOAST NOTIFICATION COMPONENT
+                     Đọc toastSuccess (login) hoặc toastMessage (chung)
+                     từ session rồi xóa đi ngay (flash message pattern)
+                ═══════════════════════════════════════════════════ --%>
+                <c:set var="toastText"  value="${sessionScope.toastSuccess}" />
+                <c:set var="toastType"  value="success" />
+                <c:if test="${empty toastText}">
+                    <c:set var="toastText" value="${sessionScope.toastMessage}" />
+                    <c:set var="toastType" value="${not empty sessionScope.toastType ? sessionScope.toastType : 'info'}" />
                 </c:if>
+
+                <c:if test="${not empty toastText}">
+                    <%
+                        // Xóa flash message ngay sau khi đọc
+                        session.removeAttribute("toastSuccess");
+                        session.removeAttribute("toastMessage");
+                        session.removeAttribute("toastType");
+                    %>
+
+                    <!-- Toast Container -->
+                    <div id="hrm-toast-container" style="
+                        position: fixed;
+                        bottom: 28px;
+                        right: 28px;
+                        z-index: 99999;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 12px;
+                        pointer-events: none;
+                    ">
+                        <div id="hrm-toast" style="
+                            display: flex;
+                            align-items: flex-start;
+                            gap: 14px;
+                            min-width: 320px;
+                            max-width: 420px;
+                            background: #ffffff;
+                            border-radius: 16px;
+                            box-shadow: 0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08);
+                            padding: 18px 20px 18px 18px;
+                            pointer-events: auto;
+                            border-left: 5px solid
+                                <c:choose>
+                                    <c:when test="${toastType == 'success'}">#22c55e</c:when>
+                                    <c:when test="${toastType == 'error'}">#ef4444</c:when>
+                                    <c:when test="${toastType == 'warning'}">#f59e0b</c:when>
+                                    <c:otherwise>#3b82f6</c:otherwise>
+                                </c:choose>;
+                            opacity: 0;
+                            transform: translateX(60px);
+                            transition: opacity 0.4s cubic-bezier(.22,1,.36,1), transform 0.4s cubic-bezier(.22,1,.36,1);
+                        ">
+                            <!-- Icon -->
+                            <div style="
+                                flex-shrink: 0;
+                                width: 40px; height: 40px;
+                                border-radius: 50%;
+                                display: flex; align-items: center; justify-content: center;
+                                background:
+                                    <c:choose>
+                                        <c:when test="${toastType == 'success'}">#dcfce7</c:when>
+                                        <c:when test="${toastType == 'error'}">#fee2e2</c:when>
+                                        <c:when test="${toastType == 'warning'}">#fef9c3</c:when>
+                                        <c:otherwise>#dbeafe</c:otherwise>
+                                    </c:choose>;
+                                font-size: 18px;
+                                color:
+                                    <c:choose>
+                                        <c:when test="${toastType == 'success'}">#16a34a</c:when>
+                                        <c:when test="${toastType == 'error'}">#dc2626</c:when>
+                                        <c:when test="${toastType == 'warning'}">#d97706</c:when>
+                                        <c:otherwise>#2563eb</c:otherwise>
+                                    </c:choose>;
+                            ">
+                                <c:choose>
+                                    <c:when test="${toastType == 'success'}">✓</c:when>
+                                    <c:when test="${toastType == 'error'}">✕</c:when>
+                                    <c:when test="${toastType == 'warning'}">⚠</c:when>
+                                    <c:otherwise>ℹ</c:otherwise>
+                                </c:choose>
+                            </div>
+
+                            <!-- Content -->
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 700; font-size: 13px; letter-spacing: 0.5px; color: #111827; margin-bottom: 3px; text-transform: uppercase;">
+                                    <c:choose>
+                                        <c:when test="${toastType == 'success'}">Thành công</c:when>
+                                        <c:when test="${toastType == 'error'}">Lỗi</c:when>
+                                        <c:when test="${toastType == 'warning'}">Cảnh báo</c:when>
+                                        <c:otherwise>Thông báo</c:otherwise>
+                                    </c:choose>
+                                </div>
+                                <div style="font-size: 13.5px; color: #4b5563; line-height: 1.5; word-break: break-word;">
+                                    <c:out value="${toastText}" />
+                                </div>
+                            </div>
+
+                            <!-- Close button -->
+                            <button onclick="hrmDismissToast()" style="
+                                flex-shrink: 0;
+                                background: none; border: none; cursor: pointer;
+                                color: #9ca3af; font-size: 16px; line-height: 1;
+                                padding: 0; margin-top: -2px;
+                            " title="Đóng">×</button>
+                        </div>
+                    </div>
+
+                    <script>
+                        (function () {
+                            const toast = document.getElementById('hrm-toast');
+                            let timer;
+
+                            function showToast() {
+                                // Slide in
+                                requestAnimationFrame(() => {
+                                    toast.style.opacity = '1';
+                                    toast.style.transform = 'translateX(0)';
+                                });
+                                // Auto dismiss sau 5 giây
+                                timer = setTimeout(hrmDismissToast, 5000);
+                            }
+
+                            window.hrmDismissToast = function () {
+                                clearTimeout(timer);
+                                toast.style.opacity = '0';
+                                toast.style.transform = 'translateX(60px)';
+                                setTimeout(() => {
+                                    const container = document.getElementById('hrm-toast-container');
+                                    if (container) container.remove();
+                                }, 450);
+                            };
+
+                            // Khởi động sau khi DOM sẵn sàng
+                            if (document.readyState === 'loading') {
+                                document.addEventListener('DOMContentLoaded', showToast);
+                            } else {
+                                showToast();
+                            }
+                        })();
+                    </script>
+                </c:if>
+
 
                 <main class="flex-grow-1">

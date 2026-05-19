@@ -21,11 +21,11 @@ import java.util.List;
 public class notificationDAO {
     // ── Tạo thông báo (nhận object Notification) ───────────────
     public void create(notification n) {
-        String sql = "INSERT INTO notifications (employee_id, type, title, body, link) " +
+        String sql = "INSERT INTO notifications (user_id, type, title, body, link) " +
                      "VALUES (?, ?, ?, ?, ?)";
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt   (1, n.getEmployeeId());
+            ps.setInt   (1, n.getUserId());
             ps.setString(2, n.getType());
             ps.setString(3, n.getTitle());
             ps.setString(4, n.getBody()  != null ? n.getBody()  : "");
@@ -36,25 +36,28 @@ public class notificationDAO {
         }
     }
      /* Đếm thông báo chưa đọc */
-    public int countUnread(int employeeId) {
-        String sql = "SELECT COUNT(*) FROM notifications WHERE employee_id=? AND is_read=0";
+    public int countUnread(int userId) {
+        String sql = "SELECT COUNT(*) FROM notifications WHERE user_id=? AND is_read=0";
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, employeeId);
+            ps.setInt(1, userId);
             ResultSet rs = ps.executeQuery();
             return rs.next() ? rs.getInt(1) : 0;
-        } catch (SQLException e) { e.printStackTrace(); return 0; }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return 0;
+        }
     }
  
     /* Lấy danh sách thông báo mới nhất */
-    public List<notification> findByEmployee(int employeeId, int limit) {
+    public List<notification> findByEmployee(int userId, int limit) {
         String sql = "SELECT id, type, title, body, link, is_read, created_at " +
-                     "FROM notifications WHERE employee_id=? " +
+                     "FROM notifications WHERE user_id=? " +
                      "ORDER BY created_at DESC LIMIT ?";
         List<notification> list = new ArrayList<>();
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, employeeId);
+            ps.setInt(1, userId);
             ps.setInt(2, limit);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
@@ -74,23 +77,23 @@ public class notificationDAO {
         return list;
     }
  
-    /* Đánh dấu 1 thông báo đã đọc (chỉ của đúng employee) */
-    public void markRead(int notifId, int employeeId) {
-        String sql = "UPDATE notifications SET is_read=1 WHERE id=? AND employee_id=?";
+    /* Đánh dấu 1 thông báo đã đọc (chỉ của đúng user) */
+    public void markRead(int notifId, int userId) {
+        String sql = "UPDATE notifications SET is_read=1 WHERE id=? AND user_id=?";
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, notifId);
-            ps.setInt(2, employeeId);
+            ps.setInt(2, userId);
             ps.executeUpdate();
         } catch (SQLException e) { e.printStackTrace(); }
     }
  
     /* Đánh dấu tất cả đã đọc */
-    public void markAllRead(int employeeId) {
-        String sql = "UPDATE notifications SET is_read=1 WHERE employee_id=? AND is_read=0";
+    public void markAllRead(int userId) {
+        String sql = "UPDATE notifications SET is_read=1 WHERE user_id=? AND is_read=0";
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, employeeId);
+            ps.setInt(1, userId);
             ps.executeUpdate();
         } catch (SQLException e) { e.printStackTrace(); }
     }
@@ -113,14 +116,14 @@ public class notificationDAO {
      * ── Utility: tạo thông báo từ các module khác ──
      *
      * Gọi trong LeaveServlet, AttendanceServlet, PayrollServlet, v.v.:
-     *   new NotificationDAO().create(empId, "leave", "Đơn nghỉ phép được duyệt",
+     *   new notificationDAO().create(empId, "leave", "Đơn nghỉ phép được duyệt",
      *       "Đơn xin nghỉ 3 ngày của bạn đã được HR duyệt.", "/leave/detail?id=12");
      */
-    public void create(int employeeId, String type, String title, String body, String link) {
-        String sql = "INSERT INTO notifications (employee_id, type, title, body, link) VALUES (?,?,?,?,?)";
+    public void create(int userId, String type, String title, String body, String link) {
+        String sql = "INSERT INTO notifications (user_id, type, title, body, link) VALUES (?,?,?,?,?)";
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt   (1, employeeId);
+            ps.setInt   (1, userId);
             ps.setString(2, type);
             ps.setString(3, title);
             ps.setString(4, body);

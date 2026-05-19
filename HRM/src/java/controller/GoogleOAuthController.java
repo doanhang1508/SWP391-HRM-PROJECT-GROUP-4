@@ -1,7 +1,11 @@
 package controller;
 
 import dao.UserDAO;
+import dao.notificationDAO;
 import model.User;
+import model.notification;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -154,9 +158,14 @@ public class GoogleOAuthController extends HttpServlet {
             return;
         }
 
-        // Đăng nhập thành công → set session → redirect dashboard
+        // Đăng nhập thành công → set session → gửi thông báo → redirect dashboard
         session.setAttribute("currentUser", user);
-       
+        sendLoginNotification(user, request);
+
+        // Flash message hiện toast góc dưới màn hình
+        String displayName = (user.getFullName() != null && !user.getFullName().isBlank())
+                ? user.getFullName() : user.getEmail();
+        session.setAttribute("toastSuccess", "Đăng nhập Google thành công! Chào mừng, " + displayName + ".");
 
         if (user.getRoleId() == 1) {
             response.sendRedirect(request.getContextPath() + "/admin/dashboard");
@@ -264,5 +273,60 @@ public class GoogleOAuthController extends HttpServlet {
             return null;
         }
         return json.substring(start + 1, end);
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Gửi thông báo "Đăng nhập thành công" vào DB (giống loginController)
+    // ─────────────────────────────────────────────────────────
+    private void sendLoginNotification(User user, HttpServletRequest req) {
+        try {
+            String userAgent = req.getHeader("User-Agent");
+            String device = parseDevice(userAgent);
+
+            String ip = req.getHeader("X-Forwarded-For");
+            if (ip == null || ip.isBlank()) {
+                ip = req.getRemoteAddr();
+            }
+
+            String timeStr = LocalDateTime.now()
+                    .format(DateTimeFormatter.ofPattern("HH:mm - dd/MM/yyyy"));
+
+            notification notif = new notification();
+            notif.setUserId(user.getUserId());
+            notif.setType("system");
+            notif.setTitle("Đăng nhập thành công (Google)");
+            notif.setBody(String.format(
+                    "Bạn vừa đăng nhập qua Google lúc %s từ %s (IP: %s). Nếu không phải bạn, hãy đổi mật khẩu ngay.",
+                    timeStr, device, ip));
+            notif.setLink("/profile/security");
+
+            new notificationDAO().create(notif);
+        } catch (Exception e) {
+            // Không để lỗi thông báo ảnh hưởng luồng đăng nhập
+            e.printStackTrace();
+        }
+    }
+
+    private String parseDevice(String ua) {
+        if (ua == null) return "Thiết bị không xác định";
+        ua = ua.toLowerCase();
+
+        String os;
+        if (ua.contains("windows"))            os = "Windows";
+        else if (ua.contains("macintosh") || ua.contains("mac os")) os = "macOS";
+        else if (ua.contains("android"))       os = "Android";
+        else if (ua.contains("iphone") || ua.contains("ipad"))     os = "iOS";
+        else if (ua.contains("linux"))         os = "Linux";
+        else                                   os = "Hệ điều hành khác";
+
+        String browser;
+        if (ua.contains("edg"))                browser = "Microsoft Edge";
+        else if (ua.contains("opr") || ua.contains("opera")) browser = "Opera";
+        else if (ua.contains("chrome"))        browser = "Chrome";
+        else if (ua.contains("firefox"))       browser = "Firefox";
+        else if (ua.contains("safari"))        browser = "Safari";
+        else                                   browser = "Trình duyệt khác";
+
+        return browser + " / " + os;
     }
 }
