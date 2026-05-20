@@ -29,9 +29,9 @@ public class WorkHistoryController extends HttpServlet {
             return;
         }
 
-        // TODO: Khi có bảng work_history trong DB, query dữ liệu ở đây
-        // List<WorkHistory> history = workHistoryDAO.getByUserId(currentUser.getUserId());
-        // request.setAttribute("workHistory", history);
+        dao.WorkHistoryDAO workHistoryDAO = new dao.WorkHistoryDAO();
+        java.util.List<model.WorkHistory> history = workHistoryDAO.getByUserId(currentUser.getUserId());
+        request.setAttribute("workHistory", history);
 
         request.getRequestDispatcher("work-history.jsp").forward(request, response);
     }

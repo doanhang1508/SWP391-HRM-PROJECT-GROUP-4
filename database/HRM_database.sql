@@ -98,6 +98,21 @@ CREATE TABLE employee_profiles (
     CONSTRAINT fk_profile_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- BẢNG: work_history (Lịch sử công tác)
+CREATE TABLE work_history (
+    history_id      INT          PRIMARY KEY AUTO_INCREMENT,
+    user_id         INT          NOT NULL,
+    position_title  VARCHAR(100) NOT NULL,
+    company_name    VARCHAR(100) DEFAULT 'Công ty TNHH Group4',
+    location        VARCHAR(100) DEFAULT 'TP. Hồ Chí Minh',
+    start_date      DATE         NOT NULL,
+    end_date        DATE,
+    description     TEXT,
+    is_current      TINYINT(1)   DEFAULT 0,
+    CONSTRAINT fk_wh_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
 -- =============================================================
 -- NHÓM 3: CA KÍP & CHẤM CÔNG (ATTENDANCE)
 -- =============================================================
@@ -330,3 +345,10 @@ INSERT INTO payroll (user_id, month, year, base_salary, working_days, allowances
 INSERT INTO notifications (user_id, type, title, body, link) VALUES
 (4, 'leave', 'Đơn nghỉ phép được duyệt', 'Quản đốc đã duyệt đơn xin nghỉ 2 ngày của bạn.', '/leave/detail?id=1'),
 (5, 'system', 'Hệ thống nâng cấp', 'HRM sẽ bảo trì vào 22h tối nay.', '#');
+
+-- ── 8. Work History (Lịch sử công tác) ──
+INSERT INTO work_history (user_id, position_title, company_name, location, start_date, end_date, description, is_current) VALUES 
+(1, 'Quản trị viên', 'Công ty TNHH Group4', 'TP. Hồ Chí Minh', '2023-01-01', NULL, 'Đảm nhiệm công việc theo phân công của quản lý trực tiếp. Tham gia vào quy trình vận hành hệ thống HRM của công ty.', 1),
+(1, 'Thực tập sinh IT', 'Công ty TNHH ABC', 'Hà Nội', '2022-06-01', '2022-12-31', 'Thực tập sinh phòng IT. Hỗ trợ các dự án phần mềm nội bộ.', 0),
+(2, 'Quản lý', 'Công ty TNHH Group4', 'TP. Hồ Chí Minh', '2023-05-01', NULL, 'Quản lý đội ngũ nhân sự và định hướng phát triển phần mềm.', 1),
+(3, 'Nhân viên', 'Công ty TNHH Group4', 'TP. Hồ Chí Minh', '2024-02-01', NULL, 'Làm việc theo sự phân công của trưởng phòng.', 1);
