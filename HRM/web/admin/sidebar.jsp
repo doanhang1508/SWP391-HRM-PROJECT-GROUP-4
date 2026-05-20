@@ -197,20 +197,16 @@
     </div>
 
     <ul class="sidebar-menu">
-        <li class="sidebar-menu-category">MAIN</li>
-        <li class="sidebar-item">
-            <a href="${pageContext.request.contextPath}/admin/dashboard"
-               class="sidebar-link ${param.activeMenu eq 'dashboard' ? 'active' : ''}">
-                <i class="fas fa-home"></i> Bảng điều khiển
-            </a>
-        </li>
+        
 
         <li class="sidebar-menu-category">ADMINISTRATION</li>
-        <li class="sidebar-item">
-            <a href="${pageContext.request.contextPath}/admin/dashboard#users" class="sidebar-link">
-                <i class="fas fa-users"></i> Quản lý Người dùng
-            </a>
-        </li>
+
+<li class="sidebar-item">
+    <a href="${pageContext.request.contextPath}/admin/users"
+       class="sidebar-link ${param.activeMenu eq 'users' ? 'active' : ''}">
+        <i class="fas fa-users"></i> Quản lý Người dùng
+    </a>
+</li>
         <li class="sidebar-item">
             <a href="${pageContext.request.contextPath}/role?action=list"
                class="sidebar-link ${param.activeMenu eq 'roles' ? 'active' : ''}">
