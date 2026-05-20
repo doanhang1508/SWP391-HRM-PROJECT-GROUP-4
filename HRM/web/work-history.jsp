@@ -1,5 +1,6 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="jakarta.tags.core" %>
+<%@taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 
 <c:set var="pageTitle" value="Lịch sử công tác - HRM" scope="request" />
 <jsp:include page="header.jsp" />
@@ -345,42 +346,46 @@
             </div>
 
             <div class="timeline">
-                <!-- Current Position -->
-                <div class="timeline-item">
-                    <div class="timeline-dot current"></div>
-                    <div class="timeline-date">01/2026 — Hiện tại</div>
-                    <h4 class="timeline-title">
-                        ${sessionScope.currentUser.roleId == 1 ? 'Quản trị viên' : 
-                          (sessionScope.currentUser.roleId == 2 ? 'Quản lý' : 'Nhân viên')}
-                        <span class="timeline-badge badge-current ms-2">Hiện tại</span>
-                    </h4>
-                    <div class="timeline-subtitle">
-                        <span><i class="fas fa-building me-1"></i>Công ty TNHH Group4</span>
-                        <span><i class="fas fa-map-marker-alt me-1"></i>TP. Hồ Chí Minh</span>
-                    </div>
-                    <div class="timeline-desc">
-                        Đảm nhiệm công việc theo phân công của quản lý trực tiếp. 
-                        Tham gia vào quy trình vận hành hệ thống HRM của công ty.
-                    </div>
-                </div>
-
-                <!-- Past Position (Sample) -->
-                <div class="timeline-item">
-                    <div class="timeline-dot past"></div>
-                    <div class="timeline-date">06/2025 — 12/2025</div>
-                    <h4 class="timeline-title">
-                        Thực tập sinh
-                        <span class="timeline-badge badge-completed ms-2">Hoàn thành</span>
-                    </h4>
-                    <div class="timeline-subtitle">
-                        <span><i class="fas fa-building me-1"></i>Công ty TNHH Group4</span>
-                        <span><i class="fas fa-map-marker-alt me-1"></i>TP. Hồ Chí Minh</span>
-                    </div>
-                    <div class="timeline-desc">
-                        Tham gia chương trình thực tập 6 tháng. Học hỏi quy trình 
-                        làm việc và hỗ trợ các công việc được giao.
-                    </div>
-                </div>
+                <c:choose>
+                    <c:when test="${empty workHistory}">
+                        <div class="wh-empty" style="padding-top: 20px;">
+                            <i class="fas fa-history" style="font-size: 2rem; color: #cbd5e0; margin-bottom: 10px; display: block;"></i>
+                            <p style="color: #a0aec0; margin: 0; font-size: 0.9rem;">Chưa có dữ liệu lịch sử công tác</p>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <c:forEach var="wh" items="${workHistory}">
+                            <div class="timeline-item">
+                                <div class="timeline-dot ${wh.current ? 'current' : 'past'}"></div>
+                                <div class="timeline-date">
+                                    <fmt:formatDate value="${wh.startDate}" pattern="MM/yyyy" /> — 
+                                    <c:choose>
+                                        <c:when test="${wh.current || empty wh.endDate}">Hiện tại</c:when>
+                                        <c:otherwise><fmt:formatDate value="${wh.endDate}" pattern="MM/yyyy" /></c:otherwise>
+                                    </c:choose>
+                                </div>
+                                <h4 class="timeline-title">
+                                    ${wh.positionTitle}
+                                    <c:if test="${wh.current}">
+                                        <span class="timeline-badge badge-current ms-2">Hiện tại</span>
+                                    </c:if>
+                                    <c:if test="${!wh.current}">
+                                        <span class="timeline-badge badge-completed ms-2">Hoàn thành</span>
+                                    </c:if>
+                                </h4>
+                                <div class="timeline-subtitle">
+                                    <span><i class="fas fa-building me-1"></i>${wh.companyName}</span>
+                                    <span><i class="fas fa-map-marker-alt me-1"></i>${wh.location}</span>
+                                </div>
+                                <c:if test="${not empty wh.description}">
+                                    <div class="timeline-desc">
+                                        ${wh.description}
+                                    </div>
+                                </c:if>
+                            </div>
+                        </c:forEach>
+                    </c:otherwise>
+                </c:choose>
             </div>
         </div>
 
