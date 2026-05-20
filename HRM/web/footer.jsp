@@ -95,10 +95,10 @@
                         <ul style="list-style:none;padding:0;margin:0">
                             <li style="margin-bottom:16px;display:flex;align-items:center;gap:12px">
                                 <i class="fas fa-envelope" style="color:#63b3ed;width:16px"></i>
-                                <a href="mailto:admin@grupo4.com"
+                                <a href="mailto:systemhrm4@gmail.com"
                                     style="color:rgba(255,255,255,.6);text-decoration:none;font-size:.88rem"
                                     onmouseover="this.style.color='#fff'"
-                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">admin@group4.com</a>
+                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">systemhrm4@gmail.com</a>
                             </li>
                             <li style="margin-bottom:16px;display:flex;align-items:center;gap:12px">
                                 <i class="fas fa-headset" style="color:#63b3ed;width:16px"></i>
