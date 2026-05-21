@@ -11,7 +11,7 @@ import jakarta.servlet.http.HttpSession;
 import model.Role;
 
 /**
- * 
+ *
  * @author HRM Group 4
  */
 public class ActiveDeactiveRoleController extends HttpServlet {
@@ -19,7 +19,7 @@ public class ActiveDeactiveRoleController extends HttpServlet {
     private final RoleDAO roleDAO = new RoleDAO();
 
     /**
-     * 
+     *
      * @param request servlet request
      * @param response servlet response
      * @throws ServletException if a servlet-specific error occurs
@@ -28,7 +28,7 @@ public class ActiveDeactiveRoleController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         // Kiểm tra xem người dùng đã đăng nhập và có quyền quản trị hay chưa
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("currentUser") == null) {
@@ -38,15 +38,15 @@ public class ActiveDeactiveRoleController extends HttpServlet {
 
         // Lấy tất cả các vai trò từ cơ sở dữ liệu
         List<Role> roleList = roleDAO.getAllRoles();
-        
+
         // Với mỗi vai trò, hãy lấy số lượng người dùng được chỉ định cho vai trò đó
         for (Role role : roleList) {
             int userCount = roleDAO.countUsersByRole(role.getRoleId());
             request.setAttribute("userCount_" + role.getRoleId(), userCount);
         }
-        
+
         request.setAttribute("roleList", roleList);
-        
+
         // Kiểm tra thông báo thành công/lỗi từ các thao tác trước đó
         String message = request.getParameter("message");
         String error = request.getParameter("error");
@@ -56,12 +56,12 @@ public class ActiveDeactiveRoleController extends HttpServlet {
         if (error != null) {
             request.setAttribute("error", error);
         }
-        
+
         request.getRequestDispatcher("activeDeactiveRole.jsp").forward(request, response);
     }
 
     /**
-     * 
+     *
      * @param request servlet request
      * @param response servlet response
      * @throws ServletException if a servlet-specific error occurs
@@ -70,7 +70,7 @@ public class ActiveDeactiveRoleController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         // Check if user is logged in and is Admin
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("currentUser") == null) {
@@ -89,7 +89,7 @@ public class ActiveDeactiveRoleController extends HttpServlet {
 
         try {
             int roleId = Integer.parseInt(roleIdStr);
-            
+
             // Lấy thông tin vai trò hiện tại để đăng nhập
             Role currentRole = roleDAO.getRoleById(roleId);
             if (currentRole == null) {

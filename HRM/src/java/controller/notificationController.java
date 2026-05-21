@@ -79,8 +79,8 @@ public class notificationController extends HttpServlet {
         String pathInfo = request.getPathInfo(); // "/count", "/list", hoặc null
 
         if (pathInfo == null || "/".equals(pathInfo)) {
-            // Mặc định: trả count
-            pathInfo = "/count";
+            request.getRequestDispatcher("/notifications.jsp").forward(request, response);
+            return;
         }
 
         switch (pathInfo) {
