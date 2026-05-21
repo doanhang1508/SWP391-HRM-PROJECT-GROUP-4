@@ -44,46 +44,45 @@ public class AdminProfileController extends HttpServlet {
     }
     
     @Override
-protected void doPost(HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
 
-    request.setCharacterEncoding("UTF-8");
+        request.setCharacterEncoding("UTF-8");
 
-    String userIdRaw = request.getParameter("userId");
-    String fullName = request.getParameter("fullName");
-    String phone = request.getParameter("phone");
+        String userIdRaw = request.getParameter("userId");
+        String fullName = request.getParameter("fullName");
+        String phone = request.getParameter("phone");
 
-    try {
+        try {
+            int userId = Integer.parseInt(userIdRaw);
 
-        int userId = Integer.parseInt(userIdRaw);
+            UserDAO userDAO = new UserDAO();
 
-        UserDAO userDAO = new UserDAO();
+            boolean updated = userDAO.updateProfile(userId, fullName, phone);
 
-        boolean updated = userDAO.updateProfile(userId, fullName, phone);
+            if(updated){
+                response.sendRedirect(
+                    request.getContextPath()
+                    + "/admin/profile?userId="
+                    + userId
+                    + "&message=updated"
+                );
+            } else {
+                response.sendRedirect(
+                    request.getContextPath()
+                    + "/admin/profile?userId="
+                    + userId
+                    + "&error=failed"
+                );
+            }
 
-        if(updated){
+        } catch(Exception e){
+            e.printStackTrace();
+
             response.sendRedirect(
                 request.getContextPath()
-                + "/admin/profile?userId="
-                + userId
-                + "&message=updated"
-            );
-        } else {
-            response.sendRedirect(
-                request.getContextPath()
-                + "/admin/profile?userId="
-                + userId
-                + "&error=failed"
+                + "/admin/dashboard"
             );
         }
-
-    } catch(Exception e){
-        e.printStackTrace();
-
-        response.sendRedirect(
-            request.getContextPath()
-            + "/admin/dashboard"
-        );
     }
-}
 }
