@@ -45,12 +45,12 @@
  
     <servlet>
         <servlet-name>ActiveDeactiveRoleController</servlet-name>
-        <servlet-class>controller.ActiveDeactiveRoleController</servlet-class>
+        <servlet-class>controller.admin.ActiveDeactiveRoleController</servlet-class>
     </servlet>
  
     <servlet>
         <servlet-name>EditRolePermissionController</servlet-name>
-        <servlet-class>controller.EditRolePermissionController</servlet-class>
+        <servlet-class>controller.admin.EditRolePermissionController</servlet-class>
     </servlet>
  
     <!-- ══════════════════════════════════════════════════════
