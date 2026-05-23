@@ -51,4 +51,48 @@ public class EmailUtil {
              + "<p style='color:#94a3b8;font-size:12px'>Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua email này.</p>"
              + "</div></div>";
     }
+
+    /**
+     * Gửi email thông báo mật khẩu mới (Admin reset password)
+     */
+    public static void sendResetPasswordEmail(String toEmail, String fullName, String newPassword) throws MessagingException {
+        Properties props = new Properties();
+        props.put("mail.smtp.auth",            "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.host",            "smtp.gmail.com");
+        props.put("mail.smtp.port",            "587");
+        props.put("mail.smtp.ssl.trust",       "smtp.gmail.com");
+
+        Session session = Session.getInstance(props, new Authenticator() {
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(FROM_EMAIL, APP_PASSWORD);
+            }
+        });
+
+        Message message = new MimeMessage(session);
+        message.setFrom(new InternetAddress(FROM_EMAIL));
+        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
+        message.setSubject("[HRM System] Mật khẩu của bạn đã được đặt lại");
+        message.setContent(buildResetPasswordBody(fullName, newPassword), "text/html; charset=UTF-8");
+
+        Transport.send(message);
+    }
+
+    private static String buildResetPasswordBody(String fullName, String newPassword) {
+        return "<div style='font-family:sans-serif;max-width:480px;margin:0 auto;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden'>"
+             + "<div style='background:linear-gradient(135deg,#1e293b,#334155);padding:24px;text-align:center'>"
+             + "<h2 style='color:white;margin:0'>🔑 HRM System</h2></div>"
+             + "<div style='padding:32px'>"
+             + "<p style='color:#334155;font-size:16px'>Xin chào <strong>" + (fullName != null ? fullName : "bạn") + "</strong>,</p>"
+             + "<p style='color:#334155;font-size:15px'>Quản trị viên đã đặt lại mật khẩu cho tài khoản của bạn. Mật khẩu mới của bạn là:</p>"
+             + "<div style='background:#f1f5f9;border-radius:8px;padding:20px;text-align:center;margin:20px 0'>"
+             + "<span style='font-size:24px;font-weight:800;color:#0f172a;letter-spacing:4px;font-family:monospace'>" + newPassword + "</span></div>"
+             + "<p style='color:#ef4444;font-size:14px;font-weight:600'>⚠️ Vui lòng đăng nhập và đổi mật khẩu ngay sau khi nhận được email này.</p>"
+             + "<p style='color:#64748b;font-size:13px'>Nếu bạn không yêu cầu thay đổi này, hãy liên hệ quản trị viên ngay lập tức.</p>"
+             + "</div>"
+             + "<div style='background:#f8fafc;padding:16px;text-align:center;border-top:1px solid #e2e8f0'>"
+             + "<p style='color:#94a3b8;font-size:12px;margin:0'>Email này được gửi tự động từ HRM System. Vui lòng không trả lời.</p>"
+             + "</div></div>";
+    }
 }
