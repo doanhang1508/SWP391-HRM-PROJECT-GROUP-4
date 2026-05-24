@@ -2,8 +2,7 @@
 <%@taglib prefix="c" uri="jakarta.tags.core" %>
 <%@taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 
-<!-- Determine which user to display: viewUser (admin viewing another) or currentUser -->
-<c:set var="displayUser" value="${not empty viewUser ? viewUser : sessionScope.currentUser}" />
+<c:set var="displayUser" value="${sessionScope.currentUser}" />
 
 <c:set var="pageTitle" value="Hồ sơ cá nhân - HRM" scope="request" />
 <jsp:include page="header.jsp" />
@@ -453,9 +452,6 @@
 
             <form action="${pageContext.request.contextPath}/profile" method="POST">
                 <input type="hidden" name="action" value="update_profile">
-                <c:if test="${not empty viewUser}">
-                    <input type="hidden" name="targetUserId" value="${viewUser.userId}">
-                </c:if>
 
                 <div class="row">
                     <div class="col-md-6">

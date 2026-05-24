@@ -132,6 +132,16 @@ public class loginController extends HttpServlet {
         session.setAttribute("currentUser", user);
         session.setMaxInactiveInterval(60 * 60 * 8); // 8 tiếng
 
+        String remember = request.getParameter("remember");
+       
+        boolean isSecure = request.isSecure();
+        if (remember != null) {
+            // Nếu có tích "Ghi nhớ": Thời gian sống 30 ngày (30 * 24 * 60 * 60 giây)
+            util.CookieUtil.addSecureCookie(response, util.CookieUtil.REMEMBER_EMAIL_COOKIE, email.trim(), 2592000, isSecure);
+        } else {
+            // Nếu KHÔNG tích: Gọi hàm deleteCookie để xóa nó đi
+            util.CookieUtil.deleteCookie(response, util.CookieUtil.REMEMBER_EMAIL_COOKIE, isSecure);
+        }
         // --- Gửi thông báo đăng nhập thành công ---
         sendLoginNotification(user, request);
 
