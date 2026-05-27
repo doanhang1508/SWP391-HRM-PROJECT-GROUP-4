@@ -307,4 +307,76 @@ public class UserDAO {
         }
         return false;
     }
+    
+        // ── Tìm kiếm theo tên nhân viên ──
+    public java.util.List<User> searchUsersByName(String keyword) {
+
+        java.util.List<User> list = new java.util.ArrayList<>();
+
+        String sql = """
+                     SELECT *
+                     FROM users
+                     WHERE full_name LIKE ?
+                     ORDER BY user_id
+                     """;
+
+        DBContext dbContext = new DBContext();
+
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, "%" + keyword + "%");
+
+            try (ResultSet rs = ps.executeQuery()) {
+
+                while (rs.next()) {
+
+                    list.add(mapResultSetToUser(rs));
+                }
+            }
+
+        } catch (SQLException e) {
+
+            System.err.println("Lỗi searchUsersByName: " + e.getMessage());
+        }
+
+        return list;
+    }
+
+    // ── Tìm kiếm theo tên + lọc role ──
+    public java.util.List<User> searchUsers(String keyword, int roleId) {
+
+        java.util.List<User> list = new java.util.ArrayList<>();
+
+        String sql = """
+                     SELECT *
+                     FROM users
+                     WHERE full_name LIKE ?
+                     AND role_id = ?
+                     ORDER BY user_id
+                     """;
+
+        DBContext dbContext = new DBContext();
+
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, "%" + keyword + "%");
+            ps.setInt(2, roleId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+
+                while (rs.next()) {
+
+                    list.add(mapResultSetToUser(rs));
+                }
+            }
+
+        } catch (SQLException e) {
+
+            System.err.println("Lỗi searchUsers: " + e.getMessage());
+        }
+
+        return list;
+    }
 }
