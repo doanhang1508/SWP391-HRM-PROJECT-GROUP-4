@@ -2,653 +2,611 @@
 <%@taglib prefix="c" uri="jakarta.tags.core" %>
 <%@taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 
-<c:set var="pageTitle" value="Admin Dashboard - Hệ Thống HRM" scope="request" />
+<c:set var="pageTitle" value="Bảng Điều Khiển Admin" scope="request" />
 <jsp:include page="../header.jsp" />
 
-<!-- Google Fonts & Icons -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-    :root {
-        --primary-color: #3b82f6;
-        --primary-light: #eff6ff;
-        --secondary-color: #64748b;
-        --success-color: #10b981;
-        --danger-color: #ef4444;
-        --warning-color: #f59e0b;
-        --bg-body: #f8fafc;
-        --card-bg: #ffffff;
-        --text-main: #0f172a;
-        --text-muted: #64748b;
-        --border-color: #e2e8f0;
-        --sidebar-width: 260px;
-    }
+/* ── Reset portal footer cho trang admin ── */
+footer, #chatWidget {
+    display: none !important;
+}
 
-    body {
-        background-color: var(--bg-body);
-        font-family: 'Inter', sans-serif;
-        color: var(--text-main);
-    }
+body {
+    background-color: #f1f5f9 !important;
+    font-family: 'Inter', sans-serif !important;
+    padding-top: 0 !important;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
 
-    /* Layout */
-    .dashboard-wrapper {
-        display: flex;
-        min-height: calc(100vh - 64px);
-    }
+/* ── Layout ── */
+.dashboard-wrapper {
+    display: flex;
+    min-height: calc(100vh - 64px);
+}
 
-    .main-content {
-        flex: 1;
-        padding: 40px;
-        width: calc(100% - var(--sidebar-width));
-    }
+/* ── Main Area ── */
+.dash-main {
+    flex: 1;
+    min-width: 0;
+    background: #f1f5f9;
+}
 
-    /* Page Header */
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        margin-bottom: 35px;
-    }
 
-    .page-title {
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: var(--text-main);
-        margin: 0 0 8px 0;
-        letter-spacing: -0.5px;
-    }
 
-    .breadcrumb {
-        font-size: 0.9rem;
-        color: var(--text-muted);
-        margin-bottom: 0;
-        font-weight: 500;
-    }
-    .breadcrumb a {
-        color: var(--primary-color);
-        text-decoration: none;
-        transition: color 0.2s;
-    }
-    .breadcrumb a:hover { color: #2563eb; }
+/* ── Content Area ── */
+.dash-content {
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
 
-    /* Stat Cards (Premium Minimalist Style) */
-    .stat-card {
-        background: var(--card-bg);
-        border-radius: 20px;
-        padding: 24px;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
-        border: 1px solid rgba(226, 232, 240, 0.8);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-    }
+/* ── Breadcrumb / Page Title ── */
+.dash-page-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
 
-    .stat-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-    }
+.dash-breadcrumb {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
 
-    .stat-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 20px;
-    }
+.dash-breadcrumb a {
+    color: #0d9488;
+    text-decoration: none;
+}
 
-    .stat-title {
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin: 0;
-    }
+.dash-breadcrumb a:hover { text-decoration: underline; }
 
-    .stat-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-    }
+.dash-page-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.5px;
+}
 
-    .icon-blue { background: #eff6ff; color: #3b82f6; }
-    .icon-green { background: #f0fdf4; color: #10b981; }
-    .icon-orange { background: #fff7ed; color: #f97316; }
-    .icon-purple { background: #faf5ff; color: #a855f7; }
+/* ── Stat Cards ── */
+.dash-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
 
-    .stat-value {
-        font-size: 2.5rem;
-        font-weight: 800;
-        color: var(--text-main);
-        line-height: 1;
-        margin-bottom: 12px;
-        letter-spacing: -1px;
-    }
+.dash-stat-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 22px 24px;
+    box-shadow: 0 1px 3px 0 rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
 
-    .stat-footer {
-        font-size: 0.85rem;
-        font-weight: 500;
-    }
-    
-    .stat-footer a {
-        color: var(--primary-color);
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        transition: gap 0.2s;
-    }
-    .stat-footer a:hover {
-        gap: 10px;
-    }
+.dash-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
 
-    /* Panels */
-    .admin-panel {
-        background: var(--card-bg);
-        border-radius: 20px;
-        padding: 30px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
-        border: 1px solid rgba(226, 232, 240, 0.8);
-        margin-bottom: 24px;
-    }
+.dash-stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
 
-    .panel-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-    }
+.dash-stat-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
 
-    .panel-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: var(--text-main);
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        letter-spacing: -0.3px;
-    }
-    
-    .panel-title-icon {
-        width: 32px; height: 32px;
-        background: var(--bg-body);
-        border-radius: 8px;
-        display: flex; align-items: center; justify-content: center;
-        color: var(--secondary-color);
-        font-size: 0.9rem;
-    }
+.dash-stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
 
-    /* Table Styles */
-    .table-responsive {
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid var(--border-color);
-    }
+.dash-stat-val {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.1;
+}
 
-    .table-custom {
-        width: 100%;
-        margin-bottom: 0;
-        border-collapse: collapse;
-    }
+.dash-stat-change {
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
 
-    .table-custom th {
-        background: var(--bg-body);
-        color: var(--text-muted);
-        font-weight: 600;
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-        padding: 16px 20px;
-        border-bottom: 1px solid var(--border-color);
-    }
+.dash-stat-change.up { color: #10b981; }
+.dash-stat-change.down { color: #ef4444; }
+.dash-stat-change.neutral { color: #94a3b8; }
 
-    .table-custom td {
-        background: var(--card-bg);
-        padding: 16px 20px;
-        vertical-align: middle;
-        color: var(--text-main);
-        font-size: 0.95rem;
-        border-bottom: 1px solid var(--border-color);
-        transition: background 0.2s;
-    }
+/* Theme variations */
+.dash-stat-card.stat-warning { border-left: 4px solid #f59e0b; }
+.dash-stat-card.stat-warning .dash-stat-icon { background: #fef3c7; color: #d97706; }
 
-    .table-custom tbody tr:last-child td { border-bottom: none; }
-    .table-custom tbody tr:hover td { background: #f8fafc; }
+.dash-stat-card.stat-danger { border-left: 4px solid #ef4444; }
+.dash-stat-card.stat-danger .dash-stat-icon { background: #fee2e2; color: #dc2626; }
 
-    .user-info {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }
+.dash-stat-card.stat-success { border-left: 4px solid #10b981; }
+.dash-stat-card.stat-success .dash-stat-icon { background: #d1fae5; color: #059669; }
 
-    .avatar-sm {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
-        background: var(--primary-light);
-        color: var(--primary-color);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 1.1rem;
-    }
+.dash-stat-card.stat-teal { border-left: 4px solid #0d9488; }
+.dash-stat-card.stat-teal .dash-stat-icon { background: #ccfbf1; color: #0d9488; }
 
-    .badge-soft {
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 0.75rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-    .badge-soft-success { background: #dcfce7; color: #16a34a; }
-    .badge-soft-danger { background: #fee2e2; color: #dc2626; }
-    .badge-soft-gray { background: #f1f5f9; color: #64748b; }
+/* ── Chart Cards ── */
+.dash-charts-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 20px;
+}
 
-    /* Custom Form Elements */
-    .form-select-sm {
-        border-radius: 8px;
-        border: 1px solid var(--border-color);
-        padding: 8px 30px 8px 14px;
-        font-size: 0.9rem;
-        color: var(--text-main);
-        background-color: var(--card-bg);
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .form-select-sm:focus {
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        outline: none;
-    }
+@media (max-width: 1100px) {
+    .dash-charts-grid { grid-template-columns: 1fr; }
+}
 
-    .btn-action {
-        width: 36px;
-        height: 36px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 10px;
-        transition: all 0.2s;
-        border: 1px solid transparent;
-        color: var(--text-muted);
-        background: var(--bg-body);
-        cursor: pointer;
-    }
-    .btn-action:hover {
-        background: var(--card-bg);
-        border-color: var(--border-color);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        color: var(--primary-color);
-    }
-    
-    .btn-save { color: var(--success-color); }
-    .btn-save:hover { color: var(--success-color); border-color: #dcfce7; background: #f0fdf4; }
-    
-    .btn-toggle-on { color: var(--warning-color); }
-    .btn-toggle-on:hover { color: var(--warning-color); border-color: #fef3c7; background: #fffbeb; }
-    
-    .btn-view { color: var(--info-color); }
+.dash-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 1px 3px 0 rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+}
 
-    .btn-primary-custom {
-        background: var(--primary-color);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        padding: 10px 24px;
-        font-weight: 600;
-        font-size: 0.95rem;
-        transition: all 0.2s;
-        box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
-    }
-    .btn-primary-custom:hover {
-        background: #2563eb;
-        transform: translateY(-1px);
-        box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.3);
-    }
+.dash-card-header {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
-    /* Activity Feed */
-    .activity-feed {
-        position: relative;
-        padding-left: 20px;
-    }
-    .activity-feed::before {
-        content: '';
-        position: absolute;
-        top: 0; bottom: 0; left: 25px;
-        width: 2px;
-        background: var(--border-color);
-    }
-    .activity-item {
-        position: relative;
-        padding-left: 35px;
-        margin-bottom: 24px;
-    }
-    .activity-item:last-child { margin-bottom: 0; }
-    
-    .activity-dot {
-        position: absolute;
-        left: -1px;
-        top: 4px;
-        width: 12px; height: 12px;
-        border-radius: 50%;
-        background: var(--primary-color);
-        border: 2px solid var(--card-bg);
-        box-shadow: 0 0 0 3px var(--primary-light);
-    }
-    .activity-dot.success { background: var(--success-color); box-shadow: 0 0 0 3px #dcfce7; }
-    .activity-dot.warning { background: var(--warning-color); box-shadow: 0 0 0 3px #fef3c7; }
-    
-    .activity-time {
-        font-size: 0.75rem;
-        color: var(--text-muted);
-        font-weight: 600;
-        margin-bottom: 4px;
-        display: block;
-    }
-    .activity-text {
-        font-size: 0.9rem;
-        color: var(--text-main);
-        margin: 0;
-        line-height: 1.5;
-    }
-    .activity-user { font-weight: 600; color: #0f172a; }
+.dash-card-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 
+.dash-card-title-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.dot-teal   { background: #0d9488; }
+.dot-blue   { background: #3b82f6; }
+.dot-orange { background: #f59e0b; }
+
+.dash-card-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: #f0fdf4;
+    color: #059669;
+}
+
+/* ── Table ── */
+.dash-table-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.dash-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.dash-table th {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #64748b;
+    font-size: 0.73rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    background: #fafbfc;
+}
+
+.dash-table td {
+    padding: 15px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #0f172a;
+    font-size: 0.88rem;
+    vertical-align: middle;
+}
+
+.dash-table tbody tr:last-child td { border-bottom: none; }
+.dash-table tbody tr:hover td { background: #f8fafc; }
+
+.dash-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.73rem;
+    font-weight: 700;
+}
+
+.badge-pending   { background: #fef3c7; color: #d97706; }
+.badge-completed { background: #d1fae5; color: #059669; }
+.badge-rejected  { background: #fee2e2; color: #dc2626; }
+
+.dash-emp-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dash-emp-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: #eff6ff;
+    color: #3b82f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.dash-btn {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.dash-btn-primary { background: #0d9488; color: #fff; }
+.dash-btn-primary:hover { background: #0f766e; }
+
+.dash-btn-secondary { background: #f1f5f9; color: #475569; }
+.dash-btn-secondary:hover { background: #e2e8f0; }
+
+.dash-actions-cell { display: flex; gap: 6px; }
+
+/* ── Quick Stats Row ── */
+.dash-quick-stats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.dash-quick-stat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: #64748b;
+}
+
+.dash-quick-stat strong { color: #0f172a; }
+
+@media (max-width: 768px) {
+    .dash-content { padding: 20px 16px; }
+}
 </style>
 
 <div class="dashboard-wrapper">
-    <!-- Sidebar -->
+    <%-- Sidebar chung --%>
     <jsp:include page="sidebar.jsp">
         <jsp:param name="activeMenu" value="dashboard" />
     </jsp:include>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="page-header">
-            <div>
-                <p class="breadcrumb">
-                    <a href="${pageContext.request.contextPath}/home">Home</a>
-                    &nbsp;/&nbsp;
-                    <span style="color: var(--text-main);">Dashboard</span>
-                </p>
-                <h1 class="page-title">Admin Dashboard</h1>
+    <%-- Main Content Area --%>
+    <div class="dash-main">
+
+        <%-- ── Content ── --%>
+        <div class="dash-content">
+
+            <%-- Page Header --%>
+            <div class="dash-page-header">
+                <div class="dash-breadcrumb">
+                    <a href="${pageContext.request.contextPath}/home"><i class="fas fa-home"></i> Trang chủ</a>
+                    <span>/</span>
+                    <span>Bảng điều khiển</span>
+                </div>
+                <div class="dash-page-title">Tổng Quan Hệ Thống</div>
             </div>
-        </div>
 
-        <!-- System Alerts -->
-        <c:if test="${not empty param.message}">
-            <div class="alert alert-success alert-dismissible fade show shadow-sm border-0"
-                 role="alert"
-                 style="border-radius: 12px; background: #f0fdf4; color: #16a34a; border-left: 4px solid #16a34a !important;">
-                <i class="fas fa-check-circle me-2"></i> ${param.message}
-                <button type="button" class="btn-close"
-                        data-bs-dismiss="alert"
-                        aria-label="Close"></button>
-            </div>
-        </c:if>
+            <%-- ── Stat Cards ── --%>
+            <div class="dash-stat-grid">
 
-        <c:if test="${not empty param.error}">
-            <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0"
-                 role="alert"
-                 style="border-radius: 12px; background: #fef2f2; color: #dc2626; border-left: 4px solid #dc2626 !important;">
-                <i class="fas fa-exclamation-circle me-2"></i> ${param.error}
-                <button type="button" class="btn-close"
-                        data-bs-dismiss="alert"
-                        aria-label="Close"></button>
-            </div>
-        </c:if>
-
-        <!-- Stat Cards Grid -->
-        <div class="row g-4 mb-4">
-
-            <div class="col-xl-3 col-lg-6 col-md-6">
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <h3 class="stat-title">Tổng Nhân Sự</h3>
-                        <div class="stat-icon icon-blue">
-                            <i class="fas fa-users"></i>
+                <div class="dash-stat-card stat-teal">
+                    <div class="dash-stat-header">
+                        <span class="dash-stat-title">Người Dùng Hoạt Động</span>
+                        <div class="dash-stat-icon">
+                            <i class="fa-solid fa-user-check"></i>
                         </div>
                     </div>
-
-                    <div>
-                        <div class="stat-value">${totalUsers}</div>
+                    <div class="dash-stat-val">${not empty activeUsers ? activeUsers : '7'}</div>
+                    <div class="dash-stat-change up">
+                        <i class="fas fa-arrow-up"></i> Đang hoạt động trong hệ thống
                     </div>
                 </div>
-            </div>
 
-            <div class="col-xl-3 col-lg-6 col-md-6">
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <h3 class="stat-title">Yêu Cầu Nghỉ Phép</h3>
-                        <div class="stat-icon icon-orange">
-                            <i class="fas fa-envelope-open-text"></i>
+                <div class="dash-stat-card stat-warning">
+                    <div class="dash-stat-header">
+                        <span class="dash-stat-title">Đơn Chờ Xử Lý</span>
+                        <div class="dash-stat-icon">
+                            <i class="fa-solid fa-user-plus"></i>
                         </div>
                     </div>
-
-                    <div>
-                        <div class="stat-value">${pendingLeaves}</div>
+                    <div class="dash-stat-val">12</div>
+                    <div class="dash-stat-change neutral">
+                        <i class="fas fa-clock"></i> Cần xem xét và duyệt
                     </div>
                 </div>
-            </div>
 
-            <div class="col-xl-3 col-lg-6 col-md-6">
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <h3 class="stat-title">Phòng Ban</h3>
-                        <div class="stat-icon icon-green">
-                            <i class="fas fa-building"></i>
+                <div class="dash-stat-card stat-danger">
+                    <div class="dash-stat-header">
+                        <span class="dash-stat-title">Tài Khoản Bị Khóa</span>
+                        <div class="dash-stat-icon">
+                            <i class="fa-solid fa-user-slash"></i>
                         </div>
                     </div>
-
-                    <div>
-                        <div class="stat-value">${totalDepartments}</div>
+                    <div class="dash-stat-val">5</div>
+                    <div class="dash-stat-change down">
+                        <i class="fas fa-lock"></i> Đang bị tạm khóa
                     </div>
                 </div>
-            </div>
 
-            <div class="col-xl-3 col-lg-6 col-md-6">
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <h3 class="stat-title">Vai Trò Hệ Thống</h3>
-                        <div class="stat-icon icon-purple">
-                            <i class="fas fa-user-shield"></i>
+                <div class="dash-stat-card stat-success">
+                    <div class="dash-stat-header">
+                        <span class="dash-stat-title">Thời Gian Hoạt Động</span>
+                        <div class="dash-stat-icon">
+                            <i class="fa-solid fa-square-poll-vertical"></i>
                         </div>
                     </div>
-
-                    <div>
-                        <div class="stat-value">${totalRoles}</div>
+                    <div class="dash-stat-val">99,98%</div>
+                    <div class="dash-stat-change up">
+                        <i class="fas fa-server"></i> Hệ thống ổn định
                     </div>
                 </div>
+
             </div>
 
-        </div>
+            <%-- ── Charts Row ── --%>
+            <div class="dash-charts-grid">
+                <%-- Line Chart --%>
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <h3 class="dash-card-title">
+                            <div class="dash-card-title-dot dot-teal"></div>
+                            Lượt Truy Cập & Đăng Nhập (7 Ngày Qua)
+                        </h3>
+                        <span class="dash-card-badge"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Trực tiếp</span>
+                    </div>
+                    <div style="position: relative; height: 280px; width: 100%;">
+                        <canvas id="trafficChart"></canvas>
+                    </div>
+                </div>
 
-        <div class="row g-4">
-
-            <!-- Right Column: Charts & Logs -->
-            <div class="col-xl-12 col-lg-12">
-
-                <!-- Activity Log Panel -->
-                <div class="admin-panel mb-4">
-                    <div class="panel-header mb-4">
-                        <h3 class="panel-title">
-                            <div class="panel-title-icon">
-                                <i class="fas fa-bolt"></i>
-                            </div>
-                            Hoạt Động Gần Đây
+                <%-- Donut Chart --%>
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <h3 class="dash-card-title">
+                            <div class="dash-card-title-dot dot-blue"></div>
+                            Phân Bổ Người Dùng Theo Vai Trò
                         </h3>
                     </div>
-
-                    <div class="activity-feed">
-
-                        <div class="activity-item">
-                            <div class="activity-dot"></div>
-                            <span class="activity-time">Vừa xong</span>
-                            <p class="activity-text">
-                                <span class="activity-user">Bạn</span>
-                                đã cập nhật phân quyền cho Role Manager.
-                            </p>
-                        </div>
-
-                        <div class="activity-item">
-                            <div class="activity-dot success"></div>
-                            <span class="activity-time">2 giờ trước</span>
-                            <p class="activity-text">
-                                <span class="activity-user">Hệ Thống</span>
-                                tự động sao lưu Database thành công.
-                            </p>
-                        </div>
-
-                        <div class="activity-item">
-                            <div class="activity-dot warning"></div>
-                            <span class="activity-time">Hôm qua, 15:30</span>
-                            <p class="activity-text">
-                                <span class="activity-user">manager@hrm.com</span>
-                                đã duyệt 3 đơn xin nghỉ phép.
-                            </p>
-                        </div>
-
-                        <div class="activity-item">
-                            <div class="activity-dot"></div>
-                            <span class="activity-time">Hôm qua, 09:15</span>
-                            <p class="activity-text">
-                                <span class="activity-user">Nguyễn Văn A</span>
-                                đã đăng nhập hệ thống lần đầu.
-                            </p>
-                        </div>
-
-                    </div>
-
-                    <div class="text-center mt-4">
-                        <a href="#"
-                           class="text-decoration-none"
-                           style="font-size: 0.9rem; font-weight: 600; color: var(--primary-color);">
-                            Xem tất cả hoạt động
-                        </a>
+                    <div style="position: relative; height: 280px; width: 100%; display: flex; justify-content: center; align-items: center;">
+                        <canvas id="rolesChart"></canvas>
                     </div>
                 </div>
-
-                <!-- Chart Panel -->
-                <div class="admin-panel mb-0">
-                    <div class="panel-header border-0 pb-0">
-                        <h3 class="panel-title">
-                            <div class="panel-title-icon">
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                            Tỉ Lệ Đi Làm
-                        </h3>
-                    </div>
-
-                    <div style="height: 220px; position: relative; margin-top: 15px;">
-                        <canvas id="attendanceChart"></canvas>
-                    </div>
-                </div>
-
             </div>
 
-        </div>
-    </div>
-</div>
+            <%-- ── Recent Requests Table ── --%>
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <h3 class="dash-card-title">
+                        <div class="dash-card-title-dot dot-orange"></div>
+                        Yêu Cầu Tạo Tài Khoản Gần Đây (Từ HR)
+                    </h3>
+                    <a href="${pageContext.request.contextPath}/admin/pending-requests"
+                       class="dash-btn dash-btn-secondary" style="font-size:0.78rem;">
+                        Xem tất cả <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="dash-table-container">
+                    <table class="dash-table">
+                        <thead>
+                            <tr>
+                                <th>Nhân Viên</th>
+                                <th>Phòng Ban</th>
+                                <th>Ngày Gửi</th>
+                                <th>Trạng Thái</th>
+                                <th>Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="dash-emp-cell">
+                                        <div class="dash-emp-avatar">A</div>
+                                        <span style="font-weight:600;">Alex Rivera</span>
+                                    </div>
+                                </td>
+                                <td style="color:#64748b;">Kỹ thuật Sản phẩm</td>
+                                <td style="color:#64748b;">27/05/2026</td>
+                                <td><span class="dash-badge badge-pending"><i class="fas fa-clock" style="font-size:0.65rem;"></i> Chờ duyệt</span></td>
+                                <td class="dash-actions-cell">
+                                    <button class="dash-btn dash-btn-primary">Tạo tài khoản</button>
+                                    <button class="dash-btn dash-btn-secondary">Từ chối</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="dash-emp-cell">
+                                        <div class="dash-emp-avatar" style="background:#faf5ff;color:#7c3aed;">S</div>
+                                        <span style="font-weight:600;">Sophia Martinez</span>
+                                    </div>
+                                </td>
+                                <td style="color:#64748b;">Tuyển dụng Nhân sự</td>
+                                <td style="color:#64748b;">26/05/2026</td>
+                                <td><span class="dash-badge badge-pending"><i class="fas fa-clock" style="font-size:0.65rem;"></i> Chờ duyệt</span></td>
+                                <td class="dash-actions-cell">
+                                    <button class="dash-btn dash-btn-primary">Tạo tài khoản</button>
+                                    <button class="dash-btn dash-btn-secondary">Từ chối</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="dash-emp-cell">
+                                        <div class="dash-emp-avatar" style="background:#f0fdf4;color:#059669;">D</div>
+                                        <span style="font-weight:600;">David Chen</span>
+                                    </div>
+                                </td>
+                                <td style="color:#64748b;">Tài chính Kế toán</td>
+                                <td style="color:#64748b;">25/05/2026</td>
+                                <td><span class="dash-badge badge-completed"><i class="fas fa-check-circle" style="font-size:0.65rem;"></i> Hoàn thành</span></td>
+                                <td class="dash-actions-cell">
+                                    <button class="dash-btn dash-btn-secondary" style="opacity:0.6;cursor:not-allowed;" disabled>Đã tạo</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="dash-emp-cell">
+                                        <div class="dash-emp-avatar" style="background:#fef3c7;color:#d97706;">E</div>
+                                        <span style="font-weight:600;">Emma Watson</span>
+                                    </div>
+                                </td>
+                                <td style="color:#64748b;">Marketing Chiến lược</td>
+                                <td style="color:#64748b;">24/05/2026</td>
+                                <td><span class="dash-badge badge-completed"><i class="fas fa-check-circle" style="font-size:0.65rem;"></i> Hoàn thành</span></td>
+                                <td class="dash-actions-cell">
+                                    <button class="dash-btn dash-btn-secondary" style="opacity:0.6;cursor:not-allowed;" disabled>Đã tạo</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-<!-- Chart.js Setup -->
+        </div><%-- end dash-content --%>
+    </div><%-- end dash-main --%>
+</div><%-- end dashboard-wrapper --%>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener('DOMContentLoaded', function () {
 
-        const ctx = document.getElementById('attendanceChart').getContext('2d');
-
-        const labels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-
-        const dataPresent = [240, 245, 238, 242, 248, 120, 10];
-        const dataAbsent = [8, 3, 10, 6, 0, 128, 238];
-
-        new Chart(ctx, {
-            type: 'bar',
-
-            data: {
-                labels: labels,
-
-                datasets: [
-                    {
-                        label: 'Đi làm',
-                        data: dataPresent,
-                        backgroundColor: '#3b82f6',
-                        borderRadius: 4,
-                        barPercentage: 0.5
-                    },
-                    {
-                        label: 'Vắng/Nghỉ',
-                        data: dataAbsent,
-                        backgroundColor: '#e2e8f0',
-                        borderRadius: 4,
-                        barPercentage: 0.5
-                    }
-                ]
-            },
-
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-
-                scales: {
-                    x: {
-                        stacked: true,
-                        grid: {display: false},
-                        border: {display: false},
-                        ticks: {
-                            font: {family: 'Inter', size: 11},
-                            color: '#64748b'
-                        }
-                    },
-
-                    y: {
-                        stacked: true,
-                        beginAtZero: true,
-                        grid: {color: '#f1f5f9'},
-                        border: {display: false},
-                        ticks: {
-                            font: {family: 'Inter', size: 11},
-                            color: '#94a3b8'
-                        }
-                    }
+    // 1. Biểu đồ Lượt Truy Cập & Đăng Nhập
+    const trafficCtx = document.getElementById('trafficChart').getContext('2d');
+    new Chart(trafficCtx, {
+        type: 'line',
+        data: {
+            labels: ['21/05', '22/05', '23/05', '24/05', '25/05', '26/05', '27/05'],
+            datasets: [
+                {
+                    label: 'Đăng nhập thành công',
+                    data: [1120, 1280, 850, 420, 1340, 1420, 1245],
+                    borderColor: '#0d9488',
+                    backgroundColor: 'rgba(13,148,136,0.06)',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2.5,
+                    pointBackgroundColor: '#0d9488',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
                 },
-
-                plugins: {
-                    legend: {display: false},
-
-                    tooltip: {
-                        backgroundColor: '#0f172a',
-                        padding: 12,
-                        titleFont: {
-                            family: 'Inter',
-                            size: 13,
-                            weight: '600'
-                        },
-                        bodyFont: {
-                            family: 'Inter',
-                            size: 12
-                        },
-                        cornerRadius: 8,
-                        boxPadding: 4
-                    }
+                {
+                    label: 'Đăng nhập thất bại',
+                    data: [15, 24, 18, 5, 29, 32, 21],
+                    borderColor: '#ef4444',
+                    backgroundColor: 'transparent',
+                    fill: false,
+                    tension: 0.35,
+                    borderWidth: 2,
+                    borderDash: [6, 4],
+                    pointBackgroundColor: '#ef4444',
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { boxWidth: 12, font: { family: 'Inter', size: 12 }, padding: 16 }
+                }
+            },
+            scales: {
+                y: {
+                    grid: { color: 'rgba(0,0,0,0.04)' },
+                    ticks: { font: { family: 'Inter', size: 11 }, color: '#94a3b8' }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { family: 'Inter', size: 11 }, color: '#94a3b8' }
                 }
             }
-        });
-
+        }
     });
+
+    // 2. Biểu đồ Phân Bổ Vai Trò
+    const rolesCtx = document.getElementById('rolesChart').getContext('2d');
+    new Chart(rolesCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['HR', 'Quản lý dự án', 'Giám sát', 'Nhân viên'],
+            datasets: [{
+                data: [45, 120, 80, 1000],
+                backgroundColor: ['#0d9488','#0f172a','#3b82f6','#94a3b8'],
+                borderWidth: 3,
+                borderColor: '#ffffff',
+                hoverBorderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '68%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { boxWidth: 12, padding: 18, font: { family: 'Inter', size: 12 } }
+                }
+            }
+        }
+    });
+
+});
 </script>
 
 <jsp:include page="../footer.jsp" />

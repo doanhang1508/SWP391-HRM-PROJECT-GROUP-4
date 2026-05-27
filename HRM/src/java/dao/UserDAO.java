@@ -72,22 +72,7 @@ public class UserDAO {
         return null;
     }
  
-    // ── Tìm theo Email không lọc status (dùng cho Google OAuth) ──
-    public User getUserByEmailAny(String email) {
-        String sql = "SELECT * FROM users WHERE email = ?";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, email);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapResultSetToUser(rs);
-            }
-        } catch (SQLException e) {
-            System.err.println("Lỗi getUserByEmailAny: " + e.getMessage());
-        }
-        return null;
-    }
- 
+
     // ── Cập nhật mật khẩu ──
     public boolean updatePassword(int userId, String newHashedPassword) {
         String sql = "UPDATE users SET password = ? WHERE user_id = ?";
@@ -134,36 +119,7 @@ public class UserDAO {
         return false;
     }
  
-    // ── Tạo hoặc cập nhật user từ Google OAuth ──
-    public User createOrUpdateGoogleUser(String email, String fullName, String avatarUrl) {
-        User existing = getUserByEmailAny(email);
-        if (existing != null) {
-            if (avatarUrl != null && !avatarUrl.isEmpty()) {
-                updateAvatar(existing.getUserId(), avatarUrl);
-                existing.setAvatarUrl(avatarUrl);
-            }
-            return existing;
-        }
-        String sql = "INSERT INTO users (username, password, full_name, email, avatar_url, status, role_id) " +
-                     "VALUES (?, '', ?, ?, ?, 0, 3)";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
-            String username = email.contains("@") ? email.split("@")[0] : email;
-            ps.setString(1, username);
-            ps.setString(2, fullName != null ? fullName : username);
-            ps.setString(3, email);
-            ps.setString(4, avatarUrl != null ? avatarUrl : "");
-            ps.executeUpdate();
-            try (ResultSet keys = ps.getGeneratedKeys()) {
-                if (keys.next()) return getUserByEmailAny(email);
-            }
-        } catch (SQLException e) {
-            System.err.println("Lỗi createOrUpdateGoogleUser: " + e.getMessage());
-        }
-        return null;
-    }
- 
+
     // ── Thống kê cho Admin Dashboard ──
     public int getTotalUsers() {
         return countQuery("SELECT COUNT(*) FROM users");

@@ -24,8 +24,39 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
 .hero-title{font-family:'Be Vietnam Pro',sans-serif;font-size:clamp(2rem,3.5vw,3.5rem);font-weight:800;color:#fff;line-height:1.05;letter-spacing:-2px;position:relative;z-index:2;margin:0 0 20px}
 .hero-title em{color:#63b3ed;font-style:normal}
 .hero-subtitle{color:rgba(255,255,255,.65);font-size:.9rem;line-height:1.7;max-width:400px;position:relative;z-index:2;margin-bottom:30px}
-.hero-cta-row{display:flex;align-items:center;gap:30px;position:relative;z-index:2}
-.hero-scroll-hint{color:rgba(255,255,255,.35);font-size:.8rem;letter-spacing:1px}
+.hero-cta-row{display:flex;align-items:center;gap:16px;position:relative;z-index:2;flex-wrap:wrap}
+
+/* Nút hero */
+.btn-hero-main{
+    display:inline-flex;align-items:center;gap:10px;
+    background:#2b6cb0;color:#fff;border:none;
+    padding:13px 28px;
+    font-family:'Be Vietnam Pro',sans-serif;font-size:.9rem;font-weight:700;
+    text-decoration:none;letter-spacing:.3px;
+    transition:all .25s;
+}
+.btn-hero-main:hover{background:#1e4e8c;color:#fff;transform:translateY(-1px)}
+.btn-hero-ghost{
+    display:inline-flex;align-items:center;gap:10px;
+    background:transparent;color:rgba(255,255,255,.75);
+    border:1px solid rgba(255,255,255,.25);
+    padding:13px 24px;
+    font-family:'Be Vietnam Pro',sans-serif;font-size:.88rem;font-weight:600;
+    text-decoration:none;transition:all .25s;
+}
+.btn-hero-ghost:hover{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.5)}
+
+/* Badge chào mừng */
+.hero-user-badge{
+    display:inline-flex;align-items:center;gap:10px;
+    background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.12);
+    padding:8px 16px;margin-bottom:22px;
+    position:relative;z-index:2;
+}
+.online-dot{width:8px;height:8px;background:#48bb78;border-radius:50%;flex-shrink:0;box-shadow:0 0 0 2px rgba(72,187,120,.3)}
+.hero-user-badge span{font-size:.82rem;color:rgba(255,255,255,.7);font-weight:500}
+.hero-user-badge b{color:#fff}
 
 .hero-right{background:#f0ede8;display:flex;flex-direction:column;justify-content:space-between;padding:0;overflow:hidden}
 .hero-img-wrap{flex:1;overflow:hidden;position:relative;background:url('https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?q=80&w=1200&auto=format&fit=crop') center/cover no-repeat;transition:background-size .6s}
@@ -48,7 +79,7 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
 .manifesto{background:#0a2540;padding:70px 0;text-align:center;position:relative;overflow:hidden}
 .manifesto::before{content:'GROUP4';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Be Vietnam Pro',sans-serif;font-size:16rem;font-weight:800;color:rgba(255,255,255,.02);pointer-events:none;letter-spacing:-10px}
 .manifesto-sub{font-size:.85rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#63b3ed;margin-bottom:30px}
-.manifesto-text{font-family:'Be Vietnam Pro',sans-serif;font-size:clamp(1.5rem,2.5vw,2.5rem);font-weight:800;color:#fff;line-height:1.25;letter-spacing:-.5px;max-width:800px;margin:0 auto 40px}
+.manifesto-text{font-family:'Be Vietnam Pro',sans-serif;font-size:clamp(1.5rem,2.5vw,2.5rem);font-weight:800;color:#fff;line-height:1.25;letter-spacing:-.5px;max-width:800px;margin:0 auto}
 .manifesto-text span{color:#63b3ed}
 
 /* ── FEATURES BAND ── */
@@ -78,7 +109,7 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
 .photo-cell-label{position:absolute;bottom:0;left:0;right:0;padding:24px;background:linear-gradient(to top,rgba(10,37,64,.8),transparent);color:#fff;font-size:.8rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;opacity:0;transition:opacity .4s}
 .photo-cell:hover .photo-cell-label{opacity:1}
 
-/* ── NEWS ── */
+/* ── THÔNG BÁO NỘI BỘ ── */
 .news-section{padding:70px 0;background:#fff}
 .news-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:60px;padding-bottom:30px;border-bottom:3px solid #0a2540}
 .news-header h2{font-family:'Be Vietnam Pro',sans-serif;font-size:2rem;font-weight:800;color:#0a2540;letter-spacing:-.5px}
@@ -95,15 +126,6 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
 .news-arrow2{font-size:1.3rem;color:#c8bfb5;transition:all .3s}
 .news-card:hover .news-arrow2{color:#0a2540;transform:translateX(6px);display:inline-block}
 
-/* ── CTA FINAL ── */
-.final-cta{background:#0a2540;min-height:50vh;display:flex;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden}
-.final-cta::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:800px;border-radius:50%;background:rgba(43,108,176,.08);border:1px solid rgba(43,108,176,.15)}
-.final-cta-inner{position:relative;z-index:2}
-.final-cta h2{font-family:'Be Vietnam Pro',sans-serif;font-size:clamp(2rem,3.5vw,3.5rem);font-weight:800;color:#fff;letter-spacing:-1px;line-height:1.1;margin-bottom:35px}
-.final-cta h2 em{color:#63b3ed;font-style:normal}
-.btn-final{display:inline-flex;align-items:center;gap:16px;background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.35);padding:20px 50px;font-family:'Be Vietnam Pro',sans-serif;font-weight:700;font-size:1.1rem;text-decoration:none;letter-spacing:1px;text-transform:uppercase;transition:all .3s}
-.btn-final:hover{background:#fff;color:#0a2540;border-color:#fff}
-
 @media(max-width:768px){
 .hero-split{grid-template-columns:1fr}
 .hero-right{display:none}
@@ -117,11 +139,11 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
 <!-- TICKER -->
 <div class="ticker">
     <div class="ticker-track">
-        <span>Công ty CP Sản Xuất & Thương Mại Group4</span><span>Chất lượng — Uy tín — Phát triển bền vững</span>
-        <span>Tuyển dụng nhân tài</span><span>ISO 9001:2015</span>
+        <span>Công ty CP Sản Xuất &amp; Thương Mại Group4</span><span>Chất lượng — Uy tín — Phát triển bền vững</span>
+        <span>Hệ thống nội bộ dành cho CBCNV</span><span>ISO 9001:2015</span>
         <span>An toàn lao động là trên hết</span><span>Đồng hành cùng phát triển</span>
-        <span>Công ty CP Sản Xuất & Thương Mại Group4</span><span>Chất lượng — Uy tín — Phát triển bền vững</span>
-        <span>Tuyển dụng nhân tài</span><span>ISO 9001:2015</span>
+        <span>Công ty CP Sản Xuất &amp; Thương Mại Group4</span><span>Chất lượng — Uy tín — Phát triển bền vững</span>
+        <span>Hệ thống nội bộ dành cho CBCNV</span><span>ISO 9001:2015</span>
         <span>An toàn lao động là trên hết</span><span>Đồng hành cùng phát triển</span>
     </div>
 </div>
@@ -131,12 +153,31 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
     <div class="hero-left">
         <div class="hero-left-bg"></div>
         <span class="hero-year">Thành lập 2010 &nbsp;/&nbsp; Group4 Corp.</span>
-        <h1 class="hero-title">Cổng Thông Tin<br><em>Nội Bộ.</em></h1>
-        <p class="hero-subtitle">Chào mừng bạn đến với hệ thống quản trị nhân sự của Công ty CP Sản Xuất & Thương Mại Group4 — nơi kết nối toàn bộ cán bộ công nhân viên trên một nền tảng duy nhất.</p>
-        <div class="hero-cta-row">
-            <span class="hero-scroll-hint">↓ Cuộn để tìm hiểu thêm về công ty</span>
-        </div>
+
+        <c:choose>
+            <c:when test="${sessionScope.currentUser != null}">
+                <%-- Đã đăng nhập: chào tên --%>
+                <div class="hero-user-badge">
+                    <div class="online-dot"></div>
+                    <span>Xin chào, <b>${sessionScope.currentUser.fullName}</b> &mdash; Bạn đang đăng nhập</span>
+                </div>
+                <h1 class="hero-title">Cổng Thông Tin<br><em>Nội Bộ.</em></h1>
+                <p class="hero-subtitle">Tra cứu lương, chấm công, nghỉ phép và toàn bộ hồ sơ nhân sự của bạn tại một nơi duy nhất.</p>
+            </c:when>
+            <c:otherwise>
+                <%-- Chưa đăng nhập --%>
+                <h1 class="hero-title">Cổng Thông Tin<br><em>Nội Bộ.</em></h1>
+                <p class="hero-subtitle">Chào mừng bạn đến với hệ thống quản trị nhân sự của Công ty CP Sản Xuất &amp; Thương Mại Group4 — nơi kết nối toàn bộ cán bộ công nhân viên trên một nền tảng duy nhất.</p>
+                <div class="hero-cta-row">
+                    <a href="${pageContext.request.contextPath}/login" class="btn-hero-main">
+                        <i class="fas fa-sign-in-alt"></i> Đăng nhập hệ thống
+                    </a>
+                    <span style="color:rgba(255,255,255,.3);font-size:.8rem;letter-spacing:1px">Tài khoản do Phòng HCNS cấp</span>
+                </div>
+            </c:otherwise>
+        </c:choose>
     </div>
+
     <div class="hero-right">
         <div class="hero-img-wrap">
             <div class="hero-img-label">Nhà máy — KCN Bắc Ninh</div>
@@ -192,7 +233,7 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
 <section class="features-band">
     <div class="container">
         <div class="features-header">
-            <h2>Dịch vụ<br>dành cho<br>nhân viên</h2>
+            <h2>Tính năng<br>dành cho<br>nhân viên</h2>
             <span class="feat-count">06</span>
         </div>
         <div class="feat-list">
@@ -209,7 +250,7 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
                 <span class="feat-num">02</span>
                 <div class="feat-icon-wrap"><i class="fas fa-fingerprint"></i></div>
                 <div class="feat-info">
-                    <h3>Chấm công & Ca kíp</h3>
+                    <h3>Chấm công &amp; Ca kíp</h3>
                     <p>Chấm công trực tuyến, theo dõi lịch phân ca 3 ca sản xuất, xem lịch sử chấm công chi tiết.</p>
                 </div>
                 <span class="feat-arrow">&rarr;</span>
@@ -218,7 +259,7 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
                 <span class="feat-num">03</span>
                 <div class="feat-icon-wrap"><i class="fas fa-money-check-alt"></i></div>
                 <div class="feat-info">
-                    <h3>Phiếu lương & Thu nhập</h3>
+                    <h3>Phiếu lương &amp; Thu nhập</h3>
                     <p>Tra cứu phiếu lương hàng tháng: lương cơ bản, phụ cấp, tăng ca, các khoản trích BHXH, thuế TNCN.</p>
                 </div>
                 <span class="feat-arrow">&rarr;</span>
@@ -245,7 +286,7 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
                 <span class="feat-num">06</span>
                 <div class="feat-icon-wrap"><i class="fas fa-shield-alt"></i></div>
                 <div class="feat-info">
-                    <h3>An toàn Lao động & Đào tạo</h3>
+                    <h3>An toàn Lao động &amp; Đào tạo</h3>
                     <p>Tra cứu chứng chỉ ATLĐ, lịch huấn luyện định kỳ, nội quy nhà máy và quy trình ứng phó sự cố.</p>
                 </div>
                 <span class="feat-arrow">&rarr;</span>
@@ -278,12 +319,12 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
     </div>
 </div>
 
-<!-- NEWS -->
+<!-- THÔNG BÁO NỘI BỘ -->
 <section class="news-section">
     <div class="container">
         <div class="news-header">
-            <h2>Thông báo<br>Công ty</h2>
-            <a href="#">Xem tất cả &rarr;</a>
+            <h2>Thông báo<br>Nội bộ</h2>
+            <a href="${pageContext.request.contextPath}/notifications">Xem tất cả &rarr;</a>
         </div>
         <div class="news-grid">
             <div class="news-card">
@@ -299,22 +340,12 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
                 <span class="news-arrow2">&rarr;</span>
             </div>
             <div class="news-card" style="background:#0a2540">
-                <span class="news-tag2" style="color:#63b3ed">🔥 Tuyển dụng nội bộ</span>
-                <span class="news-date2" style="color:rgba(255,255,255,.5)">Đang tuyển</span>
-                <h3 class="news-title2" style="color:#fff">Tuyển 05 Trưởng ca & 10 Kỹ thuật viên QC cho nhà máy mới tại KCN Bắc Ninh</h3>
+                <span class="news-tag2" style="color:#63b3ed">🔔 Thông báo hệ thống</span>
+                <span class="news-date2" style="color:rgba(255,255,255,.5)">27 tháng 05, 2026</span>
+                <h3 class="news-title2" style="color:#fff">Bảo trì hệ thống chấm công vào 22:00 thứ 7, 31/05/2026 — Dự kiến 2 giờ</h3>
                 <span class="news-arrow2" style="color:#63b3ed">&rarr;</span>
             </div>
         </div>
-    </div>
-</section>
-
-<!-- FINAL CTA -->
-<section class="final-cta">
-    <div class="final-cta-inner">
-        <h2>Bạn là<br><em>nhân viên</em><br>Group4?</h2>
-        <a href="${pageContext.request.contextPath}/login" class="btn-final">
-            <i class="fas fa-lock-open"></i> ĐĂNG NHẬP HỆ THỐNG NỘI BỘ
-        </a>
     </div>
 </section>
 

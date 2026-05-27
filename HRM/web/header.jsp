@@ -5,6 +5,13 @@
             <html lang="vi">
 
             <head>
+                <!-- ===== THEME: apply before first paint ===== -->
+                <script>
+                    (function(){
+                        var t = localStorage.getItem('hrm-theme') || 'light';
+                        document.documentElement.setAttribute('data-theme', t);
+                    })();
+                </script>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>
@@ -25,6 +32,41 @@
                     rel="stylesheet">
                 
                 <style>
+                    /* ===== GLOBAL THEME TOKENS ===== */
+                    :root {
+                        --th-bg:        #f0f4f8;
+                        --th-surface:   #ffffff;
+                        --th-surface2:  #f8fafc;
+                        --th-border:    #e2e8f0;
+                        --th-text:      #0f172a;
+                        --th-text2:     #2d3748;
+                        --th-muted:     #64748b;
+                        --th-input-bg:  #f8fafc;
+                        --th-input-border: #e2e8f0;
+                        --th-card-shadow: 0 2px 8px rgba(0,0,0,0.06);
+                        --th-hover-bg:  #f1f5f9;
+                        --th-navbar:    #0a2540;
+                    }
+                    [data-theme="dark"] {
+                        --th-bg:        #07080f;
+                        --th-surface:   rgba(255,255,255,0.05);
+                        --th-surface2:  rgba(255,255,255,0.03);
+                        --th-border:    rgba(255,255,255,0.09);
+                        --th-text:      #f0f4ff;
+                        --th-text2:     #cbd5e0;
+                        --th-muted:     #8892a4;
+                        --th-input-bg:  rgba(255,255,255,0.05);
+                        --th-input-border: rgba(255,255,255,0.12);
+                        --th-card-shadow: 0 2px 20px rgba(0,0,0,0.4);
+                        --th-hover-bg:  rgba(255,255,255,0.06);
+                        --th-navbar:    #050810;
+                    }
+                    /* Apply to body */
+                    body {
+                        background-color: var(--th-bg) !important;
+                        color: var(--th-text) !important;
+                        transition: background-color 0.3s ease, color 0.3s ease;
+                    }
                     /* ===== NAVBAR EDITORIAL ===== */
                     body {
                         font-family: 'Be Vietnam Pro', sans-serif;
@@ -102,6 +144,33 @@
                         gap: 12px;
                     }
 
+                    /* ── Theme Toggle Button ── */
+                    .theme-toggle-btn {
+                        width: 38px;
+                        height: 38px;
+                        border-radius: 10px;
+                        border: 1.5px solid rgba(255,255,255,0.18);
+                        background: rgba(255,255,255,0.07);
+                        color: rgba(255,255,255,0.75);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        cursor: pointer;
+                        font-size: 1rem;
+                        transition: all 0.25s;
+                        flex-shrink: 0;
+                    }
+                    .theme-toggle-btn:hover {
+                        background: rgba(255,255,255,0.15);
+                        color: #fff;
+                        border-color: rgba(255,255,255,0.35);
+                        transform: rotate(20deg);
+                    }
+                    .theme-toggle-btn .icon-dark { display: none; }
+                    .theme-toggle-btn .icon-light { display: inline; }
+                    [data-theme="dark"] .theme-toggle-btn .icon-dark  { display: inline; }
+                    [data-theme="dark"] .theme-toggle-btn .icon-light { display: none; }
+
                     .btn-nav-login {
                         color: rgba(255, 255, 255, .8);
                         font-size: .85rem;
@@ -118,21 +187,7 @@
                         border-color: rgba(255, 255, 255, .4);
                     }
 
-                    .btn-nav-register {
-                        background: #2b6cb0;
-                        color: #fff;
-                        font-size: .85rem;
-                        font-weight: 700;
-                        text-decoration: none;
-                        padding: 8px 22px;
-                        transition: all .3s;
-                        border: none;
-                    }
 
-                    .btn-nav-register:hover {
-                        background: #1e4e8c;
-                        color: #fff;
-                    }
 
                     .user-avatar {
                         width: 34px;
@@ -482,6 +537,11 @@
 
 
                         <div class="nav-right">
+                            <!-- Theme Toggle -->
+                            <button class="theme-toggle-btn" id="themeToggleBtn" title="Chuyển giao diện" aria-label="Toggle theme">
+                                <i class="fas fa-sun icon-light"></i>
+                                <i class="fas fa-moon icon-dark"></i>
+                            </button>
                             <c:if test="${sessionScope.currentUser != null}">
                                 <div class="hrm-notif-wrap me-2" id="hrmNotifWrap">
 
@@ -737,6 +797,20 @@
 
                                         })();
                                     </script>
+
+                                    <!-- Theme Toggle Script -->
+                                    <script>
+                                    (function(){
+                                        var btn = document.getElementById('themeToggleBtn');
+                                        if (!btn) return;
+                                        btn.addEventListener('click', function(){
+                                            var current = document.documentElement.getAttribute('data-theme') || 'light';
+                                            var next = current === 'dark' ? 'light' : 'dark';
+                                            document.documentElement.setAttribute('data-theme', next);
+                                            localStorage.setItem('hrm-theme', next);
+                                        });
+                                    })();
+                                    </script>
                             </c:if>
 
                             <c:choose>
@@ -751,7 +825,6 @@
                                 <c:otherwise>
                                     <a href="${pageContext.request.contextPath}/login" class="btn-nav-login">Đăng
                                         nhập</a>
-                                    <a href="${pageContext.request.contextPath}/register" class="btn-nav-register">Đăng ký</a>
                                 </c:otherwise>
                             </c:choose>
                         </div>

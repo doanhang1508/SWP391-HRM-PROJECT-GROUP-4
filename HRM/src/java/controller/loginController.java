@@ -5,7 +5,6 @@
 package controller;
 
 import dao.UserDAO;
-import dao.notificationDAO;
 import java.io.IOException;
 import java.io.PrintWriter;
 import jakarta.servlet.ServletException;
@@ -13,10 +12,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import model.User;
-import model.notification;
 import util.CookieUtil;
 import util.PasswordUtil;
 
@@ -52,7 +48,6 @@ public class loginController extends HttpServlet {
         }
     }
     private final UserDAO userDAO = new UserDAO();
-    private final notificationDAO notificationDAO = new notificationDAO();
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
     /**
@@ -66,8 +61,6 @@ public class loginController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Set URL cho nút Google OAuth
-        request.setAttribute("googleLoginUrl", request.getContextPath() + "/auth/google");
 
         String userEmailCookie = CookieUtil.getCookieValue(request, CookieUtil.REMEMBER_EMAIL_COOKIE);
         if (userEmailCookie != null && !userEmailCookie.isEmpty()) {
@@ -78,12 +71,6 @@ public class loginController extends HttpServlet {
         String error = request.getParameter("error");
         if ("pending".equals(error)) {
             request.setAttribute("errorMsg", "Tài khoản của bạn đang chờ phê duyệt. Vui lòng liên hệ bộ phận HCNS.");
-        } else if ("invalid_state".equals(error)) {
-            request.setAttribute("errorMsg", "Phiên đăng nhập không hợp lệ, vui lòng thử lại.");
-        } else if ("google_denied".equals(error)) {
-            request.setAttribute("errorMsg", "Bạn đã từ chối cấp quyền truy cập Google.");
-        } else if ("token_error".equals(error) || "userinfo_error".equals(error) || "db_error".equals(error)) {
-            request.setAttribute("errorMsg", "Có lỗi xảy ra khi kết nối với Google. Vui lòng thử lại.");
         }
 
         request.getRequestDispatcher("login.jsp").forward(request, response);
@@ -142,8 +129,6 @@ public class loginController extends HttpServlet {
             // Nếu KHÔNG tích: Gọi hàm deleteCookie để xóa nó đi
             util.CookieUtil.deleteCookie(response, util.CookieUtil.REMEMBER_EMAIL_COOKIE, isSecure);
         }
-        // --- Gửi thông báo đăng nhập thành công ---
-        sendLoginNotification(user, request);
 
         // --- Flash message hiện toast Góc dưới màn hình ---
         String displayName = (user.getFullName() != null && !user.getFullName().isBlank())
@@ -172,77 +157,6 @@ public class loginController extends HttpServlet {
         return "Short description";
     }// </editor-fold>
 
-    private void sendLoginNotification(User user, HttpServletRequest req) {
-        try {
-            // Thông tin thiết bị / trình duyệt (lấy từ User-Agent)
-            String userAgent = req.getHeader("User-Agent");
-            String device = parseDevice(userAgent);
 
-            // Lấy IP người dùng (hỗ trợ cả proxy)
-            String ip = req.getHeader("X-Forwarded-For");
-            if (ip == null || ip.isBlank()) {
-                ip = req.getRemoteAddr();
-            }
-
-            // Thời điểm đăng nhập (định dạng thân thiện)
-            String timeStr = LocalDateTime.now()
-                    .format(DateTimeFormatter.ofPattern("HH:mm - dd/MM/yyyy"));
-
-            notification notif = new notification();
-            notif.setUserId(user.getUserId());
-            notif.setType("system");
-            notif.setTitle("Đăng nhập thành công");
-            notif.setBody(String.format(
-                    "Bạn vừa đăng nhập lúc %s từ %s (IP: %s). Nếu không phải bạn, hãy đổi mật khẩu ngay.",
-                    timeStr, device, ip));
-            notif.setLink("/profile/security");
-
-            notificationDAO.create(notif);
-
-        } catch (Exception e) {
-            // Không để lỗi thông báo ảnh hưởng đến luồng đăng nhập
-            e.printStackTrace();
-        }
-    }
-
-    // ── Parse tên thiết bị từ User-Agent ───────────────────────
-    private String parseDevice(String ua) {
-        if (ua == null) {
-            return "Thiết bị không xác định";
-        }
-        ua = ua.toLowerCase();
-
-        String os;
-        if (ua.contains("windows")) {
-            os = "Windows";
-        } else if (ua.contains("macintosh") || ua.contains("mac os")) {
-            os = "macOS";
-        } else if (ua.contains("android")) {
-            os = "Android";
-        } else if (ua.contains("iphone") || ua.contains("ipad")) {
-            os = "iOS";
-        } else if (ua.contains("linux")) {
-            os = "Linux";
-        } else {
-            os = "Hệ điều hành khác";
-        }
-
-        String browser;
-        if (ua.contains("edg")) {
-            browser = "Microsoft Edge";
-        } else if (ua.contains("opr") || ua.contains("opera")) {
-            browser = "Opera";
-        } else if (ua.contains("chrome")) {
-            browser = "Chrome";
-        } else if (ua.contains("firefox")) {
-            browser = "Firefox";
-        } else if (ua.contains("safari")) {
-            browser = "Safari";
-        } else {
-            browser = "Trình duyệt khác";
-        }
-
-        return browser + " / " + os;
-    }
 
 }

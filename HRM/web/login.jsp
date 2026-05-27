@@ -295,49 +295,6 @@
                 background: #1a365d;
             }
 
-            /* Divider */
-            .divider {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                margin: 24px 0;
-                color: #c4cdd8;
-                font-size: .8rem;
-            }
-
-            .divider::before,
-            .divider::after {
-                content: '';
-                flex: 1;
-                height: 1px;
-                background: #e2e8f0;
-            }
-
-            /* Google */
-            .btn-google {
-                width: 100%;
-                background: #fff;
-                color: #4a5568;
-                border: 1px solid #e2e8f0;
-                padding: 13px;
-                font-family: 'Be Vietnam Pro', sans-serif;
-                font-size: .88rem;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all .2s;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 10px;
-                text-decoration: none;
-                border-radius: 0;
-            }
-
-            .btn-google:hover {
-                background: #f7f7f7;
-                border-color: #c4cdd8;
-                color: #1a202c;
-            }
 
             /* Back link */
             .back-link {
@@ -425,8 +382,7 @@
 
                 <h2 class="form-heading">Đăng nhập</h2>
                 <p class="form-subheading">
-                    Chưa có tài khoản?
-                    <a href="${pageContext.request.contextPath}/register">Liên hệ Phòng HCNS</a>
+                    Tài khoản được cấp bởi Phòng HCNS. Vui lòng liên hệ quản trị viên nếu cần hỗ trợ.
                 </p>
 
                 <!-- Error message -->
@@ -476,14 +432,6 @@
                         <i class="fas fa-sign-in-alt"></i> Truy cập Hệ thống
                     </button>
                 </form>
-
-                <div class="divider">hoặc</div>
-
-                <a href="${not empty googleLoginUrl ? googleLoginUrl : '#'}" class="btn-google">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"
-                         width="18" alt="Google">
-                    Đăng nhập bằng Google (SSO)
-                </a>
 
                 <a href="${pageContext.request.contextPath}/home" class="back-link">
                     <i class="fas fa-arrow-left"></i> Quay về Cổng thông tin

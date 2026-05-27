@@ -5,20 +5,104 @@
     /* ─── SIDEBAR BASE ─────────────────────────────────── */
     .admin-sidebar {
         width: 260px;
-        background: #ffffff;
-        border-right: 1px solid #e2e8f0;
-        padding: 20px 0;
+        background: #0f172a;
+        border-right: 1px solid #1e293b;
+        padding: 0;
         position: sticky;
         top: 64px;
         height: calc(100vh - 64px);
         overflow-y: auto;
-        box-shadow: 4px 0 20px rgba(0,0,0,0.02);
         flex-shrink: 0;
         transition: transform 0.3s cubic-bezier(.22,1,.36,1);
         z-index: 1040;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Scrollbar dark style */
+    .admin-sidebar::-webkit-scrollbar { width: 4px; }
+    .admin-sidebar::-webkit-scrollbar-track { background: #0f172a; }
+    .admin-sidebar::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+
+    /* ─── SIDEBAR HEADER / LOGO ─────────────────────────── */
+    .sidebar-brand {
+        padding: 20px 24px;
+        border-bottom: 1px solid #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .sidebar-brand-icon {
+        width: 36px;
+        height: 36px;
+        background: #0d9488;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        color: #fff;
+        flex-shrink: 0;
+    }
+
+    .sidebar-brand-text {
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #fff;
+        letter-spacing: -0.3px;
+    }
+
+    .sidebar-brand-sub {
+        font-size: 0.7rem;
+        color: #64748b;
+        font-weight: 500;
+        margin-top: 1px;
+    }
+
+    /* ─── USER INFO ─────────────────────────────────────── */
+    .sidebar-user {
+        padding: 16px 24px;
+        border-bottom: 1px solid #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .sidebar-user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #0d9488 0%, #1e40af 100%);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .sidebar-user-name {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #f1f5f9;
+        line-height: 1.2;
+    }
+
+    .sidebar-user-role {
+        font-size: 0.72rem;
+        color: #64748b;
+        font-weight: 500;
+        margin-top: 2px;
     }
 
     /* ─── SIDEBAR MENU ──────────────────────────────────── */
+    .sidebar-nav {
+        flex: 1;
+        padding: 16px 12px;
+    }
+
     .sidebar-menu {
         list-style: none;
         padding: 0;
@@ -26,52 +110,96 @@
     }
 
     .sidebar-menu-category {
-        padding: 10px 25px;
-        font-size: 0.75rem;
+        padding: 12px 12px 6px;
+        font-size: 0.68rem;
         font-weight: 700;
-        color: #8f9fbc;
+        color: #475569;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-top: 15px;
+        letter-spacing: 1.2px;
+        margin-top: 4px;
     }
 
-    .sidebar-item { margin-bottom: 5px; }
+    .sidebar-item { margin-bottom: 2px; }
 
     .sidebar-link {
         display: flex;
         align-items: center;
-        padding: 12px 25px;
-        color: #4a5568;
+        padding: 10px 12px;
+        color: #94a3b8;
         text-decoration: none;
         font-weight: 500;
-        font-size: 0.95rem;
-        transition: all 0.3s ease;
-        border-left: 3px solid transparent;
+        font-size: 0.88rem;
+        transition: all 0.2s ease;
+        border-radius: 8px;
+        gap: 10px;
     }
 
     .sidebar-link i {
-        width: 24px;
-        font-size: 1.1rem;
-        margin-right: 10px;
-        color: #8f9fbc;
-        transition: all 0.3s ease;
+        width: 20px;
+        font-size: 0.95rem;
+        color: #475569;
+        transition: color 0.2s ease;
+        text-align: center;
+        flex-shrink: 0;
     }
 
-    .sidebar-link:hover,
+    .sidebar-link:hover {
+        background: rgba(255,255,255,0.06);
+        color: #e2e8f0;
+    }
+
+    .sidebar-link:hover i {
+        color: #94a3b8;
+    }
+
     .sidebar-link.active {
-        background: rgba(67,97,238,0.05);
-        color: #4361ee;
-        border-left-color: #4361ee;
+        background: #0d9488;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(13,148,136,0.35);
     }
 
-    .sidebar-link:hover i,
     .sidebar-link.active i {
-        color: #4361ee;
+        color: #fff;
+    }
+
+    /* ─── SIDEBAR FOOTER ────────────────────────────────── */
+    .sidebar-footer {
+        padding: 12px;
+        border-top: 1px solid #1e293b;
+    }
+
+    .sidebar-logout {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        color: #f87171;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.88rem;
+        border-radius: 8px;
+        gap: 10px;
+        transition: all 0.2s ease;
+    }
+
+    .sidebar-logout i {
+        width: 20px;
+        text-align: center;
+        color: #f87171;
+        flex-shrink: 0;
+    }
+
+    .sidebar-logout:hover {
+        background: rgba(248,113,113,0.12);
+        color: #fca5a5;
+    }
+
+    .sidebar-logout:hover i {
+        color: #fca5a5;
     }
 
     /* ─── HAMBURGER BUTTON (mobile only) ─────────────────── */
     .sidebar-toggle-btn {
-        display: none;               /* ẩn trên desktop */
+        display: none;
         position: fixed;
         top: 72px;
         left: 16px;
@@ -79,20 +207,17 @@
         width: 42px;
         height: 42px;
         border-radius: 10px;
-        background: #4361ee;
+        background: #0d9488;
         color: #fff;
         border: none;
         cursor: pointer;
         align-items: center;
         justify-content: center;
         font-size: 18px;
-        box-shadow: 0 4px 14px rgba(67,97,238,0.4);
+        box-shadow: 0 4px 14px rgba(13,148,136,0.4);
         transition: background 0.2s, transform 0.2s;
     }
-    .sidebar-toggle-btn:hover {
-        background: #3451d1;
-        transform: scale(1.05);
-    }
+    .sidebar-toggle-btn:hover { background: #0f766e; transform: scale(1.05); }
 
     /* ─── SIDEBAR CLOSE BUTTON (inside sidebar, mobile) ──── */
     .sidebar-close-btn {
@@ -100,22 +225,22 @@
         position: absolute;
         top: 12px;
         right: 12px;
-        background: none;
+        background: rgba(255,255,255,0.1);
         border: none;
-        font-size: 20px;
-        color: #8f9fbc;
+        font-size: 16px;
+        color: #94a3b8;
         cursor: pointer;
-        padding: 4px 8px;
+        padding: 6px 8px;
         border-radius: 6px;
     }
-    .sidebar-close-btn:hover { background: #f1f5f9; color: #4a5568; }
+    .sidebar-close-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
 
     /* ─── OVERLAY BACKDROP (mobile only) ─────────────────── */
     .sidebar-overlay {
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(0,0,0,0.45);
+        background: rgba(0,0,0,0.6);
         z-index: 1039;
         backdrop-filter: blur(2px);
         opacity: 0;
@@ -125,30 +250,21 @@
 
     /* ─── RESPONSIVE ──────────────────────────────────────── */
     @media (max-width: 768px) {
-        /* Sidebar trở thành drawer cố định, ẩn sang trái */
         .admin-sidebar {
             position: fixed;
             top: 0;
             left: 0;
             height: 100vh;
             transform: translateX(-100%);
-            padding-top: 56px;   /* chừa chỗ cho nút đóng */
-            box-shadow: 6px 0 30px rgba(0,0,0,0.15);
+            padding-top: 56px;
+            box-shadow: 6px 0 30px rgba(0,0,0,0.4);
         }
 
-        /* Khi sidebar mở */
-        .admin-sidebar.sidebar-open {
-            transform: translateX(0);
-        }
-
-        /* Hiện nút hamburger */
+        .admin-sidebar.sidebar-open { transform: translateX(0); }
         .sidebar-toggle-btn  { display: flex; }
-        /* Hiện nút đóng trong sidebar */
         .sidebar-close-btn   { display: block; }
-        /* Hiện overlay */
         .sidebar-overlay     { display: block; }
 
-        /* Main content chiếm toàn bộ chiều rộng */
         .main-content {
             width: 100% !important;
             padding: 20px 16px !important;
@@ -173,11 +289,20 @@
         <i class="fas fa-times"></i>
     </button>
 
-    <div class="text-center mb-4 mt-2">
-        <div class="avatar-sm mx-auto mb-2" style="
-            width:60px; height:60px; font-size:1.5rem; border-radius:10px;
-            background: linear-gradient(135deg,#e0c3fc 0%,#8ec5fc 100%);
-            color:#fff; display:flex; align-items:center; justify-content:center; font-weight:bold;">
+    <%-- Brand / Logo --%>
+    <div class="sidebar-brand">
+        <div class="sidebar-brand-icon">
+            <i class="fas fa-server"></i>
+        </div>
+        <div>
+            <div class="sidebar-brand-text">HRM System</div>
+            <div class="sidebar-brand-sub">Quản trị hệ thống</div>
+        </div>
+    </div>
+
+    <%-- User Info --%>
+    <div class="sidebar-user">
+        <div class="sidebar-user-avatar">
             <c:choose>
                 <c:when test="${not empty sessionScope.currentUser}">
                     ${sessionScope.currentUser.fullName.substring(0,1)}
@@ -185,86 +310,109 @@
                 <c:otherwise>A</c:otherwise>
             </c:choose>
         </div>
-        <h6 class="mb-0 fw-bold" style="color:#2b2b2b;">
-            <c:choose>
-                <c:when test="${not empty sessionScope.currentUser}">
-                    ${sessionScope.currentUser.fullName}
-                </c:when>
-                <c:otherwise>Administrator</c:otherwise>
-            </c:choose>
-        </h6>
-        <span class="small text-muted">Administrator</span>
+        <div>
+            <div class="sidebar-user-name">
+                <c:choose>
+                    <c:when test="${not empty sessionScope.currentUser}">
+                        ${sessionScope.currentUser.fullName}
+                    </c:when>
+                    <c:otherwise>Quản trị viên</c:otherwise>
+                </c:choose>
+            </div>
+            <div class="sidebar-user-role">Quản trị viên</div>
+        </div>
     </div>
 
-    <ul class="sidebar-menu">
-        
+    <%-- Navigation --%>
+    <nav class="sidebar-nav">
+        <ul class="sidebar-menu">
 
-        <li class="sidebar-menu-category">ADMINISTRATION</li>
+            <li class="sidebar-menu-category">Tổng quan</li>
 
-<li class="sidebar-item">
-    <a href="${pageContext.request.contextPath}/admin/users"
-       class="sidebar-link ${param.activeMenu eq 'users' ? 'active' : ''}">
-        <i class="fas fa-users"></i> Quản lý Người dùng
-    </a>
-</li>
-        <li class="sidebar-item">
-            <a href="${pageContext.request.contextPath}/role?action=list"
-               class="sidebar-link ${param.activeMenu eq 'roles' ? 'active' : ''}">
-                <i class="fas fa-user-shield"></i> Quản lý Vai trò
-            </a>
-        </li>
-        <li class="sidebar-item">
-            <a href="${pageContext.request.contextPath}/editRolePermission"
-               class="sidebar-link ${param.activeMenu eq 'permissions' ? 'active' : ''}">
-                <i class="fas fa-key"></i> Phân quyền Hệ thống
-            </a>
-        </li>
+            <li class="sidebar-item">
+                <a href="${pageContext.request.contextPath}/admin/dashboard"
+                   class="sidebar-link ${param.activeMenu eq 'dashboard' ? 'active' : ''}">
+                    <i class="fas fa-chart-line"></i> Bảng điều khiển
+                </a>
+            </li>
 
-        <li class="sidebar-menu-category">REPORTS</li>
-        <li class="sidebar-item">
-            <a href="#" class="sidebar-link">
-                <i class="fas fa-chart-pie"></i> Thống kê
-            </a>
-        </li>
-        <li class="sidebar-item">
-            <a href="#" class="sidebar-link">
-                <i class="fas fa-file-alt"></i> Nhật ký hoạt động
-            </a>
-        </li>
+            <li class="sidebar-menu-category">Quản trị</li>
 
-        <li class="sidebar-menu-category">TÀI KHOẢN</li>
-        <li class="sidebar-item">
-            <a href="${pageContext.request.contextPath}/profile"
-               class="sidebar-link ${param.activeMenu eq 'profile' ? 'active' : ''}">
-                <i class="fas fa-id-badge"></i> Hồ sơ cá nhân
-            </a>
-        </li>
-        <li class="sidebar-item">
-            <a href="${pageContext.request.contextPath}/work-history"
-               class="sidebar-link ${param.activeMenu eq 'work-history' ? 'active' : ''}">
-                <i class="fas fa-briefcase"></i> Lịch sử công tác
-            </a>
-        </li>
-        <li class="sidebar-item">
-            <a href="${pageContext.request.contextPath}/settings"
-               class="sidebar-link ${param.activeMenu eq 'settings' ? 'active' : ''}">
-                <i class="fas fa-cog"></i> Cài đặt
-            </a>
-        </li>
-        <li class="sidebar-item">
-            <a href="${pageContext.request.contextPath}/logout"
-               class="sidebar-link" style="color:#e53e3e;"
-               onclick="return confirm('Bạn có chắc chắn muốn đăng xuất không?');">
-                <i class="fas fa-sign-out-alt" style="color:#e53e3e;"></i> Đăng xuất
-            </a>
-        </li>
-    </ul>
+            <li class="sidebar-item">
+                <a href="${pageContext.request.contextPath}/admin/users"
+                   class="sidebar-link ${param.activeMenu eq 'users' ? 'active' : ''}">
+                    <i class="fas fa-users"></i> Quản lý Người dùng
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="${pageContext.request.contextPath}/admin/departments"
+                   class="sidebar-link ${param.activeMenu eq 'departments' ? 'active' : ''}">
+                    <i class="fas fa-building"></i> Phòng ban
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="${pageContext.request.contextPath}/admin/pending-requests"
+                   class="sidebar-link ${param.activeMenu eq 'pending-requests' ? 'active' : ''}">
+                    <i class="fas fa-hourglass-half"></i> Đơn chờ xử lý
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="${pageContext.request.contextPath}/role?action=list"
+                   class="sidebar-link ${param.activeMenu eq 'roles' ? 'active' : ''}">
+                    <i class="fas fa-user-shield"></i> Quản lý Vai trò
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="${pageContext.request.contextPath}/editRolePermission"
+                   class="sidebar-link ${param.activeMenu eq 'permissions' ? 'active' : ''}">
+                    <i class="fas fa-key"></i> Phân quyền Hệ thống
+                </a>
+            </li>
+
+            <li class="sidebar-menu-category">Báo cáo</li>
+
+            <li class="sidebar-item">
+                <a href="#" class="sidebar-link">
+                    <i class="fas fa-chart-pie"></i> Thống kê
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="#" class="sidebar-link">
+                    <i class="fas fa-file-alt"></i> Nhật ký hoạt động
+                </a>
+            </li>
+
+            <li class="sidebar-menu-category">Tài khoản</li>
+
+            <li class="sidebar-item">
+                <a href="${pageContext.request.contextPath}/profile"
+                   class="sidebar-link ${param.activeMenu eq 'profile' ? 'active' : ''}">
+                    <i class="fas fa-id-badge"></i> Hồ sơ cá nhân
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="${pageContext.request.contextPath}/settings"
+                   class="sidebar-link ${param.activeMenu eq 'settings' ? 'active' : ''}">
+                    <i class="fas fa-cog"></i> Cài đặt
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <%-- Footer: Đăng xuất --%>
+    <div class="sidebar-footer">
+        <a href="${pageContext.request.contextPath}/logout"
+           class="sidebar-logout"
+           onclick="return confirm('Bạn có chắc chắn muốn đăng xuất không?');">
+            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+        </a>
+    </div>
+
 </aside>
 
 <script>
     function toggleSidebar() {
         const sidebar  = document.getElementById('adminSidebar');
-        const overlay  = document.getElementById('sidebarOverlay');
         const isOpen   = sidebar.classList.contains('sidebar-open');
         isOpen ? closeSidebar() : openSidebar();
     }
@@ -273,21 +421,18 @@
         document.getElementById('adminSidebar').classList.add('sidebar-open');
         const ov = document.getElementById('sidebarOverlay');
         ov.style.display = 'block';
-        // Chờ 1 frame để transition hoạt động
         requestAnimationFrame(() => ov.classList.add('active'));
-        document.body.style.overflow = 'hidden'; // Chặn scroll nền
+        document.body.style.overflow = 'hidden';
     }
 
     function closeSidebar() {
         document.getElementById('adminSidebar').classList.remove('sidebar-open');
         const ov = document.getElementById('sidebarOverlay');
         ov.classList.remove('active');
-        // Ẩn overlay sau animation
         setTimeout(() => { ov.style.display = 'none'; }, 310);
         document.body.style.overflow = '';
     }
 
-    // Đóng sidebar khi ấn phím Escape
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') closeSidebar();
     });

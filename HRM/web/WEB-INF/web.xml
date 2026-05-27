@@ -5,10 +5,6 @@
          xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
                              https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd">
  
-    <!-- GoogleOAuthController dùng @WebServlet annotation:
-         urlPatterns = {"/auth/google", "/auth/google/callback"}
-         → KHÔNG khai báo ở đây để tránh conflict -->
- 
     <!-- ══════════════════════════════════════════════════════
          SERVLET DECLARATIONS
     ══════════════════════════════════════════════════════ -->
@@ -53,6 +49,21 @@
         <servlet-class>controller.admin.EditRolePermissionController</servlet-class>
     </servlet>
  
+    <servlet>
+        <servlet-name>adminDashboardController</servlet-name>
+        <servlet-class>controller.admin.adminDashboardController</servlet-class>
+    </servlet>
+ 
+    <servlet>
+        <servlet-name>DepartmentsController</servlet-name>
+        <servlet-class>controller.admin.DepartmentsController</servlet-class>
+    </servlet>
+ 
+    <servlet>
+        <servlet-name>PendingRequestsController</servlet-name>
+        <servlet-class>controller.admin.PendingRequestsController</servlet-class>
+    </servlet>
+ 
     <!-- ══════════════════════════════════════════════════════
          URL MAPPINGS
     ══════════════════════════════════════════════════════ -->
@@ -95,6 +106,21 @@
     <servlet-mapping>
         <servlet-name>EditRolePermissionController</servlet-name>
         <url-pattern>/editRolePermission</url-pattern>
+    </servlet-mapping>
+ 
+    <servlet-mapping>
+        <servlet-name>adminDashboardController</servlet-name>
+        <url-pattern>/admin/dashboard</url-pattern>
+    </servlet-mapping>
+ 
+    <servlet-mapping>
+        <servlet-name>DepartmentsController</servlet-name>
+        <url-pattern>/admin/departments</url-pattern>
+    </servlet-mapping>
+ 
+    <servlet-mapping>
+        <servlet-name>PendingRequestsController</servlet-name>
+        <url-pattern>/admin/pending-requests</url-pattern>
     </servlet-mapping>
  
 </web-app>

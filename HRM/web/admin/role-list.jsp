@@ -200,7 +200,7 @@
             <div>
                 <h1 class="page-title">Quản Lý Vai Trò</h1>
                 <p class="breadcrumb">
-                    <a href="${pageContext.request.contextPath}/admin/dashboard">Dashboard</a> &nbsp;>&nbsp; Quản lý vai trò
+                    <a href="${pageContext.request.contextPath}/admin/dashboard">Bảng điều khiển</a> &nbsp;>&nbsp; Quản lý vai trò
                 </p>
             </div>
             <div>
@@ -269,11 +269,11 @@
                                 <%
                                     if (r.getStatus() == 1) {
                                 %>
-                                <span class="badge-soft badge-soft-success"><i class="fas fa-circle me-1" style="font-size: 6px; vertical-align: middle;"></i> Active</span>
+                                <span class="badge-soft badge-soft-success"><i class="fas fa-circle me-1" style="font-size: 6px; vertical-align: middle;"></i> Hoạt động</span>
                                 <%
                                     } else {
                                 %>
-                                <span class="badge-soft badge-soft-danger"><i class="fas fa-circle me-1" style="font-size: 6px; vertical-align: middle;"></i> Deactive</span>
+                                <span class="badge-soft badge-soft-danger"><i class="fas fa-circle me-1" style="font-size: 6px; vertical-align: middle;"></i> Vô hiệu</span>
                                 <%
                                     }
                                 %>
