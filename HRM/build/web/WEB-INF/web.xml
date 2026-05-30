@@ -1,127 +1,113 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app version="6.0"
-         xmlns="https://jakarta.ee/xml/ns/jakartaee"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
-                             https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd">
- 
+<web-app version="6.0" xmlns="https://jakarta.ee/xml/ns/jakartaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee                              https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd">
     <!-- ══════════════════════════════════════════════════════
          SERVLET DECLARATIONS
     ══════════════════════════════════════════════════════ -->
- 
     <servlet>
         <servlet-name>homeController</servlet-name>
         <servlet-class>controller.homeController</servlet-class>
     </servlet>
- 
     <servlet>
         <servlet-name>loginController</servlet-name>
         <servlet-class>controller.loginController</servlet-class>
     </servlet>
- 
     <servlet>
         <servlet-name>logoutController</servlet-name>
         <servlet-class>controller.logoutController</servlet-class>
     </servlet>
- 
     <servlet>
         <servlet-name>changePasswordController</servlet-name>
         <servlet-class>controller.changePasswordController</servlet-class>
     </servlet>
- 
     <servlet>
         <servlet-name>notificationController</servlet-name>
         <servlet-class>controller.notificationController</servlet-class>
     </servlet>
- 
     <servlet>
         <servlet-name>ForgotPasswordController</servlet-name>
         <servlet-class>controller.ForgotPasswordController</servlet-class>
     </servlet>
- 
     <servlet>
         <servlet-name>ActiveDeactiveRoleController</servlet-name>
         <servlet-class>controller.admin.ActiveDeactiveRoleController</servlet-class>
     </servlet>
- 
     <servlet>
         <servlet-name>EditRolePermissionController</servlet-name>
         <servlet-class>controller.admin.EditRolePermissionController</servlet-class>
     </servlet>
- 
     <servlet>
         <servlet-name>adminDashboardController</servlet-name>
         <servlet-class>controller.admin.adminDashboardController</servlet-class>
     </servlet>
- 
     <servlet>
         <servlet-name>DepartmentsController</servlet-name>
-        <servlet-class>controller.admin.DepartmentsController</servlet-class>
+        <servlet-class>controller.admin.DepartmentController</servlet-class>
     </servlet>
- 
     <servlet>
         <servlet-name>PendingRequestsController</servlet-name>
         <servlet-class>controller.admin.PendingRequestsController</servlet-class>
     </servlet>
- 
     <!-- ══════════════════════════════════════════════════════
          URL MAPPINGS
     ══════════════════════════════════════════════════════ -->
- 
+    <servlet>
+        <servlet-name>PositionController</servlet-name>
+        <servlet-class>controller.admin.PositionController</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>workLocationController</servlet-name>
+        <servlet-class>controller.admin.workLocationController</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>homeController</servlet-name>
         <url-pattern>/home</url-pattern>
     </servlet-mapping>
- 
     <servlet-mapping>
         <servlet-name>loginController</servlet-name>
         <url-pattern>/login</url-pattern>
     </servlet-mapping>
- 
     <servlet-mapping>
         <servlet-name>logoutController</servlet-name>
         <url-pattern>/logout</url-pattern>
     </servlet-mapping>
- 
     <servlet-mapping>
         <servlet-name>changePasswordController</servlet-name>
         <url-pattern>/changePassword</url-pattern>
     </servlet-mapping>
- 
     <servlet-mapping>
         <servlet-name>notificationController</servlet-name>
         <url-pattern>/notifications/*</url-pattern>
     </servlet-mapping>
- 
     <servlet-mapping>
         <servlet-name>ForgotPasswordController</servlet-name>
         <url-pattern>/forgot-password</url-pattern>
     </servlet-mapping>
- 
     <servlet-mapping>
         <servlet-name>ActiveDeactiveRoleController</servlet-name>
         <url-pattern>/activeDeactiveRole</url-pattern>
     </servlet-mapping>
- 
     <servlet-mapping>
         <servlet-name>EditRolePermissionController</servlet-name>
         <url-pattern>/editRolePermission</url-pattern>
     </servlet-mapping>
- 
     <servlet-mapping>
         <servlet-name>adminDashboardController</servlet-name>
         <url-pattern>/admin/dashboard</url-pattern>
     </servlet-mapping>
- 
     <servlet-mapping>
         <servlet-name>DepartmentsController</servlet-name>
-        <url-pattern>/admin/departments</url-pattern>
+        <url-pattern>/admin/department</url-pattern>
     </servlet-mapping>
- 
     <servlet-mapping>
         <servlet-name>PendingRequestsController</servlet-name>
         <url-pattern>/admin/pending-requests</url-pattern>
     </servlet-mapping>
- 
+    <servlet-mapping>
+        <servlet-name>PositionController</servlet-name>
+        <url-pattern>/admin/position</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>workLocationController</servlet-name>
+        <url-pattern>/admin/work-location</url-pattern>
+    </servlet-mapping>
 </web-app>
- 

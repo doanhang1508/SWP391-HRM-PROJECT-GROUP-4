@@ -399,44 +399,97 @@ INSERT INTO reward_disciplines (id, name, type, description) VALUES
 
 -- ── 13. Roles & Permissions ──
 INSERT INTO roles (role_id, role_name, description) VALUES
-(1, 'Admin', 'Quản trị hệ thống'),
+(1, 'Admin', 'Quản trị hệ thống toàn quyền'),
 (2, 'HR Manager', 'Trưởng phòng Nhân sự'),
-(3, 'Factory Manager', 'Quản đốc xưởng');
+(3, 'Factory Manager', 'Quản đốc xưởng sản xuất');
 
-INSERT INTO permissions (permission_id, permission_name, module) VALUES
-(1, 'USER_MANAGE', 'USER'),
-(2, 'ATTENDANCE_MANAGE', 'ATTENDANCE'),
-(3, 'PAYROLL_MANAGE', 'PAYROLL');
+INSERT INTO permissions (permission_id, permission_name, description, module) VALUES
+-- MODULE: USER - Quản lý người dùng
+(1,  'USER_MANAGE',               'Thêm, sửa, xóa người dùng',              'USER'),
+(2,  'USER_VIEW',                 'Xem danh sách người dùng',                'USER'),
 
+-- MODULE: ROLE - Quản lý vai trò
+(3,  'ROLE_VIEW',                 'Xem danh sách vai trò',                   'ROLE'),
+(4,  'ROLE_UPDATE_INFORMATION',   'Cập nhật thông tin vai trò',              'ROLE'),
+(5,  'ROLE_PERMISSION_VIEW',      'Xem phân quyền của vai trò',              'ROLE'),
+(6,  'ROLE_PERMISSION_MANAGE',    'Chỉnh sửa phân quyền vai trò',            'ROLE'),
+
+-- MODULE: DEPARTMENT - Phòng ban
+(7,  'DEPARTMENT_VIEW',           'Xem danh sách phòng ban',                 'DEPARTMENT'),
+(8,  'DEPARTMENT_MANAGE',         'Thêm, sửa, xóa phòng ban',               'DEPARTMENT'),
+
+-- MODULE: POSITION - Chức vụ
+(9,  'POSITION_VIEW',             'Xem danh sách chức vụ',                   'POSITION'),
+(10, 'POSITION_MANAGE',           'Thêm, sửa, xóa chức vụ',                 'POSITION'),
+
+-- MODULE: WORK_LOCATION - Địa điểm làm việc
+(11, 'WORK_LOCATION_VIEW',        'Xem danh sách địa điểm làm việc',         'WORK_LOCATION'),
+(12, 'WORK_LOCATION_MANAGE',      'Thêm, sửa, xóa địa điểm làm việc',       'WORK_LOCATION'),
+
+-- MODULE: ATTENDANCE - Chấm công
+(13, 'ATTENDANCE_VIEW',           'Xem bảng chấm công',                      'ATTENDANCE'),
+(14, 'ATTENDANCE_MANAGE',         'Quản lý chấm công',                       'ATTENDANCE'),
+
+-- MODULE: LEAVE - Nghỉ phép
+(15, 'LEAVE_VIEW',                'Xem đơn xin nghỉ phép',                   'LEAVE'),
+(16, 'LEAVE_MANAGE',              'Quản lý đơn nghỉ phép',                   'LEAVE'),
+(17, 'LEAVE_APPROVE',             'Phê duyệt / từ chối đơn nghỉ phép',       'LEAVE'),
+
+-- MODULE: PAYROLL - Lương
+(18, 'PAYROLL_VIEW',              'Xem bảng lương',                          'PAYROLL'),
+(19, 'PAYROLL_MANAGE',            'Quản lý tính lương',                      'PAYROLL'),
+
+-- MODULE: REPORT - Báo cáo
+(20, 'REPORT_VIEW',               'Xem báo cáo thống kê',                    'REPORT'),
+
+-- MODULE: SYSTEM - Hệ thống
+(21, 'SYSTEM_CONFIG',             'Cấu hình hệ thống',                       'SYSTEM');
+
+-- Admin (role_id=1): Toàn quyền tất cả modules
 INSERT INTO role_permissions (role_id, permission_id) VALUES
-(1,1), (1,2), (1,3), (2,1), (2,2), (2,3), (3,2);
+(1,1),(1,2),(1,3),(1,4),(1,5),(1,6),(1,7),(1,8),(1,9),(1,10),
+(1,11),(1,12),(1,13),(1,14),(1,15),(1,16),(1,17),(1,18),(1,19),(1,20),(1,21);
+
+-- HR Manager (role_id=2): Quản lý nhân sự, chấm công, nghỉ phép, báo cáo
+INSERT INTO role_permissions (role_id, permission_id) VALUES
+(2,1),(2,2),(2,7),(2,8),(2,9),(2,10),(2,11),
+(2,13),(2,14),(2,15),(2,16),(2,17),(2,18),(2,20);
+
+-- Factory Manager (role_id=3): Xem nhân sự, quản lý chấm công và nghỉ phép xưởng
+INSERT INTO role_permissions (role_id, permission_id) VALUES
+(3,2),(3,7),(3,9),(3,11),(3,13),(3,14),(3,15),(3,16),(3,17);
 
 -- ── 14. Users & Profiles ──
--- Giám đốc (Admin)
+
+-- Admin hệ thống (tài khoản quản trị thuần túy, không phải nhân viên)
 INSERT INTO users (user_id, username, password, full_name, email, role_id, department_id, position_id) VALUES
-(1, 'admin', '@123456', 'Nguyễn Văn Giám Đốc', 'giamdoc@hrm.com', 1, 1, 1);
-INSERT INTO employee_profiles (user_id, id_card, dob, gender, address, hire_date, tax_code, bank_account, base_salary, contract_type_id, salary_grade_id, employment_status_id, education_level_id, work_location_id) VALUES 
-(1, '001085000001', '1985-01-01', 1, 'Hà Nội', '2020-01-01', '8012345678', '190300001', 50000000, 4, 1, 2, 1, 1);
+(1, 'admin', '@123456', 'Quản Trị Viên', 'admin@hrm.com', 1, NULL, NULL);
+
+-- Giám đốc (nhân viên thực tế, cũng có quyền Admin)
+INSERT INTO users (user_id, username, password, full_name, email, role_id, department_id, position_id) VALUES
+(2, 'giam_doc', '@123456', 'Nguyễn Văn Giám Đốc', 'giamdoc@hrm.com', 1, 1, 1);
+INSERT INTO employee_profiles (user_id, id_card, dob, gender, address, hire_date, tax_code, bank_account, base_salary, contract_type_id, salary_grade_id, employment_status_id, education_level_id, work_location_id) VALUES
+(2, '001085000001', '1985-01-01', 1, 'Hà Nội', '2020-01-01', '8012345678', '190300001', 50000000, 4, 1, 2, 1, 1);
 
 -- Trưởng phòng Nhân sự
 INSERT INTO users (user_id, username, password, full_name, email, role_id, department_id, position_id) VALUES
-(2, 'hr_manager', '@123456', 'Trần Thị Nhân Sự', 'hr@hrm.com', 2, 2, 2);
-INSERT INTO employee_profiles (user_id, id_card, dob, gender, address, hire_date, tax_code, bank_account, base_salary, contract_type_id, salary_grade_id, employment_status_id, education_level_id, work_location_id) VALUES 
-(2, '001090000002', '1990-05-15', 0, 'Hà Nội', '2021-03-10', '8012345679', '190300002', 25000000, 4, 2, 2, 2, 1);
+(3, 'hr_manager', '@123456', 'Trần Thị Nhân Sự', 'hr@hrm.com', 2, 2, 2);
+INSERT INTO employee_profiles (user_id, id_card, dob, gender, address, hire_date, tax_code, bank_account, base_salary, contract_type_id, salary_grade_id, employment_status_id, education_level_id, work_location_id) VALUES
+(3, '001090000002', '1990-05-15', 0, 'Hà Nội', '2021-03-10', '8012345679', '190300002', 25000000, 4, 2, 2, 2, 1);
 
 -- Quản đốc Xưởng
 INSERT INTO users (user_id, username, password, full_name, email, role_id, department_id, position_id) VALUES
-(3, 'quan_doc', '@123456', 'Lê Văn Quản Đốc', 'quandoc@hrm.com', 3, 5, 4);
-INSERT INTO employee_profiles (user_id, id_card, dob, gender, address, hire_date, tax_code, bank_account, base_salary, contract_type_id, salary_grade_id, employment_status_id, education_level_id, work_location_id) VALUES 
-(3, '001088000003', '1988-08-20', 1, 'Hải Phòng', '2020-06-01', '8012345680', '190300003', 20000000, 4, 1, 2, 2, 2);
+(4, 'quan_doc', '@123456', 'Lê Văn Quản Đốc', 'quandoc@hrm.com', 3, 5, 4);
+INSERT INTO employee_profiles (user_id, id_card, dob, gender, address, hire_date, tax_code, bank_account, base_salary, contract_type_id, salary_grade_id, employment_status_id, education_level_id, work_location_id) VALUES
+(4, '001088000003', '1988-08-20', 1, 'Hải Phòng', '2020-06-01', '8012345680', '190300003', 20000000, 4, 1, 2, 2, 2);
 
 -- Công nhân Xưởng
 INSERT INTO users (user_id, username, password, full_name, email, role_id, department_id, position_id) VALUES
-(4, 'cong_nhan', '@123456', 'Phạm Công Nhân', 'cn1@hrm.com', NULL, 5, 9);
-INSERT INTO employee_profiles (user_id, id_card, dob, gender, address, hire_date, tax_code, bank_account, base_salary, contract_type_id, salary_grade_id, employment_status_id, education_level_id, work_location_id) VALUES 
-(4, '001095000004', '1995-12-10', 1, 'Bắc Ninh', '2022-02-15', '8012345681', '190300004', 8000000, 2, 4, 2, 5, 2);
+(5, 'cong_nhan', '@123456', 'Phạm Công Nhân', 'cn1@hrm.com', NULL, 5, 9);
+INSERT INTO employee_profiles (user_id, id_card, dob, gender, address, hire_date, tax_code, bank_account, base_salary, contract_type_id, salary_grade_id, employment_status_id, education_level_id, work_location_id) VALUES
+(5, '001095000004', '1995-12-10', 1, 'Bắc Ninh', '2022-02-15', '8012345681', '190300004', 8000000, 2, 4, 2, 5, 2);
 
 -- ── 15. Dependents (Người phụ thuộc) ──
 INSERT INTO dependents (user_id, full_name, relationship, dob) VALUES
-(2, 'Nguyễn Bé Bỏng', 'Con ruột', '2020-10-10'),
-(4, 'Phạm Thị Mẹ', 'Mẹ ruột', '1960-01-01');
+(3, 'Nguyễn Bé Bỏng', 'Con ruột', '2020-10-10'),
+(5, 'Phạm Thị Mẹ', 'Mẹ ruột', '1960-01-01');

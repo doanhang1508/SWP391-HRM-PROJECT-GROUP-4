@@ -1,5 +1,5 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%@taglib prefix="c" uri="jakarta.tags.core" %>
+﻿<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <style>
     /* ─── SIDEBAR BASE ─────────────────────────────────── */
@@ -345,14 +345,28 @@
                 </a>
             </li>
             <li class="sidebar-item">
-                <a href="${pageContext.request.contextPath}/admin/departments"
-                   class="sidebar-link ${param.activeMenu eq 'departments' ? 'active' : ''}">
+                <a href="${pageContext.request.contextPath}/admin/department"
+                   class="sidebar-link ${param.activeMenu eq 'department' ? 'active' : ''}">
                     <i class="fas fa-building"></i> Phòng ban
                 </a>
             </li>
+            <!-- Dán code này vào web/admin/sidebar.jsp (Dưới mục Phòng ban) -->
+
+<li class="sidebar-item">
+    <a href="${pageContext.request.contextPath}/admin/position"
+       class="sidebar-link ${param.activeMenu eq 'position' ? 'active' : ''}">
+        <i class="fas fa-id-card-alt"></i> Chức vụ
+    </a>
+</li>
+<li class="sidebar-item">
+    <a href="${pageContext.request.contextPath}/admin/work-location"
+       class="sidebar-link ${param.activeMenu eq 'work-location' ? 'active' : ''}">
+        <i class="fas fa-map-marked-alt"></i> Địa điểm làm việc
+    </a>
+</li>
             <li class="sidebar-item">
-                <a href="${pageContext.request.contextPath}/admin/pending-requests"
-                   class="sidebar-link ${param.activeMenu eq 'pending-requests' ? 'active' : ''}">
+                <a href="${pageContext.request.contextPath}/admin/pending-request"
+                   class="sidebar-link ${param.activeMenu eq 'pending-request' ? 'active' : ''}">
                     <i class="fas fa-hourglass-half"></i> Đơn chờ xử lý
                 </a>
             </li>
