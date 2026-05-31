@@ -10,9 +10,9 @@ package constant;
  */
 public class PageConstant {
     public static final String ROLE_LIST_PAGE = "admin/role-list.jsp";
-    public static final String ROLE_PERMISSIONS_PAGE = "admin/role-permission.jsp";
     public static final String ROLE_UPDATE_PAGE = "admin/role-update.jsp";
     public static final String NO_PERMISSION_PAGE = "admin/no-permission.jsp";
     public static final String SHIFT_LIST_PAGE = "admin/shift-list.jsp";
     public static final String SHIFT_SCHEDULE_PAGE = "admin/shift-schedule.jsp";
+    public static final String ROLE_PERMISSION_PAGE = "admin/role-permission.jsp";
 }

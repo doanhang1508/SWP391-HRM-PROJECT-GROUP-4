@@ -1,5 +1,5 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%@taglib prefix="c" uri="jakarta.tags.core" %>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <style>
     /* ─── SIDEBAR BASE ─────────────────────────────────── */
@@ -20,9 +20,16 @@
     }
 
     /* Scrollbar dark style */
-    .admin-sidebar::-webkit-scrollbar { width: 4px; }
-    .admin-sidebar::-webkit-scrollbar-track { background: #0f172a; }
-    .admin-sidebar::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+    .admin-sidebar::-webkit-scrollbar {
+        width: 4px;
+    }
+    .admin-sidebar::-webkit-scrollbar-track {
+        background: #0f172a;
+    }
+    .admin-sidebar::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 2px;
+    }
 
     /* ─── SIDEBAR HEADER / LOGO ─────────────────────────── */
     .sidebar-brand {
@@ -119,7 +126,9 @@
         margin-top: 4px;
     }
 
-    .sidebar-item { margin-bottom: 2px; }
+    .sidebar-item {
+        margin-bottom: 2px;
+    }
 
     .sidebar-link {
         display: flex;
@@ -217,7 +226,10 @@
         box-shadow: 0 4px 14px rgba(13,148,136,0.4);
         transition: background 0.2s, transform 0.2s;
     }
-    .sidebar-toggle-btn:hover { background: #0f766e; transform: scale(1.05); }
+    .sidebar-toggle-btn:hover {
+        background: #0f766e;
+        transform: scale(1.05);
+    }
 
     /* ─── SIDEBAR CLOSE BUTTON (inside sidebar, mobile) ──── */
     .sidebar-close-btn {
@@ -233,7 +245,10 @@
         padding: 6px 8px;
         border-radius: 6px;
     }
-    .sidebar-close-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+    .sidebar-close-btn:hover {
+        background: rgba(255,255,255,0.15);
+        color: #fff;
+    }
 
     /* ─── OVERLAY BACKDROP (mobile only) ─────────────────── */
     .sidebar-overlay {
@@ -246,7 +261,9 @@
         opacity: 0;
         transition: opacity 0.3s ease;
     }
-    .sidebar-overlay.active { opacity: 1; }
+    .sidebar-overlay.active {
+        opacity: 1;
+    }
 
     /* ─── RESPONSIVE ──────────────────────────────────────── */
     @media (max-width: 768px) {
@@ -260,10 +277,18 @@
             box-shadow: 6px 0 30px rgba(0,0,0,0.4);
         }
 
-        .admin-sidebar.sidebar-open { transform: translateX(0); }
-        .sidebar-toggle-btn  { display: flex; }
-        .sidebar-close-btn   { display: block; }
-        .sidebar-overlay     { display: block; }
+        .admin-sidebar.sidebar-open {
+            transform: translateX(0);
+        }
+        .sidebar-toggle-btn  {
+            display: flex;
+        }
+        .sidebar-close-btn   {
+            display: block;
+        }
+        .sidebar-overlay     {
+            display: block;
+        }
 
         .main-content {
             width: 100% !important;
@@ -345,9 +370,41 @@
                 </a>
             </li>
             <li class="sidebar-item">
-                <a href="${pageContext.request.contextPath}/admin/departments"
-                   class="sidebar-link ${param.activeMenu eq 'departments' ? 'active' : ''}">
+                <a href="${pageContext.request.contextPath}/admin/department"
+                   class="sidebar-link ${param.activeMenu eq 'department' ? 'active' : ''}">
                     <i class="fas fa-building"></i> Phòng ban
+                </a>
+            </li>
+            <!-- Dán code này vào web/admin/sidebar.jsp (Dưới mục Phòng ban) -->
+
+            <li class="sidebar-item">
+                <a href="${pageContext.request.contextPath}/admin/position"
+                   class="sidebar-link ${param.activeMenu eq 'position' ? 'active' : ''}">
+                    <i class="fas fa-id-card-alt"></i> Chức vụ
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="${pageContext.request.contextPath}/admin/work-location"
+                   class="sidebar-link ${param.activeMenu eq 'work-location' ? 'active' : ''}">
+                    <i class="fas fa-map-marked-alt"></i> Địa điểm làm việc
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="${pageContext.request.contextPath}/admin/education-level"
+                   class="sidebar-link ${param.activeMenu eq 'education-level' ? 'active' : ''}">
+                    <i class="fas fa-graduation-cap"></i> Trình độ học vấn
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="${pageContext.request.contextPath}/admin/employment-status"
+                   class="sidebar-link ${param.activeMenu eq 'employment-status' ? 'active' : ''}">
+                    <i class="fas fa-briefcase"></i> Trạng thái làm việc
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="${pageContext.request.contextPath}/admin/contract-type"
+                   class="sidebar-link ${param.activeMenu eq 'contract-type' ? 'active' : ''}">
+                    <i class="fas fa-file-contract"></i> Loại hợp đồng
                 </a>
             </li>
             <li class="sidebar-item">
@@ -363,8 +420,8 @@
                 </a>
             </li>
             <li class="sidebar-item">
-                <a href="${pageContext.request.contextPath}/admin/pending-requests"
-                   class="sidebar-link ${param.activeMenu eq 'pending-requests' ? 'active' : ''}">
+                <a href="${pageContext.request.contextPath}/admin/pending-request"
+                   class="sidebar-link ${param.activeMenu eq 'pending-request' ? 'active' : ''}">
                     <i class="fas fa-hourglass-half"></i> Đơn chờ xử lý
                 </a>
             </li>
@@ -424,8 +481,8 @@
 
 <script>
     function toggleSidebar() {
-        const sidebar  = document.getElementById('adminSidebar');
-        const isOpen   = sidebar.classList.contains('sidebar-open');
+        const sidebar = document.getElementById('adminSidebar');
+        const isOpen = sidebar.classList.contains('sidebar-open');
         isOpen ? closeSidebar() : openSidebar();
     }
 
@@ -441,11 +498,14 @@
         document.getElementById('adminSidebar').classList.remove('sidebar-open');
         const ov = document.getElementById('sidebarOverlay');
         ov.classList.remove('active');
-        setTimeout(() => { ov.style.display = 'none'; }, 310);
+        setTimeout(() => {
+            ov.style.display = 'none';
+        }, 310);
         document.body.style.overflow = '';
     }
 
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') closeSidebar();
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape')
+            closeSidebar();
     });
 </script>

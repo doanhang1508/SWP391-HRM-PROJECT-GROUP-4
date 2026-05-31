@@ -32,6 +32,7 @@ public class RoleController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        request.setCharacterEncoding("UTF-8");
         processRequest(request, response);
     }
 
@@ -71,6 +72,10 @@ public class RoleController extends HttpServlet {
                 }
                 break;
 
+            case "permission":
+                viewRolePermission(request, response, user);
+                break;
+
             default:
                 viewRoleList(request, response, user);
                 break;
@@ -79,9 +84,11 @@ public class RoleController extends HttpServlet {
 
     private User getLoginUser(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
+
         if (session == null) {
             return null;
         }
+
         return (User) session.getAttribute("currentUser");
     }
 
@@ -97,9 +104,22 @@ public class RoleController extends HttpServlet {
         boolean canViewPermission = permissionDAO.canViewRolePermissions(user.getUserId());
         boolean canUpdateRole = permissionDAO.canUpdateRoleInformation(user.getUserId());
 
-        List<Role> roles = roleDAO.getAllRoles();
+        String keyword = request.getParameter("keyword");
+
+        if (keyword != null) {
+            keyword = keyword.trim();
+        }
+
+        List<Role> roles;
+
+        if (keyword != null && !keyword.isEmpty()) {
+            roles = roleDAO.searchRoles(keyword);
+        } else {
+            roles = roleDAO.getAllRoles();
+        }
 
         request.setAttribute("roles", roles);
+        request.setAttribute("keyword", keyword);
         request.setAttribute("canViewPermission", canViewPermission);
         request.setAttribute("canUpdateRole", canUpdateRole);
 
@@ -229,5 +249,38 @@ public class RoleController extends HttpServlet {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    private void viewRolePermission(HttpServletRequest request, HttpServletResponse response, User user)
+            throws ServletException, IOException {
+
+        if (!permissionDAO.canViewRolePermissions(user.getUserId())) {
+            request.setAttribute("error", "Bạn không có quyền xem quyền của vai trò.");
+            request.getRequestDispatcher(PageConstant.NO_PERMISSION_PAGE).forward(request, response);
+            return;
+        }
+
+        Integer roleId = getRoleIdFromRequest(request);
+
+        if (roleId == null) {
+            request.setAttribute("error", "Role ID không hợp lệ.");
+            request.getRequestDispatcher(PageConstant.ROLE_PERMISSION_PAGE).forward(request, response);
+            return;
+        }
+
+        Role role = roleDAO.getRoleById(roleId);
+
+        if (role == null) {
+            request.setAttribute("error", "Không tìm thấy role.");
+            request.getRequestDispatcher(PageConstant.ROLE_PERMISSION_PAGE).forward(request, response);
+            return;
+        }
+
+        List<Permission> permissions = permissionDAO.getPermissionsByRoleId(roleId);
+
+        request.setAttribute("role", role);
+        request.setAttribute("permissions", permissions);
+
+        request.getRequestDispatcher(PageConstant.ROLE_PERMISSION_PAGE).forward(request, response);
     }
 }

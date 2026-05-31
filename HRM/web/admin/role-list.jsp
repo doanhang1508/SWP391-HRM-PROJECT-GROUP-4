@@ -1,7 +1,7 @@
 <%@page import="java.util.List"%>
 <%@page import="model.Role"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%@taglib prefix="c" uri="jakarta.tags.core" %>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%!
     public String h(String s) {
@@ -28,7 +28,6 @@
 <c:set var="pageTitle" value="Quản lý Vai trò - Hệ Thống HRM" scope="request" />
 <jsp:include page="../header.jsp" />
 
-<!-- Google Fonts & Icons -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
@@ -81,6 +80,7 @@
         color: var(--text-muted);
         margin-bottom: 0;
     }
+
     .breadcrumb a {
         color: var(--primary-color);
         text-decoration: none;
@@ -102,6 +102,7 @@
         margin-bottom: 20px;
         padding-bottom: 15px;
         border-bottom: 1px solid #f1f5f9;
+        gap: 16px;
     }
 
     .panel-title {
@@ -161,8 +162,16 @@
         font-weight: 600;
         font-size: 0.75rem;
     }
-    .badge-soft-success { background: rgba(76, 201, 240, 0.1); color: #00b4d8; }
-    .badge-soft-danger { background: rgba(247, 37, 133, 0.1); color: #f72585; }
+
+    .badge-soft-success {
+        background: rgba(76, 201, 240, 0.1);
+        color: #00b4d8;
+    }
+
+    .badge-soft-danger {
+        background: rgba(247, 37, 133, 0.1);
+        color: #f72585;
+    }
 
     .btn-action {
         height: 32px;
@@ -180,45 +189,123 @@
         gap: 6px;
         cursor: pointer;
     }
-    .btn-update { background: var(--success-color); }
-    .btn-update:hover { background: #00b4d8; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); color: #fff;}
-    
-    .btn-toggle-on { background: #fca311; width: 32px; padding: 0; }
-    .btn-toggle-off { background: #14213d; width: 32px; padding: 0; }
-    .btn-toggle-on:hover, .btn-toggle-off:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+
+    .btn-view {
+        background: var(--info-color);
+        width: 32px;
+        padding: 0;
+    }
+
+    .btn-view:hover {
+        background: #2563eb;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        color: #fff;
+    }
+
+    .btn-update {
+        background: var(--success-color);
+    }
+
+    .btn-update:hover {
+        background: #00b4d8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        color: #fff;
+    }
+
+    .btn-toggle-on {
+        background: #fca311;
+        width: 32px;
+        padding: 0;
+    }
+
+    .btn-toggle-off {
+        background: #14213d;
+        width: 32px;
+        padding: 0;
+    }
+
+    .btn-toggle-on:hover,
+    .btn-toggle-off:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .search-form {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .search-input {
+        border-radius: 8px;
+        width: 240px;
+    }
+
+    .btn-search {
+        border-radius: 8px;
+        background: var(--primary-color);
+        border: none;
+        color: #fff;
+    }
+
+    .btn-reset {
+        border-radius: 8px;
+        background: #e5e7eb;
+        border: none;
+        color: #374151;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 10px;
+        height: 31px;
+        font-size: 0.875rem;
+    }
+
+    .btn-reset:hover {
+        background: #d1d5db;
+        color: #111827;
+    }
 </style>
 
 <div class="dashboard-wrapper">
-    <!-- Sidebar -->
     <jsp:include page="sidebar.jsp">
         <jsp:param name="activeMenu" value="roles" />
     </jsp:include>
 
-    <!-- Main Content -->
     <div class="main-content">
         <div class="page-header">
             <div>
                 <h1 class="page-title">Quản Lý Vai Trò</h1>
                 <p class="breadcrumb">
-                    <a href="${pageContext.request.contextPath}/admin/dashboard">Bảng điều khiển</a> &nbsp;>&nbsp; Quản lý vai trò
+                    <a href="${pageContext.request.contextPath}/admin/dashboard">Bảng điều khiển</a>
+                    &nbsp;>&nbsp; Quản lý vai trò
                 </p>
             </div>
+
             <div>
-                <button class="btn btn-primary" style="background: var(--primary-color); border: none; border-radius: 8px; padding: 10px 20px; font-weight: 500;">
+                <button class="btn btn-primary"
+                        style="background: var(--primary-color); border: none; border-radius: 8px; padding: 10px 20px; font-weight: 500;">
                     <i class="fas fa-plus me-2"></i> Thêm Vai Trò Mới
                 </button>
             </div>
         </div>
 
-        <!-- System Alerts -->
         <c:if test="${not empty param.message}">
-            <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert" style="border-radius: 10px; background: #d1fae5; color: #065f46;">
+            <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm"
+                 role="alert"
+                 style="border-radius: 10px; background: #d1fae5; color: #065f46;">
                 <i class="fas fa-check-circle me-2"></i> ${param.message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         </c:if>
+
         <c:if test="${not empty param.error}">
-            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert" style="border-radius: 10px; background: #fee2e2; color: #991b1b;">
+            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm"
+                 role="alert"
+                 style="border-radius: 10px; background: #fee2e2; color: #991b1b;">
                 <i class="fas fa-exclamation-circle me-2"></i> ${param.error}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
@@ -232,10 +319,41 @@
                     </div>
                     Danh Sách Vai Trò Hệ Thống
                 </h3>
-                <div>
-                    <input type="text" class="form-control form-control-sm" placeholder="Tìm kiếm vai trò..." style="border-radius: 8px; width: 200px;">
-                </div>
+
+                <form method="get"
+                      action="${pageContext.request.contextPath}/role"
+                      class="search-form">
+
+                    <input type="hidden" name="action" value="list" />
+
+                    <input type="text"
+                           name="keyword"
+                           value="${keyword}"
+                           class="form-control form-control-sm search-input"
+                           placeholder="Tìm kiếm vai trò..." />
+
+                    <button type="submit"
+                            class="btn btn-sm btn-search">
+                        <i class="fas fa-search"></i>
+                    </button>
+
+                    <c:if test="${not empty keyword}">
+                        <a href="${pageContext.request.contextPath}/role?action=list"
+                           class="btn-reset"
+                           title="Xóa tìm kiếm">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </c:if>
+                </form>
             </div>
+
+            <c:if test="${not empty keyword}">
+                <div class="mb-3 text-muted small">
+                    <i class="fas fa-search me-1"></i>
+                    Kết quả tìm kiếm cho:
+                    <strong>${keyword}</strong>
+                </div>
+            </c:if>
 
             <div class="table-responsive">
                 <table class="table-custom">
@@ -248,12 +366,15 @@
                             <th class="text-end">Hành Động</th>
                         </tr>
                     </thead>
+
                     <tbody>
                         <%
                             if (roles.isEmpty()) {
                         %>
                         <tr>
-                            <td colspan="5" class="text-center py-4 text-muted">Không có role nào trong hệ thống.</td>
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                Không có role nào phù hợp.
+                            </td>
                         </tr>
                         <%
                             } else {
@@ -261,39 +382,69 @@
                         %>
                         <tr>
                             <td class="fw-bold text-dark">#<%= r.getRoleId() %></td>
+
                             <td>
-                                <span class="fw-bold" style="color: var(--primary-color);"><%= h(r.getRoleName()) %></span>
+                                <span class="fw-bold" style="color: var(--primary-color);">
+                                    <%= h(r.getRoleName()) %>
+                                </span>
                             </td>
+
                             <td class="text-muted"><%= h(r.getDescription()) %></td>
+
                             <td>
                                 <%
                                     if (r.getStatus() == 1) {
                                 %>
-                                <span class="badge-soft badge-soft-success"><i class="fas fa-circle me-1" style="font-size: 6px; vertical-align: middle;"></i> Hoạt động</span>
+                                <span class="badge-soft badge-soft-success">
+                                    <i class="fas fa-circle me-1" style="font-size: 6px; vertical-align: middle;"></i>
+                                    Hoạt động
+                                </span>
                                 <%
                                     } else {
                                 %>
-                                <span class="badge-soft badge-soft-danger"><i class="fas fa-circle me-1" style="font-size: 6px; vertical-align: middle;"></i> Vô hiệu</span>
+                                <span class="badge-soft badge-soft-danger">
+                                    <i class="fas fa-circle me-1" style="font-size: 6px; vertical-align: middle;"></i>
+                                    Vô hiệu
+                                </span>
                                 <%
                                     }
                                 %>
                             </td>
+
                             <td class="text-end">
                                 <div class="d-flex justify-content-end gap-2">
                                     <%
                                         if (canUpdateRole) {
                                     %>
-                                    <a href="role?action=update&roleId=<%= r.getRoleId() %>" class="btn-action btn-update" title="Chỉnh sửa thông tin">
+
+                                    <a href="role?action=permission&roleId=<%= r.getRoleId() %>"
+                                       class="btn-action btn-view"
+                                       title="Xem quyền của role">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+
+                                    <a href="role?action=update&roleId=<%= r.getRoleId() %>"
+                                       class="btn-action btn-update"
+                                       title="Chỉnh sửa thông tin">
                                         <i class="fas fa-edit"></i> Sửa
                                     </a>
-                                    <form method="post" action="${pageContext.request.contextPath}/activeDeactiveRole" class="m-0" onsubmit="return confirm('Bạn có chắc chắn muốn <%= r.getStatus() == 1 ? "VÔ HIỆU HÓA" : "KÍCH HOẠT" %> vai trò <%= h(r.getRoleName()) %> không?');">
+
+                                    <form method="post"
+                                          action="${pageContext.request.contextPath}/activeDeactiveRole"
+                                          class="m-0"
+                                          onsubmit="return confirm('Bạn có chắc chắn muốn <%= r.getStatus() == 1 ? "VÔ HIỆU HÓA" : "KÍCH HOẠT" %> vai trò <%= h(r.getRoleName()) %> không?');">
+
                                         <input type="hidden" name="action" value="toggle" />
                                         <input type="hidden" name="roleId" value="<%= r.getRoleId() %>" />
                                         <input type="hidden" name="source" value="roleList" />
-                                        <button type="submit" class="btn-action <%= r.getStatus() == 1 ? "btn-toggle-on" : "btn-toggle-off" %>" title="<%= r.getStatus() == 1 ? "Vô hiệu hóa" : "Kích hoạt" %>">
+
+                                        <button type="submit"
+                                                class="btn-action <%= r.getStatus() == 1 ? "btn-toggle-on" : "btn-toggle-off" %>"
+                                                title="<%= r.getStatus() == 1 ? "Vô hiệu hóa" : "Kích hoạt" %>">
                                             <i class="fas <%= r.getStatus() == 1 ? "fa-lock" : "fa-unlock" %>"></i>
                                         </button>
                                     </form>
+
                                     <%
                                         } else {
                                     %>
