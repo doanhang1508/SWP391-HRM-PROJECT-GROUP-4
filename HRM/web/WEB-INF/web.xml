@@ -47,9 +47,6 @@
         <servlet-name>PendingRequestsController</servlet-name>
         <servlet-class>controller.admin.PendingRequestsController</servlet-class>
     </servlet>
-    <!-- ══════════════════════════════════════════════════════
-         URL MAPPINGS
-    ══════════════════════════════════════════════════════ -->
     <servlet>
         <servlet-name>PositionController</servlet-name>
         <servlet-class>controller.admin.PositionController</servlet-class>
@@ -70,6 +67,10 @@
         <servlet-name>ContractTypeController</servlet-name>
         <servlet-class>controller.admin.ContractTypeController</servlet-class>
     </servlet>
+
+    <!-- ══════════════════════════════════════════════════════
+         URL MAPPINGS
+    ══════════════════════════════════════════════════════ -->
     <servlet-mapping>
         <servlet-name>homeController</servlet-name>
         <url-pattern>/home</url-pattern>
