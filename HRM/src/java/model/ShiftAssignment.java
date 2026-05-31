@@ -1,6 +1,7 @@
 package model;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.sql.Timestamp;
 
 /**
@@ -21,6 +22,10 @@ public class ShiftAssignment {
     // ── Transient: joined data for display (not persisted) ──
     private String userName;    // from users.full_name
     private String shiftName;   // from shifts.shift_name
+    private LocalTime startTime;  // from shifts.start_time
+    private LocalTime endTime;    // from shifts.end_time
+    private boolean nightShift;   // from shifts.is_night_shift
+    private float coefficient;    // from shifts.coefficient
 
     // ── No-arg constructor ──
     public ShiftAssignment() {
@@ -65,4 +70,16 @@ public class ShiftAssignment {
 
     public String getShiftName() { return shiftName; }
     public void setShiftName(String shiftName) { this.shiftName = shiftName; }
+
+    public LocalTime getStartTime() { return startTime; }
+    public void setStartTime(LocalTime startTime) { this.startTime = startTime; }
+
+    public LocalTime getEndTime() { return endTime; }
+    public void setEndTime(LocalTime endTime) { this.endTime = endTime; }
+
+    public boolean isNightShift() { return nightShift; }
+    public void setNightShift(boolean nightShift) { this.nightShift = nightShift; }
+
+    public float getCoefficient() { return coefficient; }
+    public void setCoefficient(float coefficient) { this.coefficient = coefficient; }
 }

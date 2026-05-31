@@ -1,4 +1,4 @@
-﻿<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <style>
@@ -115,7 +115,7 @@
             </a>
         </li>
         <li class="sidebar-item">
-            <a href="#" class="sidebar-link ${param.activeMenu eq 'schedule' ? 'active' : ''}">
+            <a href="${pageContext.request.contextPath}/employee/schedule" class="sidebar-link ${param.activeMenu eq 'schedule' ? 'active' : ''}">
                 <i class="fas fa-calendar-alt"></i> Lịch phân ca
             </a>
         </li>

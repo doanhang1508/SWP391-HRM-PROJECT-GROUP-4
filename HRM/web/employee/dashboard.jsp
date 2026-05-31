@@ -1,4 +1,4 @@
-﻿<%@page contentType="text/html" pageEncoding="UTF-8" %>
+<%@page contentType="text/html" pageEncoding="UTF-8" %>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
@@ -341,7 +341,7 @@
                 </div>
             </div>
 
-            <!-- Lịch phân ca -->
+            <!-- Lịch phân ca (Dynamic) -->
             <div class="col-lg-5">
                 <div class="emp-card">
                     <div class="emp-card-header">
@@ -349,49 +349,74 @@
                             <i class="fas fa-calendar-alt text-info"></i>
                             Lịch Phân Ca (Tuần này)
                         </span>
+                        <a href="${pageContext.request.contextPath}/employee/schedule" class="btn-all">Xem chi tiết</a>
                     </div>
 
-                    <div class="shift-item past">
-                        <span class="shift-day">Thứ 2 (Hôm qua)</span>
+                    <%@page import="java.time.LocalDate, java.time.LocalTime, java.time.format.DateTimeFormatter, model.ShiftAssignment, java.util.*"%>
+                    <%
+                        LocalDate[] wkDates = (LocalDate[]) request.getAttribute("weekDates");
+                        LocalDate wkStart = (LocalDate) request.getAttribute("weekStart");
+                        LocalDate todayDate = LocalDate.now();
+
+                        @SuppressWarnings("unchecked")
+                        List<ShiftAssignment> wkAssignments = (List<ShiftAssignment>) request.getAttribute("weekAssignments");
+
+                        // Build a map: dayIndex -> ShiftAssignment
+                        Map<Integer, ShiftAssignment> wkMap = new LinkedHashMap<>();
+                        if (wkAssignments != null && wkStart != null) {
+                            for (ShiftAssignment sa : wkAssignments) {
+                                int dayIdx = (int) (sa.getAssignedDate().toEpochDay() - wkStart.toEpochDay());
+                                if (dayIdx >= 0 && dayIdx < 7) wkMap.put(dayIdx, sa);
+                            }
+                        }
+
+                        String[] dNames = {"Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ Nhật"};
+
+                        if (wkDates != null) {
+                            for (int d = 0; d < 7; d++) {
+                                boolean isTdy = wkDates[d].equals(todayDate);
+                                boolean isPst = wkDates[d].isBefore(todayDate);
+                                ShiftAssignment sa = wkMap.get(d);
+
+                                String itemClass = "shift-item";
+                                if (isTdy) itemClass += " today";
+                                else if (isPst) itemClass += " past";
+                                else if (sa == null) itemClass += " off";
+                                else itemClass += " future";
+
+                                String dayLabel = dNames[d];
+                                if (isTdy) dayLabel += " (Hôm nay)";
+                    %>
+                    <div class="<%= itemClass %>">
+                        <span class="shift-day"><%= dayLabel %></span>
+                        <% if (sa != null) {
+                            String sn = sa.getShiftName() != null ? sa.getShiftName() : "Ca";
+                            String badgeCss = "bg-secondary";
+                            if (sn.contains("Sáng") || sn.contains("Ca 1")) badgeCss = "bg-warning text-dark";
+                            else if (sn.contains("Chiều") || sn.contains("Ca 2")) badgeCss = "bg-primary";
+                            else if (sn.contains("Đêm") || sn.contains("Ca 3") || sa.isNightShift()) badgeCss = "bg-success";
+                            else if (sn.contains("Hành chính")) badgeCss = "bg-secondary";
+                            String st = sa.getStartTime() != null ? sa.getStartTime().toString() : "--:--";
+                            String et = sa.getEndTime() != null ? sa.getEndTime().toString() : "--:--";
+                        %>
                         <span class="shift-time">
-                            <span class="badge bg-secondary">Hành chính</span>08:00 – 17:00
+                            <span class="badge <%= badgeCss %>"><%= sn %></span><%= st %> – <%= et %>
                         </span>
-                    </div>
-
-                    <div class="shift-item today">
-                        <span class="shift-day">Thứ 3 (Hôm nay)</span>
-                        <span class="shift-time">
-                            <span class="badge bg-primary">Hành chính</span>08:00 – 17:00
-                        </span>
-                    </div>
-
-                    <div class="shift-item future">
-                        <span class="shift-day">Thứ 4 (Ngày mai)</span>
-                        <span class="shift-time">
-                            <span class="badge bg-success">Ca Đêm</span>22:00 – 06:00
-                        </span>
-                    </div>
-
-                    <div class="shift-item future">
-                        <span class="shift-day">Thứ 5</span>
-                        <span class="shift-time">
-                            <span class="badge bg-success">Ca Đêm</span>22:00 – 06:00
-                        </span>
-                    </div>
-
-                    <div class="shift-item future">
-                        <span class="shift-day">Thứ 6</span>
-                        <span class="shift-time">
-                            <span class="badge bg-success">Ca Đêm</span>22:00 – 06:00
-                        </span>
-                    </div>
-
-                    <div class="shift-item off">
-                        <span class="shift-day">Thứ 7 & Chủ Nhật</span>
+                        <% } else { %>
                         <span class="shift-time text-muted">
-                            <i class="fas fa-bed me-1"></i>Nghỉ tuần
+                            <i class="fas fa-bed me-1"></i>Nghỉ
                         </span>
+                        <% } %>
                     </div>
+                    <%
+                            }
+                        } else {
+                    %>
+                    <div class="shift-item off">
+                        <span class="shift-day">Chưa có dữ liệu lịch ca</span>
+                        <span class="shift-time text-muted"><i class="fas fa-info-circle me-1"></i>Liên hệ quản lý</span>
+                    </div>
+                    <% } %>
                 </div>
             </div>
         </div>

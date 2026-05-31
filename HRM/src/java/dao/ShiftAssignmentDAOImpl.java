@@ -25,11 +25,21 @@ public class ShiftAssignmentDAOImpl implements ShiftAssignmentDAO {
         return sa;
     }
 
-    // ── Map ResultSet with JOIN data (user_name, shift_name) ──
+    // ── Map ResultSet with JOIN data (user_name, shift_name, times, flags) ──
     private ShiftAssignment mapRowWithJoin(ResultSet rs) throws SQLException {
         ShiftAssignment sa = mapRow(rs);
         try { sa.setUserName(rs.getString("full_name")); } catch (SQLException ignored) {}
         try { sa.setShiftName(rs.getString("shift_name")); } catch (SQLException ignored) {}
+        try {
+            java.sql.Time st = rs.getTime("start_time");
+            if (st != null) sa.setStartTime(st.toLocalTime());
+        } catch (SQLException ignored) {}
+        try {
+            java.sql.Time et = rs.getTime("end_time");
+            if (et != null) sa.setEndTime(et.toLocalTime());
+        } catch (SQLException ignored) {}
+        try { sa.setNightShift(rs.getBoolean("is_night_shift")); } catch (SQLException ignored) {}
+        try { sa.setCoefficient(rs.getFloat("coefficient")); } catch (SQLException ignored) {}
         return sa;
     }
 
@@ -38,7 +48,7 @@ public class ShiftAssignmentDAOImpl implements ShiftAssignmentDAO {
     @Override
     public List<ShiftAssignment> getByUserAndDateRange(int userId, LocalDate from, LocalDate to) {
         List<ShiftAssignment> list = new ArrayList<>();
-        String sql = "SELECT sa.*, s.shift_name "
+        String sql = "SELECT sa.*, s.shift_name, s.start_time, s.end_time, s.is_night_shift, s.coefficient "
                    + "FROM shift_assignments sa "
                    + "JOIN shifts s ON sa.shift_id = s.shift_id "
                    + "WHERE sa.user_id = ? AND sa.assigned_date BETWEEN ? AND ? "
