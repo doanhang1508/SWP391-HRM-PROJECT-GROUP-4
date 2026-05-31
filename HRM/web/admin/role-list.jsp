@@ -102,6 +102,7 @@
         margin-bottom: 20px;
         padding-bottom: 15px;
         border-bottom: 1px solid #f1f5f9;
+        gap: 16px;
     }
 
     .panel-title {
@@ -230,6 +231,43 @@
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
+
+    .search-form {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .search-input {
+        border-radius: 8px;
+        width: 240px;
+    }
+
+    .btn-search {
+        border-radius: 8px;
+        background: var(--primary-color);
+        border: none;
+        color: #fff;
+    }
+
+    .btn-reset {
+        border-radius: 8px;
+        background: #e5e7eb;
+        border: none;
+        color: #374151;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 10px;
+        height: 31px;
+        font-size: 0.875rem;
+    }
+
+    .btn-reset:hover {
+        background: #d1d5db;
+        color: #111827;
+    }
 </style>
 
 <div class="dashboard-wrapper">
@@ -246,22 +284,28 @@
                     &nbsp;>&nbsp; Quản lý vai trò
                 </p>
             </div>
+
             <div>
-                <button class="btn btn-primary" style="background: var(--primary-color); border: none; border-radius: 8px; padding: 10px 20px; font-weight: 500;">
+                <button class="btn btn-primary"
+                        style="background: var(--primary-color); border: none; border-radius: 8px; padding: 10px 20px; font-weight: 500;">
                     <i class="fas fa-plus me-2"></i> Thêm Vai Trò Mới
                 </button>
             </div>
         </div>
 
         <c:if test="${not empty param.message}">
-            <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert" style="border-radius: 10px; background: #d1fae5; color: #065f46;">
+            <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm"
+                 role="alert"
+                 style="border-radius: 10px; background: #d1fae5; color: #065f46;">
                 <i class="fas fa-check-circle me-2"></i> ${param.message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         </c:if>
 
         <c:if test="${not empty param.error}">
-            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert" style="border-radius: 10px; background: #fee2e2; color: #991b1b;">
+            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm"
+                 role="alert"
+                 style="border-radius: 10px; background: #fee2e2; color: #991b1b;">
                 <i class="fas fa-exclamation-circle me-2"></i> ${param.error}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
@@ -275,10 +319,41 @@
                     </div>
                     Danh Sách Vai Trò Hệ Thống
                 </h3>
-                <div>
-                    <input type="text" class="form-control form-control-sm" placeholder="Tìm kiếm vai trò..." style="border-radius: 8px; width: 200px;">
-                </div>
+
+                <form method="get"
+                      action="${pageContext.request.contextPath}/role"
+                      class="search-form">
+
+                    <input type="hidden" name="action" value="list" />
+
+                    <input type="text"
+                           name="keyword"
+                           value="${keyword}"
+                           class="form-control form-control-sm search-input"
+                           placeholder="Tìm kiếm vai trò..." />
+
+                    <button type="submit"
+                            class="btn btn-sm btn-search">
+                        <i class="fas fa-search"></i>
+                    </button>
+
+                    <c:if test="${not empty keyword}">
+                        <a href="${pageContext.request.contextPath}/role?action=list"
+                           class="btn-reset"
+                           title="Xóa tìm kiếm">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </c:if>
+                </form>
             </div>
+
+            <c:if test="${not empty keyword}">
+                <div class="mb-3 text-muted small">
+                    <i class="fas fa-search me-1"></i>
+                    Kết quả tìm kiếm cho:
+                    <strong>${keyword}</strong>
+                </div>
+            </c:if>
 
             <div class="table-responsive">
                 <table class="table-custom">
@@ -298,7 +373,7 @@
                         %>
                         <tr>
                             <td colspan="5" class="text-center py-4 text-muted">
-                                Không có role nào trong hệ thống.
+                                Không có role nào phù hợp.
                             </td>
                         </tr>
                         <%
@@ -342,11 +417,11 @@
                                         if (canUpdateRole) {
                                     %>
 
-<a href="role?action=permission&roleId=<%= r.getRoleId() %>"
-   class="btn-action btn-view"
-   title="Xem quyền của role">
-    <i class="fas fa-eye"></i>
-</a>
+                                    <a href="role?action=permission&roleId=<%= r.getRoleId() %>"
+                                       class="btn-action btn-view"
+                                       title="Xem quyền của role">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
 
                                     <a href="role?action=update&roleId=<%= r.getRoleId() %>"
                                        class="btn-action btn-update"

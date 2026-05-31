@@ -32,6 +32,7 @@ public class RoleController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        request.setCharacterEncoding("UTF-8");
         processRequest(request, response);
     }
 
@@ -70,9 +71,11 @@ public class RoleController extends HttpServlet {
                     showUpdateRoleForm(request, response, user);
                 }
                 break;
+
             case "permission":
                 viewRolePermission(request, response, user);
                 break;
+
             default:
                 viewRoleList(request, response, user);
                 break;
@@ -81,9 +84,11 @@ public class RoleController extends HttpServlet {
 
     private User getLoginUser(HttpServletRequest request) {
         HttpSession session = request.getSession(false);
+
         if (session == null) {
             return null;
         }
+
         return (User) session.getAttribute("currentUser");
     }
 
@@ -99,9 +104,22 @@ public class RoleController extends HttpServlet {
         boolean canViewPermission = permissionDAO.canViewRolePermissions(user.getUserId());
         boolean canUpdateRole = permissionDAO.canUpdateRoleInformation(user.getUserId());
 
-        List<Role> roles = roleDAO.getAllRoles();
+        String keyword = request.getParameter("keyword");
+
+        if (keyword != null) {
+            keyword = keyword.trim();
+        }
+
+        List<Role> roles;
+
+        if (keyword != null && !keyword.isEmpty()) {
+            roles = roleDAO.searchRoles(keyword);
+        } else {
+            roles = roleDAO.getAllRoles();
+        }
 
         request.setAttribute("roles", roles);
+        request.setAttribute("keyword", keyword);
         request.setAttribute("canViewPermission", canViewPermission);
         request.setAttribute("canUpdateRole", canUpdateRole);
 
@@ -262,6 +280,7 @@ public class RoleController extends HttpServlet {
 
         request.setAttribute("role", role);
         request.setAttribute("permissions", permissions);
+
         request.getRequestDispatcher(PageConstant.ROLE_PERMISSION_PAGE).forward(request, response);
     }
 }
