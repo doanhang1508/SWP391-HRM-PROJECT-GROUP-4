@@ -20,6 +20,8 @@ public class User {
     private String avatarUrl;
     private int status;
     private int roleId;
+    private int departmentId;
+    private int positionId;
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
@@ -68,6 +70,12 @@ public class User {
 
     public int getRoleId() { return roleId; }
     public void setRoleId(int roleId) { this.roleId = roleId; }
+
+    public int getDepartmentId() { return departmentId; }
+    public void setDepartmentId(int departmentId) { this.departmentId = departmentId; }
+
+    public int getPositionId() { return positionId; }
+    public void setPositionId(int positionId) { this.positionId = positionId; }
 
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }

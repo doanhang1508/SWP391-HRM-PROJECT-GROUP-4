@@ -157,6 +157,8 @@ public class UserDAO {
         user.setAvatarUrl(rs.getString("avatar_url"));
         user.setStatus(rs.getInt("status"));
         user.setRoleId(rs.getInt("role_id"));
+        user.setDepartmentId(rs.getInt("department_id"));
+        user.setPositionId(rs.getInt("position_id"));
         user.setCreatedAt(rs.getTimestamp("created_at"));
         user.setUpdatedAt(rs.getTimestamp("updated_at"));
         return user;
