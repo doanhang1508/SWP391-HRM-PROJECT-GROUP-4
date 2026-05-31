@@ -66,8 +66,8 @@
     .dept-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: .8rem; flex-shrink: 0; }
     .dept-desc { color: var(--muted); font-size: .82rem; max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    .badge-count { display: inline-flex; align-items: center; gap: 4px; background: #eff6ff; color: #2b6cb0; font-size: .75rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; cursor: pointer; transition: background .2s, transform .15s; }
-    .badge-count:hover { background: #dbeafe; transform: scale(1.06); }
+    .badge-count { display: inline-flex; align-items: center; gap: 4px; background: #eff6ff; color: #2b6cb0; font-size: .75rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; text-decoration: none; transition: background .2s, transform .15s; }
+    .badge-count:hover { background: #dbeafe; transform: scale(1.05); }
     .badge-active { display: inline-flex; align-items: center; gap: 5px; background: #dcfce7; color: #16a34a; font-size: .73rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; }
 
     /* ACTION BUTTONS */
@@ -109,30 +109,6 @@
     .ic-4 { background:#fff7ed;color:#ea580c; }
     .ic-5 { background:#fdf2f8;color:#db2777; }
 
-    /* EMP LIST MODAL */
-    .emp-modal-box { background: var(--surface); margin: 4% auto; width: 600px; border-radius: 16px; box-shadow: 0 24px 48px rgba(0,0,0,.2); position: relative; overflow: hidden; max-height: 88vh; display: flex; flex-direction: column; }
-    .emp-modal-header { padding: 22px 28px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; flex-shrink: 0; }
-    .emp-modal-title { font-family: 'Be Vietnam Pro', sans-serif; font-size: 1.05rem; font-weight: 800; color: var(--navy); margin: 0; display: flex; align-items: center; gap: 10px; }
-    .emp-modal-subtitle { font-size: .78rem; color: var(--muted); margin-top: 3px; }
-    .emp-search-wrap { padding: 12px 28px; border-bottom: 1px solid var(--border); flex-shrink: 0; position: relative; }
-    .emp-search-input { width: 100%; padding: 9px 14px 9px 36px; border: 1px solid var(--border); border-radius: 8px; font-size: .85rem; font-family: 'Inter', sans-serif; outline: none; transition: border .2s; }
-    .emp-search-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(43,108,176,.1); }
-    .emp-search-icon { position: absolute; left: 41px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: .82rem; pointer-events: none; }
-    .emp-list-body { overflow-y: auto; flex: 1; padding: 8px 0; }
-    .emp-list-item { display: flex; align-items: center; gap: 14px; padding: 11px 28px; transition: background .15s; }
-    .emp-list-item:hover { background: #f8fafc; }
-    .emp-avatar-circle { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700; color: #fff; }
-    .emp-avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
-    .emp-info { flex: 1; min-width: 0; }
-    .emp-name { font-weight: 700; color: var(--navy); font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .emp-meta { font-size: .76rem; color: var(--muted); margin-top: 2px; display: flex; gap: 14px; flex-wrap: wrap; }
-    .emp-meta span { display: flex; align-items: center; gap: 4px; }
-    .emp-view-link { color: var(--blue); text-decoration: none; font-size: .76rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; border: 1px solid #dbeafe; transition: background .15s; flex-shrink: 0; }
-    .emp-view-link:hover { background: #eff6ff; }
-    .emp-empty { text-align: center; padding: 52px 20px; color: var(--muted); }
-    .emp-empty i { font-size: 2.5rem; opacity: .25; display: block; margin-bottom: 12px; }
-    .emp-modal-footer { padding: 14px 28px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; flex-shrink: 0; }
-
     @media (max-width:900px) {
         .page-main { padding: 20px 16px; }
         .summary-grid { grid-template-columns: 1fr 1fr; }
@@ -141,7 +117,6 @@
     @media (max-width:600px) {
         .summary-grid { grid-template-columns: 1fr; }
         .modal-box { width: 95%; margin: 5% auto; padding: 20px; }
-        .emp-modal-box { width: 95%; margin: 5% auto; }
     }
 </style>
 
@@ -245,15 +220,14 @@
                                         </td>
                                         <td><span class="dept-desc">${empty dept.description ? '—' : dept.description}</span></td>
                                         <td style="text-align:center;">
-                                            <span class="badge-count"
-                                                  data-emp-count="${empCountMap[dept.departmentId]}"
-                                                  data-dept-id="${dept.departmentId}"
-                                                  data-dept-name="${dept.departmentName}"
-                                                  onclick="openEmpModal(${dept.departmentId}, '${dept.departmentName}')"
-                                                  title="Click để xem danh sách nhân viên">
+                                            <a class="badge-count"
+                                               href="${pageContext.request.contextPath}/admin/users?departmentId=${dept.departmentId}"
+                                               data-emp-count="${empCountMap[dept.departmentId]}"
+                                               data-dept-name="${dept.departmentName}"
+                                               title="Xem danh sách nhân viên phòng ${dept.departmentName}">
                                                 <i class="fas fa-user" style="font-size:.6rem;"></i>
                                                 <span class="emp-count">...</span>
-                                            </span>
+                                            </a>
                                         </td>
                                         <td style="text-align:center;">
                                             <span class="badge-active"><i class="fas fa-circle" style="font-size:.45rem;"></i> Hoạt động</span>
@@ -283,46 +257,7 @@
     </div>
 </div>
 
-<!-- HIDDEN EMP DATA STORE -->
-<div id="empDataStore" style="display:none;">
-    <c:forEach items="${departmentList}" var="dept">
-        <div class="dept-emp-block" data-dept-id="${dept.departmentId}">
-            <c:forEach items="${empListMap[dept.departmentId]}" var="emp">
-                <span class="emp-data-item"
-                      data-id="${emp.userId}"
-                      data-name="${emp.fullName}"
-                      data-email="${emp.email}"
-                      data-phone="${emp.phone}"
-                      data-avatar="${emp.avatarUrl}"></span>
-            </c:forEach>
-        </div>
-    </c:forEach>
-</div>
 
-<!-- EMPLOYEE LIST MODAL -->
-<div class="modal-overlay" id="empListModal">
-    <div class="emp-modal-box">
-        <div class="emp-modal-header">
-            <div>
-                <div class="emp-modal-title">
-                    <i class="fas fa-users" style="color:var(--blue);"></i>
-                    <span id="empModalDeptName">Phòng ban</span>
-                </div>
-                <div class="emp-modal-subtitle" id="empModalSubtitle">Danh sách nhân viên</div>
-            </div>
-            <button class="modal-close" onclick="closeModal('empListModal')">&times;</button>
-        </div>
-        <div class="emp-search-wrap">
-            <i class="fas fa-search emp-search-icon"></i>
-            <input type="text" class="emp-search-input" id="empSearchInput"
-                   placeholder="Tìm tên, email, số điện thoại..." oninput="filterEmpList()">
-        </div>
-        <div class="emp-list-body" id="empListBody"></div>
-        <div class="emp-modal-footer">
-            <button class="btn-cancel" onclick="closeModal('empListModal')">Đóng</button>
-        </div>
-    </div>
-</div>
 
 <!-- ADD MODAL -->
 <div class="modal-overlay" id="addModal">
@@ -380,9 +315,9 @@
     function closeModal(id)  { document.getElementById(id).style.display = 'none'; }
 
     function openEditModal(id, name, desc) {
-        document.getElementById('edit_id').value   = id;
-        document.getElementById('edit_name').value  = name;
-        document.getElementById('edit_desc').value  = desc;
+        document.getElementById('edit_id').value  = id;
+        document.getElementById('edit_name').value = name;
+        document.getElementById('edit_desc').value = desc;
         document.getElementById('editModal').style.display = 'block';
     }
 
@@ -397,78 +332,8 @@
     function filterTable() {
         const query = document.getElementById('searchInput').value.toLowerCase();
         document.querySelectorAll('#deptTable tbody tr').forEach(function(row) {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(query) ? '' : 'none';
+            row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
         });
-    }
-
-    // ── EMPLOYEE LIST MODAL ──
-    var _currentEmpItems = [];
-    var avatarColors = ['#2b6cb0','#7c3aed','#16a34a','#ea580c','#db2777','#0d9488','#d97706'];
-
-    function openEmpModal(deptId, deptName) {
-        var block = document.querySelector('#empDataStore .dept-emp-block[data-dept-id="' + deptId + '"]');
-        var items = block ? Array.from(block.querySelectorAll('.emp-data-item')) : [];
-        _currentEmpItems = items;
-
-        document.getElementById('empModalDeptName').textContent = deptName;
-        document.getElementById('empModalSubtitle').textContent =
-            items.length > 0 ? items.length + ' nhân viên' : 'Chưa có nhân viên';
-
-        document.getElementById('empSearchInput').value = '';
-        renderEmpList(items);
-        document.getElementById('empListModal').style.display = 'block';
-    }
-
-    function renderEmpList(items) {
-        var body = document.getElementById('empListBody');
-        if (items.length === 0) {
-            body.innerHTML = '<div class="emp-empty"><i class="fas fa-user-slash"></i>' +
-                '<p style="font-weight:600;color:var(--navy);margin:0 0 4px;">Không tìm thấy nhân viên</p>' +
-                '<p style="font-size:.82rem;margin:0;">Thử tìm với từ khóa khác.</p></div>';
-            return;
-        }
-        var html = '';
-        items.forEach(function(item, idx) {
-            var id     = item.getAttribute('data-id') || '';
-            var name   = item.getAttribute('data-name') || '(Chưa có tên)';
-            var email  = item.getAttribute('data-email') || '';
-            var phone  = item.getAttribute('data-phone') || '';
-            var avatar = item.getAttribute('data-avatar') || '';
-            var color  = avatarColors[idx % avatarColors.length];
-            var initials = name.trim().split(/\s+/).map(function(w){ return w[0] || ''; }).slice(-2).join('').toUpperCase();
-
-            var avatarHtml = avatar
-                ? '<img src="' + avatar + '" alt="' + name + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\'">'
-                : '<span style="pointer-events:none;">' + initials + '</span>';
-
-            html += '<div class="emp-list-item">' +
-                '<div class="emp-avatar-circle" style="background:' + color + ';">' + avatarHtml + '</div>' +
-                '<div class="emp-info">' +
-                    '<div class="emp-name">' + name + '</div>' +
-                    '<div class="emp-meta">' +
-                        (email ? '<span><i class="fas fa-envelope" style="font-size:.7rem;"></i> ' + email + '</span>' : '') +
-                        (phone ? '<span><i class="fas fa-phone" style="font-size:.7rem;"></i> ' + phone + '</span>' : '') +
-                    '</div>' +
-                '</div>' +
-                (id ? '<a href="${pageContext.request.contextPath}/admin/users" class="emp-view-link" title="Xem hồ sơ">' +
-                    '<i class="fas fa-external-link-alt" style="font-size:.65rem;"></i> Hồ sơ' +
-                '</a>' : '') +
-            '</div>';
-        });
-        body.innerHTML = html;
-    }
-
-    function filterEmpList() {
-        var query = document.getElementById('empSearchInput').value.toLowerCase().trim();
-        if (!query) { renderEmpList(_currentEmpItems); return; }
-        var filtered = _currentEmpItems.filter(function(item) {
-            var n = (item.getAttribute('data-name')  || '').toLowerCase();
-            var e = (item.getAttribute('data-email') || '').toLowerCase();
-            var p = (item.getAttribute('data-phone') || '').toLowerCase();
-            return n.includes(query) || e.includes(query) || p.includes(query);
-        });
-        renderEmpList(filtered);
     }
 
     // Load employee counts (summary cards)

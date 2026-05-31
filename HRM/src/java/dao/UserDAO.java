@@ -335,4 +335,23 @@ public class UserDAO {
 
         return list;
     }
+
+    // ── Lấy danh sách nhân viên theo phòng ban ──
+    public java.util.List<User> getByDepartment(int departmentId) {
+        java.util.List<User> list = new java.util.ArrayList<>();
+        String sql = "SELECT * FROM users WHERE department_id = ? AND status = 1 ORDER BY full_name";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, departmentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToUser(rs));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi getByDepartment: " + e.getMessage());
+        }
+        return list;
+    }
 }

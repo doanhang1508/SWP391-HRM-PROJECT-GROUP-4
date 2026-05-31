@@ -1,5 +1,6 @@
-﻿<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <c:set var="pageTitle" value="Quản lý Người dùng" scope="request" />
 <jsp:include page="../header.jsp" />
@@ -57,6 +58,21 @@
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 <i class="fas fa-exclamation-circle me-2"></i> Lỗi thực thi!
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </c:if>
+
+        <%-- Banner lọc theo phòng ban --%>
+        <c:if test="${not empty filterDeptName}">
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:12px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <i class="fas fa-filter" style="color:#2b6cb0;"></i>
+                    <span style="font-weight:600;color:#1e40af;">Đang lọc: Phòng <strong>${filterDeptName}</strong></span>
+                    <span style="color:#64748b;font-size:.85rem;">— ${fn:length(users)} nhân viên</span>
+                </div>
+                <a href="${pageContext.request.contextPath}/admin/users"
+                   style="font-size:.82rem;color:#2b6cb0;text-decoration:none;border:1px solid #bfdbfe;border-radius:6px;padding:4px 12px;background:#fff;">
+                    <i class="fas fa-times" style="font-size:.7rem;"></i> Xem tất cả
+                </a>
             </div>
         </c:if>
 

@@ -41,47 +41,57 @@ public class adminUserController extends HttpServlet {
         RoleDAO roleDAO = new RoleDAO();
 
         // ===== LẤY GIÁ TRỊ SEARCH + FILTER =====
-        String keyword = request.getParameter("keyword");
+        String keyword    = request.getParameter("keyword");
         String roleFilter = request.getParameter("roleId");
+        String deptFilter = request.getParameter("departmentId");
 
-        // Tránh null
-        if (keyword == null) {
-            keyword = "";
-        }
+        if (keyword == null) keyword = "";
 
         List<User> users;
 
-        // ===== SEARCH + FILTER =====
-
-        // Có chọn role
-        if (roleFilter != null && !roleFilter.isEmpty()) {
-
+        // ===== FILTER BY DEPARTMENT (từ trang department) =====
+        if (deptFilter != null && !deptFilter.isEmpty()) {
             try {
-                int roleId = Integer.parseInt(roleFilter);
-
-                users = userDAO.searchUsers(keyword.trim(), roleId);
-
+                int departmentId = Integer.parseInt(deptFilter);
+                users = userDAO.getByDepartment(departmentId);
             } catch (NumberFormatException e) {
-
                 users = userDAO.getAllUsers();
             }
-
+        } else if (roleFilter != null && !roleFilter.isEmpty()) {
+            try {
+                int roleId = Integer.parseInt(roleFilter);
+                users = userDAO.searchUsers(keyword.trim(), roleId);
+            } catch (NumberFormatException e) {
+                users = userDAO.getAllUsers();
+            }
         } else {
-
-            // Chỉ search theo tên
             users = userDAO.searchUsersByName(keyword.trim());
         }
 
         // Lấy danh sách role
         List<Role> roles = roleDAO.getAllRoles();
 
+        // Lấy tên phòng ban nếu đang filter theo department
+        if (deptFilter != null && !deptFilter.isEmpty()) {
+            try {
+                dao.DepartmentDAO deptDao = new dao.DepartmentDAO();
+                java.util.List<model.Department> allDepts = deptDao.getAll();
+                int deptId = Integer.parseInt(deptFilter);
+                for (model.Department d : allDepts) {
+                    if (d.getDepartmentId() == deptId) {
+                        request.setAttribute("filterDeptName", d.getDepartmentName());
+                        break;
+                    }
+                }
+            } catch (NumberFormatException ignored) {}
+        }
+
         // Đẩy dữ liệu sang JSP
         request.setAttribute("users", users);
         request.setAttribute("roles", roles);
-
-        // Giữ lại giá trị search/filter trên form
         request.setAttribute("keyword", keyword);
         request.setAttribute("selectedRole", roleFilter);
+        request.setAttribute("selectedDept", deptFilter);
 
         request.getRequestDispatcher("/admin/user-list.jsp")
                 .forward(request, response);
