@@ -93,8 +93,20 @@
                                         <td class="text-end">
                                             <div class="d-flex justify-content-end gap-2">
                                                 <button class="btn-a btn-edit" title="Chỉnh sửa thông tin ca làm việc này" onclick="openEditModal(${s.shiftId},'${s.shiftName}','${s.startTime}','${s.endTime}','${s.breakStart}','${s.breakEnd}',${s.nightShift},${s.coefficient})"><i class="fas fa-edit"></i></button>
-                                                <a href="${pageContext.request.contextPath}/admin/shifts?action=toggleStatus&shiftId=${s.shiftId}" class="btn-a ${s.status==1?'btn-tog-on':'btn-tog-off'}" title="${s.status==1?'Khóa (Vô hiệu hóa) ca làm việc này':'Mở khóa (Kích hoạt) ca làm việc này'}" onclick="return confirm('${s.status==1?'Bạn có chắc chắn muốn KHÓA (Vô hiệu hóa) ca làm việc này không?':'Bạn có chắc chắn muốn MỞ KHÓA (Kích hoạt) ca làm việc này không?'}')"><i class="fas ${s.status==1?'fa-lock':'fa-unlock'}"></i></a>
-                                                <a href="${pageContext.request.contextPath}/admin/shifts?action=delete&shiftId=${s.shiftId}" class="btn-a btn-del" title="Xóa vĩnh viễn ca làm việc này" onclick="return confirm('Bạn có chắc chắn muốn XÓA VĨNH VIỄN ca làm việc này không? Hành động này không thể hoàn tác!')"><i class="fas fa-trash-alt"></i></a>
+                                                <form action="${pageContext.request.contextPath}/admin/shifts" method="POST" style="display:inline;" onsubmit="return confirm('${s.status==1?'Bạn có chắc chắn muốn KHÓA (Vô hiệu hóa) ca làm việc này không?':'Bạn có chắc chắn muốn MỞ KHÓA (Kích hoạt) ca làm việc này không?'}');">
+                                                    <input type="hidden" name="action" value="toggleStatus">
+                                                    <input type="hidden" name="shiftId" value="${s.shiftId}">
+                                                    <button type="submit" class="btn-a ${s.status==1?'btn-tog-on':'btn-tog-off'}" title="${s.status==1?'Khóa (Vô hiệu hóa) ca làm việc này':'Mở khóa (Kích hoạt) ca làm việc này'}">
+                                                        <i class="fas ${s.status==1?'fa-lock':'fa-unlock'}"></i>
+                                                    </button>
+                                                </form>
+                                                <form action="${pageContext.request.contextPath}/admin/shifts" method="POST" style="display:inline;" onsubmit="return confirm('Bạn có chắc chắn muốn XÓA VĨNH VIỄN ca làm việc này không? Hành động này không thể hoàn tác!');">
+                                                    <input type="hidden" name="action" value="delete">
+                                                    <input type="hidden" name="shiftId" value="${s.shiftId}">
+                                                    <button type="submit" class="btn-a btn-del" title="Xóa vĩnh viễn ca làm việc này">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </form>
                                             </div>
                                         </td>
                                     </tr>

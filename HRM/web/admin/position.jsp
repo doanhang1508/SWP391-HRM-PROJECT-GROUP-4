@@ -1,4 +1,4 @@
-﻿<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
@@ -239,11 +239,13 @@
                                                     onclick="openEditModal('${pos.positionId}','${pos.positionName}','${pos.description}')">
                                                 <i class="fas fa-pen"></i>
                                             </button>
-                                            <a href="${pageContext.request.contextPath}/admin/position?action=delete&id=${pos.positionId}"
-                                               class="action-btn btn-delete" title="Xóa"
-                                               onclick="return confirm('Xóa chức vụ \'${pos.positionName}\'?')">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </a>
+                                            <form action="${pageContext.request.contextPath}/admin/position" method="POST" style="display:inline;" onsubmit="return confirm('Xóa chức vụ \'${pos.positionName}\'?');">
+                                                <input type="hidden" name="action" value="delete">
+                                                <input type="hidden" name="id" value="${pos.positionId}">
+                                                <button type="submit" class="action-btn btn-delete" title="Xóa">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
                                 </c:forEach>

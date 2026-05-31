@@ -31,12 +31,6 @@ public class EducationLevelController extends HttpServlet {
         String action = request.getParameter("action");
         String idStr  = request.getParameter("id");
 
-        if ("delete".equals(action) && idStr != null) {
-            dao.delete(Integer.parseInt(idStr));
-            response.sendRedirect(request.getContextPath() + "/admin/education-level");
-            return;
-        }
-
         request.setAttribute("educationLevelList", dao.getAll());
         request.getRequestDispatcher("/admin/education-level.jsp").forward(request, response);
     }
@@ -56,7 +50,9 @@ public class EducationLevelController extends HttpServlet {
         String desc   = request.getParameter("description");
         String idStr  = request.getParameter("id");
 
-        if ("add".equals(action)) {
+        if ("delete".equals(action) && idStr != null) {
+            dao.delete(Integer.parseInt(idStr));
+        } else if ("add".equals(action)) {
             dao.insert(new EducationLevel(0, name, desc, true));
         } else if ("edit".equals(action) && idStr != null) {
             dao.update(new EducationLevel(Integer.parseInt(idStr), name, desc, true));

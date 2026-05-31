@@ -1,4 +1,4 @@
-﻿<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
@@ -149,10 +149,13 @@
                                 <td>
                                     <button class="action-btn btn-edit" title="Sửa"
                                             onclick="openEditModal('${loc.locationId}', '${loc.locationName}', '${loc.address}', '${loc.regionalMinimumWage}')"><i class="fas fa-pen"></i></button>
-                                    <a href="${pageContext.request.contextPath}/admin/work-location?action=delete&id=${loc.locationId}" 
-                                       class="action-btn btn-delete" title="Xóa" onclick="return confirm('Xóa chi nhánh này?');">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </a>
+                                    <form action="${pageContext.request.contextPath}/admin/work-location" method="POST" style="display:inline;" onsubmit="return confirm('Xóa chi nhánh này?');">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="id" value="${loc.locationId}">
+                                        <button type="submit" class="action-btn btn-delete" title="Xóa">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                         </c:forEach>

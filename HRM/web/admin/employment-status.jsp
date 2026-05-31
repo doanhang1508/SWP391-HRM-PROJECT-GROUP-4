@@ -171,11 +171,13 @@
                                             <button class="action-btn btn-edit" onclick="openEditModal('${es.statusId}','${es.statusName}','${es.description}')">
                                                 <i class="fas fa-pen"></i>
                                             </button>
-                                            <a href="${pageContext.request.contextPath}/admin/employment-status?action=delete&id=${es.statusId}"
-                                               class="action-btn btn-delete"
-                                               onclick="return confirm('Xóa trạng thái \'${es.statusName}\'?')">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </a>
+                                            <form action="${pageContext.request.contextPath}/admin/employment-status" method="POST" style="display:inline;" onsubmit="return confirm('Xóa trạng thái \'${es.statusName}\'?');">
+                                                <input type="hidden" name="action" value="delete">
+                                                <input type="hidden" name="id" value="${es.statusId}">
+                                                <button type="submit" class="action-btn btn-delete" title="Xóa">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
                                 </c:forEach>

@@ -31,12 +31,6 @@ public class ContractTypeController extends HttpServlet {
         String action = request.getParameter("action");
         String idStr  = request.getParameter("id");
 
-        if ("delete".equals(action) && idStr != null) {
-            dao.delete(Integer.parseInt(idStr));
-            response.sendRedirect(request.getContextPath() + "/admin/contract-type");
-            return;
-        }
-
         request.setAttribute("contractTypeList", dao.getAll());
         request.getRequestDispatcher("/admin/contract-type.jsp").forward(request, response);
     }
@@ -56,7 +50,9 @@ public class ContractTypeController extends HttpServlet {
         String desc   = request.getParameter("description");
         String idStr  = request.getParameter("id");
 
-        if ("add".equals(action)) {
+        if ("delete".equals(action) && idStr != null) {
+            dao.delete(Integer.parseInt(idStr));
+        } else if ("add".equals(action)) {
             dao.insert(new ContractType(0, name, desc, true));
         } else if ("edit".equals(action) && idStr != null) {
             dao.update(new ContractType(Integer.parseInt(idStr), name, desc, true));

@@ -31,12 +31,6 @@ public class DepartmentController extends HttpServlet {
         String action = request.getParameter("action");
         String idStr  = request.getParameter("id");
 
-        if ("delete".equals(action) && idStr != null) {
-            dao.delete(Integer.parseInt(idStr));
-            response.sendRedirect(request.getContextPath() + "/admin/department");
-            return;
-        }
-
         request.setAttribute("departmentList", dao.getAll());
         request.getRequestDispatcher("/admin/department.jsp").forward(request, response);
     }
@@ -56,7 +50,9 @@ public class DepartmentController extends HttpServlet {
         String desc   = request.getParameter("description");
         String idStr  = request.getParameter("id");
 
-        if ("add".equals(action)) {
+        if ("delete".equals(action) && idStr != null) {
+            dao.delete(Integer.parseInt(idStr));
+        } else if ("add".equals(action)) {
             dao.insert(new Department(0, name, desc, true));
         } else if ("edit".equals(action) && idStr != null) {
             dao.update(new Department(Integer.parseInt(idStr), name, desc, true));

@@ -72,17 +72,8 @@ public class workLocationController extends HttpServlet {
             return;
         }
         
-        String action = request.getParameter("action");
-        String idStr = request.getParameter("id");
-        
-        if("delete".equals(action)){
-            int id = Integer.parseInt(idStr);
-            dao.deleteLocation(id);
-            response.sendRedirect(request.getContextPath() + "/admin/work-location");
-        }else{
-            request.setAttribute("locationList", dao.getAll());
-            request.getRequestDispatcher("/admin/work-location.jsp").forward(request, response);
-        }
+        request.setAttribute("locationList", dao.getAll());
+        request.getRequestDispatcher("/admin/work-location.jsp").forward(request, response);
     } 
 
     /** 
@@ -97,20 +88,33 @@ public class workLocationController extends HttpServlet {
     throws ServletException, IOException {
         //processRequest(request, response);
         String action = request.getParameter("action");
-        String name = request.getParameter("name");
-        String address = request.getParameter("address");
-        BigDecimal wage = new BigDecimal(request.getParameter("wage"));
-        
         String idStr = request.getParameter("id");
         
-        if("add".equals(action)){
-            WorkLocation w = new WorkLocation(0, name, address, wage, true);
-            dao.insertLocation(w);
-        }
-        if("edit".equals(action)){
-            int id = Integer.parseInt(idStr);
-             WorkLocation w = new WorkLocation(id, name, address, wage, true);
-            dao.updateLocation(w);
+        if("delete".equals(action)){
+            if (idStr != null && !idStr.isEmpty()) {
+                int id = Integer.parseInt(idStr);
+                dao.deleteLocation(id);
+            }
+        } else {
+            String name = request.getParameter("name");
+            String address = request.getParameter("address");
+            String wageStr = request.getParameter("wage");
+            
+            if (wageStr != null && !wageStr.isEmpty()) {
+                BigDecimal wage = new BigDecimal(wageStr);
+                
+                if("add".equals(action)){
+                    WorkLocation w = new WorkLocation(0, name, address, wage, true);
+                    dao.insertLocation(w);
+                }
+                if("edit".equals(action)){
+                    if (idStr != null && !idStr.isEmpty()) {
+                        int id = Integer.parseInt(idStr);
+                        WorkLocation w = new WorkLocation(id, name, address, wage, true);
+                        dao.updateLocation(w);
+                    }
+                }
+            }
         }
         response.sendRedirect(request.getContextPath() + "/admin/work-location");
     }

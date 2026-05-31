@@ -200,11 +200,13 @@
                                                     onclick="openEditModal('${el.educationLevelId}','${el.levelName}','${el.description}')">
                                                 <i class="fas fa-pen"></i>
                                             </button>
-                                            <a href="${pageContext.request.contextPath}/admin/education-level?action=delete&id=${el.educationLevelId}"
-                                               class="action-btn btn-delete" title="Xóa"
-                                               onclick="return confirm('Xóa trình độ \'${el.levelName}\'?')">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </a>
+                                            <form action="${pageContext.request.contextPath}/admin/education-level" method="POST" style="display:inline;" onsubmit="return confirm('Xóa trình độ \'${el.levelName}\'?');">
+                                                <input type="hidden" name="action" value="delete">
+                                                <input type="hidden" name="id" value="${el.educationLevelId}">
+                                                <button type="submit" class="action-btn btn-delete" title="Xóa">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
                                 </c:forEach>

@@ -171,11 +171,13 @@
                                             <button class="action-btn btn-edit" onclick="openEditModal('${ct.contractTypeId}','${ct.typeName}','${ct.description}')">
                                                 <i class="fas fa-pen"></i>
                                             </button>
-                                            <a href="${pageContext.request.contextPath}/admin/contract-type?action=delete&id=${ct.contractTypeId}"
-                                               class="action-btn btn-delete"
-                                               onclick="return confirm('Xóa loại hợp đồng \'${ct.typeName}\'?')">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </a>
+                                            <form action="${pageContext.request.contextPath}/admin/contract-type" method="POST" style="display:inline;" onsubmit="return confirm('Xóa loại hợp đồng \'${ct.typeName}\'?');">
+                                                <input type="hidden" name="action" value="delete">
+                                                <input type="hidden" name="id" value="${ct.contractTypeId}">
+                                                <button type="submit" class="action-btn btn-delete" title="Xóa">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
                                 </c:forEach>

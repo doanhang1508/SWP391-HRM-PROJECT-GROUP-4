@@ -60,9 +60,6 @@ public class ShiftController extends HttpServlet {
         switch (getAction(req)) {
             case "schedule":     showSchedule(req, resp);      break;
             case "edit":         showEditForm(req, resp);       break;
-            case "delete":       deleteShift(req, resp);        break;
-            case "toggleStatus": toggleStatus(req, resp);       break;
-            case "deleteAssign": deleteAssignment(req, resp);   break;
             default:             listShifts(req, resp);         break;
         }
     }
@@ -75,10 +72,13 @@ public class ShiftController extends HttpServlet {
         if (user == null) { resp.sendRedirect(req.getContextPath() + "/login.jsp"); return; }
 
         switch (getAction(req)) {
-            case "create":  createShift(req, resp);  break;
-            case "update":  updateShift(req, resp);  break;
-            case "assign":  assignShift(req, resp);  break;
-            default:        resp.sendRedirect(req.getContextPath() + "/admin/shifts"); break;
+            case "create":       createShift(req, resp);      break;
+            case "update":       updateShift(req, resp);      break;
+            case "assign":       assignShift(req, resp);      break;
+            case "delete":       deleteShift(req, resp);      break;
+            case "toggleStatus": toggleStatus(req, resp);     break;
+            case "deleteAssign": deleteAssignment(req, resp); break;
+            default:             resp.sendRedirect(req.getContextPath() + "/admin/shifts"); break;
         }
     }
 
