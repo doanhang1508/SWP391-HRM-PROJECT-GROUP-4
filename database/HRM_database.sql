@@ -44,11 +44,13 @@ CREATE TABLE work_locations (
 
 -- BẢNG 4: salary_grades (Ngạch lương)
 CREATE TABLE salary_grades (
-    salary_grade_id INT          PRIMARY KEY AUTO_INCREMENT,
-    grade_name      VARCHAR(100) NOT NULL UNIQUE,
-    description     VARCHAR(255),
-    status          TINYINT(1)   NOT NULL DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    salary_grade_id INT PRIMARY KEY AUTO_INCREMENT,
+    grade_name VARCHAR(100) NOT NULL UNIQUE,
+    base_salary DECIMAL(15,2) NOT NULL,
+    coefficient DECIMAL(5,2) DEFAULT 1.00,
+    description VARCHAR(255),
+    status TINYINT(1) DEFAULT 1
+);
 
 -- BẢNG 5: contract_types (Loại hợp đồng)
 CREATE TABLE contract_types (
@@ -100,8 +102,7 @@ CREATE TABLE shifts (
     end_time     TIME         NOT NULL,
     break_start  TIME,
     break_end    TIME,
-    is_night_shift BIT        DEFAULT 0,
-    coefficient  FLOAT        DEFAULT 1.0,
+    working_days VARCHAR(50),
     status       TINYINT(1)   NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -188,7 +189,7 @@ CREATE TABLE employee_profiles (
     social_insurance_no    VARCHAR(50), -- Sổ BHXH
     bank_account           VARCHAR(50), -- STK Ngân hàng
     bank_name              VARCHAR(100),-- Tên Ngân hàng
-    base_salary            DECIMAL(15,2) DEFAULT 0, -- Lương cơ bản
+    
     contract_type_id       INT,         -- Loại HĐ
     salary_grade_id        INT,         -- Ngạch lương
     employment_status_id   INT,         -- Trạng thái làm việc
@@ -232,18 +233,6 @@ CREATE TABLE work_history (
 -- NHÓM 4: NGHIỆP VỤ (ATTENDANCE, LEAVE, PAYROLL)
 -- =============================================================
 
--- BẢNG: shift_assignments (Xếp ca làm việc)
-CREATE TABLE shift_assignments (
-    assignment_id INT        PRIMARY KEY AUTO_INCREMENT,
-    user_id       INT        NOT NULL,
-    shift_id      INT        NOT NULL,
-    assigned_date DATE       NOT NULL,
-    created_at    TIMESTAMP  DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_user_date (user_id, assigned_date),
-    CONSTRAINT fk_sa_user  FOREIGN KEY (user_id)  REFERENCES users(user_id) ON DELETE CASCADE,
-    CONSTRAINT fk_sa_shift FOREIGN KEY (shift_id) REFERENCES shifts(shift_id) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 -- BẢNG: attendance (Bảng chấm công hàng ngày)
 CREATE TABLE attendance (
     attendance_id INT  PRIMARY KEY AUTO_INCREMENT,
@@ -278,21 +267,44 @@ CREATE TABLE leave_requests (
 
 -- BẢNG: payroll (Bảng lương tháng)
 CREATE TABLE payroll (
-    payroll_id       INT           PRIMARY KEY AUTO_INCREMENT,
-    user_id          INT           NOT NULL,
-    month            INT           NOT NULL,
-    year             INT           NOT NULL,
-    base_salary      DECIMAL(15,2) NOT NULL DEFAULT 0,
-    working_days     DECIMAL(5,1)  NOT NULL DEFAULT 0, 
-    allowances       DECIMAL(15,2) DEFAULT 0,          
-    deductions       DECIMAL(15,2) DEFAULT 0,          
-    tax              DECIMAL(15,2) DEFAULT 0,          
-    insurance        DECIMAL(15,2) DEFAULT 0,          
-    net_salary       DECIMAL(15,2) NOT NULL,           
-    status           VARCHAR(20)   DEFAULT 'Draft',    
-    created_at       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_payroll_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    payroll_id INT PRIMARY KEY AUTO_INCREMENT,
+
+    user_id INT NOT NULL,
+
+    month INT NOT NULL,
+    year INT NOT NULL,
+
+    base_salary DECIMAL(15,2),
+
+    working_days DECIMAL(5,1),
+
+    overtime_amount DECIMAL(15,2),
+
+    allowance_amount DECIMAL(15,2),
+
+    bonus_amount DECIMAL(15,2),
+
+    deduction_amount DECIMAL(15,2),
+
+    insurance_amount DECIMAL(15,2),
+
+    tax_amount DECIMAL(15,2),
+
+    gross_salary DECIMAL(15,2),
+
+    net_salary DECIMAL(15,2),
+
+    status ENUM(
+        'Draft',
+        'Approved',
+        'Paid'
+    ) DEFAULT 'Draft',
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY(user_id)
+        REFERENCES users(user_id)
+);
 
 -- BẢNG: notifications (Thông báo hệ thống)
 CREATE TABLE notifications (
@@ -309,7 +321,64 @@ CREATE TABLE notifications (
     INDEX idx_created   (created_at),
     CONSTRAINT fk_notif_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- BẢNG: employee_shifts (Phân ca nhân viên)
 
+CREATE TABLE employee_shifts(
+    id INT PRIMARY KEY AUTO_INCREMENT,
+
+    user_id INT NOT NULL,
+
+    shift_id INT NOT NULL,
+
+    work_date DATE NOT NULL,
+
+    FOREIGN KEY(user_id)
+        REFERENCES users(user_id),
+
+    FOREIGN KEY(shift_id)
+        REFERENCES shifts(shift_id)
+);
+-- =============================================================
+-- NHÓM 5: Lương - C&B (Compensation & Benefits)
+-- =============================================================
+-- BẢNG: employee_allowances (nhân viên được phụ cấp)
+
+CREATE TABLE employee_allowances(
+    id INT PRIMARY KEY AUTO_INCREMENT,
+
+    user_id INT NOT NULL,
+
+    allowance_id INT NOT NULL,
+
+    amount DECIMAL(15,2) NOT NULL,
+
+    FOREIGN KEY(user_id)
+        REFERENCES users(user_id),
+
+    FOREIGN KEY(allowance_id)
+        REFERENCES allowances(allowance_id)
+);
+-- BẢNG: employee_rewards_disciplines (thưởng phạt nhân viên)
+
+CREATE TABLE employee_rewards_disciplines(
+    id INT PRIMARY KEY AUTO_INCREMENT,
+
+    user_id INT NOT NULL,
+
+    reward_discipline_id INT NOT NULL,
+
+    amount DECIMAL(15,2) NOT NULL,
+
+    note VARCHAR(255),
+
+    applied_date DATE,
+
+    FOREIGN KEY(user_id)
+        REFERENCES users(user_id),
+
+    FOREIGN KEY(reward_discipline_id)
+        REFERENCES reward_disciplines(id)
+);
 -- 3. BẬT LẠI KIỂM TRA KHÓA NGOẠI
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -344,11 +413,13 @@ INSERT INTO work_locations (location_id, location_name, address, regional_minimu
 (3, 'Chi nhánh Hồ Chí Minh', 'Tòa nhà B, Quận 1, TP.HCM', 4960000);  -- Vùng 1
 
 -- ── 4. Salary Grades ──
-INSERT INTO salary_grades (salary_grade_id, grade_name, description) VALUES
-(1, 'Ngạch Quản lý', 'Lương cao + KPI (Giám đốc, Trưởng phòng)'),
-(2, 'Ngạch Chuyên viên', 'Lương cố định + Thưởng (Khối Văn phòng)'),
-(3, 'Ngạch Kinh doanh', 'Lương cơ bản + Hoa hồng (Sales)'),
-(4, 'Ngạch Sản xuất', 'Lương ca + Lương SP (Công nhân)');
+INSERT INTO salary_grades
+(salary_grade_id, grade_name, base_salary, coefficient, description)
+VALUES
+(1,'Ngạch Quản lý',30000000,1.50,'Giám đốc, Trưởng phòng'),
+(2,'Ngạch Chuyên viên',12000000,1.20,'Khối văn phòng'),
+(3,'Ngạch Kinh doanh',10000000,1.00,'Nhân viên kinh doanh'),
+(4,'Ngạch Sản xuất',7000000,1.00,'Công nhân sản xuất');
 
 -- ── 5. Contract Types ──
 INSERT INTO contract_types (contract_type_id, type_name, description) VALUES
@@ -388,11 +459,11 @@ INSERT INTO education_levels (education_level_id, level_name) VALUES
 (5, 'Lao động phổ thông');
 
 -- ── 10. Shifts ──
-INSERT INTO shifts (shift_id, shift_name, start_time, end_time, break_start, break_end, is_night_shift, coefficient) VALUES
-(1, 'Ca Hành Chính', '08:00:00', '17:00:00', '12:00:00', '13:00:00', 0, 1.0),
-(2, 'Ca 1 (Sáng)', '06:00:00', '14:00:00', '11:00:00', '11:30:00', 0, 1.0),
-(3, 'Ca 2 (Chiều)', '14:00:00', '22:00:00', '17:30:00', '18:00:00', 0, 1.0),
-(4, 'Ca 3 (Đêm)', '22:00:00', '06:00:00', '02:00:00', '02:30:00', 1, 1.3);
+INSERT INTO shifts (shift_id, shift_name, start_time, end_time, break_start, break_end, working_days) VALUES
+(1, 'Ca Hành Chính', '08:00:00', '17:00:00', '12:00:00', '13:00:00', '2,3,4,5,6,7'),
+(2, 'Ca 1 (Sáng)', '06:00:00', '14:00:00', '11:00:00', '11:30:00', '2,3,4,5,6,7'),
+(3, 'Ca 2 (Chiều)', '14:00:00', '22:00:00', '17:30:00', '18:00:00', '2,3,4,5,6,7'),
+(4, 'Ca 3 (Đêm)', '22:00:00', '06:00:00', '02:00:00', '02:30:00', '2,3,4,5,6,7');
 
 -- ── 11. Leave Types ──
 INSERT INTO leave_types (leave_type_id, type_name, paid_leave) VALUES
@@ -477,32 +548,36 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 -- Admin hệ thống (tài khoản quản trị thuần túy, không phải nhân viên)
 INSERT INTO users (user_id, username, password, full_name, email, role_id, department_id, position_id) VALUES
 (1, 'admin', '@123456', 'Quản Trị Viên', 'admin@hrm.com', 1, NULL, NULL);
-
--- Giám đốc (nhân viên thực tế, cũng có quyền Admin)
+-- Thiếu 4 dòng này trước các INSERT employee_profiles
 INSERT INTO users (user_id, username, password, full_name, email, role_id, department_id, position_id) VALUES
 (2, 'giam_doc', '@123456', 'Nguyễn Văn Giám Đốc', 'giamdoc@hrm.com', 1, 1, 1);
-INSERT INTO employee_profiles (user_id, id_card, dob, gender, address, hire_date, tax_code, bank_account, base_salary, contract_type_id, salary_grade_id, employment_status_id, education_level_id, work_location_id) VALUES
-(2, '001085000001', '1985-01-01', 1, 'Hà Nội', '2020-01-01', '8012345678', '190300001', 50000000, 4, 1, 2, 1, 1);
 
--- Trưởng phòng Nhân sự
 INSERT INTO users (user_id, username, password, full_name, email, role_id, department_id, position_id) VALUES
 (3, 'hr_manager', '@123456', 'Trần Thị Nhân Sự', 'hr@hrm.com', 2, 2, 2);
-INSERT INTO employee_profiles (user_id, id_card, dob, gender, address, hire_date, tax_code, bank_account, base_salary, contract_type_id, salary_grade_id, employment_status_id, education_level_id, work_location_id) VALUES
-(3, '001090000002', '1990-05-15', 0, 'Hà Nội', '2021-03-10', '8012345679', '190300002', 25000000, 4, 2, 2, 2, 1);
 
--- Quản đốc Xưởng
 INSERT INTO users (user_id, username, password, full_name, email, role_id, department_id, position_id) VALUES
 (4, 'quan_doc', '@123456', 'Lê Văn Quản Đốc', 'quandoc@hrm.com', 3, 5, 4);
-INSERT INTO employee_profiles (user_id, id_card, dob, gender, address, hire_date, tax_code, bank_account, base_salary, contract_type_id, salary_grade_id, employment_status_id, education_level_id, work_location_id) VALUES
-(4, '001088000003', '1988-08-20', 1, 'Hải Phòng', '2020-06-01', '8012345680', '190300003', 20000000, 4, 1, 2, 2, 2);
 
--- Công nhân Xưởng
 INSERT INTO users (user_id, username, password, full_name, email, role_id, department_id, position_id) VALUES
 (5, 'cong_nhan', '@123456', 'Phạm Công Nhân', 'cn1@hrm.com', NULL, 5, 9);
-INSERT INTO employee_profiles (user_id, id_card, dob, gender, address, hire_date, tax_code, bank_account, base_salary, contract_type_id, salary_grade_id, employment_status_id, education_level_id, work_location_id) VALUES
-(5, '001095000004', '1995-12-10', 1, 'Bắc Ninh', '2022-02-15', '8012345681', '190300004', 8000000, 2, 4, 2, 5, 2);
 
+-- User 2: Giám đốc → hợp đồng vô thời hạn (id=4), ngạch quản lý (id=1)
+INSERT INTO employee_profiles (user_id, id_card, dob, gender, address, hire_date, tax_code, bank_account, contract_type_id, salary_grade_id, employment_status_id, education_level_id, work_location_id) VALUES
+(2, '001085000001', '1985-01-01', 1, 'Hà Nội', '2020-01-01', '8012345678', '190300001', 4, 1, 2, 1, 1);
+
+-- User 3: Trưởng phòng HR → hợp đồng vô thời hạn (id=4), ngạch chuyên viên (id=2)
+INSERT INTO employee_profiles (user_id, id_card, dob, gender, address, hire_date, tax_code, bank_account, contract_type_id, salary_grade_id, employment_status_id, education_level_id, work_location_id) VALUES
+(3, '001090000002', '1990-05-15', 0, 'Hà Nội', '2021-03-10', '8012345679', '190300002', 4, 2, 2, 2, 1);
+
+-- User 4: Quản đốc → hợp đồng vô thời hạn (id=4), ngạch chuyên viên (id=2)
+INSERT INTO employee_profiles (user_id, id_card, dob, gender, address, hire_date, tax_code, bank_account, contract_type_id, salary_grade_id, employment_status_id, education_level_id, work_location_id) VALUES
+(4, '001088000003', '1988-08-20', 1, 'Hải Phòng', '2020-06-01', '8012345680', '190300003', 4, 2, 2, 2, 2);
+
+-- User 5: Công nhân → hợp đồng có thời hạn 1 năm (id=2), ngạch sản xuất (id=4)
+INSERT INTO employee_profiles (user_id, id_card, dob, gender, address, hire_date, tax_code, bank_account, contract_type_id, salary_grade_id, employment_status_id, education_level_id, work_location_id) VALUES
+(5, '001095000004', '1995-12-10', 1, 'Bắc Ninh', '2022-02-15', '8012345681', '190300004', 2, 4, 2, 5, 2);
 -- ── 15. Dependents (Người phụ thuộc) ──
 INSERT INTO dependents (user_id, full_name, relationship, dob) VALUES
 (3, 'Nguyễn Bé Bỏng', 'Con ruột', '2020-10-10'),
 (5, 'Phạm Thị Mẹ', 'Mẹ ruột', '1960-01-01');
+
