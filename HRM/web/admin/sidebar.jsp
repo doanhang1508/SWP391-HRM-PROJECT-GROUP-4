@@ -351,6 +351,18 @@
                 </a>
             </li>
             <li class="sidebar-item">
+                <a href="${pageContext.request.contextPath}/admin/shifts"
+                   class="sidebar-link ${param.activeMenu eq 'shifts' ? 'active' : ''}">
+                    <i class="fas fa-clock"></i> Quản lý Ca làm việc
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="${pageContext.request.contextPath}/admin/shifts?action=schedule"
+                   class="sidebar-link ${param.activeMenu eq 'schedule' ? 'active' : ''}">
+                    <i class="fas fa-calendar-alt"></i> Xếp Lịch Ca
+                </a>
+            </li>
+            <li class="sidebar-item">
                 <a href="${pageContext.request.contextPath}/admin/pending-requests"
                    class="sidebar-link ${param.activeMenu eq 'pending-requests' ? 'active' : ''}">
                     <i class="fas fa-hourglass-half"></i> Đơn chờ xử lý
