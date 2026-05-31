@@ -70,7 +70,9 @@ public class RoleController extends HttpServlet {
                     showUpdateRoleForm(request, response, user);
                 }
                 break;
-
+            case "permission":
+                viewRolePermission(request, response, user);
+                break;
             default:
                 viewRoleList(request, response, user);
                 break;
@@ -229,5 +231,37 @@ public class RoleController extends HttpServlet {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    private void viewRolePermission(HttpServletRequest request, HttpServletResponse response, User user)
+            throws ServletException, IOException {
+
+        if (!permissionDAO.canViewRolePermissions(user.getUserId())) {
+            request.setAttribute("error", "Bạn không có quyền xem quyền của vai trò.");
+            request.getRequestDispatcher(PageConstant.NO_PERMISSION_PAGE).forward(request, response);
+            return;
+        }
+
+        Integer roleId = getRoleIdFromRequest(request);
+
+        if (roleId == null) {
+            request.setAttribute("error", "Role ID không hợp lệ.");
+            request.getRequestDispatcher(PageConstant.ROLE_PERMISSION_PAGE).forward(request, response);
+            return;
+        }
+
+        Role role = roleDAO.getRoleById(roleId);
+
+        if (role == null) {
+            request.setAttribute("error", "Không tìm thấy role.");
+            request.getRequestDispatcher(PageConstant.ROLE_PERMISSION_PAGE).forward(request, response);
+            return;
+        }
+
+        List<Permission> permissions = permissionDAO.getPermissionsByRoleId(roleId);
+
+        request.setAttribute("role", role);
+        request.setAttribute("permissions", permissions);
+        request.getRequestDispatcher(PageConstant.ROLE_PERMISSION_PAGE).forward(request, response);
     }
 }
