@@ -79,4 +79,29 @@ public class DepartmentDAO {
         }
         return 0;
     }
+
+    public List<model.User> getEmployeesByDepartment(int departmentId) {
+        List<model.User> list = new ArrayList<>();
+        String sql = "SELECT user_id, full_name, email, phone, avatar_url, role_id " +
+                     "FROM users WHERE department_id=? AND status=1 ORDER BY full_name";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, departmentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    model.User u = new model.User();
+                    u.setUserId(rs.getInt("user_id"));
+                    u.setFullName(rs.getString("full_name"));
+                    u.setEmail(rs.getString("email"));
+                    u.setPhone(rs.getString("phone"));
+                    u.setAvatarUrl(rs.getString("avatar_url"));
+                    u.setRoleId(rs.getInt("role_id"));
+                    list.add(u);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }
