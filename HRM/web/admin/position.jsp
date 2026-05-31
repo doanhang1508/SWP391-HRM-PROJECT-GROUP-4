@@ -226,7 +226,7 @@
                                         </td>
                                         <td><span class="pos-desc">${empty pos.description ? '—' : pos.description}</span></td>
                                         <td style="text-align:center;">
-                                            <span class="badge-count" data-pos-id="${pos.positionId}" data-pos-name="${pos.positionName}">
+                                            <span class="badge-count" data-pos-id="${pos.positionId}" data-pos-name="${pos.positionName}" data-emp-count="${empCountMap[pos.positionId]}">
                                                 <i class="fas fa-user" style="font-size:.6rem;"></i>
                                                 <span class="emp-count">...</span>
                                             </span>

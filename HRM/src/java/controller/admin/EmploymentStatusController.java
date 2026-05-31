@@ -31,7 +31,13 @@ public class EmploymentStatusController extends HttpServlet {
         String action = request.getParameter("action");
         String idStr  = request.getParameter("id");
 
-        request.setAttribute("employmentStatusList", dao.getAll());
+        java.util.List<EmploymentStatus> employmentStatusList = dao.getAll();
+        java.util.Map<Integer, Integer> empCountMap = new java.util.HashMap<>();
+        for (EmploymentStatus es : employmentStatusList) {
+            empCountMap.put(es.getStatusId(), dao.countEmployees(es.getStatusId()));
+        }
+        request.setAttribute("employmentStatusList", employmentStatusList);
+        request.setAttribute("empCountMap", empCountMap);
         request.getRequestDispatcher("/admin/employment-status.jsp").forward(request, response);
     }
 

@@ -31,7 +31,13 @@ public class DepartmentController extends HttpServlet {
         String action = request.getParameter("action");
         String idStr  = request.getParameter("id");
 
-        request.setAttribute("departmentList", dao.getAll());
+        java.util.List<model.Department> departmentList = dao.getAll();
+        java.util.Map<Integer, Integer> empCountMap = new java.util.HashMap<>();
+        for (model.Department d : departmentList) {
+            empCountMap.put(d.getDepartmentId(), dao.countEmployees(d.getDepartmentId()));
+        }
+        request.setAttribute("departmentList", departmentList);
+        request.setAttribute("empCountMap", empCountMap);
         request.getRequestDispatcher("/admin/department.jsp").forward(request, response);
     }
 

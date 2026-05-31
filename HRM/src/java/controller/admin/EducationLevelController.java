@@ -31,7 +31,13 @@ public class EducationLevelController extends HttpServlet {
         String action = request.getParameter("action");
         String idStr  = request.getParameter("id");
 
-        request.setAttribute("educationLevelList", dao.getAll());
+        java.util.List<model.EducationLevel> educationLevelList = dao.getAll();
+        java.util.Map<Integer, Integer> empCountMap = new java.util.HashMap<>();
+        for (model.EducationLevel el : educationLevelList) {
+            empCountMap.put(el.getEducationLevelId(), dao.countEmployees(el.getEducationLevelId()));
+        }
+        request.setAttribute("educationLevelList", educationLevelList);
+        request.setAttribute("empCountMap", empCountMap);
         request.getRequestDispatcher("/admin/education-level.jsp").forward(request, response);
     }
 

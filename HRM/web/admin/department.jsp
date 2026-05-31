@@ -219,7 +219,7 @@
                                         </td>
                                         <td><span class="dept-desc">${empty dept.description ? '—' : dept.description}</span></td>
                                         <td style="text-align:center;">
-                                            <span class="badge-count" data-dept-id="${dept.departmentId}" data-dept-name="${dept.departmentName}">
+                                            <span class="badge-count" data-emp-count="${empCountMap[dept.departmentId]}" data-dept-id="${dept.departmentId}" data-dept-name="${dept.departmentName}">
                                                 <i class="fas fa-user" style="font-size:.6rem;"></i>
                                                 <span class="emp-count">...</span>
                                             </span>

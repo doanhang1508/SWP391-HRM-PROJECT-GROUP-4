@@ -31,7 +31,13 @@ public class PositionController extends HttpServlet {
         String action = request.getParameter("action");
         String idStr  = request.getParameter("id");
 
-        request.setAttribute("positionList", dao.getAll());
+        java.util.List<Position> positionList = dao.getAll();
+        java.util.Map<Integer, Integer> empCountMap = new java.util.HashMap<>();
+        for (Position p : positionList) {
+            empCountMap.put(p.getPositionId(), dao.countEmployees(p.getPositionId()));
+        }
+        request.setAttribute("positionList", positionList);
+        request.setAttribute("empCountMap", empCountMap);
         request.getRequestDispatcher("/admin/position.jsp").forward(request, response);
     }
 
