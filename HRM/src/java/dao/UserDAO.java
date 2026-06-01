@@ -356,4 +356,23 @@ public class UserDAO {
         }
         return list;
     }
+
+    // ── Lấy danh sách nhân viên theo chức vụ ──
+    public java.util.List<User> getByPosition(int positionId) {
+        java.util.List<User> list = new java.util.ArrayList<>();
+        String sql = "SELECT * FROM users WHERE position_id = ? AND status = 1 ORDER BY full_name";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, positionId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToUser(rs));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi getByPosition: " + e.getMessage());
+        }
+        return list;
+    }
 }

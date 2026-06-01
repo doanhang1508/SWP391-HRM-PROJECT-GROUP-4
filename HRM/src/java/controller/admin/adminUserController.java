@@ -45,6 +45,7 @@ public class adminUserController extends HttpServlet {
         String keyword    = request.getParameter("keyword");
         String roleFilter = request.getParameter("roleId");
         String deptFilter = request.getParameter("departmentId");
+        String posFilter  = request.getParameter("positionId");
 
         if (keyword == null) keyword = "";
 
@@ -55,6 +56,13 @@ public class adminUserController extends HttpServlet {
             try {
                 int departmentId = Integer.parseInt(deptFilter);
                 users = userDAO.getByDepartment(departmentId);
+            } catch (NumberFormatException e) {
+                users = userDAO.getAllUsers();
+            }
+        } else if (posFilter != null && !posFilter.isEmpty()) {
+            try {
+                int positionId = Integer.parseInt(posFilter);
+                users = userDAO.getByPosition(positionId);
             } catch (NumberFormatException e) {
                 users = userDAO.getAllUsers();
             }
@@ -72,7 +80,7 @@ public class adminUserController extends HttpServlet {
         // Lấy danh sách role
         List<Role> roles = roleDAO.getAllRoles();
 
-        // Lấy tên phòng ban nếu đang filter theo department
+        // Lấy tên phòng ban/chức vụ nếu đang filter
         if (deptFilter != null && !deptFilter.isEmpty()) {
             try {
                 dao.DepartmentDAO deptDao = new dao.DepartmentDAO();
@@ -80,7 +88,19 @@ public class adminUserController extends HttpServlet {
                 int deptId = Integer.parseInt(deptFilter);
                 for (model.Department d : allDepts) {
                     if (d.getDepartmentId() == deptId) {
-                        request.setAttribute("filterDeptName", d.getDepartmentName());
+                        request.setAttribute("filterName", "Phòng " + d.getDepartmentName());
+                        break;
+                    }
+                }
+            } catch (NumberFormatException ignored) {}
+        } else if (posFilter != null && !posFilter.isEmpty()) {
+            try {
+                dao.PositionDAO posDao = new dao.PositionDAO();
+                java.util.List<model.Position> allPos = posDao.getAll();
+                int posId = Integer.parseInt(posFilter);
+                for (model.Position p : allPos) {
+                    if (p.getPositionId() == posId) {
+                        request.setAttribute("filterName", "Chức vụ " + p.getPositionName());
                         break;
                     }
                 }

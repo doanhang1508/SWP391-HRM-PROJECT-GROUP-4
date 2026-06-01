@@ -71,6 +71,8 @@
 
     /* ACTION */
     .action-btn { background: none; border: none; cursor: pointer; padding: 6px 10px; border-radius: 6px; font-size: .9rem; transition: background .2s; }
+    .btn-view   { color: #10b981; }
+    .btn-view:hover { background: #d1fae5; }
     .btn-edit   { color: var(--teal); }
     .btn-edit:hover { background: #f0fdfa; }
     .btn-delete { color: #e11d48; }
@@ -91,6 +93,12 @@
     /* EMPTY */
     .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
     .empty-state i { font-size: 3rem; margin-bottom: 16px; opacity: .3; }
+
+    /* PAGINATION */
+    .btn-page { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; color: var(--muted); cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+    .btn-page:hover:not(:disabled) { border-color: var(--teal); color: var(--teal); }
+    .btn-page.active { background: var(--teal); border-color: var(--teal); color: white; }
+    .btn-page:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* MODAL */
     .modal-overlay { display: none; position: fixed; inset: 0; z-index: 1050; background: rgba(0,0,0,.5); backdrop-filter: blur(3px); }
@@ -202,7 +210,7 @@
                     <tbody>
                         <c:choose>
                             <c:when test="${empty positionList}">
-                                <tr>
+                                <tr class="empty-state-row">
                                     <td colspan="6">
                                         <div class="empty-state">
                                             <i class="fas fa-id-card-alt"></i>
@@ -226,7 +234,7 @@
                                         </td>
                                         <td><span class="pos-desc">${empty pos.description ? '—' : pos.description}</span></td>
                                         <td style="text-align:center;">
-                                            <span class="badge-count" data-pos-id="${pos.positionId}" data-pos-name="${pos.positionName}" data-emp-count="${empCountMap[pos.positionId]}">
+                                            <span class="badge-count" data-pos-id="${pos.positionId}" data-pos-name="${pos.positionName}" data-emp-count="${empCountMap[pos.positionId]}" title="Tổng số nhân viên">
                                                 <i class="fas fa-user" style="font-size:.6rem;"></i>
                                                 <span class="emp-count">...</span>
                                             </span>
@@ -235,6 +243,9 @@
                                             <span class="badge-active"><i class="fas fa-circle" style="font-size:.45rem;"></i> Hoạt động</span>
                                         </td>
                                         <td style="text-align:center;">
+                                            <a href="${pageContext.request.contextPath}/admin/users?positionId=${pos.positionId}" class="action-btn btn-view" style="display:inline-flex;" title="Xem danh sách nhân viên">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
                                             <button class="action-btn btn-edit" title="Sửa"
                                                     onclick="openEditModal('${pos.positionId}','${pos.positionName}','${pos.description}')">
                                                 <i class="fas fa-pen"></i>
@@ -254,6 +265,19 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- PAGINATION -->
+            <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+                <div class="pagination-info" style="font-size: 0.85rem; color: var(--muted);">
+                    Hiển thị <span id="pageStart" style="font-weight: 600; color: var(--navy);">0</span> - <span id="pageEnd" style="font-weight: 600; color: var(--navy);">0</span> trong tổng số <span id="totalItems" style="font-weight: 600; color: var(--navy);">0</span> mục
+                </div>
+                <div class="pagination-controls" style="display: flex; gap: 8px;">
+                    <button class="btn-page" id="btnPrevPage" onclick="prevPage()"><i class="fas fa-chevron-left"></i></button>
+                    <div id="pageNumbers" style="display: flex; gap: 4px;"></div>
+                    <button class="btn-page" id="btnNextPage" onclick="nextPage()"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+
         </div>
 
     </div>
@@ -327,14 +351,95 @@
         });
     });
 
-    function filterTable() {
-        const query = document.getElementById('searchInput').value.toLowerCase();
-        document.querySelectorAll('#posTable tbody tr').forEach(function(row) {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(query) ? '' : 'none';
-        });
+    // Pagination & Search filter
+    let currentPage = 1;
+    const itemsPerPage = 8;
+    let filteredRows = [];
+
+    function initPagination() {
+        const rows = document.querySelectorAll('#posTable tbody tr:not(.empty-state-row)');
+        filteredRows = Array.from(rows);
+        updatePagination();
     }
 
+    function updatePagination() {
+        if(filteredRows.length === 0) {
+            document.getElementById('pageStart').textContent = 0;
+            document.getElementById('pageEnd').textContent = 0;
+            document.getElementById('totalItems').textContent = 0;
+            document.getElementById('pageNumbers').innerHTML = '';
+            document.getElementById('btnPrevPage').disabled = true;
+            document.getElementById('btnNextPage').disabled = true;
+            return;
+        }
+
+        const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, filteredRows.length);
+
+        // Hide all rows first
+        document.querySelectorAll('#posTable tbody tr:not(.empty-state-row)').forEach(row => row.style.display = 'none');
+        
+        // Show only rows for current page
+        for (let i = startIndex; i < endIndex; i++) {
+            filteredRows[i].style.display = '';
+        }
+
+        document.getElementById('pageStart').textContent = startIndex + 1;
+        document.getElementById('pageEnd').textContent = endIndex;
+        document.getElementById('totalItems').textContent = filteredRows.length;
+
+        // Render page numbers
+        let pageHtml = '';
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === currentPage) {
+                pageHtml += '<button class="btn-page active">' + i + '</button>';
+            } else {
+                pageHtml += '<button class="btn-page" onclick="goToPage(' + i + ')">' + i + '</button>';
+            }
+        }
+        document.getElementById('pageNumbers').innerHTML = pageHtml;
+
+        document.getElementById('btnPrevPage').disabled = currentPage === 1;
+        document.getElementById('btnNextPage').disabled = currentPage === totalPages;
+    }
+
+    function goToPage(page) {
+        currentPage = page;
+        updatePagination();
+    }
+    
+    function prevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            updatePagination();
+        }
+    }
+    
+    function nextPage() {
+        const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            updatePagination();
+        }
+    }
+
+    function filterTable() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const allRows = Array.from(document.querySelectorAll('#posTable tbody tr:not(.empty-state-row)'));
+        
+        filteredRows = allRows.filter(row => {
+            return row.textContent.toLowerCase().includes(query);
+        });
+        
+        currentPage = 1;
+        updatePagination();
+    }
+
+    // Load employee counts & init pagination
     document.addEventListener('DOMContentLoaded', function() {
         const badges = document.querySelectorAll('.badge-count');
         let total = 0;
@@ -349,6 +454,8 @@
         document.getElementById('totalEmpCount').textContent = total || '—';
         document.getElementById('biggestPos').textContent    = biggest.name;
         document.getElementById('biggestPosCount').textContent = biggest.count > 0 ? biggest.count + ' nhân viên' : '';
+        
+        initPagination();
     });
 </script>
 

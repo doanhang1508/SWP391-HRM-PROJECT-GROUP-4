@@ -39,6 +39,12 @@
     .btn-save { background: #f0fdf4; color: #10b981; } .btn-save:hover { background: #10b981; color: #fff; }
     .btn-toggle-on { background: #fee2e2; color: #ef4444; } .btn-toggle-on:hover { background: #ef4444; color: #fff; }
     .btn-toggle-off { background: #d1fae5; color: #10b981; } .btn-toggle-off:hover { background: #10b981; color: #fff; }
+
+    /* PAGINATION */
+    .btn-page { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; color: #64748b; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+    .btn-page:hover:not(:disabled) { border-color: #3b82f6; color: #3b82f6; }
+    .btn-page.active { background: #3b82f6; border-color: #3b82f6; color: white; }
+    .btn-page:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
 
 <div class="dashboard-wrapper">
@@ -61,12 +67,12 @@
             </div>
         </c:if>
 
-        <%-- Banner lọc theo phòng ban --%>
-        <c:if test="${not empty filterDeptName}">
+        <%-- Banner lọc theo phòng ban / chức vụ --%>
+        <c:if test="${not empty filterName}">
             <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:12px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
                 <div style="display:flex;align-items:center;gap:10px;">
                     <i class="fas fa-filter" style="color:#2b6cb0;"></i>
-                    <span style="font-weight:600;color:#1e40af;">Đang lọc: Phòng <strong>${filterDeptName}</strong></span>
+                    <span style="font-weight:600;color:#1e40af;">Đang lọc: <strong>${filterName}</strong></span>
                     <span style="color:#64748b;font-size:.85rem;">— ${fn:length(users)} nhân viên</span>
                 </div>
                 <a href="${pageContext.request.contextPath}/admin/users"
@@ -172,8 +178,18 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <c:forEach items="${users}" var="u">
-                            <tr>
+                        <c:choose>
+                            <c:when test="${empty users}">
+                                <tr class="empty-state-row">
+                                    <td colspan="5" class="text-center text-muted" style="padding: 40px;">
+                                        <i class="fas fa-users" style="font-size: 3rem; opacity: 0.3; margin-bottom: 16px;"></i>
+                                        <p style="font-weight: 600; color: #0f172a;">Không có người dùng nào</p>
+                                    </td>
+                                </tr>
+                            </c:when>
+                            <c:otherwise>
+                                <c:forEach items="${users}" var="u">
+                                    <tr>
                                 <td>
                                     <div class="user-info">
                                         <div class="avatar-sm">${u.fullName.substring(0,1)}</div>
@@ -230,9 +246,24 @@
                                 </td>
                             </tr>
                         </c:forEach>
+                            </c:otherwise>
+                        </c:choose>
                     </tbody>
                 </table>
             </div>
+
+            <!-- PAGINATION -->
+            <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+                <div class="pagination-info" style="font-size: 0.85rem; color: #64748b;">
+                    Hiển thị <span id="pageStart" style="font-weight: 600; color: #0f172a;">0</span> - <span id="pageEnd" style="font-weight: 600; color: #0f172a;">0</span> trong tổng số <span id="totalItems" style="font-weight: 600; color: #0f172a;">0</span> mục
+                </div>
+                <div class="pagination-controls" style="display: flex; gap: 8px;">
+                    <button class="btn-page" id="btnPrevPage" onclick="prevPage()"><i class="fas fa-chevron-left"></i></button>
+                    <div id="pageNumbers" style="display: flex; gap: 4px;"></div>
+                    <button class="btn-page" id="btnNextPage" onclick="nextPage()"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -283,6 +314,85 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-```
+<script>
+    // Pagination Logic
+    let currentPage = 1;
+    const itemsPerPage = 6;
+    let filteredRows = [];
 
----
+    document.addEventListener('DOMContentLoaded', function() {
+        initPagination();
+    });
+
+    function initPagination() {
+        const rows = document.querySelectorAll('.table-custom tbody tr:not(.empty-state-row)');
+        filteredRows = Array.from(rows);
+        updatePagination();
+    }
+
+    function updatePagination() {
+        if(filteredRows.length === 0) {
+            document.getElementById('pageStart').textContent = 0;
+            document.getElementById('pageEnd').textContent = 0;
+            document.getElementById('totalItems').textContent = 0;
+            document.getElementById('pageNumbers').innerHTML = '';
+            document.getElementById('btnPrevPage').disabled = true;
+            document.getElementById('btnNextPage').disabled = true;
+            return;
+        }
+
+        const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, filteredRows.length);
+
+        // Hide all rows first
+        document.querySelectorAll('.table-custom tbody tr:not(.empty-state-row)').forEach(row => row.style.display = 'none');
+        
+        // Show only rows for current page
+        for (let i = startIndex; i < endIndex; i++) {
+            filteredRows[i].style.display = '';
+        }
+
+        document.getElementById('pageStart').textContent = startIndex + 1;
+        document.getElementById('pageEnd').textContent = endIndex;
+        document.getElementById('totalItems').textContent = filteredRows.length;
+
+        // Render page numbers
+        let pageHtml = '';
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === currentPage) {
+                pageHtml += '<button class="btn-page active">' + i + '</button>';
+            } else {
+                pageHtml += '<button class="btn-page" onclick="goToPage(' + i + ')">' + i + '</button>';
+            }
+        }
+        document.getElementById('pageNumbers').innerHTML = pageHtml;
+
+        document.getElementById('btnPrevPage').disabled = currentPage === 1;
+        document.getElementById('btnNextPage').disabled = currentPage === totalPages;
+    }
+
+    function goToPage(page) {
+        currentPage = page;
+        updatePagination();
+    }
+    
+    function prevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            updatePagination();
+        }
+    }
+    
+    function nextPage() {
+        const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            updatePagination();
+        }
+    }
+</script>
+<jsp:include page="../footer.jsp" />
