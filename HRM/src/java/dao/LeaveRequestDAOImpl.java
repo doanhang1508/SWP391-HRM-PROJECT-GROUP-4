@@ -11,24 +11,24 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
 
     @Override
     public List<LeaveType> getAllLeaveTypes() {
-        List<LeaveType> list = new ArrayList<>();
-        String sql = "SELECT * FROM leave_types WHERE status = 1";
-        try (Connection c = DBContext.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                LeaveType type = new LeaveType();
-                type.setLeaveTypeId(rs.getInt("leave_type_id"));
-                type.setTypeName(rs.getString("type_name"));
-                type.setPaidLeave(rs.getBoolean("paid_leave"));
-                type.setStatus(rs.getBoolean("status"));
-                list.add(type);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
+    List<LeaveType> list = new ArrayList<>();
+    String sql = "SELECT * FROM leave_types WHERE status = 1";
+    try (Connection c = DBContext.getConnection();
+         PreparedStatement ps = c.prepareStatement(sql);
+         ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+            LeaveType type = new LeaveType();
+            type.setLeaveTypeId(rs.getInt("leave_type_id"));
+            type.setTypeName(rs.getString("type_name"));
+            type.setPaidLeave(rs.getInt("paid_leave"));
+            type.setStatus(rs.getInt("status"));
+            list.add(type);
         }
-        return list;
+    } catch (SQLException e) {
+        e.printStackTrace();
     }
+    return list;
+}
 
     @Override
     public List<LeaveRequest> getRequestsByUserId(int userId) {
