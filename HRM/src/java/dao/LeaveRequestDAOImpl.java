@@ -20,7 +20,9 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
             LeaveType type = new LeaveType();
             type.setLeaveTypeId(rs.getInt("leave_type_id"));
             type.setTypeName(rs.getString("type_name"));
+            type.setDescription(rs.getString("description"));
             type.setPaidLeave(rs.getInt("paid_leave"));
+            type.setMaxDaysPerYear((Integer) rs.getObject("max_days_per_year"));
             type.setStatus(rs.getInt("status"));
             list.add(type);
         }

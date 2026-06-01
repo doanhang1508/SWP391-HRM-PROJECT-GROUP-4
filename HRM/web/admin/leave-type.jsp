@@ -1,5 +1,6 @@
 <%@page contentType="text/html" pageEncoding="UTF-8" %>
     <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+    <%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
         <c:set var="pageTitle" value="Quản lý Loại Nghỉ Phép" scope="request" />
         <jsp:include page="../header.jsp" />
@@ -139,6 +140,100 @@
                 background: #fee2e2;
                 color: #dc2626;
             }
+
+            .modal-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                z-index: 1050;
+                background: rgba(15, 23, 42, 0.45);
+                backdrop-filter: blur(3px);
+            }
+
+            .modal-box {
+                background: #ffffff;
+                margin: 8% auto;
+                padding: 24px 28px;
+                width: 420px;
+                border-radius: 14px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            }
+
+            .modal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 16px;
+                padding-bottom: 12px;
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            .modal-title {
+                font-size: 1rem;
+                font-weight: 700;
+                color: #0f172a;
+                margin: 0;
+            }
+
+            .modal-close {
+                background: none;
+                border: none;
+                font-size: 1.4rem;
+                color: #64748b;
+                cursor: pointer;
+                line-height: 1;
+                padding: 0;
+            }
+
+            .form-group {
+                margin-bottom: 16px;
+            }
+
+            .form-label {
+                display: block;
+                font-size: 0.8rem;
+                font-weight: 600;
+                color: #64748b;
+                margin-bottom: 6px;
+            }
+
+            .form-control {
+                width: 100%;
+                padding: 9px 12px;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                font-size: 0.9rem;
+                outline: none;
+            }
+
+            .form-control:focus {
+                border-color: #0d9488;
+                box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+            }
+
+            .modal-footer {
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+                margin-top: 18px;
+            }
+
+            .btn-cancel {
+                background: none;
+                border: 1px solid #e2e8f0;
+                padding: 8px 16px;
+                border-radius: 8px;
+                font-size: 0.85rem;
+                color: #64748b;
+                cursor: pointer;
+            }
+
+            @media (max-width: 600px) {
+                .modal-box {
+                    width: 95%;
+                    margin: 12% auto;
+                }
+            }
         </style>
 
         <div class="dashboard-wrapper">
@@ -159,17 +254,17 @@
                         <div class="dash-page-title">Danh Mục Nghỉ Phép</div>
                     </div>
 
-                    <c:if test="${not empty error}">
+                    <c:if test="${not empty error or not empty param.error}">
                         <div
                             style="padding:15px;border-radius:8px;background:#fee2e2;color:#991b1b;border:1px solid #f87171;margin-bottom:20px;font-size:0.9rem;font-weight:500;">
-                            <i class="fas fa-exclamation-triangle"></i> ${error}
+                            <i class="fas fa-exclamation-triangle"></i> ${not empty error ? error : param.error}
                         </div>
                     </c:if>
 
                     <div class="dash-card">
                         <div class="dash-card-header">
                             <h3 class="dash-card-title">Danh sách loại nghỉ phép</h3>
-                            <button class="dash-btn" onclick="alert('Chức năng thêm mới đang được cập nhật!')">
+                            <button class="dash-btn" onclick="openAddModal()">
                                 <i class="fas fa-plus"></i> Thêm mới
                             </button>
                         </div>
@@ -179,7 +274,9 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Tên Loại Nghỉ Phép</th>
+                                    <th>Mô tả</th>
                                     <th>Tính Lương</th>
+                                    <th>Số ngày tối đa/năm</th>
                                     <th>Thao Tác</th>
                                 </tr>
                             </thead>
@@ -188,6 +285,7 @@
                                     <tr>
                                         <td>#${type.leaveTypeId}</td>
                                         <td style="font-weight: 500;">${type.typeName}</td>
+                                        <td>${empty type.description ? '—' : type.description}</td>
                                         <td>
                                             <c:choose>
                                                 <c:when test="${type.paidLeave == 1}">
@@ -198,10 +296,22 @@
                                                 </c:otherwise>
                                             </c:choose>
                                         </td>
+                                        <td>${type.maxDaysPerYear}</td>
                                         <td>
-                                            <a href="#" style="color: #3b82f6; margin-right: 10px;"><i
-                                                    class="fas fa-edit"></i></a>
-                                            <a href="#" style="color: #ef4444;"><i class="fas fa-trash"></i></a>
+                                            <button
+                                                type="button"
+                                                class="action-btn"
+                                                style="color: #3b82f6; margin-right: 10px; background: none; border: none; cursor: pointer;"
+                                                onclick="openEditModal('${type.leaveTypeId}','${fn:escapeXml(type.typeName)}','${type.paidLeave}','${fn:escapeXml(type.description)}','${type.maxDaysPerYear}')">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <form action="${pageContext.request.contextPath}/admin/leave-types" method="POST" style="display: inline;" onsubmit="return confirm('Xóa loại nghỉ phép \'${type.typeName}\'?');">
+                                                <input type="hidden" name="action" value="delete">
+                                                <input type="hidden" name="id" value="${type.leaveTypeId}">
+                                                <button type="submit" style="color: #ef4444; background: none; border: none; cursor: pointer;">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
                                 </c:forEach>
@@ -212,5 +322,115 @@
                 </div>
             </div>
         </div>
+
+        <div class="modal-overlay" id="addModal">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3 class="modal-title">Thêm loại nghỉ phép</h3>
+                    <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
+                </div>
+                <form action="${pageContext.request.contextPath}/admin/leave-types" method="POST">
+                    <input type="hidden" name="action" value="add">
+                    <div class="form-group">
+                        <label class="form-label">Tên loại nghỉ phép <span style="color:#e11d48;">*</span></label>
+                        <input type="text" name="name" class="form-control" maxlength="255" placeholder="Nhập tên loại nghỉ phép" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mô tả</label>
+                        <textarea name="description" class="form-control" maxlength="500" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tính lương <span style="color:#e11d48;">*</span></label>
+                        <div style="display:flex; gap:12px; align-items:center;">
+                            <label style="display:flex; align-items:center; gap:6px; font-size:0.9rem;">
+                                <input type="radio" name="paidLeave" value="1" checked> Có hưởng lương
+                            </label>
+                            <label style="display:flex; align-items:center; gap:6px; font-size:0.9rem;">
+                                <input type="radio" name="paidLeave" value="0"> Không hưởng lương
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Số ngày tối đa/năm</label>
+                        <input type="number" name="maxDaysPerYear" class="form-control" min="0" max="365" placeholder="0 - 365">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-cancel" onclick="closeModal('addModal')">Hủy</button>
+                        <button type="submit" class="dash-btn"><i class="fas fa-save"></i> Lưu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="editModal">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3 class="modal-title">Cập nhật loại nghỉ phép</h3>
+                    <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
+                </div>
+                <form action="${pageContext.request.contextPath}/admin/leave-types" method="POST">
+                    <input type="hidden" name="action" value="edit">
+                    <input type="hidden" name="id" id="edit_id">
+                    <div class="form-group">
+                        <label class="form-label">Tên loại nghỉ phép <span style="color:#e11d48;">*</span></label>
+                        <input type="text" name="name" id="edit_name" class="form-control" maxlength="255" placeholder="Nhập tên loại nghỉ phép" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mô tả</label>
+                        <textarea name="description" id="edit_description" class="form-control" maxlength="500" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tính lương <span style="color:#e11d48;">*</span></label>
+                        <div style="display:flex; gap:12px; align-items:center;">
+                            <label style="display:flex; align-items:center; gap:6px; font-size:0.9rem;">
+                                <input type="radio" name="paidLeave" id="edit_paid_yes" value="1"> Có hưởng lương
+                            </label>
+                            <label style="display:flex; align-items:center; gap:6px; font-size:0.9rem;">
+                                <input type="radio" name="paidLeave" id="edit_paid_no" value="0"> Không hưởng lương
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Số ngày tối đa/năm</label>
+                        <input type="number" name="maxDaysPerYear" id="edit_max_days" class="form-control" min="0" max="365" placeholder="0 - 365">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-cancel" onclick="closeModal('editModal')">Hủy</button>
+                        <button type="submit" class="dash-btn"><i class="fas fa-save"></i> Cập nhật</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            function openAddModal() {
+                document.getElementById('addModal').style.display = 'block';
+            }
+
+            function openEditModal(id, name, paidLeave, description, maxDays) {
+                document.getElementById('edit_id').value = id;
+                document.getElementById('edit_name').value = name;
+                document.getElementById('edit_description').value = description || '';
+                document.getElementById('edit_max_days').value = maxDays || '';
+                if (paidLeave === '1') {
+                    document.getElementById('edit_paid_yes').checked = true;
+                } else {
+                    document.getElementById('edit_paid_no').checked = true;
+                }
+                document.getElementById('editModal').style.display = 'block';
+            }
+
+            function closeModal(id) {
+                document.getElementById(id).style.display = 'none';
+            }
+
+            document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
+                overlay.addEventListener('click', function (e) {
+                    if (e.target === overlay) {
+                        overlay.style.display = 'none';
+                    }
+                });
+            });
+        </script>
 
         <jsp:include page="../footer.jsp" />

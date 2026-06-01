@@ -213,6 +213,12 @@
                     </a>
                 </li>
                 <li class="sidebar-item">
+                    <a href="${pageContext.request.contextPath}/admin/leave-types"
+                       class="sidebar-link ${param.activeMenu eq 'leave-types' ? 'active' : ''}">
+                        <i class="fas fa-calendar-times"></i> Loại nghỉ phép
+                    </a>
+                </li>
+                <li class="sidebar-item">
                     <a href="${pageContext.request.contextPath}/admin/shifts?action=schedule"
                        class="sidebar-link ${param.activeMenu eq 'schedule' ? 'active' : ''}">
                         <i class="fas fa-calendar-alt"></i> Xếp lịch ca

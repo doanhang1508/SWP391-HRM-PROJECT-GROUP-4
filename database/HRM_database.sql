@@ -106,9 +106,12 @@ CREATE TABLE shifts (
 -- BẢNG 11: leave_types
 CREATE TABLE leave_types (
     leave_type_id INT         PRIMARY KEY AUTO_INCREMENT,
-    type_name     VARCHAR(50) NOT NULL,
+    type_name     VARCHAR(255) NOT NULL,
+    description   VARCHAR(500),
     paid_leave    TINYINT(1)  DEFAULT 1,
-    status        TINYINT(1)  NOT NULL DEFAULT 1
+    max_days_per_year INT,
+    status        TINYINT(1)  NOT NULL DEFAULT 1,
+    UNIQUE KEY uk_leave_types_type_name (type_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- BẢNG 12: reward_disciplines
@@ -409,12 +412,12 @@ INSERT INTO shifts (shift_id, shift_name, start_time, end_time, break_start, bre
 (4, 'Ca 3 (Đêm)',   '22:00:00','06:00:00','02:00:00','02:30:00', 1, 1.30,'2,3,4,5,6,7');
 
 -- ── 11. Leave Types ──
-INSERT INTO leave_types (leave_type_id, type_name, paid_leave) VALUES
-(1, 'Nghỉ phép năm',           1),
-(2, 'Nghỉ ốm (Hưởng BHXH)',    0),
-(3, 'Nghỉ thai sản',           0),
-(4, 'Nghỉ việc riêng có lương',1),
-(5, 'Nghỉ không lương',        0);
+INSERT INTO leave_types (leave_type_id, type_name, description, paid_leave, max_days_per_year) VALUES
+(1, 'Nghỉ phép năm',           'Nghỉ phép theo quy định',                 1, 12),
+(2, 'Nghỉ ốm (Hưởng BHXH)',    'Nghỉ ốm hưởng chế độ BHXH',               0, NULL),
+(3, 'Nghỉ thai sản',           'Chế độ thai sản theo quy định',           0, NULL),
+(4, 'Nghỉ việc riêng có lương','Nghỉ việc riêng vẫn tính lương',          1, NULL),
+(5, 'Nghỉ không lương',        'Nghỉ không hưởng lương',                  0, NULL);
 
 -- ── 12. Reward Disciplines ──
 INSERT INTO reward_disciplines (id, name, type, description) VALUES
