@@ -96,14 +96,16 @@ CREATE TABLE education_levels (
 
 -- BẢNG 10: shifts (Ca làm việc)
 CREATE TABLE shifts (
-    shift_id     INT          PRIMARY KEY AUTO_INCREMENT,
-    shift_name   VARCHAR(50)  NOT NULL, 
-    start_time   TIME         NOT NULL,
-    end_time     TIME         NOT NULL,
-    break_start  TIME,
-    break_end    TIME,
-    working_days VARCHAR(50),
-    status       TINYINT(1)   NOT NULL DEFAULT 1
+    shift_id        INT          PRIMARY KEY AUTO_INCREMENT,
+    shift_name      VARCHAR(50)  NOT NULL, 
+    start_time      TIME         NOT NULL,
+    end_time        TIME         NOT NULL,
+    break_start     TIME,
+    break_end       TIME,
+    is_night_shift  TINYINT(1)   NOT NULL DEFAULT 0,
+    coefficient     DECIMAL(5,2) NOT NULL DEFAULT 1.00,
+    working_days    VARCHAR(50),
+    status          TINYINT(1)   NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- BẢNG 11: leave_types (Loại nghỉ phép)
@@ -232,6 +234,18 @@ CREATE TABLE work_history (
 -- =============================================================
 -- NHÓM 4: NGHIỆP VỤ (ATTENDANCE, LEAVE, PAYROLL)
 -- =============================================================
+
+-- BẢNG: shift_assignments (Bản phân ca làm việc)
+CREATE TABLE shift_assignments (
+    assignment_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id       INT NOT NULL,
+    shift_id      INT NOT NULL,
+    assigned_date DATE NOT NULL,
+    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_sa_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT fk_sa_shift FOREIGN KEY (shift_id) REFERENCES shifts(shift_id) ON DELETE CASCADE,
+    UNIQUE KEY idx_user_date (user_id, assigned_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- BẢNG: attendance (Bảng chấm công hàng ngày)
 CREATE TABLE attendance (
@@ -459,11 +473,11 @@ INSERT INTO education_levels (education_level_id, level_name) VALUES
 (5, 'Lao động phổ thông');
 
 -- ── 10. Shifts ──
-INSERT INTO shifts (shift_id, shift_name, start_time, end_time, break_start, break_end, working_days) VALUES
-(1, 'Ca Hành Chính', '08:00:00', '17:00:00', '12:00:00', '13:00:00', '2,3,4,5,6,7'),
-(2, 'Ca 1 (Sáng)', '06:00:00', '14:00:00', '11:00:00', '11:30:00', '2,3,4,5,6,7'),
-(3, 'Ca 2 (Chiều)', '14:00:00', '22:00:00', '17:30:00', '18:00:00', '2,3,4,5,6,7'),
-(4, 'Ca 3 (Đêm)', '22:00:00', '06:00:00', '02:00:00', '02:30:00', '2,3,4,5,6,7');
+INSERT INTO shifts (shift_id, shift_name, start_time, end_time, break_start, break_end, is_night_shift, coefficient, working_days) VALUES
+(1, 'Ca Hành Chính', '08:00:00', '17:00:00', '12:00:00', '13:00:00', 0, 1.00, '2,3,4,5,6,7'),
+(2, 'Ca 1 (Sáng)', '06:00:00', '14:00:00', '11:00:00', '11:30:00', 0, 1.00, '2,3,4,5,6,7'),
+(3, 'Ca 2 (Chiều)', '14:00:00', '22:00:00', '17:30:00', '18:00:00', 0, 1.00, '2,3,4,5,6,7'),
+(4, 'Ca 3 (Đêm)', '22:00:00', '06:00:00', '02:00:00', '02:30:00', 1, 1.30, '2,3,4,5,6,7');
 
 -- ── 11. Leave Types ──
 INSERT INTO leave_types (leave_type_id, type_name, paid_leave) VALUES
