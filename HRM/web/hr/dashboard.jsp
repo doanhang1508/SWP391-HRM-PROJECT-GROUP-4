@@ -1,4 +1,4 @@
-﻿<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="fn"
@@ -323,7 +323,7 @@ body {
 
 <div class="dashboard-wrapper">
     <%-- Sidebar chung --%>
-    <jsp:include page="sidebar.jsp">
+    <jsp:include page="../shared/sidebar.jsp">
         <jsp:param name="activeMenu" value="dashboard" />
     </jsp:include>
 

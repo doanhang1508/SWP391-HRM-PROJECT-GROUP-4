@@ -40,6 +40,10 @@
         <servlet-class>controller.admin.adminDashboardController</servlet-class>
     </servlet>
     <servlet>
+        <servlet-name>UnifiedDashboardController</servlet-name>
+        <servlet-class>controller.UnifiedDashboardController</servlet-class>
+    </servlet>
+    <servlet>
         <servlet-name>DepartmentsController</servlet-name>
         <servlet-class>controller.admin.DepartmentController</servlet-class>
     </servlet>
@@ -67,6 +71,7 @@
         <servlet-name>ContractTypeController</servlet-name>
         <servlet-class>controller.admin.ContractTypeController</servlet-class>
     </servlet>
+
 
     <!-- ══════════════════════════════════════════════════════
          URL MAPPINGS
@@ -104,8 +109,8 @@
         <url-pattern>/editRolePermission</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
-        <servlet-name>adminDashboardController</servlet-name>
-        <url-pattern>/admin/dashboard</url-pattern>
+        <servlet-name>UnifiedDashboardController</servlet-name>
+        <url-pattern>/dashboard</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>DepartmentsController</servlet-name>
@@ -135,4 +140,5 @@
         <servlet-name>ContractTypeController</servlet-name>
         <url-pattern>/admin/contract-type</url-pattern>
     </servlet-mapping>
+
 </web-app>

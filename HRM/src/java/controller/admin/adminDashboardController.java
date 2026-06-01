@@ -18,36 +18,8 @@ public class adminDashboardController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
     throws ServletException, IOException {
-        
-        HttpSession session = request.getSession();
-        User currentUser = (User) session.getAttribute("currentUser");
-        
-        if (currentUser == null) {
-            response.sendRedirect(request.getContextPath() + "/login");
-            return;
-        }
-        
-        if (currentUser.getRoleId() != 1) {
-            response.sendRedirect(request.getContextPath() + "/employee/dashboard");
-            return;
-        }
-
-        // Lấy thông số thống kê cho biểu đồ
-        UserDAO userDAO = new UserDAO();
-        int totalUsers = userDAO.getTotalUsers();
-        int activeUsers = userDAO.getActiveUsers();
-        int totalRoles = userDAO.getTotalRoles();
-        
-        int totalDepartments = 5; 
-        int pendingLeaves = 12;
-
-        request.setAttribute("totalUsers", totalUsers);
-        request.setAttribute("activeUsers", activeUsers);
-        request.setAttribute("totalRoles", totalRoles);
-        request.setAttribute("totalDepartments", totalDepartments);
-        request.setAttribute("pendingLeaves", pendingLeaves);
-
-        request.getRequestDispatcher("/admin/dashboard.jsp").forward(request, response);
+        // Redirect về unified dashboard
+        response.sendRedirect(request.getContextPath() + "/dashboard");
     } 
 
     @Override

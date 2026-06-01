@@ -1,4 +1,4 @@
-﻿<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="java.util.List" %>
 <%@ page import="model.Role" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
@@ -168,7 +168,7 @@
 
 <div class="dashboard-wrapper">
     <!-- Sidebar -->
-    <jsp:include page="sidebar.jsp">
+    <jsp:include page="../shared/sidebar.jsp">
         <jsp:param name="activeMenu" value="permissions" />
     </jsp:include>
 

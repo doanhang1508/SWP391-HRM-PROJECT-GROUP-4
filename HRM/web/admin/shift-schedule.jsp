@@ -78,7 +78,7 @@
 %>
 
 <div class="dashboard-wrapper">
-    <jsp:include page="sidebar.jsp"><jsp:param name="activeMenu" value="shifts"/></jsp:include>
+    <jsp:include page="../shared/sidebar.jsp"><jsp:param name="activeMenu" value="shifts"/></jsp:include>
     <div class="main-content">
         <div class="page-header">
             <div>

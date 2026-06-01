@@ -1,4 +1,4 @@
-﻿<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
@@ -352,19 +352,10 @@
 </script>
 
 <div class="profile-layout">
-    <!-- Sidebar: tự chọn đúng sidebar dựa trên roleId -->
-    <c:choose>
-        <c:when test="${sessionScope.currentUser.roleId == 1}">
-            <jsp:include page="admin/sidebar.jsp">
-                <jsp:param name="activeMenu" value="profile" />
-            </jsp:include>
-        </c:when>
-        <c:otherwise>
-            <jsp:include page="employee/sidebar.jsp">
-                <jsp:param name="activeMenu" value="profile" />
-            </jsp:include>
-        </c:otherwise>
-    </c:choose>
+    <!-- Sidebar chung phân quyền theo role -->
+    <jsp:include page="shared/sidebar.jsp">
+        <jsp:param name="activeMenu" value="profile" />
+    </jsp:include>
 
     <!-- Main Content -->
     <div class="profile-content">

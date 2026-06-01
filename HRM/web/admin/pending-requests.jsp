@@ -1,4 +1,4 @@
-﻿<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
@@ -180,7 +180,7 @@ body { background: var(--bg); font-family: 'Inter', sans-serif; color: var(--tex
 </style>
 
 <div class="pr-wrapper">
-    <jsp:include page="sidebar.jsp">
+    <jsp:include page="../shared/sidebar.jsp">
         <jsp:param name="activeMenu" value="pending-requests" />
     </jsp:include>
 

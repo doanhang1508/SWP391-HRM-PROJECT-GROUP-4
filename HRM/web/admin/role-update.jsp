@@ -1,4 +1,4 @@
-﻿<%@page import="model.Role"%>
+<%@page import="model.Role"%>
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
@@ -150,7 +150,7 @@
 
 <div class="dashboard-wrapper">
     <!-- Sidebar -->
-    <jsp:include page="sidebar.jsp">
+    <jsp:include page="../shared/sidebar.jsp">
         <jsp:param name="activeMenu" value="roles" />
     </jsp:include>
 

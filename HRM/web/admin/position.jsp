@@ -127,7 +127,7 @@
 </style>
 
 <div class="page-wrapper">
-    <jsp:include page="sidebar.jsp">
+    <jsp:include page="../shared/sidebar.jsp">
         <jsp:param name="activeMenu" value="position" />
     </jsp:include>
 

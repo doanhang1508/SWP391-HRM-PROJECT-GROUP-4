@@ -111,7 +111,7 @@
 </style>
 
 <div class="dept-wrapper">
-    <jsp:include page="sidebar.jsp">
+    <jsp:include page="../shared/sidebar.jsp">
         <jsp:param name="activeMenu" value="work-locations" />
     </jsp:include>
 

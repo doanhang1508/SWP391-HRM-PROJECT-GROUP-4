@@ -1,4 +1,4 @@
-﻿<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <c:set var="pageTitle" value="Cài đặt bảo mật - HRM" scope="request" />
@@ -245,19 +245,10 @@
 </style>
 
 <div class="settings-layout">
-    <!-- Sidebar -->
-    <c:choose>
-        <c:when test="${sessionScope.currentUser.roleId == 1}">
-            <jsp:include page="admin/sidebar.jsp">
-                <jsp:param name="activeMenu" value="settings" />
-            </jsp:include>
-        </c:when>
-        <c:otherwise>
-            <jsp:include page="employee/sidebar.jsp">
-                <jsp:param name="activeMenu" value="settings" />
-            </jsp:include>
-        </c:otherwise>
-    </c:choose>
+    <!-- Sidebar chung phân quyền theo role -->
+    <jsp:include page="shared/sidebar.jsp">
+        <jsp:param name="activeMenu" value="settings" />
+    </jsp:include>
 
     <!-- Main Content -->
     <div class="settings-content">
