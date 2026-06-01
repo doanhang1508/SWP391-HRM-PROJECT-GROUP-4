@@ -1,4 +1,4 @@
-﻿<%@page contentType="text/html" pageEncoding="UTF-8" %>
+<%@page contentType="text/html" pageEncoding="UTF-8" %>
     <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
         <%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
             <!DOCTYPE html>
@@ -537,12 +537,8 @@
 
 
                         <div class="nav-right">
-                            <!-- Theme Toggle -->
-                            <button class="theme-toggle-btn" id="themeToggleBtn" title="Chuyển giao diện" aria-label="Toggle theme">
-                                <i class="fas fa-sun icon-light"></i>
-                                <i class="fas fa-moon icon-dark"></i>
-                            </button>
                             <c:if test="${sessionScope.currentUser != null}">
+
                                 <div class="hrm-notif-wrap me-2" id="hrmNotifWrap">
 
                                     <%-- Nút chuông --%>
@@ -798,19 +794,7 @@
                                         })();
                                     </script>
 
-                                    <!-- Theme Toggle Script -->
-                                    <script>
-                                    (function(){
-                                        var btn = document.getElementById('themeToggleBtn');
-                                        if (!btn) return;
-                                        btn.addEventListener('click', function(){
-                                            var current = document.documentElement.getAttribute('data-theme') || 'light';
-                                            var next = current === 'dark' ? 'light' : 'dark';
-                                            document.documentElement.setAttribute('data-theme', next);
-                                            localStorage.setItem('hrm-theme', next);
-                                        });
-                                    })();
-                                    </script>
+
                             </c:if>
 
                             <c:choose>

@@ -383,24 +383,7 @@
                     <i class="fas fa-id-card-alt"></i> Chức vụ
                 </a>
             </li>
-            <li class="sidebar-item">
-                <a href="${pageContext.request.contextPath}/admin/work-location"
-                   class="sidebar-link ${param.activeMenu eq 'work-location' ? 'active' : ''}">
-                    <i class="fas fa-map-marked-alt"></i> Địa điểm làm việc
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="${pageContext.request.contextPath}/admin/education-level"
-                   class="sidebar-link ${param.activeMenu eq 'education-level' ? 'active' : ''}">
-                    <i class="fas fa-graduation-cap"></i> Trình độ học vấn
-                </a>
-            </li>
-            <li class="sidebar-item">
-                <a href="${pageContext.request.contextPath}/admin/employment-status"
-                   class="sidebar-link ${param.activeMenu eq 'employment-status' ? 'active' : ''}">
-                    <i class="fas fa-briefcase"></i> Trạng thái làm việc
-                </a>
-            </li>
+
             <li class="sidebar-item">
                 <a href="${pageContext.request.contextPath}/admin/contract-type"
                    class="sidebar-link ${param.activeMenu eq 'contract-type' ? 'active' : ''}">

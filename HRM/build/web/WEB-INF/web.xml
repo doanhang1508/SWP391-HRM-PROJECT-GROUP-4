@@ -55,18 +55,7 @@
         <servlet-name>PositionController</servlet-name>
         <servlet-class>controller.admin.PositionController</servlet-class>
     </servlet>
-    <servlet>
-        <servlet-name>workLocationController</servlet-name>
-        <servlet-class>controller.admin.workLocationController</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>EducationLevelController</servlet-name>
-        <servlet-class>controller.admin.EducationLevelController</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>EmploymentStatusController</servlet-name>
-        <servlet-class>controller.admin.EmploymentStatusController</servlet-class>
-    </servlet>
+
     <servlet>
         <servlet-name>ContractTypeController</servlet-name>
         <servlet-class>controller.admin.ContractTypeController</servlet-class>
@@ -124,18 +113,7 @@
         <servlet-name>PositionController</servlet-name>
         <url-pattern>/admin/position</url-pattern>
     </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>workLocationController</servlet-name>
-        <url-pattern>/admin/work-location</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>EducationLevelController</servlet-name>
-        <url-pattern>/admin/education-level</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>EmploymentStatusController</servlet-name>
-        <url-pattern>/admin/employment-status</url-pattern>
-    </servlet-mapping>
+
     <servlet-mapping>
         <servlet-name>ContractTypeController</servlet-name>
         <url-pattern>/admin/contract-type</url-pattern>

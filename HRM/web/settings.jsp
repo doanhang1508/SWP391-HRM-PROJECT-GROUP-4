@@ -5,7 +5,7 @@
 <jsp:include page="header.jsp" />
 
 <style>
-    body { background-color: #f0f4f8; }
+    body { background-color: var(--th-bg); }
 
     .settings-layout {
         display: flex;
@@ -25,23 +25,23 @@
     .settings-page-title {
         font-size: 1.4rem;
         font-weight: 700;
-        color: #2b2b2b;
+        color: var(--th-text);
         margin: 0;
     }
     .settings-breadcrumb {
         font-size: 0.85rem;
-        color: #8f9fbc;
+        color: var(--th-muted);
         margin: 4px 0 0;
     }
     .settings-breadcrumb a { color: #4361ee; text-decoration: none; }
 
     /* Settings Card */
     .settings-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
+        background: var(--th-surface);
+        border: 1px solid var(--th-border);
         border-radius: 16px;
         padding: 28px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        box-shadow: var(--th-card-shadow);
         margin-bottom: 24px;
     }
     .settings-card-header {
@@ -50,7 +50,7 @@
         gap: 12px;
         margin-bottom: 24px;
         padding-bottom: 16px;
-        border-bottom: 1px solid #edf2f7;
+        border-bottom: 1px solid var(--th-border);
     }
     .settings-card-header .icon-box {
         width: 40px; height: 40px;
@@ -64,101 +64,12 @@
         margin: 0;
         font-size: 1.05rem;
         font-weight: 700;
-        color: #2d3748;
+        color: var(--th-text);
     }
     .settings-card-header p {
         margin: 2px 0 0;
         font-size: 0.8rem;
-        color: #8f9fbc;
-    }
-
-    /* Password Form */
-    .password-field {
-        margin-bottom: 18px;
-    }
-    .password-field label {
-        display: block;
-        font-size: 0.82rem;
-        font-weight: 700;
-        color: #4a5568;
-        margin-bottom: 6px;
-    }
-    .password-input-wrap {
-        position: relative;
-    }
-    .password-input-wrap input {
-        width: 100%;
-        padding: 12px 44px 12px 16px;
-        border: 1.5px solid #e2e8f0;
-        border-radius: 10px;
-        font-size: 0.95rem;
-        font-family: inherit;
-        color: #2d3748;
-        background: #f8fafc;
-        transition: all 0.2s;
-    }
-    .password-input-wrap input:focus {
-        outline: none;
-        border-color: #4361ee;
-        background: #fff;
-        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.08);
-    }
-    .password-toggle {
-        position: absolute;
-        right: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        background: none;
-        border: none;
-        color: #8f9fbc;
-        cursor: pointer;
-        padding: 4px;
-        font-size: 0.9rem;
-        transition: color 0.2s;
-    }
-    .password-toggle:hover { color: #4361ee; }
-
-    /* Password Strength */
-    .password-strength {
-        display: flex;
-        gap: 4px;
-        margin-top: 8px;
-    }
-    .strength-bar {
-        height: 4px;
-        flex: 1;
-        border-radius: 2px;
-        background: #e2e8f0;
-        transition: background 0.3s;
-    }
-    .strength-bar.active.weak { background: #e53e3e; }
-    .strength-bar.active.medium { background: #dd6b20; }
-    .strength-bar.active.strong { background: #38a169; }
-    .strength-text {
-        font-size: 0.75rem;
-        font-weight: 600;
-        margin-top: 4px;
-    }
-
-    /* Submit Button */
-    .btn-change-password {
-        padding: 12px 28px;
-        border-radius: 10px;
-        font-size: 0.9rem;
-        font-weight: 700;
-        border: none;
-        background: linear-gradient(135deg, #4361ee, #4895ef);
-        color: white;
-        cursor: pointer;
-        transition: all 0.3s;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
-    }
-    .btn-change-password:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(67, 97, 238, 0.4);
+        color: var(--th-muted);
     }
 
     /* Notification Settings */
@@ -167,19 +78,19 @@
         align-items: center;
         justify-content: space-between;
         padding: 16px 0;
-        border-bottom: 1px solid #f1f5f9;
+        border-bottom: 1px solid var(--th-border);
     }
     .notif-option:last-child { border-bottom: none; }
     .notif-option-info h6 {
         margin: 0;
         font-size: 0.9rem;
         font-weight: 700;
-        color: #2d3748;
+        color: var(--th-text);
     }
     .notif-option-info p {
         margin: 2px 0 0;
         font-size: 0.8rem;
-        color: #8f9fbc;
+        color: var(--th-muted);
     }
 
     /* Toggle Switch */
@@ -193,7 +104,7 @@
     .toggle-slider {
         position: absolute;
         top: 0; left: 0; right: 0; bottom: 0;
-        background: #cbd5e0;
+        background: var(--th-muted);
         border-radius: 24px;
         cursor: pointer;
         transition: background 0.3s;
@@ -203,7 +114,7 @@
         position: absolute;
         width: 18px; height: 18px;
         left: 3px; bottom: 3px;
-        background: white;
+        background: var(--th-surface);
         border-radius: 50%;
         transition: transform 0.3s;
         box-shadow: 0 1px 3px rgba(0,0,0,0.15);
@@ -221,9 +132,9 @@
         align-items: center;
         gap: 14px;
         padding: 16px;
-        background: #f8fafc;
+        background: var(--th-surface2);
         border-radius: 12px;
-        border: 1px solid #edf2f7;
+        border: 1px solid var(--th-border);
     }
     .security-info .si-icon {
         width: 40px; height: 40px;
@@ -234,8 +145,8 @@
         flex-shrink: 0;
         font-size: 0.9rem;
     }
-    .security-info h6 { margin: 0; font-size: 0.85rem; font-weight: 700; color: #2d3748; }
-    .security-info p { margin: 2px 0 0; font-size: 0.78rem; color: #8f9fbc; }
+    .security-info h6 { margin: 0; font-size: 0.85rem; font-weight: 700; color: var(--th-text); }
+    .security-info p { margin: 2px 0 0; font-size: 0.78rem; color: var(--th-muted); }
 
     /* Responsive */
     @media (max-width: 991px) {
@@ -276,61 +187,43 @@
         </div>
 
         <!-- 1. Change Password Card -->
-        <div class="settings-card">
-            <div class="settings-card-header">
-                <div class="icon-box" style="background: rgba(229, 62, 62, 0.1); color: #e53e3e;">
+        <div class="settings-card" style="display: flex; align-items: center; justify-content: space-between; padding: 24px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div class="icon-box" style="width: 46px; height: 46px; border-radius: 12px; background: rgba(229, 62, 62, 0.1); color: #e53e3e; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
                     <i class="fas fa-key"></i>
                 </div>
                 <div>
-                    <h3>Đổi mật khẩu</h3>
-                    <p>Cập nhật mật khẩu để bảo vệ tài khoản của bạn</p>
+                    <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #2d3748;">Đổi mật khẩu</h3>
+                    <p style="margin: 2px 0 0; font-size: 0.85rem; color: #8f9fbc;">Cập nhật mật khẩu để bảo vệ tài khoản của bạn</p>
+                </div>
+            </div>
+            <a href="${pageContext.request.contextPath}/changePassword.jsp" class="btn btn-outline-primary" style="border-radius: 8px; font-weight: 600; padding: 8px 20px; font-size: 0.85rem;">
+                Thay đổi
+            </a>
+        </div>
+
+        <!-- Appearance Settings Card -->
+        <div class="settings-card">
+            <div class="settings-card-header">
+                <div class="icon-box" style="background: rgba(128, 90, 213, 0.1); color: #805ad5;">
+                    <i class="fas fa-paint-brush"></i>
+                </div>
+                <div>
+                    <h3>Giao diện</h3>
+                    <p>Tùy chỉnh giao diện hệ thống theo sở thích</p>
                 </div>
             </div>
 
-            <form action="${pageContext.request.contextPath}/changePassword" method="POST" id="changePasswordForm">
-                <div class="password-field">
-                    <label>Mật khẩu hiện tại</label>
-                    <div class="password-input-wrap">
-                        <input type="password" name="oldPassword" id="oldPassword" required placeholder="Nhập mật khẩu hiện tại">
-                        <button type="button" class="password-toggle" onclick="togglePassword('oldPassword', this)">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
+            <div class="notif-option">
+                <div class="notif-option-info">
+                    <h6><i class="fas fa-moon me-2 text-primary"></i>Chế độ nền tối (Dark Mode)</h6>
+                    <p>Giảm chói mắt khi làm việc ban đêm, tiết kiệm pin cho thiết bị</p>
                 </div>
-
-                <div class="password-field">
-                    <label>Mật khẩu mới</label>
-                    <div class="password-input-wrap">
-                        <input type="password" name="newPassword" id="newPassword" required minlength="6" placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)" oninput="checkStrength(this.value)">
-                        <button type="button" class="password-toggle" onclick="togglePassword('newPassword', this)">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                    <div class="password-strength" id="strengthBars">
-                        <div class="strength-bar"></div>
-                        <div class="strength-bar"></div>
-                        <div class="strength-bar"></div>
-                        <div class="strength-bar"></div>
-                    </div>
-                    <div class="strength-text" id="strengthText"></div>
-                </div>
-
-                <div class="password-field">
-                    <label>Xác nhận mật khẩu mới</label>
-                    <div class="password-input-wrap">
-                        <input type="password" name="confirmPassword" id="confirmPassword" required minlength="6" placeholder="Nhập lại mật khẩu mới">
-                        <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword', this)">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="d-flex justify-content-end mt-3">
-                    <button type="submit" class="btn-change-password">
-                        <i class="fas fa-check"></i> Xác nhận đổi mật khẩu
-                    </button>
-                </div>
-            </form>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="themeToggleSwitch">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
         </div>
 
         <!-- 2. Notification Settings Card -->
@@ -422,61 +315,21 @@
     </div><!-- end .settings-content -->
 </div><!-- end .settings-layout -->
 
+
+
 <script>
-    // Toggle password visibility
-    function togglePassword(inputId, btn) {
-        const input = document.getElementById(inputId);
-        const icon = btn.querySelector('i');
-        if (input.type === 'password') {
-            input.type = 'text';
-            icon.classList.replace('fa-eye', 'fa-eye-slash');
-        } else {
-            input.type = 'password';
-            icon.classList.replace('fa-eye-slash', 'fa-eye');
-        }
-    }
+    (function(){
+        var toggle = document.getElementById('themeToggleSwitch');
+        if (!toggle) return;
+        var current = document.documentElement.getAttribute('data-theme') || 'light';
+        toggle.checked = (current === 'dark');
 
-    // Password strength checker
-    function checkStrength(password) {
-        const bars = document.querySelectorAll('#strengthBars .strength-bar');
-        const text = document.getElementById('strengthText');
-        let strength = 0;
-
-        if (password.length >= 6) strength++;
-        if (password.length >= 10) strength++;
-        if (/[A-Z]/.test(password) && /[a-z]/.test(password)) strength++;
-        if (/[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) strength++;
-
-        const levels = ['', 'Yếu', 'Trung bình', 'Khá', 'Mạnh'];
-        const colors = ['', 'weak', 'medium', 'medium', 'strong'];
-        const textColors = ['', '#e53e3e', '#dd6b20', '#dd6b20', '#38a169'];
-
-        bars.forEach((bar, i) => {
-            bar.className = 'strength-bar';
-            if (i < strength) {
-                bar.classList.add('active', colors[strength]);
-            }
+        toggle.addEventListener('change', function(){
+            var next = this.checked ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('hrm-theme', next);
         });
-
-        if (password.length > 0) {
-            text.textContent = 'Độ mạnh: ' + levels[strength];
-            text.style.color = textColors[strength];
-        } else {
-            text.textContent = '';
-        }
-    }
-
-    // Client-side form validation
-    document.getElementById('changePasswordForm').addEventListener('submit', function(e) {
-        const newPwd = document.getElementById('newPassword').value;
-        const confirmPwd = document.getElementById('confirmPassword').value;
-
-        if (newPwd !== confirmPwd) {
-            e.preventDefault();
-            alert('Mật khẩu mới và xác nhận không khớp!');
-            document.getElementById('confirmPassword').focus();
-        }
-    });
+    })();
 </script>
 
 <jsp:include page="footer.jsp" />

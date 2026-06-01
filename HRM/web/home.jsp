@@ -1,4 +1,4 @@
-﻿<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <c:set var="pageTitle" value="Trang chủ" scope="request" />
 <jsp:include page="header.jsp" />
@@ -82,57 +82,10 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
 .manifesto-text{font-family:'Be Vietnam Pro',sans-serif;font-size:clamp(1.5rem,2.5vw,2.5rem);font-weight:800;color:#fff;line-height:1.25;letter-spacing:-.5px;max-width:800px;margin:0 auto}
 .manifesto-text span{color:#63b3ed}
 
-/* ── FEATURES BAND ── */
-.features-band{padding:70px 0;background:#f0ede8}
-.features-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:40px}
-.features-header h2{font-family:'Be Vietnam Pro',sans-serif;font-size:2rem;font-weight:800;color:#0a2540;letter-spacing:-.5px;line-height:1}
-.feat-count{font-family:'Be Vietnam Pro',sans-serif;font-size:3.5rem;font-weight:800;color:#e2d9cc;letter-spacing:-2px}
-
-.feat-list{display:flex;flex-direction:column}
-.feat-item{display:flex;align-items:center;gap:30px;padding:28px 0;border-top:1px solid #d1c9bd;transition:all .4s;cursor:default}
-.feat-item:hover{padding-left:20px;border-top-color:#0a2540}
-.feat-num{font-family:'Be Vietnam Pro',sans-serif;font-size:1.2rem;font-weight:800;color:#b8ae9f;min-width:60px}
-.feat-item:hover .feat-num{color:#2b6cb0}
-.feat-icon-wrap{width:44px;height:44px;border:1.5px solid #0a2540;display:flex;align-items:center;justify-content:center;font-size:1rem;color:#0a2540;transition:all .3s;flex-shrink:0}
-.feat-item:hover .feat-icon-wrap{background:#0a2540;color:#fff}
-.feat-info h3{font-family:'Be Vietnam Pro',sans-serif;font-size:1.1rem;font-weight:800;color:#0a2540;margin:0 0 4px;letter-spacing:-.3px}
-.feat-info p{color:#718096;font-size:.85rem;line-height:1.5;margin:0;max-width:500px}
-.feat-arrow{margin-left:auto;font-size:1.5rem;color:#c8bfb5;transition:all .4s;transform:translateX(-10px);opacity:0}
-.feat-item:hover .feat-arrow{color:#0a2540;transform:translateX(0);opacity:1}
-
-/* ── PHOTO GRID ── */
-.photo-grid{display:grid;grid-template-columns:2fr 1fr 1fr;grid-template-rows:200px 200px;gap:3px;background:#0a2540}
-.photo-cell{overflow:hidden;position:relative}
-.photo-cell:first-child{grid-row:1/3}
-.photo-cell img{width:100%;height:100%;object-fit:cover;filter:grayscale(30%) contrast(1.1);transition:all .6s}
-.photo-cell:hover img{filter:grayscale(0%) contrast(1);transform:scale(1.05)}
-.photo-cell-label{position:absolute;bottom:0;left:0;right:0;padding:24px;background:linear-gradient(to top,rgba(10,37,64,.8),transparent);color:#fff;font-size:.8rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;opacity:0;transition:opacity .4s}
-.photo-cell:hover .photo-cell-label{opacity:1}
-
-/* ── THÔNG BÁO NỘI BỘ ── */
-.news-section{padding:70px 0;background:#fff}
-.news-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:60px;padding-bottom:30px;border-bottom:3px solid #0a2540}
-.news-header h2{font-family:'Be Vietnam Pro',sans-serif;font-size:2rem;font-weight:800;color:#0a2540;letter-spacing:-.5px}
-.news-header a{color:#2b6cb0;font-weight:600;font-size:.9rem;text-decoration:none;letter-spacing:1px}
-.news-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border:1px solid #e2e8f0}
-.news-card{padding:40px 36px;border-right:1px solid #e2e8f0;position:relative;overflow:hidden;transition:background .3s}
-.news-card:last-child{border-right:none}
-.news-card::after{content:'';position:absolute;bottom:0;left:0;width:0;height:3px;background:#0a2540;transition:width .4s}
-.news-card:hover{background:#f8f7f5}
-.news-card:hover::after{width:100%}
-.news-tag2{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#2b6cb0;margin-bottom:20px}
-.news-date2{display:block;font-size:.8rem;color:#a0aec0;margin-bottom:12px}
-.news-title2{font-family:'Be Vietnam Pro',sans-serif;font-size:1rem;font-weight:700;color:#1a202c;line-height:1.3;margin-bottom:16px;letter-spacing:-.2px}
-.news-arrow2{font-size:1.3rem;color:#c8bfb5;transition:all .3s}
-.news-card:hover .news-arrow2{color:#0a2540;transform:translateX(6px);display:inline-block}
 
 @media(max-width:768px){
 .hero-split{grid-template-columns:1fr}
 .hero-right{display:none}
-.photo-grid{grid-template-columns:1fr;grid-template-rows:auto}
-.photo-cell:first-child{grid-row:auto}
-.news-grid{grid-template-columns:1fr}
-.news-card{border-right:none;border-bottom:1px solid #e2e8f0}
 }
 </style>
 
@@ -226,126 +179,6 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
             Xây dựng môi trường làm việc <span>chuyên nghiệp, an toàn</span>,<br>
             nơi mỗi nhân viên được <span>tôn trọng và phát triển</span>.
         </h2>
-    </div>
-</section>
-
-<!-- FEATURES BAND -->
-<section class="features-band">
-    <div class="container">
-        <div class="features-header">
-            <h2>Tính năng<br>dành cho<br>nhân viên</h2>
-            <span class="feat-count">06</span>
-        </div>
-        <div class="feat-list">
-            <div class="feat-item">
-                <span class="feat-num">01</span>
-                <div class="feat-icon-wrap"><i class="fas fa-id-card"></i></div>
-                <div class="feat-info">
-                    <h3>Hồ sơ Nhân sự Cá nhân</h3>
-                    <p>Xem và cập nhật thông tin cá nhân, hợp đồng lao động, lịch sử công tác trực tiếp trên hệ thống.</p>
-                </div>
-                <span class="feat-arrow">&rarr;</span>
-            </div>
-            <div class="feat-item">
-                <span class="feat-num">02</span>
-                <div class="feat-icon-wrap"><i class="fas fa-fingerprint"></i></div>
-                <div class="feat-info">
-                    <h3>Chấm công &amp; Ca kíp</h3>
-                    <p>Chấm công trực tuyến, theo dõi lịch phân ca 3 ca sản xuất, xem lịch sử chấm công chi tiết.</p>
-                </div>
-                <span class="feat-arrow">&rarr;</span>
-            </div>
-            <div class="feat-item">
-                <span class="feat-num">03</span>
-                <div class="feat-icon-wrap"><i class="fas fa-money-check-alt"></i></div>
-                <div class="feat-info">
-                    <h3>Phiếu lương &amp; Thu nhập</h3>
-                    <p>Tra cứu phiếu lương hàng tháng: lương cơ bản, phụ cấp, tăng ca, các khoản trích BHXH, thuế TNCN.</p>
-                </div>
-                <span class="feat-arrow">&rarr;</span>
-            </div>
-            <div class="feat-item">
-                <span class="feat-num">04</span>
-                <div class="feat-icon-wrap"><i class="fas fa-paper-plane"></i></div>
-                <div class="feat-info">
-                    <h3>Đơn Nghỉ phép Trực tuyến</h3>
-                    <p>Gửi đơn xin nghỉ phép, theo dõi trạng thái duyệt, kiểm tra số ngày phép còn lại trong năm.</p>
-                </div>
-                <span class="feat-arrow">&rarr;</span>
-            </div>
-            <div class="feat-item">
-                <span class="feat-num">05</span>
-                <div class="feat-icon-wrap"><i class="fas fa-bullhorn"></i></div>
-                <div class="feat-info">
-                    <h3>Thông báo Nội bộ</h3>
-                    <p>Nhận thông báo từ Ban Giám đốc, phòng HCNS về chính sách mới, lịch nghỉ lễ, sự kiện công ty.</p>
-                </div>
-                <span class="feat-arrow">&rarr;</span>
-            </div>
-            <div class="feat-item">
-                <span class="feat-num">06</span>
-                <div class="feat-icon-wrap"><i class="fas fa-shield-alt"></i></div>
-                <div class="feat-info">
-                    <h3>An toàn Lao động &amp; Đào tạo</h3>
-                    <p>Tra cứu chứng chỉ ATLĐ, lịch huấn luyện định kỳ, nội quy nhà máy và quy trình ứng phó sự cố.</p>
-                </div>
-                <span class="feat-arrow">&rarr;</span>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- PHOTO GRID -->
-<div class="photo-grid">
-    <div class="photo-cell">
-        <img src="https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?q=80&w=1200&auto=format&fit=crop" alt="Nhà máy">
-        <div class="photo-cell-label">Dây chuyền sản xuất</div>
-    </div>
-    <div class="photo-cell">
-        <img src="https://images.unsplash.com/photo-1581092160562-40aa08e78837?q=80&w=600&auto=format&fit=crop" alt="Kỹ sư">
-        <div class="photo-cell-label">Đội ngũ kỹ thuật</div>
-    </div>
-    <div class="photo-cell">
-        <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=600&auto=format&fit=crop" alt="Văn phòng">
-        <div class="photo-cell-label">Văn phòng công ty</div>
-    </div>
-    <div class="photo-cell">
-        <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=600&auto=format&fit=crop" alt="Phòng HCNS">
-        <div class="photo-cell-label">Phòng Hành chính Nhân sự</div>
-    </div>
-    <div class="photo-cell">
-        <img src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=600&auto=format&fit=crop" alt="Team">
-        <div class="photo-cell-label">Hoạt động Team Building</div>
-    </div>
-</div>
-
-<!-- THÔNG BÁO NỘI BỘ -->
-<section class="news-section">
-    <div class="container">
-        <div class="news-header">
-            <h2>Thông báo<br>Nội bộ</h2>
-            <a href="${pageContext.request.contextPath}/notifications">Xem tất cả &rarr;</a>
-        </div>
-        <div class="news-grid">
-            <div class="news-card">
-                <span class="news-tag2">Phúc lợi</span>
-                <span class="news-date2">10 tháng 05, 2026</span>
-                <h3 class="news-title2">Nâng mức hỗ trợ bữa ăn ca và phụ cấp xăng xe cho CBCNV từ tháng 06/2026</h3>
-                <span class="news-arrow2">&rarr;</span>
-            </div>
-            <div class="news-card">
-                <span class="news-tag2">Sức khỏe</span>
-                <span class="news-date2">02 tháng 05, 2026</span>
-                <h3 class="news-title2">Lịch khám sức khỏe định kỳ Quý II — Bắt buộc 100% nhân sự đăng ký trước 20/05</h3>
-                <span class="news-arrow2">&rarr;</span>
-            </div>
-            <div class="news-card" style="background:#0a2540">
-                <span class="news-tag2" style="color:#63b3ed">🔔 Thông báo hệ thống</span>
-                <span class="news-date2" style="color:rgba(255,255,255,.5)">27 tháng 05, 2026</span>
-                <h3 class="news-title2" style="color:#fff">Bảo trì hệ thống chấm công vào 22:00 thứ 7, 31/05/2026 — Dự kiến 2 giờ</h3>
-                <span class="news-arrow2" style="color:#63b3ed">&rarr;</span>
-            </div>
-        </div>
     </div>
 </section>
 
