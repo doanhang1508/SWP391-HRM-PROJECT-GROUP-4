@@ -314,16 +314,6 @@
         <i class="fas fa-times"></i>
     </button>
 
-    <%-- Brand / Logo --%>
-    <div class="sidebar-brand">
-        <div class="sidebar-brand-icon">
-            <i class="fas fa-server"></i>
-        </div>
-        <div>
-            <div class="sidebar-brand-text">HRM System</div>
-            <div class="sidebar-brand-sub">Quản trị hệ thống</div>
-        </div>
-    </div>
 
     <%-- User Info --%>
     <div class="sidebar-user">

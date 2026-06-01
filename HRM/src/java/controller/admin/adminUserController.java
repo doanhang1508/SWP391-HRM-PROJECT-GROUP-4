@@ -13,6 +13,7 @@ import dao.RoleDAO;
 
 import model.User;
 import model.Role;
+import util.PasswordUtil;
 
 import java.util.List;
 
@@ -240,9 +241,11 @@ public class adminUserController extends HttpServlet {
                 newUser.setUsername(username.trim());
 
                 newUser.setPassword(
-                        password != null && !password.isEmpty()
-                        ? password
-                        : "@123456"
+                        PasswordUtil.hashPassword(
+                            password != null && !password.isEmpty()
+                            ? password
+                            : "@123456"
+                        )
                 );
 
                 newUser.setFullName(fullName);

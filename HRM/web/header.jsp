@@ -525,9 +525,11 @@
                             <li><a href="${pageContext.request.contextPath}/home">Trang chủ</a></li>
                             <c:if test="${sessionScope.currentUser != null}">
                                 <c:choose>
-                                    <c:when test="${sessionScope.currentUser.roleId == 1}">
-                                        <li><a href="${pageContext.request.contextPath}/admin/dashboard">Bảng điều khiển</a></li>
+                                    <%-- Role 1-6: management dashboard --%>
+                                    <c:when test="${sessionScope.currentUser.roleId >= 1 && sessionScope.currentUser.roleId <= 6}">
+                                        <li><a href="${pageContext.request.contextPath}/dashboard">Bảng điều khiển</a></li>
                                     </c:when>
+                                    <%-- Role 7 (Employee) hoặc khác: employee dashboard --%>
                                     <c:otherwise>
                                         <li><a href="${pageContext.request.contextPath}/employee/dashboard">Bảng điều khiển</a></li>
                                     </c:otherwise>

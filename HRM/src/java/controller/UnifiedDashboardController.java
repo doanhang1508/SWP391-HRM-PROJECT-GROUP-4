@@ -32,6 +32,9 @@ public class UnifiedDashboardController extends HttpServlet {
     private static final int ROLE_HR       = 2;
     private static final int ROLE_FACTORY  = 3;
     private static final int ROLE_DIRECTOR = 4;
+    private static final int ROLE_HR_STAFF = 5;
+    private static final int ROLE_DEPT_MGR = 6;
+    private static final int ROLE_EMPLOYEE = 7;
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -48,8 +51,8 @@ public class UnifiedDashboardController extends HttpServlet {
 
         int roleId = currentUser.getRoleId();
 
-        // Employee không vào dashboard này
-        if (roleId == 0 || roleId > ROLE_DIRECTOR) {
+        // Chỉ Employee (role 7) và role không xác định (0) mới bị đẩy ra employee/dashboard
+        if (roleId == 0 || roleId == ROLE_EMPLOYEE) {
             response.sendRedirect(request.getContextPath() + "/employee/dashboard");
             return;
         }
@@ -69,12 +72,16 @@ public class UnifiedDashboardController extends HttpServlet {
         // ── Load dữ liệu theo role ──
         if (roleId == ROLE_ADMIN) {
             loadAdminData(request, userDAO);
-        } else if (roleId == ROLE_HR) {
+        } else if (roleId == ROLE_HR || roleId == ROLE_HR_STAFF) {
+            // HR Manager (2) và HR Staff (5) dùng chung HR dashboard
             loadHrData(request, userDAO);
         } else if (roleId == ROLE_FACTORY) {
             loadFactoryData(request, userDAO);
         } else if (roleId == ROLE_DIRECTOR) {
             loadDirectorData(request, userDAO, deptDAO);
+        } else if (roleId == ROLE_DEPT_MGR) {
+            // Department Manager (6)
+            loadDeptManagerData(request, userDAO);
         }
 
         request.getRequestDispatcher("/dashboard.jsp").forward(request, response);
@@ -125,9 +132,17 @@ public class UnifiedDashboardController extends HttpServlet {
     private void loadDirectorData(HttpServletRequest request,
                                   UserDAO userDAO, DepartmentDAO deptDAO) {
         request.setAttribute("totalRoles",  userDAO.getTotalRoles());
-        // Placeholder KPIs
+        // Placeholder KPIs — thay bằng DAO thực khi có
         request.setAttribute("monthlyRevenue",    0);
         request.setAttribute("employeeGrowth",    0);
+    }
+
+    // ── Department Manager: nhân viên trong phòng ban ──
+    private void loadDeptManagerData(HttpServletRequest request, UserDAO userDAO) {
+        // Placeholder — thay bằng DAO thực khi có
+        request.setAttribute("pendingLeaves",     0);
+        request.setAttribute("pendingOT",         0);
+        request.setAttribute("todayAttendance",   0);
     }
 
     @Override

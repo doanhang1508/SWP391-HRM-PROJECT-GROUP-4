@@ -1,6 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app version="6.0" xmlns="https://jakarta.ee/xml/ns/jakartaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee                              https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd">
     <!-- ══════════════════════════════════════════════════════
+         AUTH FILTER — Bảo vệ URL theo role
+    ══════════════════════════════════════════════════════ -->
+    <filter>
+        <filter-name>AuthFilter</filter-name>
+        <filter-class>filter.AuthFilter</filter-class>
+    </filter>
+    <!-- /dashboard: chỉ role 1-6 -->
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/dashboard</url-pattern>
+    </filter-mapping>
+    <!-- /admin/*: chỉ Admin (role 1) -->
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/admin/*</url-pattern>
+    </filter-mapping>
+    <!-- /hr/*: HR Manager (role 2) hoặc HR Staff (role 5) -->
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/hr/*</url-pattern>
+    </filter-mapping>
+    <!-- /employee/*: phải đăng nhập -->
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/employee/*</url-pattern>
+    </filter-mapping>
+    <!-- /editRolePermission: chỉ Admin -->
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/editRolePermission</url-pattern>
+    </filter-mapping>
+    <!-- /role/*: chỉ Admin -->
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/role</url-pattern>
+    </filter-mapping>
+
+    <!-- ══════════════════════════════════════════════════════
          SERVLET DECLARATIONS
     ══════════════════════════════════════════════════════ -->
     <servlet>

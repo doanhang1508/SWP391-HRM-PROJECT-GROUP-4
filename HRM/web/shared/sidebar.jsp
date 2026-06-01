@@ -135,30 +135,6 @@
         <i class="fas fa-times"></i>
     </button>
 
-    <%-- Brand / Logo (thay đổi theo role) --%>
-    <div class="sidebar-brand">
-        <div class="sidebar-brand-icon">
-            <c:choose>
-                <c:when test="${sessionScope.currentUser.roleId == 1}"><i class="fas fa-server"></i></c:when>
-                <c:when test="${sessionScope.currentUser.roleId == 2}"><i class="fas fa-user-tie"></i></c:when>
-                <c:when test="${sessionScope.currentUser.roleId == 3}"><i class="fas fa-industry"></i></c:when>
-                <c:when test="${sessionScope.currentUser.roleId == 4}"><i class="fas fa-chess-king"></i></c:when>
-                <c:otherwise><i class="fas fa-home"></i></c:otherwise>
-            </c:choose>
-        </div>
-        <div>
-            <div class="sidebar-brand-text">HRM System</div>
-            <div class="sidebar-brand-sub">
-                <c:choose>
-                    <c:when test="${sessionScope.currentUser.roleId == 1}">Quản trị hệ thống</c:when>
-                    <c:when test="${sessionScope.currentUser.roleId == 2}">Nhân sự (HR Manager)</c:when>
-                    <c:when test="${sessionScope.currentUser.roleId == 3}">Quản đốc xưởng</c:when>
-                    <c:when test="${sessionScope.currentUser.roleId == 4}">Giám đốc</c:when>
-                    <c:otherwise>Người dùng</c:otherwise>
-                </c:choose>
-            </div>
-        </div>
-    </div>
 
     <%-- User Info --%>
     <div class="sidebar-user">
@@ -181,7 +157,9 @@
                     <c:when test="${sessionScope.currentUser.roleId == 2}">HR Manager</c:when>
                     <c:when test="${sessionScope.currentUser.roleId == 3}">Quản đốc xưởng</c:when>
                     <c:when test="${sessionScope.currentUser.roleId == 4}">Giám đốc</c:when>
-                    <c:otherwise>Người dùng</c:otherwise>
+                    <c:when test="${sessionScope.currentUser.roleId == 5}">Nhân viên HR</c:when>
+                    <c:when test="${sessionScope.currentUser.roleId == 6}">Quản lý phòng ban</c:when>
+                    <c:otherwise>Nhân viên</c:otherwise>
                 </c:choose>
             </div>
         </div>
@@ -334,6 +312,41 @@
                     <a href="${pageContext.request.contextPath}/admin/pending-requests"
                        class="sidebar-link ${param.activeMenu eq 'pending-requests' ? 'active' : ''}">
                         <i class="fas fa-hourglass-half"></i> Đơn chờ phê duyệt
+                    </a>
+                </li>
+            </c:if>
+
+            <%-- ══════ HR STAFF (roleId = 5) ══════ --%>
+            <c:if test="${sessionScope.currentUser.roleId == 5}">
+                <li class="sidebar-menu-category">Quản lý nhân sự</li>
+                <li class="sidebar-item">
+                    <a href="${pageContext.request.contextPath}/hr/employees"
+                       class="sidebar-link ${param.activeMenu eq 'employees' ? 'active' : ''}">
+                        <i class="fas fa-users"></i> Danh sách nhân viên
+                    </a>
+                </li>
+                <li class="sidebar-menu-category">Nghỉ phép &amp; OT</li>
+                <li class="sidebar-item">
+                    <a href="${pageContext.request.contextPath}/leave-ot-manager"
+                       class="sidebar-link ${param.activeMenu eq 'leave-ot' ? 'active' : ''}">
+                        <i class="fas fa-calendar-check"></i> Duyệt nghỉ phép / OT
+                    </a>
+                </li>
+            </c:if>
+
+            <%-- ══════ DEPARTMENT MANAGER (roleId = 6) ══════ --%>
+            <c:if test="${sessionScope.currentUser.roleId == 6}">
+                <li class="sidebar-menu-category">Quản lý phòng ban</li>
+                <li class="sidebar-item">
+                    <a href="${pageContext.request.contextPath}/leave-ot-manager"
+                       class="sidebar-link ${param.activeMenu eq 'leave-ot' ? 'active' : ''}">
+                        <i class="fas fa-calendar-check"></i> Duyệt nghỉ phép / OT
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="${pageContext.request.contextPath}/admin/shifts?action=schedule"
+                       class="sidebar-link ${param.activeMenu eq 'schedule' ? 'active' : ''}">
+                        <i class="fas fa-calendar-alt"></i> Lịch ca làm việc
                     </a>
                 </li>
             </c:if>
