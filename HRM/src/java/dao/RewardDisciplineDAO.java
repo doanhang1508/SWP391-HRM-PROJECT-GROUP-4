@@ -1,0 +1,153 @@
+package dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import model.EmployeeRewardDiscipline;
+import model.RewardDiscipline;
+import model.Attendance;
+import util.DBContext;
+
+public class RewardDisciplineDAO {
+
+    public boolean insertManualRecord(EmployeeRewardDiscipline record) {
+        String sql = "INSERT INTO employee_rewards_disciplines (user_id, reward_discipline_id, amount, note, applied_date) VALUES (?, ?, ?, ?, ?)";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, record.getUserId());
+            ps.setInt(2, record.getRewardDisciplineId());
+            ps.setBigDecimal(3, record.getAmount());
+            ps.setString(4, record.getNote());
+            ps.setDate(5, record.getAppliedDate());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Lỗi lưu bản ghi Thưởng/Phạt: " + e.getMessage(), e);
+        }
+    }
+
+    public List<EmployeeRewardDiscipline> getRecordsByUserIdAndMonthYear(int userId, int month, int year) {
+        List<EmployeeRewardDiscipline> list = new ArrayList<>();
+        String sql = "SELECT erd.*, rd.name as rd_name, rd.type as rd_type "
+                + "FROM employee_rewards_disciplines erd "
+                + "JOIN reward_disciplines rd ON erd.reward_discipline_id = rd.id "
+                + "WHERE erd.user_id = ? AND MONTH(erd.applied_date) = ? AND YEAR(erd.applied_date) = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    EmployeeRewardDiscipline erd = new EmployeeRewardDiscipline();
+                    erd.setId(rs.getInt("id"));
+                    erd.setUserId(rs.getInt("user_id"));
+                    erd.setRewardDisciplineId(rs.getInt("reward_discipline_id"));
+                    erd.setAmount(rs.getBigDecimal("amount"));
+                    erd.setNote(rs.getString("note"));
+                    erd.setAppliedDate(rs.getDate("applied_date"));
+                    erd.setRewardDisciplineName(rs.getString("rd_name"));
+                    erd.setType(rs.getString("rd_type"));
+                    list.add(erd);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public RewardDiscipline getRewardDisciplineByName(String name) {
+        String sql = "SELECT * FROM reward_disciplines WHERE name = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, name);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    RewardDiscipline rd = new RewardDiscipline();
+                    rd.setId(rs.getInt("id"));
+                    rd.setName(rs.getString("name"));
+                    rd.setType(rs.getString("type"));
+                    rd.setDescription(rs.getString("description"));
+                    rd.setStatus(rs.getInt("status"));
+                    return rd;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public List<Attendance> getAttendanceByUserIdAndMonth(int userId, int month, int year) {
+        List<Attendance> list = new ArrayList<>();
+        String sql = "SELECT * FROM attendance WHERE user_id = ? AND MONTH(work_date) = ? AND YEAR(work_date) = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Attendance a = new Attendance();
+                    a.setAttendanceId(rs.getInt("attendance_id"));
+                    a.setUserId(rs.getInt("user_id"));
+                    a.setShiftId(rs.getInt("shift_id"));
+                    a.setWorkDate(rs.getDate("work_date"));
+                    a.setCheckIn(rs.getTime("check_in"));
+                    a.setCheckOut(rs.getTime("check_out"));
+                    a.setStatus(rs.getString("status"));
+                    list.add(a);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Lỗi lấy dữ liệu chấm công: " + e.getMessage(), e);
+        }
+        return list;
+    }
+
+    public int getWarningCountInLast3Months(int userId, java.time.LocalDate currentDate) {
+        String sql = "SELECT COUNT(*) FROM employee_rewards_disciplines erd "
+                + "JOIN reward_disciplines rd ON erd.reward_discipline_id = rd.id "
+                + "WHERE erd.user_id = ? AND rd.name = 'Warning' "
+                + "AND erd.applied_date BETWEEN ? AND ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setDate(2, java.sql.Date.valueOf(currentDate.minusMonths(3)));
+            ps.setDate(3, java.sql.Date.valueOf(currentDate));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public List<RewardDiscipline> getAllRewardDisciplines() {
+        List<RewardDiscipline> list = new ArrayList<>();
+        String sql = "SELECT * FROM reward_disciplines";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                RewardDiscipline rd = new RewardDiscipline();
+                rd.setId(rs.getInt("id"));
+                rd.setName(rs.getString("name"));
+                rd.setType(rs.getString("type"));
+                rd.setDescription(rs.getString("description"));
+                rd.setStatus(rs.getInt("status"));
+                list.add(rd);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+}

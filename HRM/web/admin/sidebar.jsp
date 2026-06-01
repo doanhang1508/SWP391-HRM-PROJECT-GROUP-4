@@ -426,6 +426,28 @@
                 </a>
             </li>
             <li class="sidebar-item">
+                <a href="${pageContext.request.contextPath}/admin/leave-types"
+                   class="sidebar-link ${param.activeMenu eq 'leave-types' ? 'active' : ''}">
+                    <i class="fas fa-calendar-times"></i> Loại nghỉ phép
+                </a>
+            </li>
+            
+            <li class="sidebar-menu-category">Tiện ích / Tự động hóa</li>
+            <li class="sidebar-item">
+                <a href="${pageContext.request.contextPath}/admin/reward-disciplines"
+                   class="sidebar-link ${param.activeMenu eq 'reward-disciplines' ? 'active' : ''}">
+                    <i class="fas fa-award"></i> Danh mục Thưởng/Phạt
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="${pageContext.request.contextPath}/admin/automation"
+                   class="sidebar-link ${param.activeMenu eq 'automation' ? 'active' : ''}">
+                    <i class="fas fa-robot"></i> Tác vụ Tự động
+                </a>
+            </li>
+
+            <li class="sidebar-menu-category">Phân quyền Hệ thống</li>
+            <li class="sidebar-item">
                 <a href="${pageContext.request.contextPath}/role?action=list"
                    class="sidebar-link ${param.activeMenu eq 'roles' ? 'active' : ''}">
                     <i class="fas fa-user-shield"></i> Quản lý Vai trò
