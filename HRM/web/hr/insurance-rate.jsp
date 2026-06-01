@@ -73,6 +73,8 @@
     .badge-active { display: inline-flex; align-items: center; gap: 5px; background: #dcfce7; color: #16a34a; font-size: .73rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; }
 
     .action-btn { background: none; border: none; cursor: pointer; padding: 6px 10px; border-radius: 6px; font-size: .9rem; transition: background .2s; }
+    .btn-view   { color: #0d9488; }
+    .btn-view:hover { background: #f0fdf4; }
     .btn-edit   { color: var(--blue); }
     .btn-edit:hover { background: #eff6ff; }
     .btn-delete { color: #e11d48; }
@@ -135,7 +137,7 @@
 </style>
 
 <div class="page-wrapper">
-    <jsp:include page="../shared/sidebar.jsp">
+    <jsp:include page="../shared/sidebar.jsp" />
 
     <main class="page-main">
 
@@ -180,7 +182,7 @@
                 <div class="s-icon s-green"><i class="fas fa-building"></i></div>
                 <div>
                     <div class="s-label">Doanh Nghiệp Đóng</div>
-                    <div class="s-value">—</div>
+                    <div class="s-value"><fmt:formatNumber value="${avgCompanyRate}" pattern="0.##"/>%</div>
                     <div class="s-sub">tỷ lệ trung bình</div>
                 </div>
             </div>
@@ -188,7 +190,7 @@
                 <div class="s-icon s-purple"><i class="fas fa-user-tie"></i></div>
                 <div>
                     <div class="s-label">Nhân Viên Đóng</div>
-                    <div class="s-value">—</div>
+                    <div class="s-value"><fmt:formatNumber value="${avgEmployeeRate}" pattern="0.##"/>%</div>
                     <div class="s-sub">tỷ lệ trung bình</div>
                 </div>
             </div>
@@ -252,7 +254,12 @@
                                             </div>
                                         </td>
                                         <td><span class="badge-active"><i class="fas fa-circle" style="font-size:.5rem;"></i> Hoạt động</span></td>
-                                        <td style="text-align:center;">
+                                        <td style="text-align:center; white-space: nowrap;">
+                                            <button class="action-btn btn-view"
+                                                    onclick="openViewModal('${fn:escapeXml(ir.insuranceName)}', '${ir.companyRate}', '${ir.employeeRate}', '${fn:escapeXml(ir.description)}')"
+                                                    title="Xem chi tiết">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
                                             <button class="action-btn btn-edit"
                                                     onclick="openEditModal(${ir.insuranceRateId}, '${fn:escapeXml(ir.insuranceName)}', '${ir.companyRate}', '${ir.employeeRate}', '${fn:escapeXml(ir.description)}')"
                                                     title="Chỉnh sửa">
@@ -360,6 +367,47 @@
     </div>
 </div>
 
+<!-- ═══════════════════════════ MODAL XEM CHI TIẾT ═══════════════════════════ -->
+<div class="modal-overlay" id="viewModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fas fa-info-circle" style="color:var(--blue);"></i> Chi Tiết Mức Đóng Bảo Hiểm</h3>
+            <button class="modal-close" onclick="closeModal('viewModal')">&times;</button>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Tên Loại Bảo Hiểm</label>
+            <div id="viewName" style="font-weight: 700; color: var(--navy); font-size: 1.1rem; padding: 6px 0;"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Tỷ Lệ Doanh Nghiệp</label>
+                <div class="rate-badge rate-company" id="viewCompanyRate" style="font-size: 1rem; display: inline-block;"></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Tỷ Lệ Nhân Viên</label>
+                <div class="rate-badge rate-employee" id="viewEmployeeRate" style="font-size: 1rem; display: inline-block;"></div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Tổng Tỷ Lệ</label>
+            <div class="rate-badge rate-total" id="viewTotalRate" style="font-size: 1.1rem; font-weight: 800; display: inline-block; padding: 6px 12px;"></div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Trạng Thái</label>
+            <div>
+                <span class="badge-active"><i class="fas fa-circle" style="font-size:.5rem;"></i> Hoạt động</span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Mô Tả</label>
+            <div id="viewDesc" style="color: var(--text); background: #f8fafc; padding: 12px; border-radius: 8px; font-size: 0.9rem; min-height: 60px; border: 1px solid var(--border); white-space: pre-wrap;"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-cancel" onclick="closeModal('viewModal')">Đóng</button>
+        </div>
+    </div>
+</div>
+
 <!-- ═══════════════════════════ MODAL XÓA ═══════════════════════════ -->
 <div class="modal-overlay" id="deleteModal">
     <div class="modal-box delete-modal-box">
@@ -378,6 +426,15 @@
 </div>
 
 <script>
+    function openViewModal(name, companyRate, employeeRate, desc) {
+        document.getElementById('viewName').textContent = name;
+        document.getElementById('viewCompanyRate').textContent = parseFloat(companyRate).toFixed(2).replace(/\.00$/, '') + '%';
+        document.getElementById('viewEmployeeRate').textContent = parseFloat(employeeRate).toFixed(2).replace(/\.00$/, '') + '%';
+        var total = parseFloat(companyRate) + parseFloat(employeeRate);
+        document.getElementById('viewTotalRate').textContent = total.toFixed(2).replace(/\.00$/, '') + '%';
+        document.getElementById('viewDesc').textContent = desc ? desc : '—';
+        document.getElementById('viewModal').classList.add('show');
+    }
     function openAddModal() {
         document.getElementById('addModal').classList.add('show');
     }

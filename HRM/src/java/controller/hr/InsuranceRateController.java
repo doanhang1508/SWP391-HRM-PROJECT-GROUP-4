@@ -2,20 +2,23 @@ package controller.hr;
 
 import dao.InsuranceRateDAO;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.List;
 import model.InsuranceRate;
 import model.User;
 
 /**
  * HR Controller – Quản lý Mức đóng Bảo hiểm (Insurance Rate)
  * URL: /hr/insurance-rate
- * Quyền: HR Manager (roleId=2) hoặc Admin (roleId=1)
+ * Quyền: HR Manager (roleId=2) hoặc HR Staff (roleId=5)
  */
+@WebServlet(name = "InsuranceRateController", urlPatterns = {"/hr/insurance-rate"})
 public class InsuranceRateController extends HttpServlet {
 
     private static final String LIST_JSP = "/hr/insurance-rate.jsp";
@@ -31,7 +34,7 @@ public class InsuranceRateController extends HttpServlet {
             return false;
         }
         User user = (User) session.getAttribute("currentUser");
-        if (user.getRoleId() != 1 && user.getRoleId() != 2) {
+        if (user.getRoleId() != 2 && user.getRoleId() != 5) {
             resp.sendRedirect(req.getContextPath() + "/home");
             return false;
         }
@@ -53,7 +56,19 @@ public class InsuranceRateController extends HttpServlet {
             return;
         }
 
-        request.setAttribute("insuranceRateList", dao.getAll());
+        List<InsuranceRate> list = dao.getAll();
+        BigDecimal totalCompany = BigDecimal.ZERO;
+        BigDecimal totalEmployee = BigDecimal.ZERO;
+        for (InsuranceRate ir : list) {
+            totalCompany = totalCompany.add(ir.getCompanyRate());
+            totalEmployee = totalEmployee.add(ir.getEmployeeRate());
+        }
+        BigDecimal avgCompany = list.isEmpty() ? BigDecimal.ZERO : totalCompany.divide(new BigDecimal(list.size()), 2, java.math.RoundingMode.HALF_UP);
+        BigDecimal avgEmployee = list.isEmpty() ? BigDecimal.ZERO : totalEmployee.divide(new BigDecimal(list.size()), 2, java.math.RoundingMode.HALF_UP);
+
+        request.setAttribute("insuranceRateList", list);
+        request.setAttribute("avgCompanyRate", avgCompany);
+        request.setAttribute("avgEmployeeRate", avgEmployee);
         request.getRequestDispatcher(LIST_JSP).forward(request, response);
     }
 
@@ -75,13 +90,22 @@ public class InsuranceRateController extends HttpServlet {
             BigDecimal employeeRate = new BigDecimal(employeeRateS);
 
             if ("add".equals(action)) {
-                dao.insert(new InsuranceRate(0, insuranceName, companyRate,
-                                             employeeRate, description, true));
-                request.getSession().setAttribute("successMsg", "Thêm mức bảo hiểm thành công.");
+                if (dao.isDuplicate(insuranceName, 0)) {
+                    request.getSession().setAttribute("errorMsg", "Tên loại bảo hiểm đã tồn tại.");
+                } else {
+                    dao.insert(new InsuranceRate(0, insuranceName, companyRate,
+                                                 employeeRate, description, true));
+                    request.getSession().setAttribute("successMsg", "Thêm mức bảo hiểm thành công.");
+                }
             } else if ("edit".equals(action) && idStr != null) {
-                dao.update(new InsuranceRate(Integer.parseInt(idStr), insuranceName,
-                                             companyRate, employeeRate, description, true));
-                request.getSession().setAttribute("successMsg", "Cập nhật mức bảo hiểm thành công.");
+                int editId = Integer.parseInt(idStr);
+                if (dao.isDuplicate(insuranceName, editId)) {
+                    request.getSession().setAttribute("errorMsg", "Tên loại bảo hiểm đã tồn tại.");
+                } else {
+                    dao.update(new InsuranceRate(editId, insuranceName,
+                                                 companyRate, employeeRate, description, true));
+                    request.getSession().setAttribute("successMsg", "Cập nhật mức bảo hiểm thành công.");
+                }
             }
         } catch (NumberFormatException e) {
             request.getSession().setAttribute("errorMsg", "Tỷ lệ % không hợp lệ.");
