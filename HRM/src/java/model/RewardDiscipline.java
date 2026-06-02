@@ -1,11 +1,19 @@
 package model;
 
+import java.sql.Timestamp;
+
 public class RewardDiscipline {
     private int id;
     private String name;
     private String type;
     private String description;
+    private String applyLevel;
     private int status;
+    private Timestamp createdAt;
+    private int createdBy;
+
+    // Display-only field (joined from users table)
+    private String createdByName;
 
     public RewardDiscipline() {}
 
@@ -23,6 +31,20 @@ public class RewardDiscipline {
         this.status = status;
     }
 
+    public RewardDiscipline(int id, String name, String type, String description,
+                            String applyLevel, int status, Timestamp createdAt,
+                            int createdBy, String createdByName) {
+        this.id = id;
+        this.name = name;
+        this.type = type;
+        this.description = description;
+        this.applyLevel = applyLevel;
+        this.status = status;
+        this.createdAt = createdAt;
+        this.createdBy = createdBy;
+        this.createdByName = createdByName;
+    }
+
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
     public String getName() { return name; }
@@ -31,6 +53,14 @@ public class RewardDiscipline {
     public void setType(String type) { this.type = type; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+    public String getApplyLevel() { return applyLevel; }
+    public void setApplyLevel(String applyLevel) { this.applyLevel = applyLevel; }
     public int getStatus() { return status; }
     public void setStatus(int status) { this.status = status; }
+    public Timestamp getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+    public int getCreatedBy() { return createdBy; }
+    public void setCreatedBy(int createdBy) { this.createdBy = createdBy; }
+    public String getCreatedByName() { return createdByName; }
+    public void setCreatedByName(String createdByName) { this.createdByName = createdByName; }
 }

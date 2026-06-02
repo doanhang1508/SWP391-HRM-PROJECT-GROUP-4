@@ -122,7 +122,10 @@ CREATE TABLE reward_disciplines (
     name        VARCHAR(100) NOT NULL,
     type        VARCHAR(20)  NOT NULL,
     description VARCHAR(255),
-    status      TINYINT(1)   NOT NULL DEFAULT 1
+    apply_level VARCHAR(50)  DEFAULT 'Cá nhân',
+    status      TINYINT(1)   NOT NULL DEFAULT 1,
+    created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by  INT          NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- =============================================================
@@ -422,12 +425,12 @@ INSERT INTO leave_types (leave_type_id, type_name, description, paid_leave, max_
 (5, 'Nghỉ không lương',        'Nghỉ không hưởng lương',                  0, NULL);
 
 -- ── 12. Reward Disciplines ──
-INSERT INTO reward_disciplines (id, name, type, description) VALUES
-(1, 'Thưởng KPI Tháng',   'Reward',    'Thưởng dựa trên đánh giá hiệu suất'),
-(2, 'Thưởng Dự án',       'Reward',    'Thưởng hoàn thành xuất sắc dự án'),
-(3, 'Thưởng Chuyên cần',  'Reward',    'Không đi muộn, không nghỉ phép trong tháng'),
-(4, 'Đi muộn/Về sớm',     'Discipline','Phạt đi muộn theo quy định'),
-(5, 'Vi phạm An toàn LĐ', 'Discipline','Phạt do không tuân thủ an toàn tại xưởng');
+INSERT INTO reward_disciplines (id, name, type, description, apply_level, created_by) VALUES
+(1, 'Thưởng KPI Tháng',   'Reward',    'Thưởng dựa trên đánh giá hiệu suất',           'Cá nhân',    1),
+(2, 'Thưởng Dự án',       'Reward',    'Thưởng hoàn thành xuất sắc dự án',             'Nhóm/Dự án', 1),
+(3, 'Thưởng Chuyên cần',  'Reward',    'Không đi muộn, không nghỉ phép trong tháng',   'Cá nhân',    1),
+(4, 'Đi muộn/Về sớm',     'Discipline','Phạt đi muộn theo quy định',                     'Cá nhân',    1),
+(5, 'Vi phạm An toàn LĐ', 'Discipline','Phạt do không tuân thủ an toàn tại xưởng',      'Cá nhân',    1);
 
 -- ── 13. Roles (7 roles) ──
 INSERT INTO roles (role_id, role_name, description) VALUES

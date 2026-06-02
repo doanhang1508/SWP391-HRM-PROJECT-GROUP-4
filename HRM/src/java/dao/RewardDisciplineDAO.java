@@ -13,6 +13,183 @@ import util.DBContext;
 
 public class RewardDisciplineDAO {
 
+    // ================================================================
+    // CATEGORY CRUD OPERATIONS
+    // ================================================================
+
+    /**
+     * Get all active reward/discipline categories.
+     */
+    public List<RewardDiscipline> getAllRewardDisciplines() {
+        List<RewardDiscipline> list = new ArrayList<>();
+        String sql = "SELECT rd.*, u.full_name AS creator_name "
+                + "FROM reward_disciplines rd "
+                + "LEFT JOIN users u ON rd.created_by = u.user_id "
+                + "ORDER BY rd.id";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapRow(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * Search categories by keyword (name or description) and filter by type.
+     */
+    public List<RewardDiscipline> searchCategories(String keyword, String typeFilter) {
+        List<RewardDiscipline> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT rd.*, u.full_name AS creator_name "
+                + "FROM reward_disciplines rd "
+                + "LEFT JOIN users u ON rd.created_by = u.user_id "
+                + "WHERE 1=1 ");
+
+        List<Object> params = new ArrayList<>();
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            sql.append("AND (rd.name LIKE ? OR rd.description LIKE ?) ");
+            String like = "%" + keyword.trim() + "%";
+            params.add(like);
+            params.add(like);
+        }
+
+        if (typeFilter != null && !typeFilter.trim().isEmpty()
+                && !"all".equalsIgnoreCase(typeFilter.trim())) {
+            sql.append("AND rd.type = ? ");
+            params.add(typeFilter.trim());
+        }
+
+        sql.append("ORDER BY rd.id");
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * Get a single category by ID (with creator info).
+     */
+    public RewardDiscipline getById(int id) {
+        String sql = "SELECT rd.*, u.full_name AS creator_name "
+                + "FROM reward_disciplines rd "
+                + "LEFT JOIN users u ON rd.created_by = u.user_id "
+                + "WHERE rd.id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapRow(rs);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Insert a new category.
+     */
+    public boolean insertCategory(RewardDiscipline rd) {
+        String sql = "INSERT INTO reward_disciplines (name, type, description, apply_level, created_by) "
+                + "VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, rd.getName());
+            ps.setString(2, rd.getType());
+            ps.setString(3, rd.getDescription());
+            ps.setString(4, rd.getApplyLevel());
+            if (rd.getCreatedBy() > 0) {
+                ps.setInt(5, rd.getCreatedBy());
+            } else {
+                ps.setNull(5, java.sql.Types.INTEGER);
+            }
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Update an existing category.
+     */
+    public boolean updateCategory(RewardDiscipline rd) {
+        String sql = "UPDATE reward_disciplines SET name = ?, type = ?, description = ?, apply_level = ? "
+                + "WHERE id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, rd.getName());
+            ps.setString(2, rd.getType());
+            ps.setString(3, rd.getDescription());
+            ps.setString(4, rd.getApplyLevel());
+            ps.setInt(5, rd.getId());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Delete a category permanently.
+     */
+    public boolean deleteCategory(int id) {
+        String sql = "DELETE FROM reward_disciplines WHERE id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Check if a category name already exists (for duplicate prevention).
+     */
+    public boolean isNameExists(String name, Integer excludeId) {
+        String sql = "SELECT 1 FROM reward_disciplines WHERE LOWER(name) = LOWER(?)";
+        if (excludeId != null && excludeId > 0) {
+            sql += " AND id <> ?";
+        }
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, name);
+            if (excludeId != null && excludeId > 0) {
+                ps.setInt(2, excludeId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    // ================================================================
+    // EMPLOYEE REWARD/DISCIPLINE OPERATIONS (existing - preserved)
+    // ================================================================
+
     public boolean insertManualRecord(EmployeeRewardDiscipline record) {
         String sql = "INSERT INTO employee_rewards_disciplines (user_id, reward_discipline_id, amount, note, applied_date) VALUES (?, ?, ?, ?, ?)";
         DBContext dbContext = new DBContext();
@@ -131,23 +308,30 @@ public class RewardDisciplineDAO {
         return 0;
     }
 
-    public List<RewardDiscipline> getAllRewardDisciplines() {
-        List<RewardDiscipline> list = new ArrayList<>();
-        String sql = "SELECT * FROM reward_disciplines";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                RewardDiscipline rd = new RewardDiscipline();
-                rd.setId(rs.getInt("id"));
-                rd.setName(rs.getString("name"));
-                rd.setType(rs.getString("type"));
-                rd.setDescription(rs.getString("description"));
-                rd.setStatus(rs.getInt("status"));
-                list.add(rd);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return list;
+    // ================================================================
+    // PRIVATE HELPERS
+    // ================================================================
+
+    private RewardDiscipline mapRow(ResultSet rs) throws SQLException {
+        RewardDiscipline rd = new RewardDiscipline();
+        rd.setId(rs.getInt("id"));
+        rd.setName(rs.getString("name"));
+        rd.setType(rs.getString("type"));
+        rd.setDescription(rs.getString("description"));
+        rd.setStatus(rs.getInt("status"));
+        // New columns — read safely in case migration hasn't been run
+        try {
+            rd.setApplyLevel(rs.getString("apply_level"));
+        } catch (SQLException ignored) {}
+        try {
+            rd.setCreatedAt(rs.getTimestamp("created_at"));
+        } catch (SQLException ignored) {}
+        try {
+            rd.setCreatedBy(rs.getInt("created_by"));
+        } catch (SQLException ignored) {}
+        try {
+            rd.setCreatedByName(rs.getString("creator_name"));
+        } catch (SQLException ignored) {}
+        return rd;
     }
 }

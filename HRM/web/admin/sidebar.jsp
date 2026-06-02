@@ -404,8 +404,6 @@
                     <i class="fas fa-calendar-times"></i> Loại nghỉ phép
                 </a>
             </li>
-            
-            <li class="sidebar-menu-category">Tiện ích / Tự động hóa</li>
             <li class="sidebar-item">
                 <a href="${pageContext.request.contextPath}/admin/reward-disciplines"
                    class="sidebar-link ${param.activeMenu eq 'reward-disciplines' ? 'active' : ''}">
@@ -502,5 +500,13 @@
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape')
             closeSidebar();
+    });
+
+    // Auto-scroll sidebar to active item on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        var activeLink = document.querySelector('.admin-sidebar .sidebar-link.active');
+        if (activeLink) {
+            activeLink.scrollIntoView({ block: 'center', behavior: 'instant' });
+        }
     });
 </script>
