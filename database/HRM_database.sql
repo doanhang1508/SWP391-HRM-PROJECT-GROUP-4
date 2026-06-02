@@ -620,4 +620,222 @@ INSERT INTO employee_profiles (user_id,id_card,dob,gender,address,hire_date,tax_
 -- 18. CÔNG NHÂN (user_id 33-181, 149 người)
 -- ================================================================
 -- (Chưa có seed data công nhân — sẽ bổ sung sau)
+INSERT INTO attendance (user_id, shift_id, work_date, check_in, check_out, status, overtime_hrs)
+VALUES
+-- Nguyễn Văn Giám Đốc - Ca hành chính, đi đúng giờ
+(2, 1, '2026-06-03', '07:55:00', '17:00:00', 'Present', 0.00),
 
+-- Trần Thị Nhân Sự - Ca hành chính, làm thêm giờ
+(3, 1, '2026-06-03', '08:00:00', '19:00:00', 'Present', 2.00),
+
+-- Lê Văn Quản Đốc - Ca hành chính, đi muộn
+(4, 1, '2026-06-03', '08:25:00', '17:00:00', 'Late',    0.00),
+
+-- Phạm Công Nhân - Ca 1 (Sáng), đi đúng giờ
+(5, 2, '2026-06-03', '06:00:00', '14:00:00', 'Present', 0.00),
+
+-- Đỗ Thị Hà (Trưởng phòng HC) - Ca hành chính, nghỉ không phép
+(6, 1, '2026-06-03', NULL,        NULL,        'Absent',  0.00),
+
+-- Ngô Văn Tài - Ca hành chính, đi muộn + làm thêm giờ
+(7, 1, '2026-06-03', '08:15:00', '18:30:00', 'Late',    1.50),
+
+-- Vũ Thị Nga - Ca hành chính, đi đúng giờ
+(8, 1, '2026-06-03', '07:58:00', '17:00:00', 'Present', 0.00),
+
+-- Đinh Văn Phúc - Ca 2 (Chiều), làm thêm giờ
+(9, 3, '2026-06-03', '14:00:00', '23:00:00', 'Present', 1.00),
+
+-- Đặng Thị Hồng (HR Staff) - Ca hành chính, về sớm
+(10, 1, '2026-06-03', '08:00:00', '16:00:00', 'Early Leave', 0.00),
+
+-- Chu Văn Minh (HR Staff) - Ca 3 (Đêm), đi đúng giờ, hệ số OT cao
+(11, 4, '2026-06-03', '22:00:00', '06:00:00', 'Present', 0.00);
+
+INSERT INTO employee_rewards_disciplines (user_id, reward_discipline_id, amount, note, applied_date) VALUES
+-- Thưởng KPI Tháng (reward_discipline_id = 1)
+(6,  1, 2000000, 'Thưởng KPI tháng 5/2026 - Hoàn thành 110% chỉ tiêu',    '2026-05-31'),
+(10, 1, 1500000, 'Thưởng KPI tháng 5/2026 - Hoàn thành 105% chỉ tiêu',    '2026-05-31'),
+(19, 1, 3000000, 'Thưởng KPI tháng 5/2026 - Doanh thu vượt mục tiêu',      '2026-05-31'),
+
+-- Thưởng Dự án (reward_discipline_id = 2)
+(14, 2, 5000000, 'Thưởng hoàn thành xuất sắc dự án kiểm toán nội bộ Q1',   '2026-04-30'),
+(21, 2, 2500000, 'Thưởng ký kết hợp đồng lớn với đối tác mới',             '2026-05-15'),
+
+-- Thưởng Chuyên cần (reward_discipline_id = 3)
+(9,  3,  500000, 'Chuyên cần tháng 5/2026 - Không nghỉ, không đi muộn',    '2026-05-31'),
+(17, 3,  500000, 'Chuyên cần tháng 5/2026 - Không nghỉ, không đi muộn',    '2026-05-31'),
+
+-- Phạt Đi muộn/Về sớm (reward_discipline_id = 4)
+(7,  4,  100000, 'Đi muộn 3 lần trong tháng 5/2026',                       '2026-05-31'),
+(18, 4,  150000, 'Đi muộn 4 lần trong tháng 5/2026',                       '2026-05-31'),
+
+-- Phạt Vi phạm An toàn LĐ (reward_discipline_id = 5)
+(29, 5,  500000, 'Không đeo bảo hộ khi vận hành máy tại xưởng ngày 20/5',  '2026-05-20');
+
+INSERT INTO employee_shifts (user_id, shift_id, work_date) VALUES
+(6,  1, '2026-06-03'),
+(7,  1, '2026-06-03'),
+(8,  1, '2026-06-03'),
+(9,  1, '2026-06-03'),
+(10, 1, '2026-06-03'),
+(29, 2, '2026-06-03'),
+(30, 2, '2026-06-03'),
+(31, 3, '2026-06-03'),
+(32, 3, '2026-06-03'),
+(4,  4, '2026-06-03');
+
+INSERT INTO leave_requests (user_id, leave_type_id, start_date, end_date, total_days, reason, status, approved_by) VALUES
+-- Nghỉ phép năm (leave_type_id = 1)
+(7,  1, '2026-06-05', '2026-06-06', 2.0, 'Về quê thăm gia đình',                    'Approved', 6),
+(21, 1, '2026-06-10', '2026-06-12', 3.0, 'Nghỉ phép năm theo kế hoạch',             'Approved', 19),
+(16, 1, '2026-06-15', '2026-06-15', 1.0, 'Giải quyết việc cá nhân',                 'Pending',  NULL),
+
+-- Nghỉ ốm hưởng BHXH (leave_type_id = 2)
+(12, 2, '2026-06-03', '2026-06-04', 2.0, 'Sốt cao, có giấy nghỉ của bác sĩ',        'Approved', 3),
+(25, 2, '2026-06-05', '2026-06-05', 1.0, 'Khám sức khỏe định kỳ',                   'Approved', 19),
+
+-- Nghỉ việc riêng có lương (leave_type_id = 4)
+(9,  4, '2026-06-08', '2026-06-08', 1.0, 'Đám cưới anh trai',                       'Approved', 6),
+(17, 4, '2026-06-09', '2026-06-10', 2.0, 'Người thân mất, lo tang lễ',              'Approved', 14),
+
+-- Nghỉ không lương (leave_type_id = 5)
+(22, 5, '2026-06-16', '2026-06-19', 4.0, 'Du lịch nước ngoài, xin nghỉ không lương','Pending',  NULL),
+(27, 5, '2026-06-20', '2026-06-20', 1.0, 'Giải quyết thủ tục hành chính cá nhân',   'Rejected', 19),
+
+-- Nghỉ thai sản (leave_type_id = 3)
+(31, 3, '2026-06-01', '2026-11-30', 130.0,'Nghỉ thai sản theo chế độ BHXH 6 tháng', 'Approved', 4);
+
+INSERT INTO payroll (user_id, month, year, base_salary, working_days, overtime_amount, allowance_amount, bonus_amount, deduction_amount, insurance_amount, tax_amount, gross_salary, net_salary, status) VALUES
+
+-- Giám đốc (user 2) - Ngạch Quản lý: base 30,000,000
+(2,  5, 2026, 30000000, 22.0, 0,       1800000, 5000000, 0,      3225000, 2500000, 36800000, 31075000, 'Paid'),
+
+-- Trưởng phòng Nhân sự (user 3) - Ngạch Chuyên viên: base 12,000,000
+(3,  5, 2026, 12000000, 22.0, 0,       1300000, 1500000, 0,      1290000,  750000, 14800000, 12760000, 'Paid'),
+
+-- Quản đốc (user 4) - Ngạch Chuyên viên: base 12,000,000
+(4,  5, 2026, 12000000, 21.0, 780000,  1300000, 0,       150000, 1290000,  720000, 14080000, 11920000, 'Paid'),
+
+-- Trưởng phòng Hành chính (user 6) - Ngạch Quản lý: base 30,000,000
+(6,  5, 2026, 30000000, 22.0, 500000,  1800000, 2000000, 0,      3225000, 2300000, 34300000, 28775000, 'Approved'),
+
+-- HR Staff (user 10) - Ngạch Chuyên viên: base 12,000,000
+(10, 5, 2026, 12000000, 22.0, 0,       1300000, 1500000, 0,      1290000,  680000, 14800000, 12830000, 'Approved'),
+
+-- Kế toán trưởng (user 14) - Ngạch Quản lý: base 30,000,000
+(14, 5, 2026, 30000000, 22.0, 0,       1800000, 5000000, 0,      3225000, 2500000, 36800000, 31075000, 'Approved'),
+
+-- Nhân viên kế toán (user 16) - Ngạch Chuyên viên: base 12,000,000
+(16, 5, 2026, 12000000, 20.0, 0,       1300000, 0,       150000, 1290000,  580000, 13300000, 11280000, 'Draft'),
+
+-- Trưởng phòng Kinh doanh (user 19) - Ngạch Quản lý: base 30,000,000
+(19, 5, 2026, 30000000, 22.0, 1500000, 1800000, 3000000, 0,      3225000, 2800000, 36300000, 30275000, 'Approved'),
+
+-- Nhân viên Kinh doanh (user 21) - Ngạch Kinh doanh: base 10,000,000
+(21, 5, 2026, 10000000, 22.0, 0,       1300000, 2500000, 0,      1075000,  850000, 13800000, 11875000, 'Draft'),
+
+-- Tổ trưởng xưởng (user 29) - Ngạch Chuyên viên: base 12,000,000
+(29, 5, 2026, 12000000, 22.0, 1560000, 2300000, 0,       0,      1290000,  780000, 15860000, 13790000, 'Draft');
+
+INSERT INTO shift_assignments (user_id, shift_id, assigned_date) VALUES
+
+-- Ca Hành Chính (shift_id = 1): Khối văn phòng ngày 04/06/2026
+(6,  1, '2026-06-04'),
+(7,  1, '2026-06-04'),
+(10, 1, '2026-06-04'),
+(14, 1, '2026-06-04'),
+(19, 1, '2026-06-04'),
+
+-- Ca 1 Sáng (shift_id = 2): Tổ trưởng xưởng ngày 04/06/2026
+(29, 2, '2026-06-04'),
+(30, 2, '2026-06-04'),
+
+-- Ca 2 Chiều (shift_id = 3): Tổ trưởng xưởng ngày 04/06/2026
+(31, 3, '2026-06-04'),
+(32, 3, '2026-06-04'),
+
+-- Ca 3 Đêm (shift_id = 4): Quản đốc ngày 04/06/2026
+(4,  4, '2026-06-04');
+
+INSERT INTO work_history (user_id, position_title, company_name, location, start_date, end_date, description, is_current) VALUES
+
+-- Giám đốc (user 2) - Vị trí hiện tại
+(2, 'Giám đốc điều hành',
+    'Công ty TNHH Group4',
+    'Hà Nội',
+    '2020-01-01', NULL,
+    'Điều hành toàn bộ hoạt động sản xuất kinh doanh của công ty',
+    1),
+
+-- Trưởng phòng Nhân sự (user 3) - Vị trí hiện tại
+(3, 'Trưởng phòng Nhân sự',
+    'Công ty TNHH Group4',
+    'Hà Nội',
+    '2021-03-10', NULL,
+    'Phụ trách tuyển dụng, đào tạo và quản lý chính sách C&B toàn công ty',
+    1),
+
+-- Trưởng phòng Nhân sự (user 3) - Vị trí cũ
+(3, 'Chuyên viên Nhân sự',
+    'Công ty CP Nhân Lực Việt',
+    'Hà Nội',
+    '2016-06-01', '2021-02-28',
+    'Thực hiện tuyển dụng và quản lý hồ sơ nhân viên',
+    0),
+
+-- Quản đốc (user 4) - Vị trí hiện tại
+(4, 'Quản đốc xưởng sản xuất',
+    'Công ty TNHH Group4',
+    'Bắc Ninh',
+    '2020-06-01', NULL,
+    'Quản lý toàn bộ dây chuyền sản xuất, giám sát an toàn lao động',
+    1),
+
+-- Kế toán trưởng (user 14) - Vị trí hiện tại
+(14, 'Kế toán trưởng',
+     'Công ty TNHH Group4',
+     'Hà Nội',
+     '2015-02-01', NULL,
+     'Phụ trách tài chính, công nợ, thuế và báo cáo tài chính định kỳ',
+     1),
+
+-- Kế toán trưởng (user 14) - Vị trí cũ
+(14, 'Kế toán tổng hợp',
+     'Công ty TNHH Tài Chính Minh Phát',
+     'Hà Nội',
+     '2009-08-01', '2015-01-31',
+     'Lập báo cáo tài chính, quyết toán thuế hàng năm',
+     0),
+
+-- Trưởng phòng Kinh doanh (user 19) - Vị trí hiện tại
+(19, 'Trưởng phòng Kinh doanh',
+     'Công ty TNHH Group4',
+     'Hà Nội',
+     '2016-01-01', NULL,
+     'Phụ trách phát triển thị trường, quản lý đội ngũ sales 10 người',
+     1),
+
+-- Trưởng phòng Kinh doanh (user 19) - Vị trí cũ
+(19, 'Nhân viên Kinh doanh',
+     'Công ty CP Thương Mại Sao Việt',
+     'TP. Hồ Chí Minh',
+     '2010-03-01', '2015-12-31',
+     'Phát triển khách hàng mới, chăm sóc khách hàng khu vực miền Nam',
+     0),
+
+-- Tổ trưởng xưởng (user 29) - Vị trí hiện tại
+(29, 'Tổ trưởng sản xuất',
+     'Công ty TNHH Group4',
+     'Bắc Ninh',
+     '2015-06-01', NULL,
+     'Quản lý tổ sản xuất 15 công nhân, giám sát chất lượng sản phẩm',
+     1),
+
+-- Trưởng phòng Hành chính (user 6) - Vị trí hiện tại
+(6,  'Trưởng phòng Hành chính',
+     'Công ty TNHH Group4',
+     'Hà Nội',
+     '2018-03-01', NULL,
+     'Quản lý văn phòng phẩm, thiết bị, lễ tân và công tác hành chính nội bộ',
+     1);

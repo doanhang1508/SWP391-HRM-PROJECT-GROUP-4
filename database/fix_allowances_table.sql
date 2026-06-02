@@ -6,9 +6,7 @@
 USE HRM_System;
 
 -- Bước 1: Thêm cột amount (nếu chưa có)
-ALTER TABLE allowances
-    ADD COLUMN IF NOT EXISTS amount DECIMAL(15,2) NOT NULL DEFAULT 0 AFTER description,
-    ADD COLUMN IF NOT EXISTS apply_condition VARCHAR(255) AFTER amount;
+
 
 -- Bước 2: Xóa dữ liệu cũ (nếu có) và insert lại đúng
 DELETE FROM allowances;
