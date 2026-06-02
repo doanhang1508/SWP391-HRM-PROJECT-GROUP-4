@@ -160,7 +160,7 @@
 </c:forEach>
 
 <div class="page-wrapper">
-    <jsp:include page="sidebar.jsp" />
+    <jsp:include page="../shared/sidebar.jsp" />
 
     <main class="page-main">
 

@@ -57,10 +57,12 @@ CREATE TABLE contract_types (
 
 -- BẢNG 6: allowances
 CREATE TABLE allowances (
-    allowance_id   INT          PRIMARY KEY AUTO_INCREMENT,
-    allowance_name VARCHAR(100) NOT NULL UNIQUE,
-    description    VARCHAR(255),
-    status         TINYINT(1)   NOT NULL DEFAULT 1
+    allowance_id    INT           PRIMARY KEY AUTO_INCREMENT,
+    allowance_name  VARCHAR(100)  NOT NULL UNIQUE,
+    description     VARCHAR(255),
+    amount          DECIMAL(15,2) NOT NULL DEFAULT 0,
+    apply_condition VARCHAR(255),
+    status          TINYINT(1)    NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- BẢNG 7: insurance_rates
@@ -376,12 +378,12 @@ INSERT INTO contract_types (contract_type_id, type_name, description) VALUES
 (5, 'Thời vụ',            'Dành cho lao động ngắn hạn ở xưởng');
 
 -- ── 6. Allowances ──
-INSERT INTO allowances (allowance_id, allowance_name, description) VALUES
-(1, 'Ăn trưa',    'Phụ cấp ăn ca'),
-(2, 'Đi lại',     'Phụ cấp xăng xe'),
-(3, 'Trách nhiệm','Cho quản đốc, tổ trưởng'),
-(4, 'Độc hại',    'Cho công nhân xưởng'),
-(5, 'Chuyên cần', 'Thưởng đi làm đầy đủ');
+INSERT INTO allowances (allowance_id, allowance_name, description, amount, apply_condition) VALUES
+(1, 'Ăn trưa',    'Phụ cấp ăn ca',                    800000,  'Áp dụng cho tất cả nhân viên chính thức'),
+(2, 'Đi lại',     'Phụ cấp xăng xe',                  500000,  'Áp dụng cho nhân viên không ở trong ký túc xá'),
+(3, 'Trách nhiệm','Cho quản đốc, tổ trưởng',          1000000, 'Áp dụng cho quản đốc và tổ trưởng'),
+(4, 'Độc hại',    'Cho công nhân xưởng',               300000,  'Áp dụng cho công nhân làm việc trực tiếp tại xưởng'),
+(5, 'Chuyên cần', 'Thưởng đi làm đầy đủ',             500000,  'Không nghỉ phép, không đi muộn trong tháng');
 
 -- ── 7. Insurance Rates (BHXH / BHYT / BHTN) ──
 INSERT INTO insurance_rates (insurance_rate_id, insurance_name, company_rate, employee_rate) VALUES

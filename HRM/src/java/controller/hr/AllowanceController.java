@@ -2,11 +2,13 @@ package controller.hr;
 
 import dao.AllowanceDAO;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.math.BigDecimal;
 import model.Allowance;
 import model.User;
 
@@ -15,6 +17,7 @@ import model.User;
  * URL: /hr/allowance
  * Quyền: HR Manager (roleId=2) hoặc Admin (roleId=1)
  */
+@WebServlet(name = "AllowanceController", urlPatterns = {"/hr/allowance"})
 public class AllowanceController extends HttpServlet {
 
     private static final String LIST_JSP = "/hr/allowance.jsp";
@@ -47,13 +50,21 @@ public class AllowanceController extends HttpServlet {
 
         if ("delete".equals(action) && idStr != null) {
             int id = Integer.parseInt(idStr);
-            if (dao.countEmployees(id) > 0) {
-                request.getSession().setAttribute("errorMsg",
-                    "Không thể xóa: vẫn còn nhân viên đang được áp dụng loại phụ cấp này!");
-            } else {
-                dao.delete(id);
-                request.getSession().setAttribute("successMsg", "Đã xóa loại phụ cấp thành công.");
-            }
+            // Soft-delete (deactivate) thay vì xóa cứng
+            dao.deactivate(id);
+            request.getSession().setAttribute("successMsg", "Đã vô hiệu hóa loại phụ cấp thành công.");
+            response.sendRedirect(request.getContextPath() + LIST_URL);
+            return;
+        }
+        if ("deactivate".equals(action) && idStr != null) {
+            dao.deactivate(Integer.parseInt(idStr));
+            request.getSession().setAttribute("successMsg", "Đã vô hiệu hóa loại phụ cấp thành công.");
+            response.sendRedirect(request.getContextPath() + LIST_URL);
+            return;
+        }
+        if ("activate".equals(action) && idStr != null) {
+            dao.activate(Integer.parseInt(idStr));
+            request.getSession().setAttribute("successMsg", "Kích hoạt lại loại phụ cấp thành công.");
             response.sendRedirect(request.getContextPath() + LIST_URL);
             return;
         }
@@ -68,17 +79,26 @@ public class AllowanceController extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         if (!checkAccess(request, response)) return;
 
-        String action        = request.getParameter("action");
-        String allowanceName = request.getParameter("allowanceName");
-        String description   = request.getParameter("description");
-        String idStr         = request.getParameter("id");
+        String action          = request.getParameter("action");
+        String allowanceName   = request.getParameter("allowanceName");
+        String description     = request.getParameter("description");
+        String amountStr       = request.getParameter("amount");
+        String applyCondition  = request.getParameter("applyCondition");
+        String idStr           = request.getParameter("id");
 
-        if ("add".equals(action)) {
-            dao.insert(new Allowance(0, allowanceName, description, true));
-            request.getSession().setAttribute("successMsg", "Thêm loại phụ cấp thành công.");
-        } else if ("edit".equals(action) && idStr != null) {
-            dao.update(new Allowance(Integer.parseInt(idStr), allowanceName, description, true));
-            request.getSession().setAttribute("successMsg", "Cập nhật loại phụ cấp thành công.");
+        try {
+            BigDecimal amount = (amountStr != null && !amountStr.isEmpty())
+                    ? new BigDecimal(amountStr.replaceAll(",", "")) : BigDecimal.ZERO;
+
+            if ("add".equals(action)) {
+                dao.insert(new Allowance(0, allowanceName, description, amount, applyCondition, true));
+                request.getSession().setAttribute("successMsg", "Thêm loại phụ cấp thành công.");
+            } else if ("edit".equals(action) && idStr != null) {
+                dao.update(new Allowance(Integer.parseInt(idStr), allowanceName, description, amount, applyCondition, true));
+                request.getSession().setAttribute("successMsg", "Cập nhật loại phụ cấp thành công.");
+            }
+        } catch (NumberFormatException e) {
+            request.getSession().setAttribute("errorMsg", "Dữ liệu mức tiền không hợp lệ.");
         }
 
         response.sendRedirect(request.getContextPath() + LIST_URL);

@@ -2,6 +2,7 @@ package controller.hr;
 
 import dao.SalaryGradeDAO;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,6 +17,7 @@ import model.User;
  * URL: /hr/salary-grade
  * Quyền: HR Manager (roleId=2) hoặc Admin (roleId=1)
  */
+@WebServlet(name = "SalaryGradeController", urlPatterns = {"/hr/salary-grade"})
 public class SalaryGradeController extends HttpServlet {
 
     private static final String LIST_JSP = "/hr/salary-grade.jsp";
@@ -51,12 +53,12 @@ public class SalaryGradeController extends HttpServlet {
         if ("delete".equals(action) && idStr != null) {
             int id = Integer.parseInt(idStr);
             // Cảnh báo nếu còn nhân viên đang dùng ngạch này
-            if (dao.countEmployees(id) > 0) {
+            if (dao.countLinkedEmployees(id) > 0) {
                 request.getSession().setAttribute("errorMsg",
                     "Không thể xóa: vẫn còn nhân viên đang sử dụng ngạch lương này!");
             } else {
-                dao.delete(id);
-                request.getSession().setAttribute("successMsg", "Đã xóa ngạch lương thành công.");
+                dao.deactivate(id);
+                request.getSession().setAttribute("successMsg", "Đã vô hiệu hóa ngạch lương thành công.");
             }
             response.sendRedirect(request.getContextPath() + LIST_URL);
             return;
@@ -73,11 +75,31 @@ public class SalaryGradeController extends HttpServlet {
         if (!checkAccess(request, response)) return;
 
         String action      = request.getParameter("action");
+        String idStr       = request.getParameter("id");
+
+        // Deactivate / Activate (không cần parse số)
+        if ("deactivate".equals(action) && idStr != null) {
+            if (dao.countLinkedEmployees(Integer.parseInt(idStr)) > 0) {
+                request.getSession().setAttribute("errorMsg",
+                    "Không thể vô hiệu hóa: vẫn còn nhân viên đang sử dụng ngạch lương này!");
+            } else {
+                dao.deactivate(Integer.parseInt(idStr));
+                request.getSession().setAttribute("successMsg", "Đã vô hiệu hóa ngạch lương thành công.");
+            }
+            response.sendRedirect(request.getContextPath() + LIST_URL);
+            return;
+        }
+        if ("activate".equals(action) && idStr != null) {
+            dao.activate(Integer.parseInt(idStr));
+            request.getSession().setAttribute("successMsg", "Kích hoạt lại ngạch lương thành công.");
+            response.sendRedirect(request.getContextPath() + LIST_URL);
+            return;
+        }
+
         String gradeName   = request.getParameter("gradeName");
         String baseSalaryS = request.getParameter("baseSalary");
         String coefficientS= request.getParameter("coefficient");
         String description = request.getParameter("description");
-        String idStr       = request.getParameter("id");
 
         try {
             BigDecimal baseSalary  = new BigDecimal(baseSalaryS.replaceAll(",", ""));
