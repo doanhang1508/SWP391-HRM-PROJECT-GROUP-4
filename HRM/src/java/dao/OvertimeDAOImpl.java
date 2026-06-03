@@ -37,11 +37,17 @@ public class OvertimeDAOImpl implements OvertimeDAO {
         String sql = "SELECT a.*, s.shift_name, u.full_name FROM attendance a " +
                      "JOIN shifts s ON a.shift_id = s.shift_id " +
                      "JOIN users u ON a.user_id = u.user_id " +
-                     "WHERE u.department_id = ? AND a.status = 'Pending OT' " +
-                     "ORDER BY a.work_date DESC";
+                     "WHERE a.status = 'Pending OT' ";
+        if (departmentId > 0) {
+            sql += "AND u.department_id = ? ";
+        }
+        sql += "ORDER BY a.work_date DESC";
+        
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, departmentId);
+            if (departmentId > 0) {
+                ps.setInt(1, departmentId);
+            }
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     list.add(mapRow(rs));

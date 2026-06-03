@@ -29,9 +29,10 @@ public class LeaveOvertimeEmployeeController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         HttpSession session = request.getSession();
-        User user = (User) session.getAttribute("user");
+        User user = (User) session.getAttribute("currentUser");
         
         if (user == null) {
+            System.out.println("User is null in LeaveOvertimeEmployeeController! Redirecting to login...");
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
@@ -49,9 +50,10 @@ public class LeaveOvertimeEmployeeController extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         HttpSession session = request.getSession();
-        User user = (User) session.getAttribute("user");
+        User user = (User) session.getAttribute("currentUser");
         
         if (user == null) {
+            System.out.println("User is null in LeaveOvertimeEmployeeController doPost! Redirecting to login...");
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }

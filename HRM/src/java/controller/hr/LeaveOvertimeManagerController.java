@@ -26,15 +26,21 @@ public class LeaveOvertimeManagerController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         HttpSession session = request.getSession();
-        User user = (User) session.getAttribute("user");
+        User user = (User) session.getAttribute("currentUser");
 
-        if (user == null || user.getDepartmentId() == 0) {
+        if (user == null) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
+        
+        int filterDeptId = user.getDepartmentId();
+        // Admins, HR Managers, Factory Managers, Directors, HR Staff can see all pending requests
+        if (user.getRoleId() == 1 || user.getRoleId() == 2 || user.getRoleId() == 3 || user.getRoleId() == 4 || user.getRoleId() == 5) {
+            filterDeptId = 0;
+        }
 
-        request.setAttribute("pendingLeaves", service.getPendingLeavesByDepartment(user.getDepartmentId()));
-        request.setAttribute("pendingOTs", service.getPendingOTByDepartment(user.getDepartmentId()));
+        request.setAttribute("pendingLeaves", service.getPendingLeavesByDepartment(filterDeptId));
+        request.setAttribute("pendingOTs", service.getPendingOTByDepartment(filterDeptId));
 
         request.getRequestDispatcher("/leave-ot-manager.jsp").forward(request, response);
     }
@@ -43,7 +49,7 @@ public class LeaveOvertimeManagerController extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         HttpSession session = request.getSession();
-        User user = (User) session.getAttribute("user");
+        User user = (User) session.getAttribute("currentUser");
 
         if (user == null) {
             response.sendRedirect(request.getContextPath() + "/login");

@@ -852,3 +852,25 @@ INSERT INTO work_history (user_id, position_title, company_name, location, start
      '2018-03-01', NULL,
      'Quản lý văn phòng phẩm, thiết bị, lễ tân và công tác hành chính nội bộ',
      1);
+     
+INSERT INTO employee_allowances (user_id, allowance_id, amount) VALUES
+
+-- Phụ cấp Ăn trưa (allowance_id = 1): 800,000đ - Áp dụng tất cả nhân viên chính thức
+(6,  1, 800000),
+(14, 1, 800000),
+(19, 1, 800000),
+
+-- Phụ cấp Đi lại (allowance_id = 2): 500,000đ - Nhân viên không ở ký túc xá
+(6,  2, 500000),
+(19, 2, 500000),
+
+-- Phụ cấp Trách nhiệm (allowance_id = 3): 1,000,000đ - Quản đốc, Tổ trưởng
+(4,  3, 1000000),
+(29, 3, 1000000),
+
+-- Phụ cấp Độc hại (allowance_id = 4): 300,000đ - Công nhân làm việc trực tiếp tại xưởng
+(29, 4, 300000),
+(30, 4, 300000),
+
+-- Phụ cấp Chuyên cần (allowance_id = 5): 500,000đ - Không nghỉ, không đi muộn
+(9,  5, 500000);

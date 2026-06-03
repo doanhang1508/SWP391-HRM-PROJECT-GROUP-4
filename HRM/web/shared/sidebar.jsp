@@ -455,7 +455,7 @@
                                                     </li>
                                                     <li class="sidebar-menu-category">Nghỉ phép &amp; OT</li>
                                                     <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/leave-ot-manager"
+                                                        <a href="${pageContext.request.contextPath}/manager/leave-ot"
                                                             class="sidebar-link ${param.activeMenu eq 'leave-ot' ? 'active' : ''}">
                                                             <i class="fas fa-calendar-check"></i> Duyệt nghỉ phép / OT
                                                         </a>
@@ -472,7 +472,7 @@
                                                             </a>
                                                         </li>
                                                         <li class="sidebar-item">
-                                                            <a href="${pageContext.request.contextPath}/leave-ot-manager"
+                                                            <a href="${pageContext.request.contextPath}/manager/leave-ot"
                                                                 class="sidebar-link ${param.activeMenu eq 'leave-ot' ? 'active' : ''}">
                                                                 <i class="fas fa-calendar-check"></i> Duyệt nghỉ phép /
                                                                 OT
@@ -517,7 +517,7 @@
                                                                 <li class="sidebar-menu-category">Nghỉ phép &amp; OT
                                                                 </li>
                                                                 <li class="sidebar-item">
-                                                                    <a href="${pageContext.request.contextPath}/leave-ot-manager"
+                                                                    <a href="${pageContext.request.contextPath}/manager/leave-ot"
                                                                         class="sidebar-link ${param.activeMenu eq 'leave-ot' ? 'active' : ''}">
                                                                         <i class="fas fa-calendar-check"></i> Duyệt nghỉ
                                                                         phép / OT
@@ -530,7 +530,7 @@
                                                                     <li class="sidebar-menu-category">Quản lý phòng ban
                                                                     </li>
                                                                     <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/leave-ot-manager"
+                                                                        <a href="${pageContext.request.contextPath}/manager/leave-ot"
                                                                             class="sidebar-link ${param.activeMenu eq 'leave-ot' ? 'active' : ''}">
                                                                             <i class="fas fa-calendar-check"></i> Duyệt
                                                                             nghỉ phép / OT

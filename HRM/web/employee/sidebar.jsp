@@ -120,8 +120,8 @@
             </a>
         </li>
         <li class="sidebar-item">
-            <a href="#" class="sidebar-link ${param.activeMenu eq 'leave' ? 'active' : ''}">
-                <i class="fas fa-paper-plane"></i> Đơn nghỉ phép
+            <a href="${pageContext.request.contextPath}/employee/leave-ot" class="sidebar-link ${param.activeMenu eq 'leave' ? 'active' : ''}">
+                <i class="fas fa-paper-plane"></i> Đơn nghỉ phép / OT
             </a>
         </li>
 
