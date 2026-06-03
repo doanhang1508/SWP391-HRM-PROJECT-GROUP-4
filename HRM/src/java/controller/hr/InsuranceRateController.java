@@ -41,6 +41,37 @@ public class InsuranceRateController extends HttpServlet {
         return true;
     }
 
+    /**
+     * Đọc tham số tìm kiếm, load danh sách bảo hiểm và tính tổng/trung bình.
+     * Đây là điểm duy nhất gom logic load list, tránh lặp code.
+     */
+    private void loadList(HttpServletRequest request) {
+        String keyword      = request.getParameter("keyword");
+        String statusFilter = request.getParameter("statusFilter");
+
+        // Bảo hiểm cũ chỉ có status=1, mặc định active để giữ behaviour cũ
+        if (statusFilter == null || statusFilter.isBlank()) statusFilter = "active";
+
+        List<InsuranceRate> list = dao.search(keyword, statusFilter);
+
+        BigDecimal totalCompany  = BigDecimal.ZERO;
+        BigDecimal totalEmployee = BigDecimal.ZERO;
+        for (InsuranceRate ir : list) {
+            totalCompany  = totalCompany.add(ir.getCompanyRate());
+            totalEmployee = totalEmployee.add(ir.getEmployeeRate());
+        }
+        BigDecimal avgCompany  = list.isEmpty() ? BigDecimal.ZERO
+            : totalCompany.divide(new BigDecimal(list.size()), 2, java.math.RoundingMode.HALF_UP);
+        BigDecimal avgEmployee = list.isEmpty() ? BigDecimal.ZERO
+            : totalEmployee.divide(new BigDecimal(list.size()), 2, java.math.RoundingMode.HALF_UP);
+
+        request.setAttribute("insuranceRateList", list);
+        request.setAttribute("avgCompanyRate",    avgCompany);
+        request.setAttribute("avgEmployeeRate",   avgEmployee);
+        request.setAttribute("keyword",           keyword      != null ? keyword      : "");
+        request.setAttribute("statusFilter",      statusFilter);
+    }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -56,19 +87,8 @@ public class InsuranceRateController extends HttpServlet {
             return;
         }
 
-        List<InsuranceRate> list = dao.getAll();
-        BigDecimal totalCompany = BigDecimal.ZERO;
-        BigDecimal totalEmployee = BigDecimal.ZERO;
-        for (InsuranceRate ir : list) {
-            totalCompany = totalCompany.add(ir.getCompanyRate());
-            totalEmployee = totalEmployee.add(ir.getEmployeeRate());
-        }
-        BigDecimal avgCompany = list.isEmpty() ? BigDecimal.ZERO : totalCompany.divide(new BigDecimal(list.size()), 2, java.math.RoundingMode.HALF_UP);
-        BigDecimal avgEmployee = list.isEmpty() ? BigDecimal.ZERO : totalEmployee.divide(new BigDecimal(list.size()), 2, java.math.RoundingMode.HALF_UP);
-
-        request.setAttribute("insuranceRateList", list);
-        request.setAttribute("avgCompanyRate", avgCompany);
-        request.setAttribute("avgEmployeeRate", avgEmployee);
+        // Hiển thị danh sách (có thể kèm tìm kiếm qua GET param ?keyword=...&statusFilter=...)
+        loadList(request);
         request.getRequestDispatcher(LIST_JSP).forward(request, response);
     }
 
