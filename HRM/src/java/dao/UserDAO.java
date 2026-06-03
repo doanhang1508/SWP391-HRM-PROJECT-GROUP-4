@@ -88,21 +88,7 @@ public class UserDAO {
         return false;
     }
  
-    // ── Cập nhật avatar ──
-    public boolean updateAvatar(int userId, String avatarUrl) {
-        String sql = "UPDATE users SET avatar_url = ? WHERE user_id = ?";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, avatarUrl);
-            ps.setInt(2, userId);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            System.err.println("Lỗi updateAvatar: " + e.getMessage());
-        }
-        return false;
-    }
- 
+
     // ── Cập nhật hồ sơ ──
     public boolean updateProfile(int userId, String fullName, String phone) {
         String sql = "UPDATE users SET full_name = ?, phone = ? WHERE user_id = ?";
@@ -154,7 +140,6 @@ public class UserDAO {
         user.setFullName(rs.getString("full_name"));
         user.setEmail(rs.getString("email"));
         user.setPhone(rs.getString("phone"));
-        user.setAvatarUrl(rs.getString("avatar_url"));
         user.setStatus(rs.getInt("status"));
         user.setRoleId(rs.getInt("role_id"));
         user.setDepartmentId(rs.getInt("department_id"));

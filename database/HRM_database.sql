@@ -165,7 +165,6 @@ CREATE TABLE users (
     full_name     VARCHAR(100),
     email         VARCHAR(100) UNIQUE,
     phone         VARCHAR(20),
-    avatar_url    VARCHAR(255),
     status        TINYINT(1)   NOT NULL DEFAULT 1,
     role_id       INT,
     department_id INT,
