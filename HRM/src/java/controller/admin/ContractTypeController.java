@@ -52,15 +52,28 @@ public class ContractTypeController extends HttpServlet {
         String name   = request.getParameter("name");
         String desc   = request.getParameter("description");
         String idStr  = request.getParameter("id");
+        String durationStr = request.getParameter("duration");
+        String durationUnit = request.getParameter("durationUnit");
+
+        Integer duration = null;
+        if (durationStr != null && !durationStr.trim().isEmpty()) {
+            try {
+                duration = Integer.parseInt(durationStr.trim());
+            } catch (NumberFormatException e) {
+                // Keep it null
+            }
+        }
 
         if ("delete".equals(action) && idStr != null) {
-            dao.delete(Integer.parseInt(idStr));
-        } else if ("toggleStatus".equals(action) && idStr != null) {
-            dao.toggleStatus(Integer.parseInt(idStr));
+            dao.changeStatus(Integer.parseInt(idStr), false);
+        } else if ("deactivate".equals(action) && idStr != null) {
+            dao.changeStatus(Integer.parseInt(idStr), false);
+        } else if ("activate".equals(action) && idStr != null) {
+            dao.changeStatus(Integer.parseInt(idStr), true);
         } else if ("add".equals(action)) {
-            dao.insert(new ContractType(0, name, desc, true));
+            dao.insert(new ContractType(0, name, desc, duration, durationUnit, true, null, null));
         } else if ("edit".equals(action) && idStr != null) {
-            dao.update(new ContractType(Integer.parseInt(idStr), name, desc, true));
+            dao.update(new ContractType(Integer.parseInt(idStr), name, desc, duration, durationUnit, true, null, null));
         }
         response.sendRedirect(request.getContextPath() + "/admin/contract-type");
     }
