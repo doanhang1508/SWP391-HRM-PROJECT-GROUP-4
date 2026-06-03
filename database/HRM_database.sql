@@ -52,7 +52,11 @@ CREATE TABLE contract_types (
     contract_type_id INT          PRIMARY KEY AUTO_INCREMENT,
     type_name        VARCHAR(100) NOT NULL UNIQUE,
     description      VARCHAR(255),
-    status           TINYINT(1)   NOT NULL DEFAULT 1
+    duration         INT          NULL,
+    duration_unit    VARCHAR(50)  NULL,
+    status           TINYINT(1)   NOT NULL DEFAULT 1,
+    created_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- BẢNG 6: allowances
@@ -373,12 +377,12 @@ INSERT INTO salary_grades (salary_grade_id, grade_name, base_salary, coefficient
 (4, 'Ngạch Sản xuất',    7000000, 1.00, 'Công nhân sản xuất');
 
 -- ── 5. Contract Types ──
-INSERT INTO contract_types (contract_type_id, type_name, description) VALUES
-(1, 'Thử việc',           'Hợp đồng thử việc 2 tháng'),
-(2, 'Có thời hạn 1 năm',  'Hợp đồng lao động 12 tháng'),
-(3, 'Có thời hạn 3 năm',  'Hợp đồng lao động 36 tháng'),
-(4, 'Vô thời hạn',        'Hợp đồng không xác định thời hạn'),
-(5, 'Thời vụ',            'Dành cho lao động ngắn hạn ở xưởng');
+INSERT INTO contract_types (contract_type_id, type_name, description, duration, duration_unit) VALUES
+(1, 'Thử việc',           'Hợp đồng thử việc 2 tháng', 2, 'Tháng'),
+(2, 'Có thời hạn 1 năm',  'Hợp đồng lao động 12 tháng', 1, 'Năm'),
+(3, 'Có thời hạn 3 năm',  'Hợp đồng lao động 36 tháng', 3, 'Năm'),
+(4, 'Vô thời hạn',        'Hợp đồng không xác định thời hạn', NULL, 'Vô thời hạn'),
+(5, 'Thời vụ',            'Dành cho lao động ngắn hạn ở xưởng', 3, 'Tháng');
 
 -- ── 6. Allowances ──
 INSERT INTO allowances (allowance_id, allowance_name, description, amount, apply_condition) VALUES

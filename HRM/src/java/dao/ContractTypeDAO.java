@@ -12,16 +12,22 @@ public class ContractTypeDAO {
 
     public List<ContractType> getAll() {
         List<ContractType> list = new ArrayList<>();
-        String sql = "SELECT * FROM contract_types WHERE status = 1 ORDER BY contract_type_id";
+        String sql = "SELECT * FROM contract_types ORDER BY contract_type_id";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
+                int dur = rs.getInt("duration");
+                Integer durationVal = rs.wasNull() ? null : dur;
                 list.add(new ContractType(
                     rs.getInt("contract_type_id"),
                     rs.getString("type_name"),
                     rs.getString("description"),
-                    rs.getBoolean("status")
+                    durationVal,
+                    rs.getString("duration_unit"),
+                    rs.getBoolean("status"),
+                    rs.getTimestamp("created_at"),
+                    rs.getTimestamp("updated_at")
                 ));
             }
         } catch (Exception e) {
@@ -31,11 +37,17 @@ public class ContractTypeDAO {
     }
 
     public void insert(ContractType ct) {
-        String sql = "INSERT INTO contract_types (type_name, description, status) VALUES (?, ?, 1)";
+        String sql = "INSERT INTO contract_types (type_name, description, duration, duration_unit, status) VALUES (?, ?, ?, ?, 1)";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, ct.getTypeName());
             ps.setString(2, ct.getDescription());
+            if (ct.getDuration() == null) {
+                ps.setNull(3, java.sql.Types.INTEGER);
+            } else {
+                ps.setInt(3, ct.getDuration());
+            }
+            ps.setString(4, ct.getDurationUnit());
             ps.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
@@ -43,12 +55,18 @@ public class ContractTypeDAO {
     }
 
     public void update(ContractType ct) {
-        String sql = "UPDATE contract_types SET type_name=?, description=? WHERE contract_type_id=?";
+        String sql = "UPDATE contract_types SET type_name=?, description=?, duration=?, duration_unit=? WHERE contract_type_id=?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, ct.getTypeName());
             ps.setString(2, ct.getDescription());
-            ps.setInt(3, ct.getContractTypeId());
+            if (ct.getDuration() == null) {
+                ps.setNull(3, java.sql.Types.INTEGER);
+            } else {
+                ps.setInt(3, ct.getDuration());
+            }
+            ps.setString(4, ct.getDurationUnit());
+            ps.setInt(5, ct.getContractTypeId());
             ps.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
@@ -56,10 +74,15 @@ public class ContractTypeDAO {
     }
 
     public void delete(int id) {
-        String sql = "UPDATE contract_types SET status = 0 WHERE contract_type_id=?";
+        changeStatus(id, false);
+    }
+
+    public void changeStatus(int id, boolean status) {
+        String sql = "UPDATE contract_types SET status = ? WHERE contract_type_id=?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
+            ps.setBoolean(1, status);
+            ps.setInt(2, id);
             ps.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
