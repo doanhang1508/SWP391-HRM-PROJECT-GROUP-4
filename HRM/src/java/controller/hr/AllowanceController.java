@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.math.BigDecimal;
 import model.Allowance;
 import model.User;
@@ -15,8 +16,7 @@ import model.User;
 @WebServlet(name = "AllowanceController", urlPatterns = {"/hr/allowance"})
 public class AllowanceController extends HttpServlet {
 
-    private static final String LIST_JSP   = "/hr/allowance.jsp";
-    private static final String DETAIL_JSP = "/hr/allowance-detail.jsp";
+    private static final String LIST_JSP = "/hr/allowance.jsp";
     private static final String LIST_URL = "/hr/allowance";
 
     private final AllowanceDAO dao = new AllowanceDAO();
@@ -36,17 +36,15 @@ public class AllowanceController extends HttpServlet {
         return true;
     }
 
-    /** Đọc tham số tìm kiếm và load danh sách phụ cấp tương ứng */
+    /** Đọc tham số tìm kiếm và load danh sách phụ cấp */
     private void loadList(HttpServletRequest request) {
         String keyword      = request.getParameter("keyword");
         String statusFilter = request.getParameter("statusFilter");
-
-        // Mặc định hiển thị tất cả nếu chưa có filter
         if (statusFilter == null || statusFilter.isBlank()) statusFilter = "all";
 
         request.setAttribute("allowanceList", dao.search(keyword, statusFilter));
-        request.setAttribute("keyword",      keyword      != null ? keyword      : "");
-        request.setAttribute("statusFilter", statusFilter);
+        request.setAttribute("keyword",       keyword != null ? keyword : "");
+        request.setAttribute("statusFilter",  statusFilter);
     }
 
     @Override
@@ -57,27 +55,27 @@ public class AllowanceController extends HttpServlet {
         String action = request.getParameter("action");
         String idStr  = request.getParameter("id");
 
-        // Xem chi tiết
+        // ── Chi tiết (AJAX / JSON) ──────────────────────────────────────────
         if ("detail".equals(action) && idStr != null) {
+            response.setContentType("application/json;charset=UTF-8");
+            PrintWriter out = response.getWriter();
             try {
                 int id = Integer.parseInt(idStr);
                 Allowance a = dao.getById(id);
                 if (a != null) {
-                    request.setAttribute("allowance", a);
-                    request.getRequestDispatcher(DETAIL_JSP).forward(request, response);
-                    return;
+                    out.write(allowanceToJson(a));
                 } else {
-                    request.getSession().setAttribute("errorMsg", "Không tìm thấy phụ cấp.");
+                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    out.write("{\"error\":\"Không tìm thấy phụ cấp.\"}");
                 }
             } catch (NumberFormatException e) {
-                request.getSession().setAttribute("errorMsg", "ID không hợp lệ.");
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                out.write("{\"error\":\"ID không hợp lệ.\"}");
             }
-            loadList(request);
-            request.getRequestDispatcher(LIST_JSP).forward(request, response);
             return;
         }
 
-        // Vô hiệu hóa
+        // ── Vô hiệu hóa ────────────────────────────────────────────────────
         if (("delete".equals(action) || "deactivate".equals(action)) && idStr != null) {
             dao.deactivate(Integer.parseInt(idStr));
             request.getSession().setAttribute("successMsg", "Đã vô hiệu hóa loại phụ cấp thành công.");
@@ -85,7 +83,7 @@ public class AllowanceController extends HttpServlet {
             return;
         }
 
-        // Kích hoạt lại
+        // ── Kích hoạt lại ───────────────────────────────────────────────────
         if ("activate".equals(action) && idStr != null) {
             dao.activate(Integer.parseInt(idStr));
             request.getSession().setAttribute("successMsg", "Kích hoạt lại loại phụ cấp thành công.");
@@ -93,8 +91,15 @@ public class AllowanceController extends HttpServlet {
             return;
         }
 
-        // Hiển thị danh sách (có thể kèm tìm kiếm qua GET param ?keyword=...&statusFilter=...)
+        // ── Danh sách ───────────────────────────────────────────────────────
         loadList(request);
+
+        // Hỗ trợ mở edit modal trực tiếp từ query param ?openEdit=<id>
+        String openEdit = request.getParameter("openEdit");
+        if (openEdit != null && !openEdit.isBlank()) {
+            request.setAttribute("openEditId", openEdit);
+        }
+
         request.getRequestDispatcher(LIST_JSP).forward(request, response);
     }
 
@@ -111,7 +116,6 @@ public class AllowanceController extends HttpServlet {
         String applyCondition = request.getParameter("applyCondition");
         String idStr          = request.getParameter("id");
 
-        // Validate tên
         if (allowanceName == null || allowanceName.isBlank()) {
             request.getSession().setAttribute("errorMsg", "Tên phụ cấp không được để trống.");
             response.sendRedirect(request.getContextPath() + LIST_URL);
@@ -151,5 +155,28 @@ public class AllowanceController extends HttpServlet {
         }
 
         response.sendRedirect(request.getContextPath() + LIST_URL);
+    }
+
+    /** Chuyển Allowance thành JSON string — không cần thư viện ngoài */
+    private String allowanceToJson(Allowance a) {
+        return "{"
+            + "\"allowanceId\":"   + a.getAllowanceId()                        + ","
+            + "\"allowanceName\":" + jsonStr(a.getAllowanceName())              + ","
+            + "\"description\":"   + jsonStr(a.getDescription())               + ","
+            + "\"amount\":"        + (a.getAmount() != null ? a.getAmount().toPlainString() : "0") + ","
+            + "\"applyCondition\":" + jsonStr(a.getApplyCondition())           + ","
+            + "\"status\":"        + a.isStatus()
+            + "}";
+    }
+
+    /** Escape chuỗi thành JSON string literal (bao gồm null → null) */
+    private String jsonStr(String s) {
+        if (s == null) return "null";
+        return "\"" + s.replace("\\", "\\\\")
+                       .replace("\"", "\\\"")
+                       .replace("\n", "\\n")
+                       .replace("\r", "\\r")
+                       .replace("\t", "\\t")
+               + "\"";
     }
 }
