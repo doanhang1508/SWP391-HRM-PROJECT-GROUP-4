@@ -203,18 +203,40 @@
                     <span class="dot"></span>
                     Danh Sách Mức Đóng Bảo Hiểm
                 </h2>
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="searchInput" placeholder="Tìm kiếm..." oninput="filterTable()">
-                </div>
+                <form method="get" action="${pageContext.request.contextPath}/hr/insurance-rate"
+                      style="display:flex;align-items:center;gap:8px;margin:0;">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" name="keyword" id="searchInput"
+                               placeholder="Tìm tên bảo hiểm..."
+                               value="${keyword}" oninput="liveFilter()">
+                    </div>
+                    <button type="submit" style="background:var(--blue);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <c:if test="${not empty keyword}">
+                        <a href="${pageContext.request.contextPath}/hr/insurance-rate"
+                           style="color:var(--muted);font-size:.85rem;text-decoration:none;padding:4px 6px;" title="Xóa tìm kiếm">
+                            <i class="fas fa-times-circle"></i>
+                        </a>
+                    </c:if>
+                </form>
             </div>
 
             <c:choose>
                 <c:when test="${empty insuranceRateList}">
                     <div class="empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <p style="font-size:1rem;font-weight:600;color:var(--navy);margin-bottom:6px;">Chưa có mức bảo hiểm nào</p>
-                        <p style="font-size:.85rem;">Nhấn <strong>Thêm Mức Bảo Hiểm</strong> để bắt đầu.</p>
+                        <i class="fas fa-${not empty keyword ? 'search' : 'inbox'}"></i>
+                        <c:choose>
+                            <c:when test="${not empty keyword}">
+                                <p style="font-size:1rem;font-weight:600;color:var(--navy);margin-bottom:6px;">Không tìm thấy kết quả cho "<strong>${keyword}</strong>"</p>
+                                <p style="font-size:.85rem;"><a href="${pageContext.request.contextPath}/hr/insurance-rate" style="color:var(--blue);">Xóa bộ lọc</a> để xem tất cả.</p>
+                            </c:when>
+                            <c:otherwise>
+                                <p style="font-size:1rem;font-weight:600;color:var(--navy);margin-bottom:6px;">Chưa có mức bảo hiểm nào</p>
+                                <p style="font-size:.85rem;">Nhấn <strong>Thêm Mức Bảo Hiểm</strong> để bắt đầu.</p>
+                            </c:otherwise>
+                        </c:choose>
                     </div>
                 </c:when>
                 <c:otherwise>
@@ -459,7 +481,8 @@
             if (e.target === el) el.classList.remove('show');
         });
     });
-    function filterTable() {
+    // Live filter nhanh trên client (thêm vào kết quả đã lọc server-side)
+    function liveFilter() {
         var q = document.getElementById('searchInput').value.toLowerCase();
         document.querySelectorAll('#insuranceTable tbody tr').forEach(function(row) {
             row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
