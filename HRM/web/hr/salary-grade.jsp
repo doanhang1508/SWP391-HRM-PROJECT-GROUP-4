@@ -319,10 +319,16 @@
                                         </td>
                                         <td style="text-align:center; white-space:nowrap;">
                                             <%-- View Detail --%>
-                                            <a href="${pageContext.request.contextPath}/hr/salary-grade?action=detail&id=${sg.salaryGradeId}"
-                                               class="action-btn btn-detail" title="Xem chi tiết">
+                                            <button class="action-btn btn-detail" title="Xem chi tiết"
+                                                    onclick="openDetailModal(
+                                                        ${sg.salaryGradeId},
+                                                        '${fn:escapeXml(sg.gradeName)}',
+                                                        '${sg.baseSalary}',
+                                                        '${sg.coefficient}',
+                                                        '${fn:escapeXml(sg.description)}',
+                                                        '${sg.status}')">
                                                 <i class="fas fa-eye"></i>
-                                            </a>
+                                            </button>
                                             <%-- Edit --%>
                                             <button class="action-btn btn-edit"
                                                     onclick="openEditModal(${sg.salaryGradeId},
@@ -364,6 +370,69 @@
             </c:choose>
         </div>
     </main>
+</div>
+
+<!-- ═════════════════════ MODAL XEM CHI TIẾT ═════════════════════ -->
+<div class="modal-overlay" id="detailModal">
+    <div class="modal-box" style="width:560px;">
+        <div class="modal-header" style="background:linear-gradient(135deg,#0a2540,#2b6cb0);border-radius:10px 10px 0 0;margin:-28px -32px 22px;padding:24px 28px;">
+            <div style="display:flex;align-items:center;gap:14px;">
+                <div style="width:52px;height:52px;background:rgba(255,255,255,.18);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:#fff;flex-shrink:0;">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <div>
+                    <h3 class="modal-title" id="detailName" style="color:#fff;margin:0 0 4px;"></h3>
+                    <span id="detailIdBadge" style="font-size:.72rem;font-weight:600;background:rgba(255,255,255,.18);color:rgba(255,255,255,.9);padding:2px 10px;border-radius:20px;"></span>
+                    <span id="detailStatusBadge" style="margin-left:6px;font-size:.72rem;font-weight:700;padding:2px 10px;border-radius:20px;"></span>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeModal('detailModal')" style="color:rgba(255,255,255,.8);">&times;</button>
+        </div>
+
+        <%-- Lương thực tế highlight --%>
+        <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin-bottom:22px;display:flex;align-items:center;gap:14px;">
+            <div style="width:44px;height:44px;background:#16a34a;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#fff;flex-shrink:0;">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <div>
+                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#16a34a;margin-bottom:2px;">Lương thực tế</div>
+                <div id="detailNetSalary" style="font-family:'Be Vietnam Pro',sans-serif;font-size:1.6rem;font-weight:800;color:#15803d;line-height:1;"></div>
+            </div>
+        </div>
+
+        <%-- Grid thông tin --%>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+            <div style="background:#f8fafc;border-radius:10px;padding:14px 16px;">
+                <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px;"><i class="fas fa-coins" style="margin-right:4px;"></i>Lương cơ bản</div>
+                <div id="detailBaseSalary" style="font-family:'Be Vietnam Pro',sans-serif;font-weight:700;color:var(--navy);font-size:.95rem;"></div>
+            </div>
+            <div style="background:#f8fafc;border-radius:10px;padding:14px 16px;">
+                <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px;"><i class="fas fa-times" style="margin-right:4px;"></i>Hệ số lương</div>
+                <div id="detailCoefficient" style="font-family:'Be Vietnam Pro',sans-serif;font-weight:700;color:var(--blue);font-size:.95rem;"></div>
+            </div>
+            <div style="background:#f8fafc;border-radius:10px;padding:14px 16px;grid-column:1/-1;">
+                <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px;"><i class="fas fa-align-left" style="margin-right:4px;"></i>Mô tả</div>
+                <div id="detailDesc" style="font-size:.875rem;color:var(--navy);line-height:1.6;"></div>
+            </div>
+        </div>
+
+        <%-- Công thức tính --%>
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;">
+            <span id="detailFormulaBase" style="font-family:'Be Vietnam Pro',sans-serif;font-weight:700;color:var(--navy);"></span>
+            <span style="color:var(--muted);">×</span>
+            <span id="detailFormulaCoeff" style="font-family:'Be Vietnam Pro',sans-serif;font-weight:700;color:var(--blue);"></span>
+            <span style="color:var(--muted);">=</span>
+            <span id="detailFormulaNet" style="font-family:'Be Vietnam Pro',sans-serif;font-weight:800;color:#16a34a;font-size:1.05rem;"></span>
+        </div>
+
+        <div class="modal-footer" style="margin-top:0;">
+            <button type="button" class="btn-cancel" onclick="closeModal('detailModal')">Đóng</button>
+            <button type="button" id="detailEditBtn" class="btn-submit"
+                    onclick="closeModal('detailModal'); setTimeout(function(){ openEditFromDetail(); }, 150);">
+                <i class="fas fa-pen" style="margin-right:6px;"></i>Chỉnh sửa
+            </button>
+        </div>
+    </div>
 </div>
 
 <!-- ═════════════════════ MODAL THÊM MỚI ═════════════════════ -->
@@ -491,6 +560,45 @@
 </div>
 
 <script>
+    // ── Detail Modal ─────────────────────────────────────────────────────
+    var _detailData = {};
+    function openDetailModal(id, gradeName, baseSalary, coefficient, desc, status) {
+        _detailData = { id: id, gradeName: gradeName, baseSalary: parseFloat(baseSalary), coefficient: parseFloat(coefficient), desc: desc, status: status === 'true' };
+        var fmt = function(n){ return new Intl.NumberFormat('vi-VN').format(Math.round(n)) + ' ₫'; };
+        var net = _detailData.baseSalary * _detailData.coefficient;
+
+        document.getElementById('detailName').textContent       = gradeName;
+        document.getElementById('detailIdBadge').textContent    = '# ID: ' + id;
+        document.getElementById('detailBaseSalary').textContent = fmt(_detailData.baseSalary);
+        document.getElementById('detailCoefficient').textContent= '× ' + coefficient;
+        document.getElementById('detailNetSalary').textContent  = fmt(net);
+        document.getElementById('detailDesc').textContent       = desc || 'Chưa có mô tả';
+        document.getElementById('detailDesc').style.fontStyle   = desc ? 'normal' : 'italic';
+        document.getElementById('detailDesc').style.color       = desc ? 'var(--navy)' : '#94a3b8';
+        document.getElementById('detailFormulaBase').textContent  = fmt(_detailData.baseSalary);
+        document.getElementById('detailFormulaCoeff').textContent = coefficient;
+        document.getElementById('detailFormulaNet').textContent   = fmt(net);
+
+        var badge = document.getElementById('detailStatusBadge');
+        if (_detailData.status) {
+            badge.textContent = '● Đang hoạt động';
+            badge.style.background = 'rgba(22,163,74,.25)';
+            badge.style.color = '#bbf7d0';
+        } else {
+            badge.textContent = '● Đã vô hiệu';
+            badge.style.background = 'rgba(255,255,255,.15)';
+            badge.style.color = 'rgba(255,255,255,.65)';
+        }
+
+        var editBtn = document.getElementById('detailEditBtn');
+        editBtn.style.display = _detailData.status ? 'inline-flex' : 'none';
+
+        document.getElementById('detailModal').classList.add('show');
+    }
+    function openEditFromDetail() {
+        openEditModal(_detailData.id, _detailData.gradeName, _detailData.baseSalary, _detailData.coefficient, _detailData.desc);
+    }
+
     // ── Modal helpers ────────────────────────────────────────────────────
     function openAddModal() {
         document.getElementById('addModal').classList.add('show');
