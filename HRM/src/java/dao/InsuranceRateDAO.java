@@ -11,21 +11,55 @@ import util.DBContext;
 
 public class InsuranceRateDAO {
 
+    private InsuranceRate mapRow(ResultSet rs) throws Exception {
+        return new InsuranceRate(
+            rs.getInt("insurance_rate_id"),
+            rs.getString("insurance_name"),
+            rs.getBigDecimal("company_rate"),
+            rs.getBigDecimal("employee_rate"),
+            rs.getString("description"),
+            rs.getBoolean("status")
+        );
+    }
+
     public List<InsuranceRate> getAll() {
         List<InsuranceRate> list = new ArrayList<>();
         String sql = "SELECT * FROM insurance_rates WHERE status = 1 ORDER BY insurance_rate_id";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                list.add(new InsuranceRate(
-                    rs.getInt("insurance_rate_id"),
-                    rs.getString("insurance_name"),
-                    rs.getBigDecimal("company_rate"),
-                    rs.getBigDecimal("employee_rate"),
-                    rs.getString("description"),
-                    rs.getBoolean("status")
-                ));
+            while (rs.next()) list.add(mapRow(rs));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * Tìm kiếm bảo hiểm theo tên.
+     *
+     * @param keyword      từ khóa tìm kiếm trong insurance_name (null / blank = tất cả)
+     * @param statusFilter "active" = chỉ đang hoạt động (status=1),
+     *                     "inactive" = chỉ vô hiệu (status=0),
+     *                     null / "all" = tất cả
+     */
+    public List<InsuranceRate> search(String keyword, String statusFilter) {
+        List<InsuranceRate> list = new ArrayList<>();
+        boolean hasKeyword   = keyword != null && !keyword.isBlank();
+        boolean activeOnly   = "active".equalsIgnoreCase(statusFilter);
+        boolean inactiveOnly = "inactive".equalsIgnoreCase(statusFilter);
+
+        StringBuilder sql = new StringBuilder("SELECT * FROM insurance_rates WHERE 1=1");
+        if (hasKeyword)    sql.append(" AND insurance_name LIKE ?");
+        if (activeOnly)    sql.append(" AND status = 1");
+        if (inactiveOnly)  sql.append(" AND status = 0");
+        sql.append(" ORDER BY status DESC, insurance_name");
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            if (hasKeyword) ps.setString(1, "%" + keyword.trim() + "%");
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapRow(rs));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -39,16 +73,7 @@ public class InsuranceRateDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return new InsuranceRate(
-                        rs.getInt("insurance_rate_id"),
-                        rs.getString("insurance_name"),
-                        rs.getBigDecimal("company_rate"),
-                        rs.getBigDecimal("employee_rate"),
-                        rs.getString("description"),
-                        rs.getBoolean("status")
-                    );
-                }
+                if (rs.next()) return mapRow(rs);
             }
         } catch (Exception e) {
             e.printStackTrace();
