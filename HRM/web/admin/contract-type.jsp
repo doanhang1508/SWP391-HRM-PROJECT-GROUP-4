@@ -494,6 +494,9 @@
         const btnPrevPage = document.getElementById('btnPrevPage');
         const btnNextPage = document.getElementById('btnNextPage');
 
+        // Hide all rows in tbody
+        document.querySelectorAll('#mainTable tbody tr:not(.empty-state-row)').forEach(row => row.style.display = 'none');
+
         if(filteredRows.length === 0) {
             pageStartEl.textContent = 0;
             pageEndEl.textContent = 0;
@@ -510,9 +513,6 @@
 
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = Math.min(startIndex + itemsPerPage, filteredRows.length);
-
-        // Hide all rows in tbody
-        document.querySelectorAll('#mainTable tbody tr:not(.empty-state-row)').forEach(row => row.style.display = 'none');
         
         // Show only rows for current page and update index order
         for (let i = startIndex; i < endIndex; i++) {
