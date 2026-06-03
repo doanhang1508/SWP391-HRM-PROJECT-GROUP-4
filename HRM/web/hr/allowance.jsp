@@ -230,25 +230,52 @@
                     <span class="dot"></span>
                     Danh Sách Phụ Cấp
                 </h2>
-                <div class="panel-controls">
+                <form method="get" action="${pageContext.request.contextPath}/hr/allowance"
+                      style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0;">
                     <div class="filter-tabs">
-                        <button class="filter-tab active" onclick="filterByStatus('all', this)">Tất cả</button>
-                        <button class="filter-tab" onclick="filterByStatus('active', this)">Hoạt động</button>
-                        <button class="filter-tab" onclick="filterByStatus('inactive', this)">Vô hiệu</button>
+                        <a href="?statusFilter=all${not empty keyword ? '&keyword='.concat(keyword) : ''}"
+                           class="filter-tab ${empty statusFilter or statusFilter == 'all' ? 'active' : ''}"
+                           style="text-decoration:none;">Tất cả</a>
+                        <a href="?statusFilter=active${not empty keyword ? '&keyword='.concat(keyword) : ''}"
+                           class="filter-tab ${statusFilter == 'active' ? 'active' : ''}"
+                           style="text-decoration:none;">Hoạt động</a>
+                        <a href="?statusFilter=inactive${not empty keyword ? '&keyword='.concat(keyword) : ''}"
+                           class="filter-tab ${statusFilter == 'inactive' ? 'active' : ''}"
+                           style="text-decoration:none;">Vô hiệu</a>
                     </div>
+                    <input type="hidden" name="statusFilter" value="${not empty statusFilter ? statusFilter : 'all'}">
                     <div class="search-box">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="searchInput" placeholder="Tìm kiếm..." oninput="filterTable()">
+                        <input type="text" name="keyword" id="searchInput"
+                               placeholder="Tìm tên phụ cấp..."
+                               value="${keyword}" oninput="liveFilter()">
                     </div>
-                </div>
+                    <button type="submit" style="background:var(--blue);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <c:if test="${not empty keyword}">
+                        <a href="${pageContext.request.contextPath}/hr/allowance?statusFilter=${not empty statusFilter ? statusFilter : 'all'}"
+                           style="color:var(--muted);font-size:.85rem;text-decoration:none;padding:4px 6px;" title="Xóa tìm kiếm">
+                            <i class="fas fa-times-circle"></i>
+                        </a>
+                    </c:if>
+                </form>
             </div>
 
             <c:choose>
                 <c:when test="${empty allowanceList}">
                     <div class="empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <p style="font-size:1rem;font-weight:600;color:var(--navy);margin-bottom:6px;">Chưa có phụ cấp nào</p>
-                        <p style="font-size:.85rem;">Nhấn <strong>Thêm Phụ Cấp</strong> để bắt đầu.</p>
+                        <i class="fas fa-${not empty keyword ? 'search' : 'inbox'}"></i>
+                        <c:choose>
+                            <c:when test="${not empty keyword}">
+                                <p style="font-size:1rem;font-weight:600;color:var(--navy);margin-bottom:6px;">Không tìm thấy kết quả cho "<strong>${keyword}</strong>"</p>
+                                <p style="font-size:.85rem;"><a href="${pageContext.request.contextPath}/hr/allowance" style="color:var(--blue);">Xóa bộ lọc</a> để xem tất cả.</p>
+                            </c:when>
+                            <c:otherwise>
+                                <p style="font-size:1rem;font-weight:600;color:var(--navy);margin-bottom:6px;">Chưa có phụ cấp nào</p>
+                                <p style="font-size:.85rem;">Nhấn <strong>Thêm Phụ Cấp</strong> để bắt đầu.</p>
+                            </c:otherwise>
+                        </c:choose>
                     </div>
                 </c:when>
                 <c:otherwise>
@@ -474,19 +501,11 @@
         });
     });
 
-    var currentFilter = 'all';
-    function filterByStatus(status, btn) {
-        currentFilter = status;
-        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-        btn.classList.add('active');
-        filterTable();
-    }
-    function filterTable() {
+    // Live filter nhanh trên client (thêm vào kết quả đã lọc server-side)
+    function liveFilter() {
         var q = document.getElementById('searchInput').value.toLowerCase();
         document.querySelectorAll('#allowanceTable tbody tr').forEach(function(row) {
-            var matchStatus = currentFilter === 'all' || row.dataset.status === currentFilter;
-            var matchText   = row.textContent.toLowerCase().includes(q);
-            row.style.display = (matchStatus && matchText) ? '' : 'none';
+            row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
         });
     }
     setTimeout(function() {
