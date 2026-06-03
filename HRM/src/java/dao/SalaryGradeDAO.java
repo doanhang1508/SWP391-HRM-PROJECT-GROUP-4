@@ -10,7 +10,7 @@ import util.DBContext;
 
 /**
  * DAO – Salary Grade Management
- * Covers: list (all / active only), detail, insert, update, deactivate, activate
+ * Covers: list (all / active only), detail, search, insert, update, deactivate, activate
  */
 public class SalaryGradeDAO {
 
@@ -35,6 +35,38 @@ public class SalaryGradeDAO {
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 list.add(mapRow(rs));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * Tìm kiếm bậc lương theo tên.
+     *
+     * @param keyword      từ khóa tìm kiếm trong grade_name (null / blank = tất cả)
+     * @param statusFilter "active" = chỉ đang hoạt động,
+     *                     "inactive" = chỉ vô hiệu,
+     *                     null / "all" = tất cả
+     */
+    public List<SalaryGrade> search(String keyword, String statusFilter) {
+        List<SalaryGrade> list = new ArrayList<>();
+        boolean hasKeyword   = keyword != null && !keyword.isBlank();
+        boolean activeOnly   = "active".equalsIgnoreCase(statusFilter);
+        boolean inactiveOnly = "inactive".equalsIgnoreCase(statusFilter);
+
+        StringBuilder sql = new StringBuilder("SELECT * FROM salary_grades WHERE 1=1");
+        if (hasKeyword)    sql.append(" AND grade_name LIKE ?");
+        if (activeOnly)    sql.append(" AND status = 1");
+        if (inactiveOnly)  sql.append(" AND status = 0");
+        sql.append(" ORDER BY status DESC, grade_name");
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            if (hasKeyword) ps.setString(1, "%" + keyword.trim() + "%");
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapRow(rs));
             }
         } catch (Exception e) {
             e.printStackTrace();
