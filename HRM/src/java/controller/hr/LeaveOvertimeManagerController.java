@@ -42,7 +42,7 @@ public class LeaveOvertimeManagerController extends HttpServlet {
         request.setAttribute("pendingLeaves", service.getPendingLeavesByDepartment(filterDeptId));
         request.setAttribute("pendingOTs", service.getPendingOTByDepartment(filterDeptId));
 
-        request.getRequestDispatcher("/leave-ot-manager.jsp").forward(request, response);
+        request.getRequestDispatcher("/hr/leave-ot-manager.jsp").forward(request, response);
     }
 
     @Override

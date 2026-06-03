@@ -172,7 +172,7 @@
             <div>
                 <h1 class="page-title">Phân Quyền Hệ Thống</h1>
                 <p class="breadcrumb">
-                    <a href="${pageContext.request.contextPath}/admin/dashboard">Dashboard</a> &nbsp;>&nbsp; Phân quyền hệ thống
+                    <a href="${pageContext.request.contextPath}/dashboard">Dashboard</a> &nbsp;>&nbsp; Phân quyền hệ thống
                 </p>
             </div>
         </div>

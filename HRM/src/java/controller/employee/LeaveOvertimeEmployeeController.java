@@ -10,6 +10,8 @@ import model.LeaveRequest;
 import model.User;
 import service.LeaveAndOvertimeService;
 import service.LeaveAndOvertimeServiceImpl;
+import dao.ShiftDAO;
+import dao.ShiftDAOImpl;
 
 import java.io.IOException;
 import java.sql.Date;
@@ -19,10 +21,12 @@ import java.time.LocalDate;
 public class LeaveOvertimeEmployeeController extends HttpServlet {
 
     private LeaveAndOvertimeService service;
+    private ShiftDAO shiftDAO;
 
     @Override
     public void init() throws ServletException {
         service = new LeaveAndOvertimeServiceImpl();
+        shiftDAO = new ShiftDAOImpl();
     }
 
     @Override
@@ -37,13 +41,21 @@ public class LeaveOvertimeEmployeeController extends HttpServlet {
             return;
         }
 
+        if (service == null) {
+            service = new LeaveAndOvertimeServiceImpl();
+        }
+        if (shiftDAO == null) {
+            shiftDAO = new ShiftDAOImpl();
+        }
+
         int year = LocalDate.now().getYear();
         request.setAttribute("remainingAnnualLeave", service.getRemainingAnnualLeave(user.getUserId(), year));
         request.setAttribute("leaveTypes", service.getAllLeaveTypes());
         request.setAttribute("leaveHistory", service.getLeaveHistoryByUserId(user.getUserId()));
         request.setAttribute("otHistory", service.getOTHistoryByUserId(user.getUserId()));
+        request.setAttribute("shifts", shiftDAO.getActiveShifts());
 
-        request.getRequestDispatcher("/leave-ot-employee.jsp").forward(request, response);
+        request.getRequestDispatcher("/employee/leave-ot.jsp").forward(request, response);
     }
 
     @Override
@@ -56,6 +68,10 @@ public class LeaveOvertimeEmployeeController extends HttpServlet {
             System.out.println("User is null in LeaveOvertimeEmployeeController doPost! Redirecting to login...");
             response.sendRedirect(request.getContextPath() + "/login");
             return;
+        }
+
+        if (service == null) {
+            service = new LeaveAndOvertimeServiceImpl();
         }
 
         String action = request.getParameter("action");

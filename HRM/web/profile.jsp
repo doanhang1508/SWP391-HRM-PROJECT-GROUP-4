@@ -520,7 +520,7 @@
 
         <!-- Quick Navigation Links -->
         <div class="quick-links">
-            <a href="${pageContext.request.contextPath}/work-history" class="quick-link-card">
+            <a href="${pageContext.request.contextPath}/employee/work-history" class="quick-link-card">
                 <div class="ql-icon" style="background: #ebf8ff; color: #3182ce;">
                     <i class="fas fa-briefcase"></i>
                 </div>

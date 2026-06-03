@@ -55,7 +55,7 @@
         <div class="page-header">
             <div>
                 <h1 class="page-title">Quản Lý Ca Làm Việc</h1>
-                <p class="breadcrumb-c"><a href="${pageContext.request.contextPath}/admin/dashboard">Bảng điều khiển</a> &gt; Ca làm việc</p>
+                <p class="breadcrumb-c"><a href="${pageContext.request.contextPath}/dashboard">Bảng điều khiển</a> &gt; Ca làm việc</p>
             </div>
             <div class="d-flex gap-2">
                 <a href="${pageContext.request.contextPath}/admin/shifts?action=schedule" class="btn-add" style="background:#0d9488"><i class="fas fa-calendar-alt"></i> Xếp Lịch</a>

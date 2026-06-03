@@ -15,7 +15,7 @@ import model.RewardDiscipline;
 import service.RewardDisciplineService;
 import service.RewardDisciplineServiceImpl;
 
-@WebServlet("/manual-reward-discipline")
+@WebServlet("/hr/manual-reward-discipline")
 public class ManualRewardDisciplineController extends HttpServlet {
 
     private RewardDisciplineService rdService = new RewardDisciplineServiceImpl();
@@ -25,7 +25,7 @@ public class ManualRewardDisciplineController extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         List<RewardDiscipline> types = rdDAO.getAllRewardDisciplines();
         req.setAttribute("types", types);
-        req.getRequestDispatcher("/manual_reward_discipline.jsp").forward(req, resp);
+        req.getRequestDispatcher("/hr/manual_reward_discipline.jsp").forward(req, resp);
     }
 
     @Override

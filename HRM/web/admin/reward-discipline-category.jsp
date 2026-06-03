@@ -432,7 +432,7 @@ body {
                 <div class="dash-breadcrumb">
                     <a href="${pageContext.request.contextPath}/home"><i class="fas fa-home"></i> Trang chủ</a>
                     <span>/</span>
-                    <a href="${pageContext.request.contextPath}/admin/dashboard">Bảng điều khiển</a>
+                    <a href="${pageContext.request.contextPath}/dashboard">Bảng điều khiển</a>
                     <span>/</span>
                     <span>Thưởng & Kỷ luật</span>
                 </div>

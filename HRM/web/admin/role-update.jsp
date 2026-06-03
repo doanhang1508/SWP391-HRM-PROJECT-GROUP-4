@@ -160,7 +160,7 @@
             <div>
                 <h1 class="page-title">Cập Nhật Vai Trò</h1>
                 <p class="breadcrumb">
-                    <a href="${pageContext.request.contextPath}/admin/dashboard">Dashboard</a> &nbsp;>&nbsp; 
+                    <a href="${pageContext.request.contextPath}/dashboard">Dashboard</a> &nbsp;>&nbsp; 
                     <a href="${pageContext.request.contextPath}/role?action=list">Quản lý vai trò</a> &nbsp;>&nbsp; 
                     Cập nhật
                 </p>

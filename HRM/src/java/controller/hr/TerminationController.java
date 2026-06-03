@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import service.EmployeeLifecycleService;
 import service.EmployeeLifecycleServiceImpl;
 
-@WebServlet("/terminate-employee")
+@WebServlet("/hr/terminate-employee")
 public class TerminationController extends HttpServlet {
 
     private EmployeeLifecycleService lifecycleService = new EmployeeLifecycleServiceImpl();
@@ -35,6 +35,6 @@ public class TerminationController extends HttpServlet {
         }
         
         // Forward back to a view, e.g., the termination form (for now, reusing a common HR dashboard or manual form)
-        req.getRequestDispatcher("/manual_reward_discipline.jsp").forward(req, resp);
+        req.getRequestDispatcher("/hr/termination.jsp").forward(req, resp);
     }
 }

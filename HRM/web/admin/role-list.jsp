@@ -280,13 +280,14 @@
             <div>
                 <h1 class="page-title">Quản Lý Vai Trò</h1>
                 <p class="breadcrumb">
-                    <a href="${pageContext.request.contextPath}/admin/dashboard">Bảng điều khiển</a>
+                    <a href="${pageContext.request.contextPath}/dashboard">Bảng điều khiển</a>
                     &nbsp;>&nbsp; Quản lý vai trò
                 </p>
             </div>
 
             <div>
                 <button class="btn btn-primary"
+                        data-bs-toggle="modal" data-bs-target="#addRoleModal"
                         style="background: var(--primary-color); border: none; border-radius: 8px; padding: 10px 20px; font-weight: 500;">
                     <i class="fas fa-plus me-2"></i> Thêm Vai Trò Mới
                 </button>
@@ -541,5 +542,43 @@ document.addEventListener('DOMContentLoaded', function() {
     updatePagination();
 });
 </script>
+
+<!-- Add Role Modal -->
+<div class="modal fade" id="addRoleModal" tabindex="-1" aria-labelledby="addRoleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 12px; border: none;">
+            <div class="modal-header" style="background: var(--dark-bg); border-bottom: 1px solid #e2e8f0; border-radius: 12px 12px 0 0;">
+                <h5 class="modal-title" id="addRoleModalLabel" style="font-weight: 700; color: var(--navy);">
+                    <i class="fas fa-plus-circle" style="color: var(--primary-color); margin-right: 8px;"></i> Thêm Vai Trò Mới
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="${pageContext.request.contextPath}/role" method="post">
+                <input type="hidden" name="action" value="add">
+                <div class="modal-body" style="padding: 24px;">
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; color: var(--text-main); font-size: 0.9rem;">
+                            Tên vai trò <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="roleName" class="form-control" placeholder="Nhập tên vai trò..." required maxlength="50" style="border-radius: 8px; font-size: 0.95rem; padding: 10px 14px;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; color: var(--text-main); font-size: 0.9rem;">
+                            Mô tả
+                        </label>
+                        <textarea name="description" class="form-control" placeholder="Mô tả chức năng của vai trò này..." rows="3" maxlength="255" style="border-radius: 8px; font-size: 0.95rem; padding: 10px 14px;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid #e2e8f0; padding: 16px 24px;">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius: 8px; font-weight: 500;">Hủy</button>
+                    <button type="submit" class="btn btn-primary" style="background: var(--primary-color); border: none; border-radius: 8px; font-weight: 500;">
+                        <i class="fas fa-save me-1"></i> Lưu vai trò
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 
 <jsp:include page="../footer.jsp" />

@@ -16,7 +16,7 @@
     </c:if>
 
     <div style="border: 1px solid #ccc; padding: 10px;">
-        <form action="${pageContext.request.contextPath}/terminate-employee" method="post">
+        <form action="${pageContext.request.contextPath}/hr/terminate-employee" method="post">
             User ID: <input type="number" name="userId" required><br><br>
             Reason for Termination: <br>
             <textarea name="reason" rows="3" cols="30" required></textarea><br><br>

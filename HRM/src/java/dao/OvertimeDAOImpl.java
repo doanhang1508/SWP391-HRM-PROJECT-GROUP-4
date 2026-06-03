@@ -70,20 +70,22 @@ public class OvertimeDAOImpl implements OvertimeDAO {
             try (ResultSet rs = checkPs.executeQuery()) {
                 if (rs.next()) {
                     int attendanceId = rs.getInt("attendance_id");
-                    String updateSql = "UPDATE attendance SET overtime_hrs = ?, status = 'Pending OT' WHERE attendance_id = ?";
+                    String updateSql = "UPDATE attendance SET overtime_hrs = ?, status = 'Pending OT', ot_reason = ? WHERE attendance_id = ?";
                     try (PreparedStatement updatePs = c.prepareStatement(updateSql)) {
                         updatePs.setDouble(1, hours);
-                        updatePs.setInt(2, attendanceId);
+                        updatePs.setString(2, reason);
+                        updatePs.setInt(3, attendanceId);
                         return updatePs.executeUpdate() > 0;
                     }
                 } else {
-                    String insertSql = "INSERT INTO attendance (user_id, shift_id, work_date, overtime_hrs, status) " +
-                                       "VALUES (?, ?, ?, ?, 'Pending OT')";
+                    String insertSql = "INSERT INTO attendance (user_id, shift_id, work_date, overtime_hrs, ot_reason, status) " +
+                                       "VALUES (?, ?, ?, ?, ?, 'Pending OT')";
                     try (PreparedStatement insertPs = c.prepareStatement(insertSql)) {
                         insertPs.setInt(1, userId);
                         insertPs.setInt(2, shiftId);
                         insertPs.setDate(3, workDate);
                         insertPs.setDouble(4, hours);
+                        insertPs.setString(5, reason);
                         return insertPs.executeUpdate() > 0;
                     }
                 }
@@ -134,7 +136,7 @@ public class OvertimeDAOImpl implements OvertimeDAO {
         
         a.setShiftName(rs.getString("shift_name"));
         a.setUserName(rs.getString("full_name"));
-        // reason is transient, we don't fetch it from DB as there is no column
+        a.setOtReason(rs.getString("ot_reason"));
         return a;
     }
 }

@@ -258,6 +258,7 @@ CREATE TABLE attendance (
     check_out     TIME,
     status        VARCHAR(30) DEFAULT 'Present',
     overtime_hrs  DECIMAL(5,2) DEFAULT 0,
+    ot_reason     VARCHAR(255),
     created_at    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_att_user  FOREIGN KEY (user_id)  REFERENCES users(user_id)   ON DELETE CASCADE,
     CONSTRAINT fk_att_shift FOREIGN KEY (shift_id) REFERENCES shifts(shift_id) ON DELETE RESTRICT
@@ -276,7 +277,6 @@ CREATE TABLE leave_requests (
     created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_leave_user     FOREIGN KEY (user_id)       REFERENCES users(user_id)                 ON DELETE CASCADE,
     CONSTRAINT fk_leave_type     FOREIGN KEY (leave_type_id) REFERENCES leave_types(leave_type_id)     ON DELETE RESTRICT,
-    CONSTRAINT fk_leave_approver FOREIGN KEY (approved_by)   REFERENCES users(user_id)                 ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE payroll (

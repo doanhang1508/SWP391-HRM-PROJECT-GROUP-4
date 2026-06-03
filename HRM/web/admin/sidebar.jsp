@@ -345,7 +345,7 @@
             <li class="sidebar-menu-category">Tổng quan</li>
 
             <li class="sidebar-item">
-                <a href="${pageContext.request.contextPath}/admin/dashboard"
+                <a href="${pageContext.request.contextPath}/dashboard"
                    class="sidebar-link ${param.activeMenu eq 'dashboard' ? 'active' : ''}">
                     <i class="fas fa-chart-line"></i> Bảng điều khiển
                 </a>
