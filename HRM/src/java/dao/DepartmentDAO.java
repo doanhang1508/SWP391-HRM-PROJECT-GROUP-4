@@ -66,6 +66,37 @@ public class DepartmentDAO {
         }
     }
 
+    public List<Department> getAllIncludingInactive() {
+        List<Department> list = new ArrayList<>();
+        String sql = "SELECT * FROM departments ORDER BY department_id";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(new Department(
+                    rs.getInt("department_id"),
+                    rs.getString("department_name"),
+                    rs.getString("description"),
+                    rs.getBoolean("status")
+                ));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public void toggleStatus(int id) {
+        String sql = "UPDATE departments SET status = CASE WHEN status = 1 THEN 0 ELSE 1 END WHERE department_id=?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public int countEmployees(int departmentId) {
         String sql = "SELECT COUNT(*) FROM users WHERE department_id=? AND status=1";
         try (Connection conn = DBContext.getConnection();

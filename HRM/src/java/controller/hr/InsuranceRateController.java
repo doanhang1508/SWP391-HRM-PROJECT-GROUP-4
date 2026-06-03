@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.sql.Date;
 import java.util.List;
 import model.InsuranceRate;
 import model.User;
@@ -41,34 +42,37 @@ public class InsuranceRateController extends HttpServlet {
         return true;
     }
 
+    /** Load all data — client-side does filtering + pagination */
+    private void loadList(HttpServletRequest request) {
+        List<InsuranceRate> list = dao.getAll();
+
+        BigDecimal totalCompany  = BigDecimal.ZERO;
+        BigDecimal totalEmployee = BigDecimal.ZERO;
+        int activeCount = 0;
+        for (InsuranceRate ir : list) {
+            if (ir.isStatus()) {
+                totalCompany  = totalCompany.add(ir.getCompanyRate());
+                totalEmployee = totalEmployee.add(ir.getEmployeeRate());
+                activeCount++;
+            }
+        }
+        BigDecimal avgCompany  = activeCount == 0 ? BigDecimal.ZERO
+            : totalCompany.divide(new BigDecimal(activeCount), 2, java.math.RoundingMode.HALF_UP);
+        BigDecimal avgEmployee = activeCount == 0 ? BigDecimal.ZERO
+            : totalEmployee.divide(new BigDecimal(activeCount), 2, java.math.RoundingMode.HALF_UP);
+
+        request.setAttribute("insuranceRateList", list);
+        request.setAttribute("avgCompanyRate",    avgCompany);
+        request.setAttribute("avgEmployeeRate",   avgEmployee);
+        request.setAttribute("activeCount",       activeCount);
+    }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         if (!checkAccess(request, response)) return;
 
-        String action = request.getParameter("action");
-        String idStr  = request.getParameter("id");
-
-        if ("delete".equals(action) && idStr != null) {
-            dao.delete(Integer.parseInt(idStr));
-            request.getSession().setAttribute("successMsg", "Đã xóa mức bảo hiểm thành công.");
-            response.sendRedirect(request.getContextPath() + LIST_URL);
-            return;
-        }
-
-        List<InsuranceRate> list = dao.getAll();
-        BigDecimal totalCompany = BigDecimal.ZERO;
-        BigDecimal totalEmployee = BigDecimal.ZERO;
-        for (InsuranceRate ir : list) {
-            totalCompany = totalCompany.add(ir.getCompanyRate());
-            totalEmployee = totalEmployee.add(ir.getEmployeeRate());
-        }
-        BigDecimal avgCompany = list.isEmpty() ? BigDecimal.ZERO : totalCompany.divide(new BigDecimal(list.size()), 2, java.math.RoundingMode.HALF_UP);
-        BigDecimal avgEmployee = list.isEmpty() ? BigDecimal.ZERO : totalEmployee.divide(new BigDecimal(list.size()), 2, java.math.RoundingMode.HALF_UP);
-
-        request.setAttribute("insuranceRateList", list);
-        request.setAttribute("avgCompanyRate", avgCompany);
-        request.setAttribute("avgEmployeeRate", avgEmployee);
+        loadList(request);
         request.getRequestDispatcher(LIST_JSP).forward(request, response);
     }
 
@@ -78,37 +82,66 @@ public class InsuranceRateController extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         if (!checkAccess(request, response)) return;
 
-        String action         = request.getParameter("action");
-        String insuranceName  = request.getParameter("insuranceName");
-        String companyRateS   = request.getParameter("companyRate");
-        String employeeRateS  = request.getParameter("employeeRate");
-        String description    = request.getParameter("description");
-        String idStr          = request.getParameter("id");
+        String action        = request.getParameter("action");
+        String idStr         = request.getParameter("id");
+
+        // Status toggle actions
+        if ("deactivate".equals(action) && idStr != null) {
+            dao.changeStatus(Integer.parseInt(idStr), false);
+            request.getSession().setAttribute("successMsg", "Đã vô hiệu hóa mức bảo hiểm.");
+            response.sendRedirect(request.getContextPath() + LIST_URL);
+            return;
+        }
+        if ("activate".equals(action) && idStr != null) {
+            dao.changeStatus(Integer.parseInt(idStr), true);
+            request.getSession().setAttribute("successMsg", "Đã kích hoạt mức bảo hiểm.");
+            response.sendRedirect(request.getContextPath() + LIST_URL);
+            return;
+        }
+
+        // Add / Edit
+        String insuranceCode = request.getParameter("insuranceCode");
+        String insuranceName = request.getParameter("insuranceName");
+        String companyRateS  = request.getParameter("companyRate");
+        String employeeRateS = request.getParameter("employeeRate");
+        String description   = request.getParameter("description");
+        String fromStr       = request.getParameter("effectiveFrom");
+        String toStr         = request.getParameter("effectiveTo");
 
         try {
             BigDecimal companyRate  = new BigDecimal(companyRateS);
             BigDecimal employeeRate = new BigDecimal(employeeRateS);
+            Date effectiveFrom = (fromStr != null && !fromStr.isBlank()) ? Date.valueOf(fromStr) : null;
+            Date effectiveTo   = (toStr   != null && !toStr.isBlank())   ? Date.valueOf(toStr)   : null;
 
             if ("add".equals(action)) {
                 if (dao.isDuplicate(insuranceName, 0)) {
                     request.getSession().setAttribute("errorMsg", "Tên loại bảo hiểm đã tồn tại.");
+                } else if (dao.isCodeDuplicate(insuranceCode, 0)) {
+                    request.getSession().setAttribute("errorMsg", "Mã bảo hiểm đã tồn tại.");
                 } else {
-                    dao.insert(new InsuranceRate(0, insuranceName, companyRate,
-                                                 employeeRate, description, true));
+                    InsuranceRate ir = new InsuranceRate(
+                        0, insuranceCode, insuranceName, companyRate, employeeRate,
+                        description, effectiveFrom, effectiveTo, null, null, true);
+                    dao.insert(ir);
                     request.getSession().setAttribute("successMsg", "Thêm mức bảo hiểm thành công.");
                 }
             } else if ("edit".equals(action) && idStr != null) {
                 int editId = Integer.parseInt(idStr);
                 if (dao.isDuplicate(insuranceName, editId)) {
                     request.getSession().setAttribute("errorMsg", "Tên loại bảo hiểm đã tồn tại.");
+                } else if (dao.isCodeDuplicate(insuranceCode, editId)) {
+                    request.getSession().setAttribute("errorMsg", "Mã bảo hiểm đã tồn tại.");
                 } else {
-                    dao.update(new InsuranceRate(editId, insuranceName,
-                                                 companyRate, employeeRate, description, true));
+                    InsuranceRate ir = new InsuranceRate(
+                        editId, insuranceCode, insuranceName, companyRate, employeeRate,
+                        description, effectiveFrom, effectiveTo, null, null, true);
+                    dao.update(ir);
                     request.getSession().setAttribute("successMsg", "Cập nhật mức bảo hiểm thành công.");
                 }
             }
-        } catch (NumberFormatException e) {
-            request.getSession().setAttribute("errorMsg", "Tỷ lệ % không hợp lệ.");
+        } catch (IllegalArgumentException e) {
+            request.getSession().setAttribute("errorMsg", "Dữ liệu nhập không hợp lệ.");
         }
 
         response.sendRedirect(request.getContextPath() + LIST_URL);

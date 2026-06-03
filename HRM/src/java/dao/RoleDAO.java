@@ -140,6 +140,39 @@ public class RoleDAO {
     }
 
     /**
+     * Thêm vai trò mới.
+     */
+    public boolean addRole(String roleName, String description) {
+        String sql = "INSERT INTO roles (role_name, description, status) VALUES (?, ?, 1)";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, roleName);
+            ps.setString(2, description);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Kiểm tra tên role đã tồn tại chưa (khi thêm mới).
+     */
+    public boolean isRoleNameExists(String roleName) {
+        String sql = "SELECT role_id FROM roles WHERE role_name = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, roleName);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
      * Kiểm tra tên role đã tồn tại ở role khác chưa.
      * Dùng để tránh trùng tên khi update.
      */

@@ -280,13 +280,14 @@
             <div>
                 <h1 class="page-title">Quản Lý Vai Trò</h1>
                 <p class="breadcrumb">
-                    <a href="${pageContext.request.contextPath}/admin/dashboard">Bảng điều khiển</a>
+                    <a href="${pageContext.request.contextPath}/dashboard">Bảng điều khiển</a>
                     &nbsp;>&nbsp; Quản lý vai trò
                 </p>
             </div>
 
             <div>
                 <button class="btn btn-primary"
+                        data-bs-toggle="modal" data-bs-target="#addRoleModal"
                         style="background: var(--primary-color); border: none; border-radius: 8px; padding: 10px 20px; font-weight: 500;">
                     <i class="fas fa-plus me-2"></i> Thêm Vai Trò Mới
                 </button>
@@ -325,6 +326,12 @@
                       class="search-form">
 
                     <input type="hidden" name="action" value="list" />
+
+                    <select id="statusFilter" onchange="filterRoleTable()" style="padding:6px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:.85rem;outline:none;cursor:pointer;font-family:'Inter',sans-serif;">
+                        <option value="all">Tất cả trạng thái</option>
+                        <option value="active">Hoạt động</option>
+                        <option value="inactive">Vô hiệu</option>
+                    </select>
 
                     <input type="text"
                            name="keyword"
@@ -462,8 +469,116 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- PAGINATION -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:20px;border-top:1px solid #f1f5f9;">
+                <div style="font-size:.85rem;color:var(--text-muted);">Hiển thị <span id="pageStart" style="font-weight:600;color:var(--text-main);">0</span> - <span id="pageEnd" style="font-weight:600;color:var(--text-main);">0</span> trong tổng số <span id="totalItems" style="font-weight:600;color:var(--text-main);">0</span> vai trò</div>
+                <div style="display:flex;gap:8px;">
+                    <button id="btnPrevPage" onclick="prevPage()" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--text-muted);cursor:pointer;"><i class="fas fa-chevron-left"></i></button>
+                    <div id="pageNumbers" style="display:flex;gap:4px;"></div>
+                    <button id="btnNextPage" onclick="nextPage()" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--text-muted);cursor:pointer;"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+let currentPage = 1;
+const itemsPerPage = 8;
+let filteredRows = [];
+
+function filterRoleTable() {
+    const statusVal = document.getElementById('statusFilter').value;
+    const allRows = Array.from(document.querySelectorAll('.table-custom tbody tr'));
+    filteredRows = allRows.filter(function(row) {
+        if (statusVal === 'all') return true;
+        const badges = row.querySelectorAll('.badge-soft-success, .badge-soft-danger');
+        if (badges.length === 0) return true;
+        const badge = badges[0];
+        const isActive = badge.classList.contains('badge-soft-success');
+        return (statusVal === 'active' && isActive) || (statusVal === 'inactive' && !isActive);
+    });
+    currentPage = 1;
+    updatePagination();
+}
+
+function updatePagination() {
+    if(filteredRows.length === 0) {
+        document.querySelectorAll('.table-custom tbody tr').forEach(row => row.style.display = 'none');
+        document.getElementById('pageStart').textContent = 0;
+        document.getElementById('pageEnd').textContent = 0;
+        document.getElementById('totalItems').textContent = 0;
+        document.getElementById('pageNumbers').innerHTML = '';
+        document.getElementById('btnPrevPage').disabled = true;
+        document.getElementById('btnNextPage').disabled = true;
+        return;
+    }
+    const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, filteredRows.length);
+    document.querySelectorAll('.table-custom tbody tr').forEach(row => row.style.display = 'none');
+    for (let i = startIndex; i < endIndex; i++) { filteredRows[i].style.display = ''; }
+    document.getElementById('pageStart').textContent = startIndex + 1;
+    document.getElementById('pageEnd').textContent = endIndex;
+    document.getElementById('totalItems').textContent = filteredRows.length;
+    let pageHtml = '';
+    for (let i = 1; i <= totalPages; i++) {
+        pageHtml += '<button style="background:' + (i===currentPage ? 'var(--primary-color)' : '#fff') + ';border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:' + (i===currentPage ? 'white' : 'var(--text-muted)') + ';cursor:pointer;" onclick="goToPage(' + i + ')">' + i + '</button>';
+    }
+    document.getElementById('pageNumbers').innerHTML = pageHtml;
+    document.getElementById('btnPrevPage').disabled = currentPage === 1;
+    document.getElementById('btnNextPage').disabled = currentPage === totalPages;
+}
+
+function goToPage(page) { currentPage = page; updatePagination(); }
+function prevPage() { if (currentPage > 1) { currentPage--; updatePagination(); } }
+function nextPage() { const tp = Math.ceil(filteredRows.length / itemsPerPage); if (currentPage < tp) { currentPage++; updatePagination(); } }
+
+document.addEventListener('DOMContentLoaded', function() {
+    filteredRows = Array.from(document.querySelectorAll('.table-custom tbody tr'));
+    updatePagination();
+});
+</script>
+
+<!-- Add Role Modal -->
+<div class="modal fade" id="addRoleModal" tabindex="-1" aria-labelledby="addRoleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 12px; border: none;">
+            <div class="modal-header" style="background: var(--dark-bg); border-bottom: 1px solid #e2e8f0; border-radius: 12px 12px 0 0;">
+                <h5 class="modal-title" id="addRoleModalLabel" style="font-weight: 700; color: var(--navy);">
+                    <i class="fas fa-plus-circle" style="color: var(--primary-color); margin-right: 8px;"></i> Thêm Vai Trò Mới
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="${pageContext.request.contextPath}/role" method="post">
+                <input type="hidden" name="action" value="add">
+                <div class="modal-body" style="padding: 24px;">
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; color: var(--text-main); font-size: 0.9rem;">
+                            Tên vai trò <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="roleName" class="form-control" placeholder="Nhập tên vai trò..." required maxlength="50" style="border-radius: 8px; font-size: 0.95rem; padding: 10px 14px;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; color: var(--text-main); font-size: 0.9rem;">
+                            Mô tả
+                        </label>
+                        <textarea name="description" class="form-control" placeholder="Mô tả chức năng của vai trò này..." rows="3" maxlength="255" style="border-radius: 8px; font-size: 0.95rem; padding: 10px 14px;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid #e2e8f0; padding: 16px 24px;">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius: 8px; font-weight: 500;">Hủy</button>
+                    <button type="submit" class="btn btn-primary" style="background: var(--primary-color); border: none; border-radius: 8px; font-weight: 500;">
+                        <i class="fas fa-save me-1"></i> Lưu vai trò
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 
 <jsp:include page="../footer.jsp" />

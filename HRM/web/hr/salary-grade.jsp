@@ -219,25 +219,46 @@
                     <span class="dot"></span>
                     Danh Sách Ngạch Lương
                 </h2>
-                <div class="filter-bar">
+                <form method="get" action="${pageContext.request.contextPath}/hr/salary-grade"
+                      style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0;" class="filter-bar">
                     <div class="search-box">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="searchInput" placeholder="Tìm kiếm..." oninput="filterTable()">
+                        <input type="text" name="keyword" id="searchInput"
+                               placeholder="Tìm tên ngạch lương..."
+                               value="${keyword}" oninput="liveFilter()">
                     </div>
-                    <select id="statusFilter" class="filter-select" onchange="filterTable()">
-                        <option value="all">Tất cả trạng thái</option>
-                        <option value="active">Hoạt động</option>
-                        <option value="inactive">Vô hiệu hóa</option>
+                    <select name="statusFilter" id="statusFilterSelect" class="filter-select"
+                            onchange="this.form.submit()">
+                        <option value="all"      ${empty statusFilter or statusFilter == 'all'      ? 'selected' : ''}>Tất cả trạng thái</option>
+                        <option value="active"   ${statusFilter == 'active'   ? 'selected' : ''}>Hoạt động</option>
+                        <option value="inactive" ${statusFilter == 'inactive' ? 'selected' : ''}>Vô hiệu hóa</option>
                     </select>
-                </div>
+                    <button type="submit" style="background:var(--blue);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <c:if test="${not empty keyword}">
+                        <a href="${pageContext.request.contextPath}/hr/salary-grade?statusFilter=${not empty statusFilter ? statusFilter : 'all'}"
+                           style="color:var(--muted);font-size:.85rem;text-decoration:none;padding:4px 6px;" title="Xóa tìm kiếm">
+                            <i class="fas fa-times-circle"></i>
+                        </a>
+                    </c:if>
+                </form>
             </div>
 
             <c:choose>
                 <c:when test="${empty salaryGradeList}">
                     <div class="empty-state">
-                        <i class="fas fa-inbox"></i>
-                        <p style="font-size:1rem;font-weight:600;color:var(--navy);margin-bottom:6px;">Chưa có ngạch lương nào</p>
-                        <p style="font-size:.85rem;">Nhấn <strong>Thêm Ngạch Lương</strong> để bắt đầu.</p>
+                        <i class="fas fa-${not empty keyword ? 'search' : 'inbox'}"></i>
+                        <c:choose>
+                            <c:when test="${not empty keyword}">
+                                <p style="font-size:1rem;font-weight:600;color:var(--navy);margin-bottom:6px;">Không tìm thấy kết quả cho "<strong>${keyword}</strong>"</p>
+                                <p style="font-size:.85rem;"><a href="${pageContext.request.contextPath}/hr/salary-grade" style="color:var(--blue);">Xóa bộ lọc</a> để xem tất cả.</p>
+                            </c:when>
+                            <c:otherwise>
+                                <p style="font-size:1rem;font-weight:600;color:var(--navy);margin-bottom:6px;">Chưa có ngạch lương nào</p>
+                                <p style="font-size:.85rem;">Nhấn <strong>Thêm Ngạch Lương</strong> để bắt đầu.</p>
+                            </c:otherwise>
+                        </c:choose>
                     </div>
                 </c:when>
                 <c:otherwise>
@@ -521,17 +542,12 @@
     document.getElementById('editBaseSalary').addEventListener('input',  function(){ updatePreview('edit'); });
     document.getElementById('editCoefficient').addEventListener('input', function(){ updatePreview('edit'); });
 
-    // ── Search + Status filter ───────────────────────────────────────────
-    function filterTable() {
-        var q      = document.getElementById('searchInput').value.toLowerCase();
-        var status = document.getElementById('statusFilter').value;
-        var rows   = document.querySelectorAll('#salaryGradeTable tbody tr');
+    // Live filter nhanh trên client (thêm vào kết quả đã lọc server-side)
+    function liveFilter() {
+        var q = document.getElementById('searchInput').value.toLowerCase();
         var visible = 0;
-        rows.forEach(function(row) {
-            var matchText   = row.textContent.toLowerCase().includes(q);
-            var rowStatus   = row.getAttribute('data-status');
-            var matchStatus = (status === 'all') || (rowStatus === status);
-            var show = matchText && matchStatus;
+        document.querySelectorAll('#salaryGradeTable tbody tr').forEach(function(row) {
+            var show = row.textContent.toLowerCase().includes(q);
             row.style.display = show ? '' : 'none';
             if (show) visible++;
         });

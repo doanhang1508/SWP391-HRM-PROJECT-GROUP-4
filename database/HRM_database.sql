@@ -52,7 +52,11 @@ CREATE TABLE contract_types (
     contract_type_id INT          PRIMARY KEY AUTO_INCREMENT,
     type_name        VARCHAR(100) NOT NULL UNIQUE,
     description      VARCHAR(255),
-    status           TINYINT(1)   NOT NULL DEFAULT 1
+    duration         INT          NULL,
+    duration_unit    VARCHAR(50)  NULL,
+    status           TINYINT(1)   NOT NULL DEFAULT 1,
+    created_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- BẢNG 6: allowances
@@ -68,11 +72,17 @@ CREATE TABLE allowances (
 -- BẢNG 7: insurance_rates
 CREATE TABLE insurance_rates (
     insurance_rate_id INT          PRIMARY KEY AUTO_INCREMENT,
+    insurance_code    VARCHAR(20)  NOT NULL DEFAULT '',
     insurance_name    VARCHAR(100) NOT NULL UNIQUE,
     company_rate      DECIMAL(5,2) NOT NULL,
     employee_rate     DECIMAL(5,2) NOT NULL,
     description       VARCHAR(255),
-    status            TINYINT(1)   NOT NULL DEFAULT 1
+    effective_from    DATE         NULL,
+    effective_to      DATE         NULL,
+    created_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    status            TINYINT(1)   NOT NULL DEFAULT 1,
+    UNIQUE KEY uk_insurance_code (insurance_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- BẢNG 8: employment_statuses
@@ -247,6 +257,7 @@ CREATE TABLE attendance (
     check_out     TIME,
     status        VARCHAR(30) DEFAULT 'Present',
     overtime_hrs  DECIMAL(5,2) DEFAULT 0,
+    ot_reason     VARCHAR(255),
     created_at    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_att_user  FOREIGN KEY (user_id)  REFERENCES users(user_id)   ON DELETE CASCADE,
     CONSTRAINT fk_att_shift FOREIGN KEY (shift_id) REFERENCES shifts(shift_id) ON DELETE RESTRICT
@@ -265,7 +276,6 @@ CREATE TABLE leave_requests (
     created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_leave_user     FOREIGN KEY (user_id)       REFERENCES users(user_id)                 ON DELETE CASCADE,
     CONSTRAINT fk_leave_type     FOREIGN KEY (leave_type_id) REFERENCES leave_types(leave_type_id)     ON DELETE RESTRICT,
-    CONSTRAINT fk_leave_approver FOREIGN KEY (approved_by)   REFERENCES users(user_id)                 ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE payroll (
@@ -372,12 +382,12 @@ INSERT INTO salary_grades (salary_grade_id, grade_name, base_salary, coefficient
 (4, 'Ngạch Sản xuất',    7000000, 1.00, 'Công nhân sản xuất');
 
 -- ── 5. Contract Types ──
-INSERT INTO contract_types (contract_type_id, type_name, description) VALUES
-(1, 'Thử việc',           'Hợp đồng thử việc 2 tháng'),
-(2, 'Có thời hạn 1 năm',  'Hợp đồng lao động 12 tháng'),
-(3, 'Có thời hạn 3 năm',  'Hợp đồng lao động 36 tháng'),
-(4, 'Vô thời hạn',        'Hợp đồng không xác định thời hạn'),
-(5, 'Thời vụ',            'Dành cho lao động ngắn hạn ở xưởng');
+INSERT INTO contract_types (contract_type_id, type_name, description, duration, duration_unit) VALUES
+(1, 'Thử việc',           'Hợp đồng thử việc 2 tháng', 2, 'Tháng'),
+(2, 'Có thời hạn 1 năm',  'Hợp đồng lao động 12 tháng', 1, 'Năm'),
+(3, 'Có thời hạn 3 năm',  'Hợp đồng lao động 36 tháng', 3, 'Năm'),
+(4, 'Vô thời hạn',        'Hợp đồng không xác định thời hạn', NULL, 'Vô thời hạn'),
+(5, 'Thời vụ',            'Dành cho lao động ngắn hạn ở xưởng', 3, 'Tháng');
 
 -- ── 6. Allowances ──
 INSERT INTO allowances (allowance_id, allowance_name, description, amount, apply_condition) VALUES
@@ -388,10 +398,10 @@ INSERT INTO allowances (allowance_id, allowance_name, description, amount, apply
 (5, 'Chuyên cần', 'Thưởng đi làm đầy đủ',             500000,  'Không nghỉ phép, không đi muộn trong tháng');
 
 -- ── 7. Insurance Rates (BHXH / BHYT / BHTN) ──
-INSERT INTO insurance_rates (insurance_rate_id, insurance_name, company_rate, employee_rate) VALUES
-(1, 'Bảo hiểm Xã hội (BHXH)',       17.5, 8.0),
-(2, 'Bảo hiểm Y tế (BHYT)',          3.0, 1.5),
-(3, 'Bảo hiểm Thất nghiệp (BHTN)',   1.0, 1.0);
+INSERT INTO insurance_rates (insurance_rate_id, insurance_code, insurance_name, company_rate, employee_rate, description, effective_from) VALUES
+(1, 'BHXH', 'Bảo hiểm Xã hội (BHXH)',       17.5, 8.0, 'Bảo hiểm xã hội theo quy định pháp luật', '2020-01-01'),
+(2, 'BHYT', 'Bảo hiểm Y tế (BHYT)',          3.0,  1.5, 'Bảo hiểm y tế bắt buộc',                  '2020-01-01'),
+(3, 'BHTN', 'Bảo hiểm Thất nghiệp (BHTN)',   1.0,  1.0, 'Bảo hiểm thất nghiệp theo quy định',       '2020-01-01');
 
 -- ── 8. Employment Statuses ──
 INSERT INTO employment_statuses (status_id, status_name, description) VALUES
@@ -841,3 +851,25 @@ INSERT INTO work_history (user_id, position_title, company_name, location, start
      '2018-03-01', NULL,
      'Quản lý văn phòng phẩm, thiết bị, lễ tân và công tác hành chính nội bộ',
      1);
+     
+INSERT INTO employee_allowances (user_id, allowance_id, amount) VALUES
+
+-- Phụ cấp Ăn trưa (allowance_id = 1): 800,000đ - Áp dụng tất cả nhân viên chính thức
+(6,  1, 800000),
+(14, 1, 800000),
+(19, 1, 800000),
+
+-- Phụ cấp Đi lại (allowance_id = 2): 500,000đ - Nhân viên không ở ký túc xá
+(6,  2, 500000),
+(19, 2, 500000),
+
+-- Phụ cấp Trách nhiệm (allowance_id = 3): 1,000,000đ - Quản đốc, Tổ trưởng
+(4,  3, 1000000),
+(29, 3, 1000000),
+
+-- Phụ cấp Độc hại (allowance_id = 4): 300,000đ - Công nhân làm việc trực tiếp tại xưởng
+(29, 4, 300000),
+(30, 4, 300000),
+
+-- Phụ cấp Chuyên cần (allowance_id = 5): 500,000đ - Không nghỉ, không đi muộn
+(9,  5, 500000);

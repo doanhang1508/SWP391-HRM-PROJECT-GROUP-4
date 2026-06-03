@@ -15,7 +15,8 @@ import model.User;
 @WebServlet(name = "SalaryGradeController", urlPatterns = {"/hr/salary-grade"})
 public class SalaryGradeController extends HttpServlet {
 
-    private static final String LIST_JSP = "/hr/salary-grade.jsp";
+    private static final String LIST_JSP   = "/hr/salary-grade.jsp";
+    private static final String DETAIL_JSP = "/hr/salary-grade-detail.jsp";
     private static final String LIST_URL = "/hr/salary-grade";
 
     private final SalaryGradeDAO dao = new SalaryGradeDAO();
@@ -35,6 +36,18 @@ public class SalaryGradeController extends HttpServlet {
         return true;
     }
 
+    /** Đọc tham số tìm kiếm và load danh sách bậc lương tương ứng */
+    private void loadList(HttpServletRequest request) {
+        String keyword      = request.getParameter("keyword");
+        String statusFilter = request.getParameter("statusFilter");
+
+        if (statusFilter == null || statusFilter.isBlank()) statusFilter = "all";
+
+        request.setAttribute("salaryGradeList", dao.search(keyword, statusFilter));
+        request.setAttribute("keyword",         keyword      != null ? keyword      : "");
+        request.setAttribute("statusFilter",    statusFilter);
+    }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -43,25 +56,27 @@ public class SalaryGradeController extends HttpServlet {
         String action = request.getParameter("action");
         String idStr  = request.getParameter("id");
 
-        // FIX: Xử lý action=detail (JSP có link xem chi tiết)
+        // Xem chi tiết
         if ("detail".equals(action) && idStr != null) {
             try {
                 int id = Integer.parseInt(idStr);
                 SalaryGrade sg = dao.getById(id);
                 if (sg != null) {
-                    request.setAttribute("detailGrade", sg);
+                    request.setAttribute("salaryGrade", sg);
+                    request.getRequestDispatcher(DETAIL_JSP).forward(request, response);
+                    return;
                 } else {
                     request.getSession().setAttribute("errorMsg", "Không tìm thấy ngạch lương.");
                 }
             } catch (NumberFormatException e) {
                 request.getSession().setAttribute("errorMsg", "ID không hợp lệ.");
             }
-            request.setAttribute("salaryGradeList", dao.getAll());
+            loadList(request);
             request.getRequestDispatcher(LIST_JSP).forward(request, response);
             return;
         }
 
-        // Deactivate qua GET (link trực tiếp)
+        // Vô hiệu hóa qua GET
         if ("delete".equals(action) && idStr != null) {
             int id = Integer.parseInt(idStr);
             if (dao.countLinkedEmployees(id) > 0) {
@@ -75,8 +90,8 @@ public class SalaryGradeController extends HttpServlet {
             return;
         }
 
-        // Load danh sách
-        request.setAttribute("salaryGradeList", dao.getAll());
+        // Hiển thị danh sách (có thể kèm tìm kiếm qua GET param ?keyword=...&statusFilter=...)
+        loadList(request);
         request.getRequestDispatcher(LIST_JSP).forward(request, response);
     }
 
@@ -117,7 +132,6 @@ public class SalaryGradeController extends HttpServlet {
         String coefficientS = request.getParameter("coefficient");
         String description  = request.getParameter("description");
 
-        // Validate input
         if (gradeName == null || gradeName.isBlank()) {
             request.getSession().setAttribute("errorMsg", "Tên ngạch lương không được để trống.");
             response.sendRedirect(request.getContextPath() + LIST_URL);
@@ -140,7 +154,6 @@ public class SalaryGradeController extends HttpServlet {
             }
 
             if ("add".equals(action)) {
-                // FIX: Kiểm tra trùng tên trước khi thêm
                 if (dao.isDuplicate(gradeName.trim(), 0)) {
                     request.getSession().setAttribute("errorMsg",
                         "Tên ngạch lương \"" + gradeName + "\" đã tồn tại.");
@@ -150,7 +163,6 @@ public class SalaryGradeController extends HttpServlet {
                 }
             } else if ("edit".equals(action) && idStr != null) {
                 int id = Integer.parseInt(idStr);
-                // FIX: Kiểm tra trùng tên khi edit (bỏ qua chính nó)
                 if (dao.isDuplicate(gradeName.trim(), id)) {
                     request.getSession().setAttribute("errorMsg",
                         "Tên ngạch lương \"" + gradeName + "\" đã tồn tại.");

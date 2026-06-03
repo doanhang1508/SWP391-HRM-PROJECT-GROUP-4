@@ -98,6 +98,14 @@ public class AuthFilter implements Filter {
             }
         }
 
+        // ── 4b. /manager/* → role 1-6 (quản lý), không cho Employee (7) ──
+        if (path.startsWith("/manager/")) {
+            if (roleId == ROLE_EMPLOYEE || roleId == 0) {
+                redirectToAppropriate(req, resp, roleId);
+                return;
+            }
+        }
+
         // ── 5. /dashboard → role 1-6 (management); role 7 → employee ──────
         if (path.equals("/dashboard")) {
             if (roleId == ROLE_EMPLOYEE || roleId == 0) {

@@ -46,6 +46,36 @@ public class AllowanceDAO {
         return list;
     }
 
+    /**
+     * Tìm kiếm phụ cấp theo tên (không phân biệt hoa thường).
+     *
+     * @param keyword  từ khóa tìm kiếm (null / blank = lấy tất cả)
+     * @param statusFilter  "active" = chỉ đang hoạt động,
+     *                      "inactive" = chỉ vô hiệu,
+     *                      null/"all" = tất cả
+     */
+    public List<Allowance> search(String keyword, String statusFilter) {
+        List<Allowance> list = new ArrayList<>();
+        boolean hasKeyword = keyword != null && !keyword.isBlank();
+        boolean activeOnly = "active".equalsIgnoreCase(statusFilter);
+        boolean inactiveOnly = "inactive".equalsIgnoreCase(statusFilter);
+
+        StringBuilder sql = new StringBuilder("SELECT * FROM allowances WHERE 1=1");
+        if (hasKeyword)    sql.append(" AND allowance_name LIKE ?");
+        if (activeOnly)    sql.append(" AND status = 1");
+        if (inactiveOnly)  sql.append(" AND status = 0");
+        sql.append(" ORDER BY status DESC, allowance_name");
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            if (hasKeyword) ps.setString(1, "%" + keyword.trim() + "%");
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapRow(rs));
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return list;
+    }
+
     /** Lấy chi tiết theo ID */
     public Allowance getById(int id) {
         String sql = "SELECT * FROM allowances WHERE allowance_id = ?";

@@ -23,6 +23,51 @@ public class Payroll {
 
     public Payroll() {}
 
+    /**
+     * Validate dữ liệu Payroll trước khi lưu.
+     * @return null nếu hợp lệ, chuỗi thông báo lỗi nếu không hợp lệ.
+     */
+    public static String validate(Payroll p) {
+        if (p == null) {
+            return "Payroll không được null";
+        }
+
+        // Kiểm tra tháng hợp lệ (1 - 12)
+        if (p.getMonth() < 1 || p.getMonth() > 12) {
+            return "Tháng không hợp lệ: phải từ 1 đến 12";
+        }
+
+        // Kiểm tra năm hợp lệ (>= 2000)
+        if (p.getYear() < 2000) {
+            return "Năm không hợp lệ: phải từ 2000 trở đi";
+        }
+
+        // Kiểm tra baseSalary không null và > 0
+        if (p.getBaseSalary() == null) {
+            return "Lương cơ bản không được để trống";
+        }
+        if (p.getBaseSalary().compareTo(BigDecimal.ZERO) <= 0) {
+            return "Lương cơ bản phải lớn hơn 0";
+        }
+
+        // Kiểm tra bonusAmount không null
+        if (p.getBonusAmount() == null) {
+            return "Tiền thưởng không được để trống";
+        }
+
+        // Kiểm tra deductionAmount không null
+        if (p.getDeductionAmount() == null) {
+            return "Tiền khấu trừ không được để trống";
+        }
+
+        // Kiểm tra netSalary không âm (nếu đã được set)
+        if (p.getNetSalary() != null && p.getNetSalary().compareTo(BigDecimal.ZERO) < 0) {
+            return "Lương thực nhận không được âm";
+        }
+
+        return null;
+    }
+
     // Getters & Setters
     public int getPayrollId() { return payrollId; }
     public void setPayrollId(int payrollId) { this.payrollId = payrollId; }

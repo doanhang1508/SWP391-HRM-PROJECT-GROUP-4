@@ -37,11 +37,17 @@ public class OvertimeDAOImpl implements OvertimeDAO {
         String sql = "SELECT a.*, s.shift_name, u.full_name FROM attendance a " +
                      "JOIN shifts s ON a.shift_id = s.shift_id " +
                      "JOIN users u ON a.user_id = u.user_id " +
-                     "WHERE u.department_id = ? AND a.status = 'Pending OT' " +
-                     "ORDER BY a.work_date DESC";
+                     "WHERE a.status = 'Pending OT' ";
+        if (departmentId > 0) {
+            sql += "AND u.department_id = ? ";
+        }
+        sql += "ORDER BY a.work_date DESC";
+        
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, departmentId);
+            if (departmentId > 0) {
+                ps.setInt(1, departmentId);
+            }
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     list.add(mapRow(rs));
@@ -64,20 +70,22 @@ public class OvertimeDAOImpl implements OvertimeDAO {
             try (ResultSet rs = checkPs.executeQuery()) {
                 if (rs.next()) {
                     int attendanceId = rs.getInt("attendance_id");
-                    String updateSql = "UPDATE attendance SET overtime_hrs = ?, status = 'Pending OT' WHERE attendance_id = ?";
+                    String updateSql = "UPDATE attendance SET overtime_hrs = ?, status = 'Pending OT', ot_reason = ? WHERE attendance_id = ?";
                     try (PreparedStatement updatePs = c.prepareStatement(updateSql)) {
                         updatePs.setDouble(1, hours);
-                        updatePs.setInt(2, attendanceId);
+                        updatePs.setString(2, reason);
+                        updatePs.setInt(3, attendanceId);
                         return updatePs.executeUpdate() > 0;
                     }
                 } else {
-                    String insertSql = "INSERT INTO attendance (user_id, shift_id, work_date, overtime_hrs, status) " +
-                                       "VALUES (?, ?, ?, ?, 'Pending OT')";
+                    String insertSql = "INSERT INTO attendance (user_id, shift_id, work_date, overtime_hrs, ot_reason, status) " +
+                                       "VALUES (?, ?, ?, ?, ?, 'Pending OT')";
                     try (PreparedStatement insertPs = c.prepareStatement(insertSql)) {
                         insertPs.setInt(1, userId);
                         insertPs.setInt(2, shiftId);
                         insertPs.setDate(3, workDate);
                         insertPs.setDouble(4, hours);
+                        insertPs.setString(5, reason);
                         return insertPs.executeUpdate() > 0;
                     }
                 }
@@ -128,7 +136,7 @@ public class OvertimeDAOImpl implements OvertimeDAO {
         
         a.setShiftName(rs.getString("shift_name"));
         a.setUserName(rs.getString("full_name"));
-        // reason is transient, we don't fetch it from DB as there is no column
+        a.setOtReason(rs.getString("ot_reason"));
         return a;
     }
 }

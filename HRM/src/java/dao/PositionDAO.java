@@ -66,6 +66,37 @@ public class PositionDAO {
         }
     }
 
+    public List<Position> getAllIncludingInactive() {
+        List<Position> list = new ArrayList<>();
+        String sql = "SELECT * FROM positions ORDER BY position_id";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(new Position(
+                    rs.getInt("position_id"),
+                    rs.getString("position_name"),
+                    rs.getString("description"),
+                    rs.getBoolean("status")
+                ));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public void toggleStatus(int id) {
+        String sql = "UPDATE positions SET status = CASE WHEN status = 1 THEN 0 ELSE 1 END WHERE position_id=?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public int countEmployees(int positionId) {
         String sql = "SELECT COUNT(*) FROM users WHERE position_id=? AND status=1";
         try (Connection conn = DBContext.getConnection();

@@ -28,12 +28,9 @@ public class DepartmentController extends HttpServlet {
             return;
         }
 
-        String action = request.getParameter("action");
-        String idStr  = request.getParameter("id");
-
-        java.util.List<model.Department> departmentList = dao.getAll();
+        java.util.List<Department> departmentList = dao.getAllIncludingInactive();
         java.util.Map<Integer, Integer> empCountMap = new java.util.HashMap<>();
-        for (model.Department d : departmentList) {
+        for (Department d : departmentList) {
             empCountMap.put(d.getDepartmentId(), dao.countEmployees(d.getDepartmentId()));
         }
         request.setAttribute("departmentList", departmentList);
@@ -58,6 +55,8 @@ public class DepartmentController extends HttpServlet {
 
         if ("delete".equals(action) && idStr != null) {
             dao.delete(Integer.parseInt(idStr));
+        } else if ("toggleStatus".equals(action) && idStr != null) {
+            dao.toggleStatus(Integer.parseInt(idStr));
         } else if ("add".equals(action)) {
             dao.insert(new Department(0, name, desc, true));
         } else if ("edit".equals(action) && idStr != null) {

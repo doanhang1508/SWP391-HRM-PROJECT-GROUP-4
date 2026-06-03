@@ -12,7 +12,7 @@ import model.Payroll;
 import service.PayrollService;
 import service.PayrollServiceImpl;
 
-@WebServlet("/payroll")
+@WebServlet("/employee/payroll")
 public class PayrollController extends HttpServlet {
     private PayrollService payrollService = new PayrollServiceImpl();
     private PayrollDAO payrollDAO = new PayrollDAO();
@@ -25,7 +25,7 @@ public class PayrollController extends HttpServlet {
             int month = Integer.parseInt(req.getParameter("month"));
             int year = Integer.parseInt(req.getParameter("year"));
             payrollService.calculateMonthlyPayroll(userId, month, year);
-            resp.sendRedirect(req.getContextPath() + "/payroll?userId=" + userId + "&month=" + month + "&year=" + year);
+            resp.sendRedirect(req.getContextPath() + "/employee/payroll?userId=" + userId + "&month=" + month + "&year=" + year);
             return;
         }
 
@@ -42,6 +42,6 @@ public class PayrollController extends HttpServlet {
             req.setAttribute("year", year);
         }
         
-        req.getRequestDispatcher("/payslip.jsp").forward(req, resp);
+        req.getRequestDispatcher("/employee/payslip.jsp").forward(req, resp);
     }
 }

@@ -120,14 +120,14 @@
             </a>
         </li>
         <li class="sidebar-item">
-            <a href="#" class="sidebar-link ${param.activeMenu eq 'leave' ? 'active' : ''}">
-                <i class="fas fa-paper-plane"></i> Đơn nghỉ phép
+            <a href="${pageContext.request.contextPath}/employee/leave-ot" class="sidebar-link ${param.activeMenu eq 'leave' ? 'active' : ''}">
+                <i class="fas fa-paper-plane"></i> Đơn nghỉ phép / OT
             </a>
         </li>
 
         <li class="sidebar-menu-category">TÀI CHÍNH</li>
         <li class="sidebar-item">
-            <a href="${pageContext.request.contextPath}/payroll" class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
+            <a href="${pageContext.request.contextPath}/employee/payroll" class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
                 <i class="fas fa-file-invoice-dollar"></i> Phiếu lương
             </a>
         </li>
@@ -139,7 +139,7 @@
             </a>
         </li>
         <li class="sidebar-item">
-            <a href="${pageContext.request.contextPath}/work-history" class="sidebar-link ${param.activeMenu eq 'work-history' ? 'active' : ''}">
+            <a href="${pageContext.request.contextPath}/employee/work-history" class="sidebar-link ${param.activeMenu eq 'work-history' ? 'active' : ''}">
                 <i class="fas fa-briefcase"></i> Lịch sử công tác
             </a>
         </li>

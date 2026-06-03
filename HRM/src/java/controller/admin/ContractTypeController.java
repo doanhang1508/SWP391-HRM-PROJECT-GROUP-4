@@ -28,12 +28,9 @@ public class ContractTypeController extends HttpServlet {
             return;
         }
 
-        String action = request.getParameter("action");
-        String idStr  = request.getParameter("id");
-
-        java.util.List<model.ContractType> contractTypeList = dao.getAll();
+        java.util.List<ContractType> contractTypeList = dao.getAllIncludingInactive();
         java.util.Map<Integer, Integer> empCountMap = new java.util.HashMap<>();
-        for (model.ContractType ct : contractTypeList) {
+        for (ContractType ct : contractTypeList) {
             empCountMap.put(ct.getContractTypeId(), dao.countEmployees(ct.getContractTypeId()));
         }
         request.setAttribute("contractTypeList", contractTypeList);
@@ -55,13 +52,28 @@ public class ContractTypeController extends HttpServlet {
         String name   = request.getParameter("name");
         String desc   = request.getParameter("description");
         String idStr  = request.getParameter("id");
+        String durationStr = request.getParameter("duration");
+        String durationUnit = request.getParameter("durationUnit");
+
+        Integer duration = null;
+        if (durationStr != null && !durationStr.trim().isEmpty()) {
+            try {
+                duration = Integer.parseInt(durationStr.trim());
+            } catch (NumberFormatException e) {
+                // Keep it null
+            }
+        }
 
         if ("delete".equals(action) && idStr != null) {
-            dao.delete(Integer.parseInt(idStr));
+            dao.changeStatus(Integer.parseInt(idStr), false);
+        } else if ("deactivate".equals(action) && idStr != null) {
+            dao.changeStatus(Integer.parseInt(idStr), false);
+        } else if ("activate".equals(action) && idStr != null) {
+            dao.changeStatus(Integer.parseInt(idStr), true);
         } else if ("add".equals(action)) {
-            dao.insert(new ContractType(0, name, desc, true));
+            dao.insert(new ContractType(0, name, desc, duration, durationUnit, true, null, null));
         } else if ("edit".equals(action) && idStr != null) {
-            dao.update(new ContractType(Integer.parseInt(idStr), name, desc, true));
+            dao.update(new ContractType(Integer.parseInt(idStr), name, desc, duration, durationUnit, true, null, null));
         }
         response.sendRedirect(request.getContextPath() + "/admin/contract-type");
     }
