@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app version="6.0" xmlns="https://jakarta.ee/xml/ns/jakartaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee                              https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd">
+<web-app version="6.0" xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+                             https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd">
+
     <!-- ══════════════════════════════════════════════════════
          AUTH FILTER — Bảo vệ URL theo role
     ══════════════════════════════════════════════════════ -->
@@ -7,40 +11,67 @@
         <filter-name>AuthFilter</filter-name>
         <filter-class>filter.AuthFilter</filter-class>
     </filter>
-    <!-- /dashboard: chỉ role 1-6 -->
+
     <filter-mapping>
         <filter-name>AuthFilter</filter-name>
         <url-pattern>/dashboard</url-pattern>
     </filter-mapping>
-    <!-- /admin/*: chỉ Admin (role 1) -->
     <filter-mapping>
         <filter-name>AuthFilter</filter-name>
         <url-pattern>/admin/*</url-pattern>
     </filter-mapping>
-    <!-- /hr/*: HR Manager (role 2) hoặc HR Staff (role 5) -->
     <filter-mapping>
         <filter-name>AuthFilter</filter-name>
         <url-pattern>/hr/*</url-pattern>
     </filter-mapping>
-    <!-- /employee/*: phải đăng nhập -->
     <filter-mapping>
         <filter-name>AuthFilter</filter-name>
         <url-pattern>/employee/*</url-pattern>
     </filter-mapping>
-    <!-- /editRolePermission: chỉ Admin -->
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/manager/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/profile</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/settings</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/payroll</url-pattern>
+    </filter-mapping>
     <filter-mapping>
         <filter-name>AuthFilter</filter-name>
         <url-pattern>/editRolePermission</url-pattern>
     </filter-mapping>
-    <!-- /role/*: chỉ Admin -->
+    <!-- FIX: đổi /role thành /role/* để bắt cả sub-path -->
     <filter-mapping>
         <filter-name>AuthFilter</filter-name>
-        <url-pattern>/role</url-pattern>
+        <url-pattern>/role/*</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/terminate-employee</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/manual-reward-discipline</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/work-history</url-pattern>
     </filter-mapping>
 
     <!-- ══════════════════════════════════════════════════════
          SERVLET DECLARATIONS
+         Chỉ khai báo các servlet KHÔNG dùng @WebServlet annotation
     ══════════════════════════════════════════════════════ -->
+
+    <!-- Core (không có @WebServlet) -->
     <servlet>
         <servlet-name>homeController</servlet-name>
         <servlet-class>controller.homeController</servlet-class>
@@ -65,6 +96,8 @@
         <servlet-name>ForgotPasswordController</servlet-name>
         <servlet-class>controller.ForgotPasswordController</servlet-class>
     </servlet>
+
+    <!-- Admin (không có @WebServlet) -->
     <servlet>
         <servlet-name>ActiveDeactiveRoleController</servlet-name>
         <servlet-class>controller.admin.ActiveDeactiveRoleController</servlet-class>
@@ -72,14 +105,6 @@
     <servlet>
         <servlet-name>EditRolePermissionController</servlet-name>
         <servlet-class>controller.admin.EditRolePermissionController</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>adminDashboardController</servlet-name>
-        <servlet-class>controller.admin.adminDashboardController</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>UnifiedDashboardController</servlet-name>
-        <servlet-class>controller.UnifiedDashboardController</servlet-class>
     </servlet>
     <servlet>
         <servlet-name>DepartmentsController</servlet-name>
@@ -93,15 +118,14 @@
         <servlet-name>PositionController</servlet-name>
         <servlet-class>controller.admin.PositionController</servlet-class>
     </servlet>
-
     <servlet>
         <servlet-name>ContractTypeController</servlet-name>
         <servlet-class>controller.admin.ContractTypeController</servlet-class>
     </servlet>
 
-
     <!-- ══════════════════════════════════════════════════════
          URL MAPPINGS
+         Chỉ map các servlet KHÔNG dùng @WebServlet annotation
     ══════════════════════════════════════════════════════ -->
     <servlet-mapping>
         <servlet-name>homeController</servlet-name>
@@ -136,10 +160,6 @@
         <url-pattern>/editRolePermission</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
-        <servlet-name>UnifiedDashboardController</servlet-name>
-        <url-pattern>/dashboard</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
         <servlet-name>DepartmentsController</servlet-name>
         <url-pattern>/admin/department</url-pattern>
     </servlet-mapping>
@@ -151,7 +171,6 @@
         <servlet-name>PositionController</servlet-name>
         <url-pattern>/admin/position</url-pattern>
     </servlet-mapping>
-
     <servlet-mapping>
         <servlet-name>ContractTypeController</servlet-name>
         <url-pattern>/admin/contract-type</url-pattern>
