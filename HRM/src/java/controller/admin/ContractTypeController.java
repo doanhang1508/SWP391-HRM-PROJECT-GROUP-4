@@ -28,12 +28,9 @@ public class ContractTypeController extends HttpServlet {
             return;
         }
 
-        String action = request.getParameter("action");
-        String idStr  = request.getParameter("id");
-
-        java.util.List<model.ContractType> contractTypeList = dao.getAll();
+        java.util.List<ContractType> contractTypeList = dao.getAllIncludingInactive();
         java.util.Map<Integer, Integer> empCountMap = new java.util.HashMap<>();
-        for (model.ContractType ct : contractTypeList) {
+        for (ContractType ct : contractTypeList) {
             empCountMap.put(ct.getContractTypeId(), dao.countEmployees(ct.getContractTypeId()));
         }
         request.setAttribute("contractTypeList", contractTypeList);
@@ -58,6 +55,8 @@ public class ContractTypeController extends HttpServlet {
 
         if ("delete".equals(action) && idStr != null) {
             dao.delete(Integer.parseInt(idStr));
+        } else if ("toggleStatus".equals(action) && idStr != null) {
+            dao.toggleStatus(Integer.parseInt(idStr));
         } else if ("add".equals(action)) {
             dao.insert(new ContractType(0, name, desc, true));
         } else if ("edit".equals(action) && idStr != null) {

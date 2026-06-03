@@ -14,7 +14,7 @@
                 overflow-y: auto;
                 flex-shrink: 0;
                 transition: transform 0.3s cubic-bezier(.22, 1, .36, 1);
-                z-index: 1040;
+                z-index: 990;
                 display: flex;
                 flex-direction: column;
             }
@@ -276,6 +276,7 @@
                     transform: translateX(-100%);
                     padding-top: 56px;
                     box-shadow: 6px 0 30px rgba(0, 0, 0, 0.4);
+                    z-index: 1040;
                 }
 
                 .admin-sidebar.sidebar-open {

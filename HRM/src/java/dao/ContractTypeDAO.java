@@ -66,6 +66,37 @@ public class ContractTypeDAO {
         }
     }
 
+    public List<ContractType> getAllIncludingInactive() {
+        List<ContractType> list = new ArrayList<>();
+        String sql = "SELECT * FROM contract_types ORDER BY contract_type_id";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(new ContractType(
+                    rs.getInt("contract_type_id"),
+                    rs.getString("type_name"),
+                    rs.getString("description"),
+                    rs.getBoolean("status")
+                ));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public void toggleStatus(int id) {
+        String sql = "UPDATE contract_types SET status = CASE WHEN status = 1 THEN 0 ELSE 1 END WHERE contract_type_id=?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public int countEmployees(int contractTypeId) {
         String sql = "SELECT COUNT(*) FROM employee_profiles WHERE contract_type_id=?";
         try (Connection conn = DBContext.getConnection();

@@ -326,6 +326,12 @@
 
                     <input type="hidden" name="action" value="list" />
 
+                    <select id="statusFilter" onchange="filterRoleTable()" style="padding:6px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:.85rem;outline:none;cursor:pointer;font-family:'Inter',sans-serif;">
+                        <option value="all">Tất cả trạng thái</option>
+                        <option value="active">Hoạt động</option>
+                        <option value="inactive">Vô hiệu</option>
+                    </select>
+
                     <input type="text"
                            name="keyword"
                            value="${keyword}"
@@ -462,8 +468,78 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- PAGINATION -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:20px;border-top:1px solid #f1f5f9;">
+                <div style="font-size:.85rem;color:var(--text-muted);">Hiển thị <span id="pageStart" style="font-weight:600;color:var(--text-main);">0</span> - <span id="pageEnd" style="font-weight:600;color:var(--text-main);">0</span> trong tổng số <span id="totalItems" style="font-weight:600;color:var(--text-main);">0</span> vai trò</div>
+                <div style="display:flex;gap:8px;">
+                    <button id="btnPrevPage" onclick="prevPage()" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--text-muted);cursor:pointer;"><i class="fas fa-chevron-left"></i></button>
+                    <div id="pageNumbers" style="display:flex;gap:4px;"></div>
+                    <button id="btnNextPage" onclick="nextPage()" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--text-muted);cursor:pointer;"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+let currentPage = 1;
+const itemsPerPage = 8;
+let filteredRows = [];
+
+function filterRoleTable() {
+    const statusVal = document.getElementById('statusFilter').value;
+    const allRows = Array.from(document.querySelectorAll('.table-custom tbody tr'));
+    filteredRows = allRows.filter(function(row) {
+        if (statusVal === 'all') return true;
+        const badges = row.querySelectorAll('.badge-soft-success, .badge-soft-danger');
+        if (badges.length === 0) return true;
+        const badge = badges[0];
+        const isActive = badge.classList.contains('badge-soft-success');
+        return (statusVal === 'active' && isActive) || (statusVal === 'inactive' && !isActive);
+    });
+    currentPage = 1;
+    updatePagination();
+}
+
+function updatePagination() {
+    if(filteredRows.length === 0) {
+        document.querySelectorAll('.table-custom tbody tr').forEach(row => row.style.display = 'none');
+        document.getElementById('pageStart').textContent = 0;
+        document.getElementById('pageEnd').textContent = 0;
+        document.getElementById('totalItems').textContent = 0;
+        document.getElementById('pageNumbers').innerHTML = '';
+        document.getElementById('btnPrevPage').disabled = true;
+        document.getElementById('btnNextPage').disabled = true;
+        return;
+    }
+    const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, filteredRows.length);
+    document.querySelectorAll('.table-custom tbody tr').forEach(row => row.style.display = 'none');
+    for (let i = startIndex; i < endIndex; i++) { filteredRows[i].style.display = ''; }
+    document.getElementById('pageStart').textContent = startIndex + 1;
+    document.getElementById('pageEnd').textContent = endIndex;
+    document.getElementById('totalItems').textContent = filteredRows.length;
+    let pageHtml = '';
+    for (let i = 1; i <= totalPages; i++) {
+        pageHtml += '<button style="background:' + (i===currentPage ? 'var(--primary-color)' : '#fff') + ';border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:' + (i===currentPage ? 'white' : 'var(--text-muted)') + ';cursor:pointer;" onclick="goToPage(' + i + ')">' + i + '</button>';
+    }
+    document.getElementById('pageNumbers').innerHTML = pageHtml;
+    document.getElementById('btnPrevPage').disabled = currentPage === 1;
+    document.getElementById('btnNextPage').disabled = currentPage === totalPages;
+}
+
+function goToPage(page) { currentPage = page; updatePagination(); }
+function prevPage() { if (currentPage > 1) { currentPage--; updatePagination(); } }
+function nextPage() { const tp = Math.ceil(filteredRows.length / itemsPerPage); if (currentPage < tp) { currentPage++; updatePagination(); } }
+
+document.addEventListener('DOMContentLoaded', function() {
+    filteredRows = Array.from(document.querySelectorAll('.table-custom tbody tr'));
+    updatePagination();
+});
+</script>
 
 <jsp:include page="../footer.jsp" />

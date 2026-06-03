@@ -184,9 +184,16 @@
         <div class="panel">
             <div class="panel-header">
                 <h3 class="panel-title"><span class="dot"></span> Danh Sách Phòng Ban</h3>
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="searchInput" placeholder="Tìm phòng ban..." oninput="filterTable()">
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <select id="statusFilter" onchange="filterTable()" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:.85rem;font-family:'Inter',sans-serif;outline:none;cursor:pointer;">
+                        <option value="all">Tất cả trạng thái</option>
+                        <option value="active">Hoạt động</option>
+                        <option value="inactive">Vô hiệu</option>
+                    </select>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Tìm phòng ban..." oninput="filterTable()">
+                    </div>
                 </div>
             </div>
             <div style="overflow-x:auto;">
@@ -236,8 +243,15 @@
                                                 <span class="emp-count">...</span>
                                             </span>
                                         </td>
-                                        <td style="text-align:center;">
-                                            <span class="badge-active"><i class="fas fa-circle" style="font-size:.45rem;"></i> Hoạt động</span>
+                                        <td style="text-align:center;" data-status="${dept.status ? 'active' : 'inactive'}">
+                                            <c:choose>
+                                                <c:when test="${dept.status}">
+                                                    <span class="badge-active"><i class="fas fa-circle" style="font-size:.45rem;"></i> Hoạt động</span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span style="display:inline-flex;align-items:center;gap:5px;background:#fee2e2;color:#dc2626;font-size:.73rem;font-weight:700;padding:4px 12px;border-radius:20px;"><i class="fas fa-circle" style="font-size:.45rem;"></i> Vô hiệu</span>
+                                                </c:otherwise>
+                                            </c:choose>
                                         </td>
                                         <td style="text-align:center;">
                                             <a href="${pageContext.request.contextPath}/admin/users?departmentId=${dept.departmentId}" class="action-btn btn-view" style="display:inline-flex;" title="Xem danh sách nhân viên">
@@ -247,6 +261,13 @@
                                                     onclick="openEditModal('${dept.departmentId}','${dept.departmentName}','${dept.description}')">
                                                 <i class="fas fa-pen"></i>
                                             </button>
+                                            <form action="${pageContext.request.contextPath}/admin/department" method="POST" style="display:inline;" onsubmit="return confirm('${dept.status ? "Vô hiệu hóa" : "Kích hoạt"} phòng ban \'${dept.departmentName}\'?');">
+                                                <input type="hidden" name="action" value="toggleStatus">
+                                                <input type="hidden" name="id" value="${dept.departmentId}">
+                                                <button type="submit" class="action-btn" style="color:${dept.status ? '#f59e0b' : '#1e293b'};" title="${dept.status ? 'Vô hiệu hóa' : 'Kích hoạt'}">
+                                                    <i class="fas ${dept.status ? 'fa-lock' : 'fa-unlock'}"></i>
+                                                </button>
+                                            </form>
                                             <form action="${pageContext.request.contextPath}/admin/department" method="POST" style="display:inline;" onsubmit="return confirm('Xóa phòng ban \'${dept.departmentName}\'?');">
                                                 <input type="hidden" name="action" value="delete">
                                                 <input type="hidden" name="id" value="${dept.departmentId}">
@@ -364,6 +385,7 @@
 
     function updatePagination() {
         if(filteredRows.length === 0) {
+            document.querySelectorAll('#deptTable tbody tr:not(.empty-state-row)').forEach(row => row.style.display = 'none');
             document.getElementById('pageStart').textContent = 0;
             document.getElementById('pageEnd').textContent = 0;
             document.getElementById('totalItems').textContent = 0;
@@ -429,10 +451,15 @@
 
     function filterTable() {
         const query = document.getElementById('searchInput').value.toLowerCase();
+        const statusVal = document.getElementById('statusFilter').value;
         const allRows = Array.from(document.querySelectorAll('#deptTable tbody tr:not(.empty-state-row)'));
         
         filteredRows = allRows.filter(row => {
-            return row.textContent.toLowerCase().includes(query);
+            const matchText = row.textContent.toLowerCase().includes(query);
+            const statusCell = row.querySelector('td[data-status]');
+            const rowStatus = statusCell ? statusCell.getAttribute('data-status') : 'active';
+            const matchStatus = statusVal === 'all' || rowStatus === statusVal;
+            return matchText && matchStatus;
         });
         
         currentPage = 1;

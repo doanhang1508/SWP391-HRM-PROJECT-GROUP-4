@@ -119,9 +119,16 @@
         <div class="panel">
             <div class="panel-header">
                 <h3 class="panel-title"><span class="dot"></span> Danh Sách Loại Hợp Đồng</h3>
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="searchInput" placeholder="Tìm loại hợp đồng..." oninput="filterTable()">
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <select id="statusFilter" onchange="filterTable()" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:.85rem;font-family:'Inter',sans-serif;outline:none;cursor:pointer;">
+                        <option value="all">Tất cả trạng thái</option>
+                        <option value="active">Hoạt động</option>
+                        <option value="inactive">Vô hiệu</option>
+                    </select>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Tìm loại hợp đồng..." oninput="filterTable()">
+                    </div>
                 </div>
             </div>
             <div style="overflow-x:auto;">
@@ -164,13 +171,27 @@
                                                 <span class="emp-count">...</span>
                                             </span>
                                         </td>
-                                        <td style="text-align:center;">
-                                            <span class="badge-active"><i class="fas fa-circle" style="font-size:.45rem;"></i> Hoạt động</span>
+                                        <td style="text-align:center;" data-status="${ct.status ? 'active' : 'inactive'}">
+                                            <c:choose>
+                                                <c:when test="${ct.status}">
+                                                    <span class="badge-active"><i class="fas fa-circle" style="font-size:.45rem;"></i> Hoạt động</span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span style="display:inline-flex;align-items:center;gap:5px;background:#fee2e2;color:#dc2626;font-size:.73rem;font-weight:700;padding:4px 12px;border-radius:20px;"><i class="fas fa-circle" style="font-size:.45rem;"></i> Vô hiệu</span>
+                                                </c:otherwise>
+                                            </c:choose>
                                         </td>
                                         <td style="text-align:center;">
                                             <button class="action-btn btn-edit" onclick="openEditModal('${ct.contractTypeId}','${ct.typeName}','${ct.description}')">
                                                 <i class="fas fa-pen"></i>
                                             </button>
+                                            <form action="${pageContext.request.contextPath}/admin/contract-type" method="POST" style="display:inline;" onsubmit="return confirm('${ct.status ? "Vô hiệu hóa" : "Kích hoạt"} loại hợp đồng \'${ct.typeName}\'?');">
+                                                <input type="hidden" name="action" value="toggleStatus">
+                                                <input type="hidden" name="id" value="${ct.contractTypeId}">
+                                                <button type="submit" class="action-btn" style="color:${ct.status ? '#f59e0b' : '#1e293b'};" title="${ct.status ? 'Vô hiệu hóa' : 'Kích hoạt'}">
+                                                    <i class="fas ${ct.status ? 'fa-lock' : 'fa-unlock'}"></i>
+                                                </button>
+                                            </form>
                                             <form action="${pageContext.request.contextPath}/admin/contract-type" method="POST" style="display:inline;" onsubmit="return confirm('Xóa loại hợp đồng \'${ct.typeName}\'?');">
                                                 <input type="hidden" name="action" value="delete">
                                                 <input type="hidden" name="id" value="${ct.contractTypeId}">
@@ -186,6 +207,19 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- PAGINATION -->
+            <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+                <div style="font-size: 0.85rem; color: var(--muted);">
+                    Hiển thị <span id="pageStart" style="font-weight: 600; color: var(--navy);">0</span> - <span id="pageEnd" style="font-weight: 600; color: var(--navy);">0</span> trong tổng số <span id="totalItems" style="font-weight: 600; color: var(--navy);">0</span> mục
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-page" id="btnPrevPage" onclick="prevPage()" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:0.85rem;color:var(--muted);cursor:pointer;"><i class="fas fa-chevron-left"></i></button>
+                    <div id="pageNumbers" style="display: flex; gap: 4px;"></div>
+                    <button class="btn-page" id="btnNextPage" onclick="nextPage()" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:0.85rem;color:var(--muted);cursor:pointer;"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
@@ -253,10 +287,59 @@
     document.querySelectorAll('.modal-overlay').forEach(function(o) {
         o.addEventListener('click', function(e) { if (e.target === o) o.style.display = 'none'; });
     });
+    let currentPage = 1;
+    const itemsPerPage = 8;
+    let filteredRows = [];
+
     function filterTable() {
         const q = document.getElementById('searchInput').value.toLowerCase();
-        document.querySelectorAll('#mainTable tbody tr').forEach(function(r) { r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+        const statusVal = document.getElementById('statusFilter').value;
+        const allRows = Array.from(document.querySelectorAll('#mainTable tbody tr'));
+        filteredRows = allRows.filter(function(r) {
+            const matchText = r.textContent.toLowerCase().includes(q);
+            const statusCell = r.querySelector('td[data-status]');
+            const rowStatus = statusCell ? statusCell.getAttribute('data-status') : 'active';
+            const matchStatus = statusVal === 'all' || rowStatus === statusVal;
+            return matchText && matchStatus;
+        });
+        currentPage = 1;
+        updatePagination();
     }
+
+    function updatePagination() {
+        if(filteredRows.length === 0) {
+            document.querySelectorAll('#mainTable tbody tr').forEach(row => row.style.display = 'none');
+            document.getElementById('pageStart').textContent = 0;
+            document.getElementById('pageEnd').textContent = 0;
+            document.getElementById('totalItems').textContent = 0;
+            document.getElementById('pageNumbers').innerHTML = '';
+            document.getElementById('btnPrevPage').disabled = true;
+            document.getElementById('btnNextPage').disabled = true;
+            return;
+        }
+        const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, filteredRows.length);
+        document.querySelectorAll('#mainTable tbody tr').forEach(row => row.style.display = 'none');
+        for (let i = startIndex; i < endIndex; i++) { filteredRows[i].style.display = ''; }
+        document.getElementById('pageStart').textContent = startIndex + 1;
+        document.getElementById('pageEnd').textContent = endIndex;
+        document.getElementById('totalItems').textContent = filteredRows.length;
+        let pageHtml = '';
+        for (let i = 1; i <= totalPages; i++) {
+            pageHtml += '<button style="background:' + (i===currentPage ? 'var(--blue)' : 'var(--surface)') + ';border:1px solid var(--border);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:0.85rem;color:' + (i===currentPage ? 'white' : 'var(--muted)') + ';cursor:pointer;" onclick="goToPage(' + i + ')">' + i + '</button>';
+        }
+        document.getElementById('pageNumbers').innerHTML = pageHtml;
+        document.getElementById('btnPrevPage').disabled = currentPage === 1;
+        document.getElementById('btnNextPage').disabled = currentPage === totalPages;
+    }
+
+    function goToPage(page) { currentPage = page; updatePagination(); }
+    function prevPage() { if (currentPage > 1) { currentPage--; updatePagination(); } }
+    function nextPage() { const tp = Math.ceil(filteredRows.length / itemsPerPage); if (currentPage < tp) { currentPage++; updatePagination(); } }
+
     document.addEventListener('DOMContentLoaded', function() {
         const badges = document.querySelectorAll('.badge-count');
         let total = 0, top = { name: '—', count: 0 };
@@ -269,6 +352,9 @@
         document.getElementById('totalEmpCount').textContent = total || '—';
         document.getElementById('topType').textContent = top.name;
         document.getElementById('topTypeCount').textContent = top.count > 0 ? top.count + ' nhân viên' : '';
+        
+        filteredRows = Array.from(document.querySelectorAll('#mainTable tbody tr'));
+        updatePagination();
     });
 </script>
 
