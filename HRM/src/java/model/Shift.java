@@ -71,4 +71,29 @@ public class Shift {
 
     public int getStatus() { return status; }
     public void setStatus(int status) { this.status = status; }
+
+    /**
+     * Kiểm tra dữ liệu ca làm việc hợp lệ.
+     * Thuần Java, không cần Database.
+     */
+    public static String validate(Shift s) {
+        if (s == null) return "Shift không được null";
+        if (s.getShiftName() == null || s.getShiftName().trim().isEmpty())
+            return "Tên ca làm việc không được để trống";
+        if (s.getStartTime() == null)
+            return "Giờ bắt đầu không được để trống";
+        if (s.getEndTime() == null)
+            return "Giờ kết thúc không được để trống";
+        if (!s.isNightShift() && !s.getStartTime().isBefore(s.getEndTime()))
+            return "Giờ bắt đầu phải trước giờ kết thúc (ca không phải ca đêm)";
+        if (s.getCoefficient() <= 0)
+            return "Hệ số lương phải lớn hơn 0";
+        if (s.getBreakStart() != null && s.getBreakEnd() != null) {
+            if (!s.getBreakStart().isBefore(s.getBreakEnd()))
+                return "Giờ bắt đầu nghỉ phải trước giờ kết thúc nghỉ";
+            if (s.getBreakStart().isBefore(s.getStartTime()) || s.getBreakEnd().isAfter(s.getEndTime()))
+                return "Giờ nghỉ phải nằm trong khoảng thời gian ca làm";
+        }
+        return null; // null = hợp lệ
+    }
 }

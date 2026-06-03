@@ -117,4 +117,27 @@ public class LeaveRequest {
     public void setUserName(String userName) {
         this.userName = userName;
     }
+
+    /**
+     * Kiểm tra dữ liệu đơn xin nghỉ phép hợp lệ.
+     * Thuần Java, không cần Database.
+     */
+    public static String validate(LeaveRequest r) {
+        if (r == null) return "LeaveRequest không được null";
+        if (r.getUserId() <= 0)
+            return "UserId phải lớn hơn 0";
+        if (r.getLeaveTypeId() <= 0)
+            return "Loại nghỉ phép phải hợp lệ (> 0)";
+        if (r.getStartDate() == null)
+            return "Ngày bắt đầu không được để trống";
+        if (r.getEndDate() == null)
+            return "Ngày kết thúc không được để trống";
+        if (r.getStartDate().after(r.getEndDate()))
+            return "Ngày bắt đầu không được sau ngày kết thúc";
+        if (r.getTotalDays() <= 0)
+            return "Số ngày nghỉ phải lớn hơn 0";
+        if (r.getReason() == null || r.getReason().trim().isEmpty())
+            return "Lý do không được để trống";
+        return null; // null = hợp lệ
+    }
 }

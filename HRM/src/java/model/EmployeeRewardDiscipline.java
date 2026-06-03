@@ -43,4 +43,25 @@ public class EmployeeRewardDiscipline {
     public void setRewardDisciplineName(String rewardDisciplineName) { this.rewardDisciplineName = rewardDisciplineName; }
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
+
+    /**
+     * Kiểm tra dữ liệu khen thưởng/kỷ luật hợp lệ.
+     * Thuần Java, không cần Database.
+     */
+    public static String validate(EmployeeRewardDiscipline r) {
+        if (r == null) return "Record không được null";
+        if (r.getUserId() <= 0)
+            return "UserId phải lớn hơn 0";
+        if (r.getRewardDisciplineId() <= 0)
+            return "Loại khen thưởng/kỷ luật phải hợp lệ (> 0)";
+        if (r.getAmount() == null)
+            return "Số tiền không được null";
+        if (r.getAmount().compareTo(java.math.BigDecimal.ZERO) < 0)
+            return "Số tiền không được âm";
+        if (r.getNote() == null || r.getNote().trim().isEmpty())
+            return "Ghi chú không được để trống";
+        if (r.getAppliedDate() == null)
+            return "Ngày áp dụng không được để trống";
+        return null; // null = hợp lệ
+    }
 }

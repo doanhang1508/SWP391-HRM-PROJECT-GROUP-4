@@ -118,4 +118,25 @@ public class Attendance {
     public void setOtReason(String otReason) {
         this.otReason = otReason;
     }
+
+    /**
+     * Kiểm tra dữ liệu yêu cầu OT hợp lệ.
+     * Thuần Java, không cần Database.
+     */
+    public static String validateOTRequest(Attendance a) {
+        if (a == null) return "Attendance không được null";
+        if (a.getUserId() <= 0)
+            return "UserId phải lớn hơn 0";
+        if (a.getShiftId() <= 0)
+            return "ShiftId phải lớn hơn 0";
+        if (a.getWorkDate() == null)
+            return "Ngày làm việc không được để trống";
+        if (a.getOvertimeHrs() <= 0)
+            return "Số giờ OT phải lớn hơn 0";
+        if (a.getOvertimeHrs() > 24)
+            return "Số giờ OT không được vượt quá 24 giờ";
+        if (a.getOtReason() == null || a.getOtReason().trim().isEmpty())
+            return "Lý do OT không được để trống";
+        return null; // null = hợp lệ
+    }
 }

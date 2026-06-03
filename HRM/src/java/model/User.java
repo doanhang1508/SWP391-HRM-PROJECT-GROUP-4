@@ -85,5 +85,29 @@ public class User {
     public String getPasswordHash() {
         return this.password;
     }
-    
+
+    /**
+     * Kiểm tra dữ liệu hợp lệ trước khi lưu vào DB.
+     * Hàm này là thuần Java, không cần kết nối Database.
+     */
+    public static String validate(User u) {
+        if (u == null) return "User không được null";
+        if (u.getUsername() == null || u.getUsername().trim().isEmpty())
+            return "Username không được để trống";
+        if (u.getUsername().length() > 50)
+            return "Username không được vượt quá 50 ký tự";
+        if (u.getPassword() == null || u.getPassword().trim().isEmpty())
+            return "Password không được để trống";
+        if (u.getEmail() == null || u.getEmail().trim().isEmpty())
+            return "Email không được để trống";
+        if (!u.getEmail().contains("@"))
+            return "Email không đúng định dạng";
+        if (u.getRoleId() <= 0)
+            return "RoleId phải lớn hơn 0";
+        if (u.getStatus() != 0 && u.getStatus() != 1)
+            return "Status chỉ được là 0 hoặc 1";
+        if (u.getPhone() != null && u.getPhone().length() > 15)
+            return "Số điện thoại không được vượt quá 15 ký tự";
+        return null; // null = hợp lệ
+    }
 }
