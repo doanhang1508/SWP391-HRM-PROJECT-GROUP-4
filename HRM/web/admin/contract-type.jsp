@@ -222,10 +222,13 @@
                                             </c:choose>
                                         </td>
                                         <td style="text-align:center;">
-                                            <a href="${pageContext.request.contextPath}/admin/users?contractTypeId=${ct.contractTypeId}" class="badge-count" data-emp-count="${empCountMap[ct.contractTypeId]}" data-id="${ct.contractTypeId}" data-name="${ct.typeName}">
-                                                <i class="fas fa-user" style="font-size:.6rem;"></i>
-                                                <span class="emp-count">...</span>
-                                            </a>
+                                            <span class="badge-count" 
+      data-emp-count="${empCountMap[ct.contractTypeId]}" 
+      data-id="${ct.contractTypeId}" 
+      data-name="${ct.typeName}">
+    <i class="fas fa-user" style="font-size:.6rem;"></i>
+    <span class="emp-count">...</span>
+</span>
                                         </td>
                                         <td style="text-align:center;">
                                             <c:choose>
