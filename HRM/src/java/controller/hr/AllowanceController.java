@@ -15,7 +15,8 @@ import model.User;
 @WebServlet(name = "AllowanceController", urlPatterns = {"/hr/allowance"})
 public class AllowanceController extends HttpServlet {
 
-    private static final String LIST_JSP = "/hr/allowance.jsp";
+    private static final String LIST_JSP   = "/hr/allowance.jsp";
+    private static final String DETAIL_JSP = "/hr/allowance-detail.jsp";
     private static final String LIST_URL = "/hr/allowance";
 
     private final AllowanceDAO dao = new AllowanceDAO();
@@ -35,6 +36,19 @@ public class AllowanceController extends HttpServlet {
         return true;
     }
 
+    /** Đọc tham số tìm kiếm và load danh sách phụ cấp tương ứng */
+    private void loadList(HttpServletRequest request) {
+        String keyword      = request.getParameter("keyword");
+        String statusFilter = request.getParameter("statusFilter");
+
+        // Mặc định hiển thị tất cả nếu chưa có filter
+        if (statusFilter == null || statusFilter.isBlank()) statusFilter = "all";
+
+        request.setAttribute("allowanceList", dao.search(keyword, statusFilter));
+        request.setAttribute("keyword",      keyword      != null ? keyword      : "");
+        request.setAttribute("statusFilter", statusFilter);
+    }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -43,25 +57,27 @@ public class AllowanceController extends HttpServlet {
         String action = request.getParameter("action");
         String idStr  = request.getParameter("id");
 
-        // FIX: Xử lý action=detail
+        // Xem chi tiết
         if ("detail".equals(action) && idStr != null) {
             try {
                 int id = Integer.parseInt(idStr);
                 Allowance a = dao.getById(id);
                 if (a != null) {
-                    request.setAttribute("detailAllowance", a);
+                    request.setAttribute("allowance", a);
+                    request.getRequestDispatcher(DETAIL_JSP).forward(request, response);
+                    return;
                 } else {
                     request.getSession().setAttribute("errorMsg", "Không tìm thấy phụ cấp.");
                 }
             } catch (NumberFormatException e) {
                 request.getSession().setAttribute("errorMsg", "ID không hợp lệ.");
             }
-            request.setAttribute("allowanceList", dao.getAll());
+            loadList(request);
             request.getRequestDispatcher(LIST_JSP).forward(request, response);
             return;
         }
 
-        // FIX: Gộp delete và deactivate thành 1 (tránh trùng lặp)
+        // Vô hiệu hóa
         if (("delete".equals(action) || "deactivate".equals(action)) && idStr != null) {
             dao.deactivate(Integer.parseInt(idStr));
             request.getSession().setAttribute("successMsg", "Đã vô hiệu hóa loại phụ cấp thành công.");
@@ -69,6 +85,7 @@ public class AllowanceController extends HttpServlet {
             return;
         }
 
+        // Kích hoạt lại
         if ("activate".equals(action) && idStr != null) {
             dao.activate(Integer.parseInt(idStr));
             request.getSession().setAttribute("successMsg", "Kích hoạt lại loại phụ cấp thành công.");
@@ -76,7 +93,8 @@ public class AllowanceController extends HttpServlet {
             return;
         }
 
-        request.setAttribute("allowanceList", dao.getAll());
+        // Hiển thị danh sách (có thể kèm tìm kiếm qua GET param ?keyword=...&statusFilter=...)
+        loadList(request);
         request.getRequestDispatcher(LIST_JSP).forward(request, response);
     }
 
@@ -111,7 +129,6 @@ public class AllowanceController extends HttpServlet {
             }
 
             if ("add".equals(action)) {
-                // FIX: Kiểm tra trùng tên trước khi thêm
                 if (dao.isDuplicate(allowanceName.trim(), 0)) {
                     request.getSession().setAttribute("errorMsg",
                         "Tên phụ cấp \"" + allowanceName + "\" đã tồn tại.");
@@ -121,7 +138,6 @@ public class AllowanceController extends HttpServlet {
                 }
             } else if ("edit".equals(action) && idStr != null) {
                 int id = Integer.parseInt(idStr);
-                // FIX: Kiểm tra trùng tên khi edit (bỏ qua chính nó)
                 if (dao.isDuplicate(allowanceName.trim(), id)) {
                     request.getSession().setAttribute("errorMsg",
                         "Tên phụ cấp \"" + allowanceName + "\" đã tồn tại.");
