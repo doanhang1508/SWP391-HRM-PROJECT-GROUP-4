@@ -7,6 +7,7 @@ import java.sql.*;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * ShiftDAOImpl — JDBC implementation of {@link ShiftDAO} for v2 schema.
@@ -54,7 +55,7 @@ public class ShiftDAOImpl implements ShiftDAO {
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
-            System.err.println("Lỗi getAllShifts: " + e.getMessage());
+            Logger.getAnonymousLogger("Lỗi getAllShifts: " + e.getMessage());
         }
         return list;
     }
@@ -68,7 +69,7 @@ public class ShiftDAOImpl implements ShiftDAO {
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
-            System.err.println("Lỗi getActiveShifts: " + e.getMessage());
+            Logger.getAnonymousLogger("Lỗi getActiveShifts: " + e.getMessage());
         }
         return list;
     }

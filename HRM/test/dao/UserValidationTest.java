@@ -10,13 +10,13 @@ import static org.junit.Assert.*;
  * Chỉ cần file User.java và thư viện JUnit 4.
  */
 public class UserValidationTest {
-
+    private static final String NAME = "testuser";
     // ==========================================
     // CONDITION 1: Dữ liệu hợp lệ -> kỳ vọng validate() trả về null
     // ==========================================
 
     @Test
-    public void TC01_ValidUser_ShouldReturnNull() {
+    public void tC01ValidUserShouldReturnNull() {
         User u = new User();
         u.setUsername("nguyenvana");
         u.setPassword("123456");
@@ -29,7 +29,7 @@ public class UserValidationTest {
     }
 
     @Test
-    public void TC02_ValidUser_StatusZero_ShouldReturnNull() {
+    public void tC02ValidUserStatusZeroShouldReturnNull() {
         User u = new User();
         u.setUsername("tranthib");
         u.setPassword("pass123");
@@ -45,9 +45,9 @@ public class UserValidationTest {
     // ==========================================
 
     @Test
-    public void TC03_NullUsername_ShouldReturnError() {
+    public void TC03NullUsernameShouldReturnError() {
         User u = new User();
-        u.setUsername(null);
+        u.setUsername(NAME);
         u.setPassword("123456");
         u.setEmail("test@gmail.com");
         u.setRoleId(2);
@@ -56,9 +56,9 @@ public class UserValidationTest {
     }
 
     @Test
-    public void TC04_EmptyUsername_ShouldReturnError() {
+    public void TC04EmptyUsernameShouldReturnError() {
         User u = new User();
-        u.setUsername("   "); // Chỉ có dấu cách
+        u.setUsername(); // Chỉ có dấu cách
         u.setPassword("123456");
         u.setEmail("test@gmail.com");
         u.setRoleId(2);
@@ -67,9 +67,9 @@ public class UserValidationTest {
     }
 
     @Test
-    public void TC05_NullPassword_ShouldReturnError() {
+    public void TC05NullPasswordShouldReturnError() {
         User u = new User();
-        u.setUsername("testuser");
+        u.setUsername(NAME);
         u.setPassword(null);
         u.setEmail("test@gmail.com");
         u.setRoleId(2);
@@ -78,9 +78,9 @@ public class UserValidationTest {
     }
 
     @Test
-    public void TC06_NullEmail_ShouldReturnError() {
+    public void TC06NullEmailShouldReturnError() {
         User u = new User();
-        u.setUsername("testuser");
+        u.setUsername(NAME);
         u.setPassword("123456");
         u.setEmail(null);
         u.setRoleId(2);
@@ -89,9 +89,9 @@ public class UserValidationTest {
     }
 
     @Test
-    public void TC07_InvalidEmailFormat_ShouldReturnError() {
+    public void TC07InvalidEmailFormatShouldReturnError() {
         User u = new User();
-        u.setUsername("testuser");
+        u.setUsername(NAME);
         u.setPassword("123456");
         u.setEmail("emailkhongcoat"); // Không có ký tự @
         u.setRoleId(2);
@@ -104,9 +104,9 @@ public class UserValidationTest {
     // ==========================================
 
     @Test
-    public void TC08_InvalidRoleId_ShouldReturnError() {
+    public void TC08InvalidRoleIdShouldReturnError() {
         User u = new User();
-        u.setUsername("testuser");
+        u.setUsername(NAME);
         u.setPassword("123456");
         u.setEmail("test@gmail.com");
         u.setRoleId(-1); // RoleId âm = sai
@@ -115,9 +115,9 @@ public class UserValidationTest {
     }
 
     @Test
-    public void TC09_InvalidStatus_ShouldReturnError() {
+    public void TC09InvalidStatusShouldReturnError() {
         User u = new User();
-        u.setUsername("testuser");
+        u.setUsername(NAME);
         u.setPassword("123456");
         u.setEmail("test@gmail.com");
         u.setRoleId(2);
@@ -126,9 +126,9 @@ public class UserValidationTest {
     }
 
     @Test
-    public void TC10_PhoneTooLong_ShouldReturnError() {
+    public void TC10PhoneTooLongShouldReturnError() {
         User u = new User();
-        u.setUsername("testuser");
+        u.setUsername(NAME);
         u.setPassword("123456");
         u.setEmail("test@gmail.com");
         u.setRoleId(2);
