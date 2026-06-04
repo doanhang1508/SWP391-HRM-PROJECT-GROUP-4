@@ -28,10 +28,9 @@ import java.util.Map;
 /**
  * ShiftController — Handles Shift CRUD + Schedule Assignment operations.
  *
- * Routes:
- *   /admin/shifts                         → Shift definition list
- *   /admin/shifts?action=schedule         → Weekly schedule dashboard
- *   /admin/shifts?action=assign (POST)    → Assign shift to employee(s)
+ * Routes: /admin/shifts → Shift definition list /admin/shifts?action=schedule →
+ * Weekly schedule dashboard /admin/shifts?action=assign (POST) → Assign shift
+ * to employee(s)
  */
 @WebServlet(name = "ShiftController", urlPatterns = {"/admin/shifts"})
 public class ShiftController extends HttpServlet {
@@ -50,17 +49,25 @@ public class ShiftController extends HttpServlet {
     // ═══════════════════════════════════════════════════════════════
     // HTTP Handlers
     // ═══════════════════════════════════════════════════════════════
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         User user = getLoginUser(req);
-        if (user == null) { resp.sendRedirect(req.getContextPath() + "/login.jsp"); return; }
+        if (user == null) {
+            resp.sendRedirect(req.getContextPath() + "/login.jsp");
+            return;
+        }
 
         switch (getAction(req)) {
-            case "schedule":     showSchedule(req, resp);      break;
-            case "edit":         showEditForm(req, resp);       break;
-            default:             listShifts(req, resp);         break;
+            case "schedule":
+                showSchedule(req, resp);
+                break;
+            case "edit":
+                showEditForm(req, resp);
+                break;
+            default:
+                listShifts(req, resp);
+                break;
         }
     }
 
@@ -69,23 +76,39 @@ public class ShiftController extends HttpServlet {
             throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
         User user = getLoginUser(req);
-        if (user == null) { resp.sendRedirect(req.getContextPath() + "/login.jsp"); return; }
+        if (user == null) {
+            resp.sendRedirect(req.getContextPath() + "/login.jsp");
+            return;
+        }
 
         switch (getAction(req)) {
-            case "create":       createShift(req, resp);      break;
-            case "update":       updateShift(req, resp);      break;
-            case "assign":       assignShift(req, resp);      break;
-            case "delete":       deleteShift(req, resp);      break;
-            case "toggleStatus": toggleStatus(req, resp);     break;
-            case "deleteAssign": deleteAssignment(req, resp); break;
-            default:             resp.sendRedirect(req.getContextPath() + "/admin/shifts"); break;
+            case "create":
+                createShift(req, resp);
+                break;
+            case "update":
+                updateShift(req, resp);
+                break;
+            case "assign":
+                assignShift(req, resp);
+                break;
+            case "delete":
+                deleteShift(req, resp);
+                break;
+            case "toggleStatus":
+                toggleStatus(req, resp);
+                break;
+            case "deleteAssign":
+                deleteAssignment(req, resp);
+                break;
+            default:
+                resp.sendRedirect(req.getContextPath() + "/admin/shifts");
+                break;
         }
     }
 
     // ═══════════════════════════════════════════════════════════════
     // Shift CRUD Actions
     // ═══════════════════════════════════════════════════════════════
-
     private void listShifts(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         List<Shift> shifts = shiftService.getAllShifts();
@@ -106,22 +129,40 @@ public class ShiftController extends HttpServlet {
     private void showEditForm(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         Integer id = parseIntParam(req, "shiftId");
-        if (id == null) { redirect(resp, req, "error", "ID không hợp lệ"); return; }
+        if (id == null) {
+            redirect(resp, req, "error", "ID không hợp lệ");
+            return;
+        }
         Shift s = shiftService.getShiftById(id);
-        if (s == null) { redirect(resp, req, "error", "Không tìm thấy ca"); return; }
+        if (s == null) {
+            redirect(resp, req, "error", "Không tìm thấy ca");
+            return;
+        }
         req.setAttribute("editShift", s);
         listShifts(req, resp);
     }
 
     private void createShift(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String name = trimParam(req, "shiftName");
-        if (name == null || name.isEmpty()) { redirect(resp, req, "error", "Tên ca không được để trống"); return; }
-        if (name.length() > 50)            { redirect(resp, req, "error", "Tên ca không vượt quá 50 ký tự"); return; }
-        if (shiftService.isShiftNameExists(name, 0)) { redirect(resp, req, "error", "Tên ca đã tồn tại"); return; }
+        if (name == null || name.isEmpty()) {
+            redirect(resp, req, "error", "Tên ca không được để trống");
+            return;
+        }
+        if (name.length() > 50) {
+            redirect(resp, req, "error", "Tên ca không vượt quá 50 ký tự");
+            return;
+        }
+        if (shiftService.isShiftNameExists(name, 0)) {
+            redirect(resp, req, "error", "Tên ca đã tồn tại");
+            return;
+        }
 
         LocalTime start = parseTime(trimParam(req, "startTime"));
-        LocalTime end   = parseTime(trimParam(req, "endTime"));
-        if (start == null || end == null) { redirect(resp, req, "error", "Giờ bắt đầu và kết thúc là bắt buộc"); return; }
+        LocalTime end = parseTime(trimParam(req, "endTime"));
+        if (start == null || end == null) {
+            redirect(resp, req, "error", "Giờ bắt đầu và kết thúc là bắt buộc");
+            return;
+        }
 
         Shift s = new Shift();
         s.setShiftName(name);
@@ -140,17 +181,32 @@ public class ShiftController extends HttpServlet {
 
     private void updateShift(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Integer id = parseIntParam(req, "shiftId");
-        if (id == null) { redirect(resp, req, "error", "ID không hợp lệ"); return; }
+        if (id == null) {
+            redirect(resp, req, "error", "ID không hợp lệ");
+            return;
+        }
         Shift existing = shiftService.getShiftById(id);
-        if (existing == null) { redirect(resp, req, "error", "Không tìm thấy ca"); return; }
+        if (existing == null) {
+            redirect(resp, req, "error", "Không tìm thấy ca");
+            return;
+        }
 
         String name = trimParam(req, "shiftName");
-        if (name == null || name.isEmpty()) { redirect(resp, req, "error", "Tên ca không được để trống"); return; }
-        if (shiftService.isShiftNameExists(name, id)) { redirect(resp, req, "error", "Tên ca đã tồn tại"); return; }
+        if (name == null || name.isEmpty()) {
+            redirect(resp, req, "error", "Tên ca không được để trống");
+            return;
+        }
+        if (shiftService.isShiftNameExists(name, id)) {
+            redirect(resp, req, "error", "Tên ca đã tồn tại");
+            return;
+        }
 
         LocalTime start = parseTime(trimParam(req, "startTime"));
-        LocalTime end   = parseTime(trimParam(req, "endTime"));
-        if (start == null || end == null) { redirect(resp, req, "error", "Giờ bắt đầu và kết thúc là bắt buộc"); return; }
+        LocalTime end = parseTime(trimParam(req, "endTime"));
+        if (start == null || end == null) {
+            redirect(resp, req, "error", "Giờ bắt đầu và kết thúc là bắt buộc");
+            return;
+        }
 
         existing.setShiftName(name);
         existing.setStartTime(start);
@@ -167,7 +223,10 @@ public class ShiftController extends HttpServlet {
 
     private void deleteShift(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Integer id = parseIntParam(req, "shiftId");
-        if (id == null) { redirect(resp, req, "error", "ID không hợp lệ"); return; }
+        if (id == null) {
+            redirect(resp, req, "error", "ID không hợp lệ");
+            return;
+        }
         boolean ok = shiftService.deleteShift(id);
         redirect(resp, req, ok ? "message" : "error",
                 ok ? "Xóa ca thành công" : "Xóa thất bại");
@@ -175,7 +234,10 @@ public class ShiftController extends HttpServlet {
 
     private void toggleStatus(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Integer id = parseIntParam(req, "shiftId");
-        if (id == null) { redirect(resp, req, "error", "ID không hợp lệ"); return; }
+        if (id == null) {
+            redirect(resp, req, "error", "ID không hợp lệ");
+            return;
+        }
         boolean ok = shiftService.toggleShiftStatus(id);
         redirect(resp, req, ok ? "message" : "error",
                 ok ? "Cập nhật trạng thái thành công" : "Cập nhật trạng thái thất bại");
@@ -184,22 +246,23 @@ public class ShiftController extends HttpServlet {
     // ═══════════════════════════════════════════════════════════════
     // Schedule Assignment Actions
     // ═══════════════════════════════════════════════════════════════
-
     /**
-     * Show the weekly scheduling dashboard.
-     * Accepts optional ?week=2026-06-01 parameter (any date in the target week).
+     * Show the weekly scheduling dashboard. Accepts optional ?week=2026-06-01
+     * parameter (any date in the target week).
      */
     private void showSchedule(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
         // Determine the target week (Monday start)
         LocalDate targetDate = parseDate(req.getParameter("week"));
-        if (targetDate == null) targetDate = LocalDate.now();
+        if (targetDate == null) {
+            targetDate = LocalDate.now();
+        }
         LocalDate weekStart = targetDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
 
         // Build the schedule matrix
-        Map<Integer, Map<Integer, ShiftAssignment>> matrix =
-                assignmentService.buildWeeklyScheduleMatrix(weekStart);
+        Map<Integer, Map<Integer, ShiftAssignment>> matrix
+                = assignmentService.buildWeeklyScheduleMatrix(weekStart);
 
         // Load reference data
         List<Shift> activeShifts = shiftService.getActiveShifts();
@@ -221,14 +284,14 @@ public class ShiftController extends HttpServlet {
     }
 
     /**
-     * POST: Assign a shift to a user for a date range.
-     * Parameters: userId, shiftId, fromDate, toDate
+     * POST: Assign a shift to a user for a date range. Parameters: userId,
+     * shiftId, fromDate, toDate
      */
     private void assignShift(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        Integer userId  = parseIntParam(req, "userId");
+        Integer userId = parseIntParam(req, "userId");
         Integer shiftId = parseIntParam(req, "shiftId");
-        LocalDate from  = parseDate(req.getParameter("fromDate"));
-        LocalDate to    = parseDate(req.getParameter("toDate"));
+        LocalDate from = parseDate(req.getParameter("fromDate"));
+        LocalDate to = parseDate(req.getParameter("toDate"));
 
         if (userId == null || shiftId == null || from == null || to == null) {
             redirectSchedule(resp, req, "error", "Vui lòng điền đầy đủ thông tin");
@@ -246,7 +309,10 @@ public class ShiftController extends HttpServlet {
 
     private void deleteAssignment(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Integer id = parseIntParam(req, "assignmentId");
-        if (id == null) { redirectSchedule(resp, req, "error", "ID không hợp lệ"); return; }
+        if (id == null) {
+            redirectSchedule(resp, req, "error", "ID không hợp lệ");
+            return;
+        }
         boolean ok = assignmentService.deleteAssignment(id);
         redirectSchedule(resp, req, ok ? "message" : "error",
                 ok ? "Xóa lịch thành công" : "Xóa lịch thất bại");
@@ -255,7 +321,6 @@ public class ShiftController extends HttpServlet {
     // ═══════════════════════════════════════════════════════════════
     // Helpers
     // ═══════════════════════════════════════════════════════════════
-
     private User getLoginUser(HttpServletRequest req) {
         HttpSession s = req.getSession(false);
         return s != null ? (User) s.getAttribute("currentUser") : null;
@@ -273,37 +338,57 @@ public class ShiftController extends HttpServlet {
 
     private Integer parseIntParam(HttpServletRequest req, String name) {
         String raw = req.getParameter(name);
-        if (raw == null || raw.trim().isEmpty()) return null;
-        try { return Integer.parseInt(raw.trim()); }
-        catch (NumberFormatException e) { return null; }
+        if (raw == null || raw.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(raw.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private float parseFloatParam(HttpServletRequest req, String name, float defaultVal) {
         String raw = req.getParameter(name);
-        if (raw == null || raw.trim().isEmpty()) return defaultVal;
-        try { return Float.parseFloat(raw.trim()); }
-        catch (NumberFormatException e) { return defaultVal; }
+        if (raw == null || raw.trim().isEmpty()) {
+            return defaultVal;
+        }
+        try {
+            return Float.parseFloat(raw.trim());
+        } catch (NumberFormatException e) {
+            return defaultVal;
+        }
     }
 
     private LocalTime parseTime(String s) {
-        if (s == null || s.trim().isEmpty()) return null;
-        try { return LocalTime.parse(s.trim()); }
-        catch (DateTimeParseException e) { return null; }
+        if (s == null || s.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return LocalTime.parse(s.trim());
+        } catch (DateTimeParseException e) {
+            return null;
+        }
     }
 
     private LocalDate parseDate(String s) {
-        if (s == null || s.trim().isEmpty()) return null;
-        try { return LocalDate.parse(s.trim()); }
-        catch (DateTimeParseException e) { return null; }
+        if (s == null || s.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(s.trim());
+        } catch (DateTimeParseException e) {
+            return null;
+        }
     }
 
     private void redirect(HttpServletResponse resp, HttpServletRequest req,
-                           String key, String msg) throws IOException {
+            String key, String msg) throws IOException {
         resp.sendRedirect(req.getContextPath() + "/admin/shifts?" + key + "=" + encode(msg));
     }
 
     private void redirectSchedule(HttpServletResponse resp, HttpServletRequest req,
-                                   String key, String msg) throws IOException {
+            String key, String msg) throws IOException {
         resp.sendRedirect(req.getContextPath() + "/admin/shifts?action=schedule&" + key + "=" + encode(msg));
     }
 
