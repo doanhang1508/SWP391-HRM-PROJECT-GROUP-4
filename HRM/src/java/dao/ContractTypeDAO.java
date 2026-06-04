@@ -96,11 +96,17 @@ public class ContractTypeDAO {
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
+                int dur = rs.getInt("duration");
+                Integer durationVal = rs.wasNull() ? null : dur;
                 list.add(new ContractType(
                     rs.getInt("contract_type_id"),
                     rs.getString("type_name"),
                     rs.getString("description"),
-                    rs.getBoolean("status")
+                    durationVal,
+                    rs.getString("duration_unit"),
+                    rs.getBoolean("status"),
+                    rs.getTimestamp("created_at"),
+                    rs.getTimestamp("updated_at")
                 ));
             }
         } catch (Exception e) {
