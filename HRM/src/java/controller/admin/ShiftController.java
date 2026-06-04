@@ -53,8 +53,16 @@ public class ShiftController extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
         User user = getLoginUser(req);
+<<<<<<< Updated upstream
         if (user == null) {
             resp.sendRedirect(req.getContextPath() + "/login.jsp");
+=======
+        if (user == null) { resp.sendRedirect(req.getContextPath() + "/login"); return; }
+
+        // Chỉ HR Manager (role 2) mới được quản lý ca làm việc
+        if (user.getRoleId() != 2) {
+            resp.sendRedirect(req.getContextPath() + "/dashboard");
+>>>>>>> Stashed changes
             return;
         }
 
@@ -76,8 +84,16 @@ public class ShiftController extends HttpServlet {
             throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
         User user = getLoginUser(req);
+<<<<<<< Updated upstream
         if (user == null) {
             resp.sendRedirect(req.getContextPath() + "/login.jsp");
+=======
+        if (user == null) { resp.sendRedirect(req.getContextPath() + "/login"); return; }
+
+        // Chỉ HR Manager (role 2) mới được phép POST
+        if (user.getRoleId() != 2) {
+            resp.sendRedirect(req.getContextPath() + "/dashboard");
+>>>>>>> Stashed changes
             return;
         }
 
@@ -123,7 +139,7 @@ public class ShiftController extends HttpServlet {
         req.setAttribute("shifts", shifts);
         req.setAttribute("workingHours", hours);
         req.setAttribute("nightShifts", nightFlags);
-        req.getRequestDispatcher("/admin/shift-list.jsp").forward(req, resp);
+        req.getRequestDispatcher("/hr/shift-list.jsp").forward(req, resp);
     }
 
     private void showEditForm(HttpServletRequest req, HttpServletResponse resp)
@@ -280,7 +296,7 @@ public class ShiftController extends HttpServlet {
         req.setAttribute("activeShifts", activeShifts);
         req.setAttribute("allUsers", allUsers);
 
-        req.getRequestDispatcher("/admin/shift-schedule.jsp").forward(req, resp);
+        req.getRequestDispatcher("/hr/shift-schedule.jsp").forward(req, resp);
     }
 
     /**

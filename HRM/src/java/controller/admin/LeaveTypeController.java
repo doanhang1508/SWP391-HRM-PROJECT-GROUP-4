@@ -21,7 +21,7 @@ public class LeaveTypeController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        if (!isAdmin(request, response)) {
+        if (!isAuthorized(request, response)) {
             return;
         }
 
@@ -32,13 +32,13 @@ public class LeaveTypeController extends HttpServlet {
             e.printStackTrace();
             request.setAttribute("error", "Lỗi tải danh mục nghỉ phép: " + e.getMessage());
         }
-        request.getRequestDispatcher("/admin/leave-type.jsp").forward(request, response);
+        request.getRequestDispatcher("/hr/leave-type.jsp").forward(request, response);
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
-        if (!isAdmin(request, response)) {
+        if (!isAuthorized(request, response)) {
             return;
         }
 
@@ -76,15 +76,18 @@ public class LeaveTypeController extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/admin/leave-types");
     }
 
-    private boolean isAdmin(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    /**
+     * Kiểm tra quyền truy cập: chỉ HR Manager (role 2)
+     */
+    private boolean isAuthorized(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("currentUser") == null) {
             response.sendRedirect(request.getContextPath() + "/login");
             return false;
         }
         User user = (User) session.getAttribute("currentUser");
-        if (user.getRoleId() != 1) {
-            response.sendRedirect(request.getContextPath() + "/home");
+        if (user.getRoleId() != 2) {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
             return false;
         }
         return true;

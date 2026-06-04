@@ -16,16 +16,18 @@ import java.io.IOException;
  * AuthFilter — Bộ lọc xác thực và phân quyền URL.
  *
  * Mapping URL được đăng ký trong web.xml:
- *   /dashboard         → role 1-6 (management)
- *   /admin/*           → role 1 (Admin only)
- *   /hr/*              → role 2, 5 (HR Manager, HR Staff)
- *   /employee/*        → role 7 (Employee) hoặc đã đăng nhập
- *   /editRolePermission → role 1 (Admin only)
- *   /role/*            → role 1 (Admin only)
+ *   /dashboard              → role 1-6 (management)
+ *   /admin/users            → role 1 (Admin only) — quản lý tài khoản
+ *   /admin/automation       → role 1 (Admin only) — tác vụ tự động
+ *   /admin/* (còn lại)      → role 1, 2 (Admin + HR Manager)
+ *   /hr/*                   → role 2, 5 (HR Manager, HR Staff)
+ *   /employee/*             → mọi role đã đăng nhập
+ *   /editRolePermission     → role 1 (Admin only)
+ *   /role/*                 → role 1 (Admin only)
  *
  * Role IDs:
  *   1 = Admin
- *   2 = HR Manager
+ *   2 = HR Manager (Trưởng phòng nhân sự)
  *   3 = Factory Manager
  *   4 = Director
  *   5 = HR Staff
@@ -74,11 +76,28 @@ public class AuthFilter implements Filter {
         // Lấy phần path sau context (không có context prefix)
         String path = uri.substring(ctx.length()); // ví dụ: /admin/users
 
-        // ── 2. /admin/* → chỉ Admin (role 1) ──────────────────────────────
+        // ── 2. /admin/* → phân quyền chi tiết ─────────────────────────────
         if (path.startsWith("/admin/")) {
-            if (roleId != ROLE_ADMIN) {
-                redirectToAppropriate(req, resp, roleId);
-                return;
+            // Các path CHỈ Admin (role 1) mới được vào:
+            // - /admin/users    : quản lý tài khoản hệ thống
+            // - /admin/automation : tác vụ tự động hệ thống
+            boolean isAdminOnlyPath = path.startsWith("/admin/users")
+                    || path.startsWith("/admin/automation");
+
+            if (isAdminOnlyPath) {
+                if (roleId != ROLE_ADMIN) {
+                    redirectToAppropriate(req, resp, roleId);
+                    return;
+                }
+            } else {
+                // Các path HR Manager (role 2) cũng được vào:
+                // /admin/department, /admin/position, /admin/contract-type,
+                // /admin/shifts, /admin/leave-types, /admin/reward-disciplines,
+                // /admin/pending-request, v.v.
+                if (roleId != ROLE_ADMIN && roleId != ROLE_HR_MANAGER) {
+                    redirectToAppropriate(req, resp, roleId);
+                    return;
+                }
             }
         }
 

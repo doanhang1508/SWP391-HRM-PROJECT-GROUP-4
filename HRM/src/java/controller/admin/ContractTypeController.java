@@ -23,8 +23,9 @@ public class ContractTypeController extends HttpServlet {
             return;
         }
         User user = (User) session.getAttribute("currentUser");
-        if (user.getRoleId() != 1) {
-            response.sendRedirect(request.getContextPath() + "/home");
+        // Chỉ HR Manager (role 2) mới được quản lý loại hợp đồng
+        if (user.getRoleId() != 2) {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }
 
@@ -35,7 +36,7 @@ public class ContractTypeController extends HttpServlet {
         }
         request.setAttribute("contractTypeList", contractTypeList);
         request.setAttribute("empCountMap", empCountMap);
-        request.getRequestDispatcher("/admin/contract-type.jsp").forward(request, response);
+        request.getRequestDispatcher("/hr/contract-type.jsp").forward(request, response);
     }
 
     @Override

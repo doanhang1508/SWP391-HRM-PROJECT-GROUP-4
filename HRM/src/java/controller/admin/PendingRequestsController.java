@@ -19,11 +19,12 @@ public class PendingRequestsController extends HttpServlet {
             return;
         }
         User user = (User) session.getAttribute("currentUser");
-        if (user.getRoleId() != 1) {
-            response.sendRedirect(request.getContextPath() + "/home");
+        // Chỉ HR Manager (role 2) mới được quản lý đơn chờ xử lý
+        if (user.getRoleId() != 2) {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }
-        request.getRequestDispatcher("/admin/pending-requests.jsp").forward(request, response);
+        request.getRequestDispatcher("/hr/pending-requests.jsp").forward(request, response);
     }
 
     @Override

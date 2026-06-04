@@ -23,8 +23,9 @@ public class DepartmentController extends HttpServlet {
             return;
         }
         User user = (User) session.getAttribute("currentUser");
-        if (user.getRoleId() != 1) {
-            response.sendRedirect(request.getContextPath() + "/home");
+        // Chỉ HR Manager (role 2) mới được quản lý phòng ban
+        if (user.getRoleId() != 2) {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }
 
@@ -35,7 +36,7 @@ public class DepartmentController extends HttpServlet {
         }
         request.setAttribute("departmentList", departmentList);
         request.setAttribute("empCountMap", empCountMap);
-        request.getRequestDispatcher("/admin/department.jsp").forward(request, response);
+        request.getRequestDispatcher("/hr/department.jsp").forward(request, response);
     }
 
     @Override

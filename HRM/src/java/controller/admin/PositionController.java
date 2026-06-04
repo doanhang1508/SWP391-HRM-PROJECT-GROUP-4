@@ -23,8 +23,9 @@ public class PositionController extends HttpServlet {
             return;
         }
         User user = (User) session.getAttribute("currentUser");
-        if (user.getRoleId() != 1) {
-            response.sendRedirect(request.getContextPath() + "/home");
+        // Chỉ HR Manager (role 2) mới được quản lý chức vụ
+        if (user.getRoleId() != 2) {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }
 
@@ -35,7 +36,7 @@ public class PositionController extends HttpServlet {
         }
         request.setAttribute("positionList", positionList);
         request.setAttribute("empCountMap", empCountMap);
-        request.getRequestDispatcher("/admin/position.jsp").forward(request, response);
+        request.getRequestDispatcher("/hr/position.jsp").forward(request, response);
     }
 
     @Override
