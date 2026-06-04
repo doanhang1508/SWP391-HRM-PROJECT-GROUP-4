@@ -66,19 +66,7 @@
         position: relative;
         z-index: 1;
     }
-    .profile-avatar-wrap {
-        position: relative;
-        flex-shrink: 0;
-    }
-    .profile-avatar-wrap img {
-        width: 100px;
-        height: 100px;
-        border-radius: 16px;
-        object-fit: cover;
-        border: 3px solid rgba(255,255,255,0.3);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-    }
-    .profile-avatar-wrap .avatar-placeholder {
+    .profile-avatar-placeholder {
         width: 100px;
         height: 100px;
         border-radius: 16px;
@@ -91,25 +79,8 @@
         color: #fff;
         border: 3px solid rgba(255,255,255,0.3);
         box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        flex-shrink: 0;
     }
-    .avatar-upload-btn {
-        position: absolute;
-        bottom: -4px;
-        right: -4px;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: #4361ee;
-        color: white;
-        border: 2px solid white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        font-size: 0.75rem;
-        transition: transform 0.2s;
-    }
-    .avatar-upload-btn:hover { transform: scale(1.1); }
     .profile-hero-info h2 {
         margin: 0 0 4px;
         font-size: 1.5rem;
@@ -306,25 +277,6 @@
 </style>
 
 <script>
-    function previewImage(event) {
-        const reader = new FileReader();
-        const avatar = document.getElementById('profileAvatar');
-        const placeholder = document.getElementById('avatarPlaceholder');
-        
-        reader.onload = function() {
-            if (avatar) {
-                avatar.src = reader.result;
-                avatar.style.display = 'block';
-            }
-            if (placeholder) placeholder.style.display = 'none';
-            console.log("Ảnh mới đã sẵn sàng để upload!");
-        }
-        
-        if (event.target.files[0]) {
-            reader.readAsDataURL(event.target.files[0]);
-        }
-    }
-
     function toggleEdit() {
         const inputs = document.querySelectorAll('.edit-input[name]');
         const saveBtn = document.getElementById('saveBtn');
@@ -387,22 +339,8 @@
         <!-- Profile Hero -->
         <div class="profile-hero">
             <div class="profile-hero-inner">
-                <div class="profile-avatar-wrap">
-                    <c:choose>
-                        <c:when test="${not empty displayUser.avatarUrl}">
-                            <img src="${displayUser.avatarUrl}" id="profileAvatar" alt="Avatar">
-                        </c:when>
-                        <c:otherwise>
-                            <div class="avatar-placeholder" id="avatarPlaceholder">
-                                ${displayUser.fullName.substring(0,1)}
-                            </div>
-                            <img src="" id="profileAvatar" alt="Avatar" style="display:none; width:100px; height:100px; border-radius:16px; object-fit:cover; border:3px solid rgba(255,255,255,0.3); box-shadow: 0 8px 20px rgba(0,0,0,0.2);">
-                        </c:otherwise>
-                    </c:choose>
-                    <label for="avatarUpload" class="avatar-upload-btn">
-                        <i class="fas fa-camera"></i>
-                    </label>
-                    <input type="file" id="avatarUpload" class="d-none" accept="image/*" onchange="previewImage(event)">
+                <div class="profile-avatar-placeholder">
+                    ${displayUser.fullName.substring(0,1)}
                 </div>
                 <div class="profile-hero-info">
                     <span class="role-badge">
@@ -520,7 +458,7 @@
 
         <!-- Quick Navigation Links -->
         <div class="quick-links">
-            <a href="${pageContext.request.contextPath}/work-history" class="quick-link-card">
+            <a href="${pageContext.request.contextPath}/employee/work-history" class="quick-link-card">
                 <div class="ql-icon" style="background: #ebf8ff; color: #3182ce;">
                     <i class="fas fa-briefcase"></i>
                 </div>

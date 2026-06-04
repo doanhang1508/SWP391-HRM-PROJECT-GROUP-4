@@ -203,7 +203,7 @@
             <div>
                 <h1 class="page-title">Quyền Của Vai Trò</h1>
                 <p class="breadcrumb">
-                    <a href="${pageContext.request.contextPath}/admin/dashboard">Bảng điều khiển</a>
+                    <a href="${pageContext.request.contextPath}/dashboard">Bảng điều khiển</a>
                     &nbsp;>&nbsp;
                     <a href="role?action=list">Quản lý vai trò</a>
                     &nbsp;>&nbsp; Xem quyền

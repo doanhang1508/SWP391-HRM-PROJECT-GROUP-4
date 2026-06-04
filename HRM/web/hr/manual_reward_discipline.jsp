@@ -33,7 +33,7 @@
             <div class="alert alert-danger">${error}</div>
         </c:if>
 
-        <form action="manual-reward-discipline" method="post">
+        <form action="${pageContext.request.contextPath}/hr/manual-reward-discipline" method="post">
             <div class="mb-3">
                 <label for="userId" class="form-label">Employee ID</label>
                 <input type="number" class="form-control" id="userId" name="userId" required>

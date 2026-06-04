@@ -247,7 +247,7 @@
                         <div class="dash-breadcrumb">
                             <a href="${pageContext.request.contextPath}/home"><i class="fas fa-home"></i> Trang chủ</a>
                             <span>/</span>
-                            <a href="${pageContext.request.contextPath}/admin/dashboard">Bảng điều khiển</a>
+                            <a href="${pageContext.request.contextPath}/dashboard">Bảng điều khiển</a>
                             <span>/</span>
                             <span>Loại Nghỉ Phép</span>
                         </div>
@@ -269,7 +269,20 @@
                             </button>
                         </div>
 
-                        <table class="dash-table">
+                        <!-- SEARCH & FILTER BAR -->
+                        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px;">
+                            <div style="position:relative;flex:1;min-width:200px;">
+                                <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:.85rem;"></i>
+                                <input type="text" id="searchInput" placeholder="Tìm loại nghỉ phép..." oninput="filterTable()" style="width:100%;padding:9px 14px 9px 36px;border:1px solid #e2e8f0;border-radius:8px;font-size:.9rem;outline:none;font-family:'Inter',sans-serif;">
+                            </div>
+                            <select id="paidFilter" onchange="filterTable()" style="padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:.9rem;outline:none;cursor:pointer;min-width:170px;font-family:'Inter',sans-serif;">
+                                <option value="all">Tất cả</option>
+                                <option value="paid">Có hưởng lương</option>
+                                <option value="unpaid">Không hưởng lương</option>
+                            </select>
+                        </div>
+
+                        <table class="dash-table" id="leaveTable">
                             <thead>
                                 <tr>
                                     <th>ID</th>
@@ -317,6 +330,16 @@
                                 </c:forEach>
                             </tbody>
                         </table>
+
+                        <!-- PAGINATION -->
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:20px;border-top:1px solid #e2e8f0;">
+                            <div style="font-size:.85rem;color:#94a3b8;">Hiển thị <span id="pageStart" style="font-weight:600;color:#0f172a;">0</span> - <span id="pageEnd" style="font-weight:600;color:#0f172a;">0</span> trong tổng số <span id="totalItems" style="font-weight:600;color:#0f172a;">0</span> mục</div>
+                            <div style="display:flex;gap:8px;">
+                                <button id="btnPrevPage" onclick="prevPage()" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:#94a3b8;cursor:pointer;"><i class="fas fa-chevron-left"></i></button>
+                                <div id="pageNumbers" style="display:flex;gap:4px;"></div>
+                                <button id="btnNextPage" onclick="nextPage()" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:#94a3b8;cursor:pointer;"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
@@ -403,6 +426,60 @@
         </div>
 
         <script>
+            let currentPage = 1;
+            const itemsPerPage = 8;
+            let filteredRows = [];
+
+            function filterTable() {
+                const query = document.getElementById('searchInput').value.toLowerCase();
+                const paidVal = document.getElementById('paidFilter').value;
+                const allRows = Array.from(document.querySelectorAll('#leaveTable tbody tr'));
+                filteredRows = allRows.filter(function(row) {
+                    const matchText = row.textContent.toLowerCase().includes(query);
+                    const paidBadge = row.querySelector('.badge-paid, .badge-unpaid');
+                    let rowPaid = 'paid';
+                    if (paidBadge && paidBadge.classList.contains('badge-unpaid')) rowPaid = 'unpaid';
+                    const matchPaid = paidVal === 'all' || rowPaid === paidVal;
+                    return matchText && matchPaid;
+                });
+                currentPage = 1;
+                updatePagination();
+            }
+
+            function updatePagination() {
+                if(filteredRows.length === 0) {
+                    document.querySelectorAll('#leaveTable tbody tr').forEach(row => row.style.display = 'none');
+                    document.getElementById('pageStart').textContent = 0;
+                    document.getElementById('pageEnd').textContent = 0;
+                    document.getElementById('totalItems').textContent = 0;
+                    document.getElementById('pageNumbers').innerHTML = '';
+                    document.getElementById('btnPrevPage').disabled = true;
+                    document.getElementById('btnNextPage').disabled = true;
+                    return;
+                }
+                const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+                if (currentPage > totalPages) currentPage = totalPages;
+                if (currentPage < 1) currentPage = 1;
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const endIndex = Math.min(startIndex + itemsPerPage, filteredRows.length);
+                document.querySelectorAll('#leaveTable tbody tr').forEach(row => row.style.display = 'none');
+                for (let i = startIndex; i < endIndex; i++) { filteredRows[i].style.display = ''; }
+                document.getElementById('pageStart').textContent = startIndex + 1;
+                document.getElementById('pageEnd').textContent = endIndex;
+                document.getElementById('totalItems').textContent = filteredRows.length;
+                let pageHtml = '';
+                for (let i = 1; i <= totalPages; i++) {
+                    pageHtml += '<button style="background:' + (i===currentPage ? '#0d9488' : '#fff') + ';border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:' + (i===currentPage ? 'white' : '#94a3b8') + ';cursor:pointer;" onclick="goToPage(' + i + ')">' + i + '</button>';
+                }
+                document.getElementById('pageNumbers').innerHTML = pageHtml;
+                document.getElementById('btnPrevPage').disabled = currentPage === 1;
+                document.getElementById('btnNextPage').disabled = currentPage === totalPages;
+            }
+
+            function goToPage(page) { currentPage = page; updatePagination(); }
+            function prevPage() { if (currentPage > 1) { currentPage--; updatePagination(); } }
+            function nextPage() { const tp = Math.ceil(filteredRows.length / itemsPerPage); if (currentPage < tp) { currentPage++; updatePagination(); } }
+
             function openAddModal() {
                 document.getElementById('addModal').style.display = 'block';
             }
@@ -430,6 +507,11 @@
                         overlay.style.display = 'none';
                     }
                 });
+            });
+
+            document.addEventListener('DOMContentLoaded', function() {
+                filteredRows = Array.from(document.querySelectorAll('#leaveTable tbody tr'));
+                updatePagination();
             });
         </script>
 

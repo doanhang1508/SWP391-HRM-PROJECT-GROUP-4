@@ -28,10 +28,7 @@ public class PositionController extends HttpServlet {
             return;
         }
 
-        String action = request.getParameter("action");
-        String idStr  = request.getParameter("id");
-
-        java.util.List<Position> positionList = dao.getAll();
+        java.util.List<Position> positionList = dao.getAllIncludingInactive();
         java.util.Map<Integer, Integer> empCountMap = new java.util.HashMap<>();
         for (Position p : positionList) {
             empCountMap.put(p.getPositionId(), dao.countEmployees(p.getPositionId()));
@@ -58,6 +55,8 @@ public class PositionController extends HttpServlet {
 
         if ("delete".equals(action) && idStr != null) {
             dao.delete(Integer.parseInt(idStr));
+        } else if ("toggleStatus".equals(action) && idStr != null) {
+            dao.toggleStatus(Integer.parseInt(idStr));
         } else if ("add".equals(action)) {
             dao.insert(new Position(0, name, desc, true));
         } else if ("edit".equals(action) && idStr != null) {

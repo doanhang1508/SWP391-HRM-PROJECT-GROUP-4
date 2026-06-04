@@ -59,10 +59,22 @@ public class RoleController extends HttpServlet {
             action = "list";
         }
 
+        System.out.println("====== RoleController DEBUG ======");
+        System.out.println("Action: " + action);
+        System.out.println("Method: " + request.getMethod());
+        System.out.println("==================================");
+
         switch (action) {
             case "list":
                 viewRoleList(request, response, user);
                 break;
+
+            case "add":
+                if ("POST".equalsIgnoreCase(request.getMethod())) {
+                    addRole(request, response, user);
+                }
+                break;
+
 
             case "update":
                 if ("POST".equalsIgnoreCase(request.getMethod())) {
@@ -90,6 +102,39 @@ public class RoleController extends HttpServlet {
         }
 
         return (User) session.getAttribute("currentUser");
+    }
+
+    private void addRole(HttpServletRequest request, HttpServletResponse response, User user)
+            throws ServletException, IOException {
+
+        if (!permissionDAO.canUpdateRoleInformation(user.getUserId())) {
+            response.sendRedirect("role?action=list&error=" + java.net.URLEncoder.encode("Bạn không có quyền thêm vai trò.", "UTF-8"));
+            return;
+        }
+
+        String roleName = request.getParameter("roleName");
+        String description = request.getParameter("description");
+
+        if (roleName != null) roleName = roleName.trim();
+        if (description != null) description = description.trim();
+
+        if (roleName == null || roleName.isEmpty()) {
+            response.sendRedirect("role?action=list&error=" + java.net.URLEncoder.encode("Tên vai trò không được để trống.", "UTF-8"));
+            return;
+        }
+
+        if (roleDAO.isRoleNameExists(roleName)) {
+            response.sendRedirect("role?action=list&error=" + java.net.URLEncoder.encode("Tên vai trò này đã tồn tại.", "UTF-8"));
+            return;
+        }
+
+        boolean added = roleDAO.addRole(roleName, description);
+
+        if (added) {
+            response.sendRedirect("role?action=list&message=" + java.net.URLEncoder.encode("Thêm vai trò mới thành công.", "UTF-8"));
+        } else {
+            response.sendRedirect("role?action=list&error=" + java.net.URLEncoder.encode("Thêm thất bại. Vui lòng thử lại.", "UTF-8"));
+        }
     }
 
     private void viewRoleList(HttpServletRequest request, HttpServletResponse response, User user)

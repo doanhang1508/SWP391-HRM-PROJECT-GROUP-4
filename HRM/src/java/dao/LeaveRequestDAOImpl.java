@@ -59,11 +59,17 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
         String sql = "SELECT lr.*, lt.type_name, u.full_name FROM leave_requests lr " +
                      "JOIN leave_types lt ON lr.leave_type_id = lt.leave_type_id " +
                      "JOIN users u ON lr.user_id = u.user_id " +
-                     "WHERE u.department_id = ? AND lr.status = 'Pending' " +
-                     "ORDER BY lr.created_at DESC";
+                     "WHERE lr.status = 'Pending' ";
+        if (departmentId > 0) {
+            sql += "AND u.department_id = ? ";
+        }
+        sql += "ORDER BY lr.created_at DESC";
+        
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, departmentId);
+            if (departmentId > 0) {
+                ps.setInt(1, departmentId);
+            }
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     list.add(mapRow(rs));

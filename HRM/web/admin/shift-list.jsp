@@ -55,7 +55,7 @@
         <div class="page-header">
             <div>
                 <h1 class="page-title">Quản Lý Ca Làm Việc</h1>
-                <p class="breadcrumb-c"><a href="${pageContext.request.contextPath}/admin/dashboard">Bảng điều khiển</a> &gt; Ca làm việc</p>
+                <p class="breadcrumb-c"><a href="${pageContext.request.contextPath}/dashboard">Bảng điều khiển</a> &gt; Ca làm việc</p>
             </div>
             <div class="d-flex gap-2">
                 <a href="${pageContext.request.contextPath}/admin/shifts?action=schedule" class="btn-add" style="background:#0d9488"><i class="fas fa-calendar-alt"></i> Xếp Lịch</a>
@@ -70,6 +70,23 @@
             <div class="panel-header">
                 <h3 class="panel-title"><div class="panel-icon"><i class="fas fa-clock"></i></div> Danh Sách Ca Làm Việc</h3>
                 <span style="font-size:.85rem;color:var(--muted)"><i class="fas fa-info-circle me-1"></i>Tổng: <strong>${shifts.size()}</strong> ca</span>
+            </div>
+            <!-- SEARCH & FILTER BAR -->
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px;">
+                <div style="position:relative;flex:1;min-width:200px;">
+                    <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.85rem;"></i>
+                    <input type="text" id="searchInput" placeholder="Tìm ca làm việc..." oninput="filterTable()" style="width:100%;padding:9px 14px 9px 36px;border:1px solid #e2e8f0;border-radius:8px;font-size:.88rem;outline:none;font-family:'Inter',sans-serif;">
+                </div>
+                <select id="statusFilter" onchange="filterTable()" style="padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:.88rem;outline:none;cursor:pointer;min-width:160px;font-family:'Inter',sans-serif;">
+                    <option value="all">Tất cả trạng thái</option>
+                    <option value="active">Hoạt động</option>
+                    <option value="inactive">Vô hiệu</option>
+                </select>
+                <select id="typeFilter" onchange="filterTable()" style="padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:.88rem;outline:none;cursor:pointer;min-width:140px;font-family:'Inter',sans-serif;">
+                    <option value="all">Tất cả loại</option>
+                    <option value="day">Ca Ngày</option>
+                    <option value="night">Ca Đêm</option>
+                </select>
             </div>
             <c:choose>
                 <c:when test="${empty shifts}">
@@ -114,6 +131,16 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- PAGINATION -->
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:20px;border-top:1px solid #f1f5f9;">
+                        <div style="font-size:.85rem;color:var(--muted);">Hiển thị <span id="pageStart" style="font-weight:600;color:var(--txt);">0</span> - <span id="pageEnd" style="font-weight:600;color:var(--txt);">0</span> trong tổng số <span id="totalItems" style="font-weight:600;color:var(--txt);">0</span> ca</div>
+                        <div style="display:flex;gap:8px;">
+                            <button id="btnPrevPage" onclick="prevPage()" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--muted);cursor:pointer;"><i class="fas fa-chevron-left"></i></button>
+                            <div id="pageNumbers" style="display:flex;gap:4px;"></div>
+                            <button id="btnNextPage" onclick="nextPage()" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--muted);cursor:pointer;"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
                 </c:otherwise>
             </c:choose>
         </div>
@@ -137,7 +164,72 @@
 
 <script>
 const ctx='${pageContext.request.contextPath}';
+
+let currentPage = 1;
+const itemsPerPage = 8;
+let filteredRows = [];
+
+function filterTable() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const statusVal = document.getElementById('statusFilter').value;
+    const typeVal = document.getElementById('typeFilter').value;
+    const allRows = Array.from(document.querySelectorAll('.tbl tbody tr'));
+    filteredRows = allRows.filter(function(row) {
+        const matchText = row.textContent.toLowerCase().includes(query);
+        const statusBadge = row.querySelector('.badge-s');
+        let rowStatus = 'active';
+        if (statusBadge && statusBadge.classList.contains('b-inactive')) rowStatus = 'inactive';
+        const matchStatus = statusVal === 'all' || rowStatus === statusVal;
+        const typeBadge = row.querySelector('.b-night, .b-day');
+        let rowType = 'day';
+        if (typeBadge && typeBadge.classList.contains('b-night')) rowType = 'night';
+        const matchType = typeVal === 'all' || rowType === typeVal;
+        return matchText && matchStatus && matchType;
+    });
+    currentPage = 1;
+    updatePagination();
+}
+
+function updatePagination() {
+    if(filteredRows.length === 0) {
+        document.querySelectorAll('.tbl tbody tr').forEach(row => row.style.display = 'none');
+        document.getElementById('pageStart').textContent = 0;
+        document.getElementById('pageEnd').textContent = 0;
+        document.getElementById('totalItems').textContent = 0;
+        document.getElementById('pageNumbers').innerHTML = '';
+        document.getElementById('btnPrevPage').disabled = true;
+        document.getElementById('btnNextPage').disabled = true;
+        return;
+    }
+    const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, filteredRows.length);
+    document.querySelectorAll('.tbl tbody tr').forEach(row => row.style.display = 'none');
+    for (let i = startIndex; i < endIndex; i++) { filteredRows[i].style.display = ''; }
+    document.getElementById('pageStart').textContent = startIndex + 1;
+    document.getElementById('pageEnd').textContent = endIndex;
+    document.getElementById('totalItems').textContent = filteredRows.length;
+    let pageHtml = '';
+    for (let i = 1; i <= totalPages; i++) {
+        pageHtml += '<button style="background:' + (i===currentPage ? 'var(--pri)' : '#fff') + ';border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:' + (i===currentPage ? 'white' : 'var(--muted)') + ';cursor:pointer;" onclick="goToPage(' + i + ')">' + i + '</button>';
+    }
+    document.getElementById('pageNumbers').innerHTML = pageHtml;
+    document.getElementById('btnPrevPage').disabled = currentPage === 1;
+    document.getElementById('btnNextPage').disabled = currentPage === totalPages;
+}
+
+function goToPage(page) { currentPage = page; updatePagination(); }
+function prevPage() { if (currentPage > 1) { currentPage--; updatePagination(); } }
+function nextPage() { const tp = Math.ceil(filteredRows.length / itemsPerPage); if (currentPage < tp) { currentPage++; updatePagination(); } }
+
 function openCreateModal(){document.getElementById('modalTitle').textContent='Thêm Ca Mới';document.getElementById('shiftForm').action=ctx+'/admin/shifts?action=create';['fId','fName','fStart','fEnd','fBS','fBE'].forEach(id=>document.getElementById(id).value='');document.getElementById('fCoeff').value='1.0';document.getElementById('fNight').checked=false;document.getElementById('modalBtn').innerHTML='<i class="fas fa-plus me-1"></i>Thêm';}
 function openEditModal(id,n,st,en,bs,be,night,coeff){document.getElementById('modalTitle').textContent='Chỉnh Sửa Ca';document.getElementById('shiftForm').action=ctx+'/admin/shifts?action=update';document.getElementById('fId').value=id;document.getElementById('fName').value=n;document.getElementById('fStart').value=st;document.getElementById('fEnd').value=en;document.getElementById('fBS').value=(bs==='null'?'':bs);document.getElementById('fBE').value=(be==='null'?'':be);document.getElementById('fNight').checked=night;document.getElementById('fCoeff').value=coeff;document.getElementById('modalBtn').innerHTML='<i class="fas fa-save me-1"></i>Cập Nhật';new bootstrap.Modal(document.getElementById('shiftModal')).show();}
+
+document.addEventListener('DOMContentLoaded', function() {
+    filteredRows = Array.from(document.querySelectorAll('.tbl tbody tr'));
+    updatePagination();
+});
 </script>
 <jsp:include page="../footer.jsp"/>

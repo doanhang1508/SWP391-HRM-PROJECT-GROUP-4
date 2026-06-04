@@ -175,7 +175,6 @@ CREATE TABLE users (
     full_name     VARCHAR(100),
     email         VARCHAR(100) UNIQUE,
     phone         VARCHAR(20),
-    avatar_url    VARCHAR(255),
     status        TINYINT(1)   NOT NULL DEFAULT 1,
     role_id       INT,
     department_id INT,
@@ -258,6 +257,7 @@ CREATE TABLE attendance (
     check_out     TIME,
     status        VARCHAR(30) DEFAULT 'Present',
     overtime_hrs  DECIMAL(5,2) DEFAULT 0,
+    ot_reason     VARCHAR(255),
     created_at    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_att_user  FOREIGN KEY (user_id)  REFERENCES users(user_id)   ON DELETE CASCADE,
     CONSTRAINT fk_att_shift FOREIGN KEY (shift_id) REFERENCES shifts(shift_id) ON DELETE RESTRICT
@@ -276,7 +276,6 @@ CREATE TABLE leave_requests (
     created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_leave_user     FOREIGN KEY (user_id)       REFERENCES users(user_id)                 ON DELETE CASCADE,
     CONSTRAINT fk_leave_type     FOREIGN KEY (leave_type_id) REFERENCES leave_types(leave_type_id)     ON DELETE RESTRICT,
-    CONSTRAINT fk_leave_approver FOREIGN KEY (approved_by)   REFERENCES users(user_id)                 ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE payroll (
@@ -852,3 +851,25 @@ INSERT INTO work_history (user_id, position_title, company_name, location, start
      '2018-03-01', NULL,
      'Quản lý văn phòng phẩm, thiết bị, lễ tân và công tác hành chính nội bộ',
      1);
+     
+INSERT INTO employee_allowances (user_id, allowance_id, amount) VALUES
+
+-- Phụ cấp Ăn trưa (allowance_id = 1): 800,000đ - Áp dụng tất cả nhân viên chính thức
+(6,  1, 800000),
+(14, 1, 800000),
+(19, 1, 800000),
+
+-- Phụ cấp Đi lại (allowance_id = 2): 500,000đ - Nhân viên không ở ký túc xá
+(6,  2, 500000),
+(19, 2, 500000),
+
+-- Phụ cấp Trách nhiệm (allowance_id = 3): 1,000,000đ - Quản đốc, Tổ trưởng
+(4,  3, 1000000),
+(29, 3, 1000000),
+
+-- Phụ cấp Độc hại (allowance_id = 4): 300,000đ - Công nhân làm việc trực tiếp tại xưởng
+(29, 4, 300000),
+(30, 4, 300000),
+
+-- Phụ cấp Chuyên cần (allowance_id = 5): 500,000đ - Không nghỉ, không đi muộn
+(9,  5, 500000);

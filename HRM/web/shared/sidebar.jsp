@@ -14,7 +14,7 @@
                 overflow-y: auto;
                 flex-shrink: 0;
                 transition: transform 0.3s cubic-bezier(.22, 1, .36, 1);
-                z-index: 1040;
+                z-index: 990;
                 display: flex;
                 flex-direction: column;
             }
@@ -276,6 +276,7 @@
                     transform: translateX(-100%);
                     padding-top: 56px;
                     box-shadow: 6px 0 30px rgba(0, 0, 0, 0.4);
+                    z-index: 1040;
                 }
 
                 .admin-sidebar.sidebar-open {
@@ -454,7 +455,7 @@
                                                     </li>
                                                     <li class="sidebar-menu-category">Nghỉ phép &amp; OT</li>
                                                     <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/leave-ot-manager"
+                                                        <a href="${pageContext.request.contextPath}/manager/leave-ot"
                                                             class="sidebar-link ${param.activeMenu eq 'leave-ot' ? 'active' : ''}">
                                                             <i class="fas fa-calendar-check"></i> Duyệt nghỉ phép / OT
                                                         </a>
@@ -471,7 +472,7 @@
                                                             </a>
                                                         </li>
                                                         <li class="sidebar-item">
-                                                            <a href="${pageContext.request.contextPath}/leave-ot-manager"
+                                                            <a href="${pageContext.request.contextPath}/manager/leave-ot"
                                                                 class="sidebar-link ${param.activeMenu eq 'leave-ot' ? 'active' : ''}">
                                                                 <i class="fas fa-calendar-check"></i> Duyệt nghỉ phép /
                                                                 OT
@@ -516,7 +517,7 @@
                                                                 <li class="sidebar-menu-category">Nghỉ phép &amp; OT
                                                                 </li>
                                                                 <li class="sidebar-item">
-                                                                    <a href="${pageContext.request.contextPath}/leave-ot-manager"
+                                                                    <a href="${pageContext.request.contextPath}/manager/leave-ot"
                                                                         class="sidebar-link ${param.activeMenu eq 'leave-ot' ? 'active' : ''}">
                                                                         <i class="fas fa-calendar-check"></i> Duyệt nghỉ
                                                                         phép / OT
@@ -529,7 +530,7 @@
                                                                     <li class="sidebar-menu-category">Quản lý phòng ban
                                                                     </li>
                                                                     <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/leave-ot-manager"
+                                                                        <a href="${pageContext.request.contextPath}/manager/leave-ot"
                                                                             class="sidebar-link ${param.activeMenu eq 'leave-ot' ? 'active' : ''}">
                                                                             <i class="fas fa-calendar-check"></i> Duyệt
                                                                             nghỉ phép / OT

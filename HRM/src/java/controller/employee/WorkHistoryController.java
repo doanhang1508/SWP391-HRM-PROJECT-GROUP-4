@@ -11,10 +11,10 @@ import jakarta.servlet.http.HttpSession;
 
 /**
  * Controller xử lý trang Lịch sử công tác
- * URL: /work-history (GET)
+ * URL: /employee/work-history (GET)
  * @author Thanh Hang
  */
-@WebServlet(name = "workHistoryController", urlPatterns = {"/work-history"})
+@WebServlet(name = "workHistoryController", urlPatterns = {"/employee/work-history"})
 public class WorkHistoryController extends HttpServlet {
 
     @Override
@@ -33,6 +33,6 @@ public class WorkHistoryController extends HttpServlet {
         java.util.List<model.WorkHistory> history = workHistoryDAO.getByUserId(currentUser.getUserId());
         request.setAttribute("workHistory", history);
 
-        request.getRequestDispatcher("work-history.jsp").forward(request, response);
+        request.getRequestDispatcher("/employee/work-history.jsp").forward(request, response);
     }
 }

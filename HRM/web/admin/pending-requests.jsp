@@ -192,7 +192,7 @@ body { background: var(--bg); font-family: 'Inter', sans-serif; color: var(--tex
                 <div class="breadcrumb-txt">
                     <a href="${pageContext.request.contextPath}/home"><i class="fas fa-home"></i> Trang chủ</a>
                     <span style="color:#cbd5e0">/</span>
-                    <a href="${pageContext.request.contextPath}/admin/dashboard">Bảng điều khiển</a>
+                    <a href="${pageContext.request.contextPath}/dashboard">Bảng điều khiển</a>
                     <span style="color:#cbd5e0">/</span>
                     <span>Yêu cầu tạo tài khoản</span>
                 </div>

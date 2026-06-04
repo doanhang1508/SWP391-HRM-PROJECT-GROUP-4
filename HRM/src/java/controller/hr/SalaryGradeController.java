@@ -16,7 +16,6 @@ import model.User;
 public class SalaryGradeController extends HttpServlet {
 
     private static final String LIST_JSP   = "/hr/salary-grade.jsp";
-    private static final String DETAIL_JSP = "/hr/salary-grade-detail.jsp";
     private static final String LIST_URL = "/hr/salary-grade";
 
     private final SalaryGradeDAO dao = new SalaryGradeDAO();
@@ -55,26 +54,6 @@ public class SalaryGradeController extends HttpServlet {
 
         String action = request.getParameter("action");
         String idStr  = request.getParameter("id");
-
-        // Xem chi tiết
-        if ("detail".equals(action) && idStr != null) {
-            try {
-                int id = Integer.parseInt(idStr);
-                SalaryGrade sg = dao.getById(id);
-                if (sg != null) {
-                    request.setAttribute("salaryGrade", sg);
-                    request.getRequestDispatcher(DETAIL_JSP).forward(request, response);
-                    return;
-                } else {
-                    request.getSession().setAttribute("errorMsg", "Không tìm thấy ngạch lương.");
-                }
-            } catch (NumberFormatException e) {
-                request.getSession().setAttribute("errorMsg", "ID không hợp lệ.");
-            }
-            loadList(request);
-            request.getRequestDispatcher(LIST_JSP).forward(request, response);
-            return;
-        }
 
         // Vô hiệu hóa qua GET
         if ("delete".equals(action) && idStr != null) {

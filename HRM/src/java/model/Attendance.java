@@ -18,7 +18,7 @@ public class Attendance {
     // Additional fields for display
     private String userName;
     private String shiftName;
-    private String otReason; // Transient field for OT Request UI, since db has no reason column
+    private String otReason; // Now a real DB column (ot_reason)
 
     public Attendance() {
     }

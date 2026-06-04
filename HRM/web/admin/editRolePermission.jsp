@@ -217,7 +217,7 @@
             <div>
                 <h1 class="page-title">Chi Tiết Phân Quyền</h1>
                 <p class="breadcrumb">
-                    <a href="${pageContext.request.contextPath}/admin/dashboard">Dashboard</a> &nbsp;>&nbsp; 
+                    <a href="${pageContext.request.contextPath}/dashboard">Dashboard</a> &nbsp;>&nbsp; 
                     <a href="${pageContext.request.contextPath}/editRolePermission">Phân quyền hệ thống</a> &nbsp;>&nbsp; 
                     Chỉnh sửa quyền
                 </p>
