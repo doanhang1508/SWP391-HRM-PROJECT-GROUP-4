@@ -434,12 +434,7 @@
                         <i class="fas fa-clock"></i> Quản lý Ca làm việc
                     </a>
                 </li>
-                <li class="sidebar-item">
-                    <a href="${pageContext.request.contextPath}/admin/shifts?action=schedule"
-                       class="sidebar-link ${param.activeMenu eq 'schedule' ? 'active' : ''}">
-                        <i class="fas fa-calendar-alt"></i> Xếp Lịch Ca
-                    </a>
-                </li>
+
                 <li class="sidebar-item">
                     <a href="${pageContext.request.contextPath}/admin/leave-types"
                        class="sidebar-link ${param.activeMenu eq 'leave-types' ? 'active' : ''}">
@@ -462,7 +457,7 @@
             <li class="sidebar-item">
                 <a href="${pageContext.request.contextPath}/profile"
                    class="sidebar-link ${param.activeMenu eq 'profile' ? 'active' : ''}">
-                    <i class="fas fa-id-badge"></i> Hồ sơ cá nhân
+                    <i class="fas fa-id-badge"></i> Thông tin cá nhân
                 </a>
             </li>
             <li class="sidebar-item">

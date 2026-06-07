@@ -121,6 +121,14 @@ public class AuthFilter implements Filter {
 
         }
 
+        // ── 4c. /director/* → chỉ Director (4) ───────────────────────────
+        if (path.startsWith("/director/")) {
+            if (roleId != ROLE_DIRECTOR) {
+                redirectToAppropriate(req, resp, roleId);
+                return;
+            }
+        }
+
         // ── 5. /dashboard → role 1-6 (management); role 7 → employee ──────
         if (path.equals("/dashboard")) {
             if (roleId == ROLE_EMPLOYEE || roleId == 0) {
