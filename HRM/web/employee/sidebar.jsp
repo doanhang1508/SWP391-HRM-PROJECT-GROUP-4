@@ -135,7 +135,7 @@
         <li class="sidebar-menu-category">TÀI KHOẢN</li>
         <li class="sidebar-item">
             <a href="${pageContext.request.contextPath}/profile" class="sidebar-link ${param.activeMenu eq 'profile' ? 'active' : ''}">
-                <i class="fas fa-id-badge"></i> Hồ sơ cá nhân
+                <i class="fas fa-id-badge"></i> Thông tin cá nhân
             </a>
         </li>
         <li class="sidebar-item">

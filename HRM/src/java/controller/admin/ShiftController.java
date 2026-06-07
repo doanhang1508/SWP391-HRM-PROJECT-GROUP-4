@@ -1,13 +1,9 @@
 package controller.admin;
 
-import dao.UserDAO;
 import model.Shift;
-import model.ShiftAssignment;
 import model.User;
 import service.ShiftService;
 import service.ShiftServiceImpl;
-import service.ShiftAssignmentService;
-import service.ShiftAssignmentServiceImpl;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -17,16 +13,16 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+<<<<<<< Updated upstream
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.TemporalAdjusters;
 import java.util.List;
-import java.util.Map;
 
+<<<<<<< Updated upstream
 @WebServlet(name = "ShiftController", urlPatterns = {"/admin/shifts"})
 public class ShiftController extends HttpServlet {
 
@@ -63,6 +59,50 @@ public class ShiftController extends HttpServlet {
             case "schedule": showSchedule(req, resp);  break;
             case "edit":     showEditForm(req, resp);  break;
             default:         listShifts(req, resp);    break;
+=======
+/**
+ * ShiftController — Chỉ quản lý ĐỊNH NGHĨA ca làm việc (CRUD).
+ *
+ * URL  : /admin/shifts
+ * Role : 2 (HR Manager) — HR Manager tạo/sửa/xóa định nghĩa ca (tên, giờ giấc, bầc công).
+ *
+ * Việc XẼP CA (gán ca cho công nhân) thuộc về Supervisor (role 3),
+ * được xử lý bởi controller.manager.ShiftScheduleController (/manager/shift-schedule).
+ */
+@WebServlet(name = "ShiftController", urlPatterns = {"/admin/shifts"})
+public class ShiftController extends HttpServlet {
+
+    private ShiftService shiftService;
+
+    @Override
+    public void init() throws ServletException {
+        shiftService = new ShiftServiceImpl();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // HTTP Handlers
+    // ═══════════════════════════════════════════════════════════════
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        User user = getLoginUser(req);
+        if (user == null) { resp.sendRedirect(req.getContextPath() + "/login"); return; }
+
+        // Chỉ HR Manager (role 2) mới được định nghĩa ca
+        // Supervisor (role 3) xếp lịch tại /manager/shift-schedule
+        if (user.getRoleId() != 2) {
+            resp.sendRedirect(req.getContextPath() + "/dashboard");
+            return;
+        }
+
+        switch (getAction(req)) {
+            case "edit":
+                showEditForm(req, resp);
+                break;
+            default:
+                listShifts(req, resp);
+                break;
+>>>>>>> Stashed changes
         }
     }
 
@@ -70,6 +110,7 @@ public class ShiftController extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
         setEncoding(req);
         User user = getLoginUser(req);
+<<<<<<< Updated upstream
         if (!checkAccess(user, resp, req)) return;
 
         switch (getAction(req)) {
@@ -80,6 +121,32 @@ public class ShiftController extends HttpServlet {
             case "toggleStatus": toggleStatus(req, resp);     break;
             case "deleteAssign": deleteAssignment(req, resp); break;
             default:             redirect(resp, req.getContextPath() + SHIFTS_URL); break;
+=======
+        if (user == null) { resp.sendRedirect(req.getContextPath() + "/login"); return; }
+
+        // Chỉ HR Manager (role 2)
+        if (user.getRoleId() != 2) {
+            resp.sendRedirect(req.getContextPath() + "/dashboard");
+            return;
+        }
+
+        switch (getAction(req)) {
+            case "create":
+                createShift(req, resp);
+                break;
+            case "update":
+                updateShift(req, resp);
+                break;
+            case "delete":
+                deleteShift(req, resp);
+                break;
+            case "toggleStatus":
+                toggleStatus(req, resp);
+                break;
+            default:
+                resp.sendRedirect(req.getContextPath() + "/admin/shifts");
+                break;
+>>>>>>> Stashed changes
         }
     }
 
@@ -294,6 +361,7 @@ public class ShiftController extends HttpServlet {
         redirect(resp, req.getContextPath() + SHIFTS_URL + "?" + key + "=" + encode(msg));
     }
 
+<<<<<<< Updated upstream
     private void redirectSchedule(HttpServletResponse resp, HttpServletRequest req,
                                   String key, String msg) {
         redirect(resp, req.getContextPath() + SCHEDULE_URL + "&" + key + "=" + encode(msg));
@@ -309,6 +377,11 @@ public class ShiftController extends HttpServlet {
 
     // ── Parse helpers ─────────────────────────────────────
 
+=======
+    // ═══════════════════════════════════════════════════════════════
+    // Helpers
+    // ═══════════════════════════════════════════════════════════════
+>>>>>>> Stashed changes
     private User getLoginUser(HttpServletRequest req) {
         HttpSession s = req.getSession(false);
         return s != null ? (User) s.getAttribute("currentUser") : null;
@@ -353,6 +426,7 @@ public class ShiftController extends HttpServlet {
         }
     }
 
+<<<<<<< Updated upstream
     private LocalDate parseDate(String s) {
         if (s == null || s.trim().isEmpty()) return null;
         try {
@@ -360,6 +434,11 @@ public class ShiftController extends HttpServlet {
         } catch (DateTimeParseException e) {
             return null;
         }
+=======
+    private void redirect(HttpServletResponse resp, HttpServletRequest req,
+            String key, String msg) throws IOException {
+        resp.sendRedirect(req.getContextPath() + "/admin/shifts?" + key + "=" + encode(msg));
+>>>>>>> Stashed changes
     }
 
     private String encode(String s) {

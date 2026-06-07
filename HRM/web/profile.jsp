@@ -4,7 +4,7 @@
 
 <c:set var="displayUser" value="${sessionScope.currentUser}" />
 
-<c:set var="pageTitle" value="Hồ sơ cá nhân - HRM" scope="request" />
+<c:set var="pageTitle" value="Thông tin cá nhân - HRM" scope="request" />
 <jsp:include page="header.jsp" />
 
 <style>
@@ -329,9 +329,9 @@
         <!-- Page Header -->
         <div class="profile-page-header">
             <div>
-                <h1 class="profile-page-title">Hồ sơ cá nhân</h1>
+                <h1 class="profile-page-title">Thông tin cá nhân</h1>
                 <p class="profile-breadcrumb">
-                    <a href="${pageContext.request.contextPath}/home">Trang chủ</a> &nbsp;>&nbsp; Hồ sơ cá nhân
+                    <a href="${pageContext.request.contextPath}/home">Trang chủ</a> &nbsp;>&nbsp; Thông tin cá nhân
                 </p>
             </div>
         </div>
