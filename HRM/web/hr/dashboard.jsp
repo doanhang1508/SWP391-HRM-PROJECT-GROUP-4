@@ -3,7 +3,7 @@
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<c:set var="pageTitle" value="Bảng Điều Khiển Giám Đốc" scope="request"/>
+<c:set var="pageTitle" value="Bảng Điều Khiển HR" scope="request"/>
 <jsp:include page="../header.jsp" />
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -65,6 +65,8 @@ body {
 .dash-stat-card.stat-success .dash-stat-icon { background: #d1fae5; color: #059669; }
 .dash-stat-card.stat-teal { border-left: 4px solid #0d9488; }
 .dash-stat-card.stat-teal .dash-stat-icon { background: #ccfbf1; color: #0d9488; }
+.dash-stat-card.stat-blue { border-left: 4px solid #3b82f6; }
+.dash-stat-card.stat-blue .dash-stat-icon { background: #dbeafe; color: #2563eb; }
 .dash-stat-card.stat-purple { border-left: 4px solid #8b5cf6; }
 .dash-stat-card.stat-purple .dash-stat-icon { background: #ede9fe; color: #7c3aed; }
 
@@ -78,6 +80,40 @@ body {
 }
 .dash-card-header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
 .dash-card-title { font-size: 0.95rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; }
+.dash-card-title-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot-teal { background: #0d9488; } .dot-blue { background: #3b82f6; } .dot-orange { background: #f59e0b; }
+
+/* ── Table ── */
+.dash-table-container { width: 100%; overflow-x: auto; }
+.dash-table { width: 100%; border-collapse: collapse; text-align: left; }
+.dash-table th {
+    padding: 12px 16px; border-bottom: 1px solid #e2e8f0;
+    color: #64748b; font-size: 0.73rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.6px; background: #fafbfc;
+}
+.dash-table td { padding: 15px 16px; border-bottom: 1px solid #f1f5f9; color: #0f172a; font-size: 0.88rem; vertical-align: middle; }
+.dash-table tbody tr:last-child td { border-bottom: none; }
+.dash-table tbody tr:hover td { background: #f8fafc; }
+.dash-emp-cell { display: flex; align-items: center; gap: 10px; }
+.dash-emp-avatar {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: #eff6ff; color: #3b82f6;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+}
+.dash-btn {
+    padding: 6px 14px; font-size: 0.8rem; font-weight: 700;
+    border-radius: 8px; border: none; cursor: pointer;
+    transition: all 0.2s; text-decoration: none; display: inline-block;
+}
+.dash-btn-primary { background: #0d9488; color: #fff; }
+.dash-btn-primary:hover { background: #0f766e; }
+.dash-btn-secondary { background: #f1f5f9; color: #475569; }
+.dash-btn-secondary:hover { background: #e2e8f0; }
+.dash-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 0.73rem; font-weight: 700; }
+.badge-pending   { background: #fef3c7; color: #d97706; }
+.badge-completed { background: #d1fae5; color: #059669; }
+.badge-rejected  { background: #fee2e2; color: #dc2626; }
 
 @media (max-width: 768px) { .dash-content { padding: 20px 16px; } }
 </style>
@@ -99,63 +135,95 @@ body {
                         <span>Dashboard</span>
                     </div>
                     <div class="dash-page-title">
-                        Tổng Quan Doanh Nghiệp
+                        Tổng Quan Nhân Sự
                     </div>
                 </div>
                 <div class="dash-role-badge">
-                    <i class="fas fa-building"></i> Giám đốc
+                    <i class="fas fa-user-tie"></i> HR Manager
                 </div>
             </div>
 
-            <%-- ── DIRECTOR STATS ── --%>
+            <%-- ── HR MANAGER STATS ── --%>
             <div class="dash-stat-grid">
                 <div class="dash-stat-card stat-teal">
                     <div class="dash-stat-header">
-                        <span class="dash-stat-title">Quy Mô Nhân Sự</span>
+                        <span class="dash-stat-title">Tổng Nhân Viên</span>
                         <div class="dash-stat-icon"><i class="fas fa-users"></i></div>
                     </div>
                     <div class="dash-stat-val">${not empty totalEmployees ? totalEmployees : '—'}</div>
-                    <div class="dash-stat-change up"><i class="fas fa-arrow-up"></i> Tăng trưởng 5%</div>
+                    <div class="dash-stat-change up"><i class="fas fa-user-check"></i> Đang làm việc</div>
                 </div>
                 <div class="dash-stat-card stat-success">
                     <div class="dash-stat-header">
-                        <span class="dash-stat-title">Phòng Ban / Xưởng</span>
-                        <div class="dash-stat-icon"><i class="fas fa-sitemap"></i></div>
+                        <span class="dash-stat-title">Phòng Ban</span>
+                        <div class="dash-stat-icon"><i class="fas fa-building"></i></div>
                     </div>
                     <div class="dash-stat-val">${not empty totalDepartments ? totalDepartments : '—'}</div>
-                    <div class="dash-stat-change neutral">Hoạt động ổn định</div>
-                </div>
-                <div class="dash-stat-card stat-purple">
-                    <div class="dash-stat-header">
-                        <span class="dash-stat-title">Quỹ Lương Dự Kiến</span>
-                        <div class="dash-stat-icon"><i class="fas fa-money-bill-wave"></i></div>
-                    </div>
-                    <div class="dash-stat-val">${not empty monthlyRevenue ? monthlyRevenue : '0'} VNĐ</div>
-                    <div class="dash-stat-change neutral">Tháng hiện tại</div>
+                    <div class="dash-stat-change neutral">Đang hoạt động</div>
                 </div>
                 <div class="dash-stat-card stat-warning">
                     <div class="dash-stat-header">
-                        <span class="dash-stat-title">Báo Cáo Cần Duyệt</span>
-                        <div class="dash-stat-icon"><i class="fas fa-clipboard-check"></i></div>
+                        <span class="dash-stat-title">Hợp Đồng Sắp Hết Hạn</span>
+                        <div class="dash-stat-icon"><i class="fas fa-file-contract"></i></div>
                     </div>
-                    <div class="dash-stat-val">0</div>
-                    <div class="dash-stat-change neutral">Chờ xem xét</div>
+                    <div class="dash-stat-val">${not empty expiringContracts ? expiringContracts : '0'}</div>
+                    <div class="dash-stat-change down">Trong 30 ngày tới</div>
+                </div>
+                <div class="dash-stat-card stat-danger">
+                    <div class="dash-stat-header">
+                        <span class="dash-stat-title">Đơn Nghỉ Phép</span>
+                        <div class="dash-stat-icon"><i class="fas fa-calendar-days"></i></div>
+                    </div>
+                    <div class="dash-stat-val">${not empty pendingLeaves ? pendingLeaves : '0'}</div>
+                    <div class="dash-stat-change neutral">Chờ duyệt</div>
                 </div>
             </div>
 
-            <%-- Director Charts --%>
+            <%-- HR Charts --%>
             <div class="dash-charts-grid">
                 <div class="dash-card">
                     <div class="dash-card-header">
-                        <h3 class="dash-card-title">Biểu Đồ Chi Phí Nhân Sự</h3>
+                        <h3 class="dash-card-title">Nhân Viên Theo Phòng Ban</h3>
                     </div>
-                    <div style="height:300px;"><canvas id="costChart"></canvas></div>
+                    <div style="height:300px;"><canvas id="departmentChart"></canvas></div>
                 </div>
                 <div class="dash-card">
                     <div class="dash-card-header">
-                        <h3 class="dash-card-title">Cơ Cấu Phòng Ban</h3>
+                        <h3 class="dash-card-title">Cơ Cấu Giới Tính</h3>
                     </div>
-                    <div style="height:300px;"><canvas id="deptChart"></canvas></div>
+                    <div style="height:300px;"><canvas id="genderChart"></canvas></div>
+                </div>
+            </div>
+
+            <%-- HR: nhân viên mới nhất --%>
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <h3 class="dash-card-title">
+                        <div class="dash-card-title-dot dot-orange"></div>
+                        Nhân Viên Mới Nhất
+                    </h3>
+                    <a href="${pageContext.request.contextPath}/hr/employees" class="dash-btn dash-btn-secondary">Xem tất cả</a>
+                </div>
+                <div class="dash-table-container">
+                    <table class="dash-table">
+                        <thead><tr><th>Họ Tên</th><th>Email</th><th>Chi Tiết</th></tr></thead>
+                        <tbody>
+                            <c:forEach items="${recentEmployees}" var="emp">
+                                <tr>
+                                    <td>
+                                        <div class="dash-emp-cell">
+                                            <div class="dash-emp-avatar">${fn:substring(emp.fullName,0,1)}</div>
+                                            <span style="font-weight:600;">${emp.fullName}</span>
+                                        </div>
+                                    </td>
+                                    <td style="color:#64748b;">${emp.email}</td>
+                                    <td>
+                                        <a href="${pageContext.request.contextPath}/hr/employee-detail?id=${emp.userId}" class="dash-btn dash-btn-primary">Xem</a>
+                                    </td>
+                                </tr>
+                            </c:forEach>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -166,24 +234,26 @@ body {
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    new Chart(document.getElementById('costChart').getContext('2d'), {
-        type: 'line',
+    new Chart(document.getElementById('departmentChart').getContext('2d'), {
+        type: 'bar',
         data: {
-            labels: ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6'],
-            datasets: [
-                { label: 'Chi phí Lương', data: [150, 160, 155, 170, 165, 180],
-                  borderColor:'#8b5cf6', backgroundColor:'rgba(139,92,246,0.1)', fill:true, tension:0.4 }
-            ]
+            labels: ['Hành chính','Nhân sự','Kế toán','Kinh doanh','Xưởng SX'],
+            datasets: [{ label:'Số nhân viên', data:[8,12,10,25,35],
+                backgroundColor:'rgba(13,148,136,0.8)', borderRadius:6 }]
         },
-        options: { responsive:true, maintainAspectRatio:false }
+        options: { responsive:true, maintainAspectRatio:false,
+            plugins:{ legend:{ display:false }},
+            scales:{ y:{ grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{family:'Inter',size:11},color:'#94a3b8'}},
+                     x:{ grid:{display:false}, ticks:{font:{family:'Inter',size:11},color:'#94a3b8'}}}}
     });
-    new Chart(document.getElementById('deptChart').getContext('2d'), {
+    new Chart(document.getElementById('genderChart').getContext('2d'), {
         type: 'doughnut',
         data: {
-            labels: ['Sản xuất','Kinh doanh','Hành chính','Kỹ thuật'],
-            datasets: [{ data:[45,30,15,10], backgroundColor:['#0d9488','#3b82f6','#f59e0b','#ec4899'] }]
+            labels: ['Nam','Nữ','Khác'],
+            datasets: [{ data:[60,38,2], backgroundColor:['#3b82f6','#ec4899','#94a3b8'], borderWidth:3, borderColor:'#fff' }]
         },
-        options: { responsive:true, maintainAspectRatio:false, cutout:'65%' }
+        options: { responsive:true, maintainAspectRatio:false, cutout:'65%',
+            plugins:{ legend:{ position:'bottom', labels:{ boxWidth:12, padding:16, font:{family:'Inter',size:12}}}}}
     });
 });
 </script>

@@ -1,4 +1,4 @@
-package controller.admin;
+package controller.hr;
 
 import dao.RewardDisciplineDAO;
 import jakarta.servlet.annotation.WebServlet;
@@ -13,11 +13,11 @@ import java.util.List;
 import model.RewardDiscipline;
 import model.User;
 
-@WebServlet("/admin/reward-disciplines")
+@WebServlet("/hr/reward-disciplines")
 public class RewardDisciplineCategoryController extends HttpServlet {
 
     private static final String ATTR_CURRENT_USER = "currentUser";
-    private static final String BASE_URL          = "/admin/reward-disciplines";
+    private static final String BASE_URL          = "/hr/reward-disciplines";
     private static final String VIEW_PAGE         = "/hr/reward-discipline-category.jsp";
 
     private final RewardDisciplineDAO rdDAO = new RewardDisciplineDAO();

@@ -112,15 +112,15 @@
     </servlet>
     <servlet>
         <servlet-name>DepartmentsController</servlet-name>
-        <servlet-class>controller.admin.DepartmentController</servlet-class>
+        <servlet-class>controller.hr.DepartmentController</servlet-class>
     </servlet>
     <servlet>
         <servlet-name>PendingRequestsController</servlet-name>
-        <servlet-class>controller.admin.PendingRequestsController</servlet-class>
+        <servlet-class>controller.hr.PendingRequestsController</servlet-class>
     </servlet>
     <servlet>
         <servlet-name>PositionController</servlet-name>
-        <servlet-class>controller.admin.PositionController</servlet-class>
+        <servlet-class>controller.hr.PositionController</servlet-class>
     </servlet>
 
 
@@ -162,15 +162,15 @@
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>DepartmentsController</servlet-name>
-        <url-pattern>/admin/department</url-pattern>
+        <url-pattern>/hr/department</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>PendingRequestsController</servlet-name>
-        <url-pattern>/admin/pending-requests</url-pattern>
+        <url-pattern>/hr/pending-requests</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>PositionController</servlet-name>
-        <url-pattern>/admin/position</url-pattern>
+        <url-pattern>/hr/position</url-pattern>
     </servlet-mapping>
 
 

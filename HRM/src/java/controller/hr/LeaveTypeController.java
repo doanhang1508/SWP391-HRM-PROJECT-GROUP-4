@@ -1,4 +1,4 @@
-package controller.admin;
+package controller.hr;
 
 import dao.LeaveTypeDAO;
 import jakarta.servlet.annotation.WebServlet;
@@ -13,11 +13,11 @@ import java.util.List;
 import model.LeaveType;
 import model.User;
 
-@WebServlet("/admin/leave-types")
+@WebServlet("/hr/leave-types")
 public class LeaveTypeController extends HttpServlet {
 
     private static final String ATTR_CURRENT_USER = "currentUser";
-    private static final String BASE_URL          = "/admin/leave-types";
+    private static final String BASE_URL          = "/hr/leave-types";
     private static final String VIEW_PAGE         = "/hr/leave-type.jsp";
 
     private final LeaveTypeDAO leaveTypeDAO = new LeaveTypeDAO();

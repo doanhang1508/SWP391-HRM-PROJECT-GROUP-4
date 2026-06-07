@@ -1,4 +1,4 @@
-package controller.admin;
+package controller.hr;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;

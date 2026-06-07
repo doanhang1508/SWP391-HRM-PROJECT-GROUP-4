@@ -1,4 +1,4 @@
-package controller.admin;
+package controller.hr;
 
 import dao.ContractTypeDAO;
 import jakarta.servlet.annotation.WebServlet;
@@ -13,13 +13,13 @@ import java.util.Map;
 import model.ContractType;
 import model.User;
 
-@WebServlet("/admin/contract-type")
+@WebServlet("/hr/contract-type")
 public class ContractTypeController extends HttpServlet {
 
     private static final String ATTR_CURRENT_USER = "currentUser";
     private static final String LOGIN_URL         = "/login";
     private static final String DASHBOARD_URL     = "/dashboard";
-    private static final String REDIRECT_URL      = "/admin/contract-type";
+    private static final String REDIRECT_URL      = "/hr/contract-type";
     private static final String VIEW_PAGE         = "/hr/contract-type.jsp";
 
     private final ContractTypeDAO dao = new ContractTypeDAO();

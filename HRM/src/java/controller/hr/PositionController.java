@@ -1,18 +1,18 @@
-package controller.admin;
+package controller.hr;
 
-import dao.DepartmentDAO;
+import dao.PositionDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
-import model.Department;
+import model.Position;
 import model.User;
 
-public class DepartmentController extends HttpServlet {
+public class PositionController extends HttpServlet {
 
-    private final DepartmentDAO dao = new DepartmentDAO();
+    private final PositionDAO dao = new PositionDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -23,20 +23,20 @@ public class DepartmentController extends HttpServlet {
             return;
         }
         User user = (User) session.getAttribute("currentUser");
-        // Chỉ HR Manager (role 2) mới được quản lý phòng ban
+        // Chỉ HR Manager (role 2) mới được quản lý chức vụ
         if (user.getRoleId() != 2) {
             response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }
 
-        java.util.List<Department> departmentList = dao.getAllIncludingInactive();
+        java.util.List<Position> positionList = dao.getAllIncludingInactive();
         java.util.Map<Integer, Integer> empCountMap = new java.util.HashMap<>();
-        for (Department d : departmentList) {
-            empCountMap.put(d.getDepartmentId(), dao.countEmployees(d.getDepartmentId()));
+        for (Position p : positionList) {
+            empCountMap.put(p.getPositionId(), dao.countEmployees(p.getPositionId()));
         }
-        request.setAttribute("departmentList", departmentList);
+        request.setAttribute("positionList", positionList);
         request.setAttribute("empCountMap", empCountMap);
-        request.getRequestDispatcher("/hr/department.jsp").forward(request, response);
+        request.getRequestDispatcher("/hr/position.jsp").forward(request, response);
     }
 
     @Override
@@ -59,10 +59,10 @@ public class DepartmentController extends HttpServlet {
         } else if ("toggleStatus".equals(action) && idStr != null) {
             dao.toggleStatus(Integer.parseInt(idStr));
         } else if ("add".equals(action)) {
-            dao.insert(new Department(0, name, desc, true));
+            dao.insert(new Position(0, name, desc, true));
         } else if ("edit".equals(action) && idStr != null) {
-            dao.update(new Department(Integer.parseInt(idStr), name, desc, true));
+            dao.update(new Position(Integer.parseInt(idStr), name, desc, true));
         }
-        response.sendRedirect(request.getContextPath() + "/admin/department");
+        response.sendRedirect(request.getContextPath() + "/hr/position");
     }
 }

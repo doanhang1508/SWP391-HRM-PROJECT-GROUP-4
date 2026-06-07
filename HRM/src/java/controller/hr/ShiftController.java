@@ -1,4 +1,4 @@
-package controller.admin;
+package controller.hr;
 
 import model.Shift;
 import model.User;
@@ -28,14 +28,14 @@ import java.util.List;
  * Việc XẾP CA (gán ca cho công nhân) thuộc về Supervisor (role 3),
  * được xử lý bởi controller.manager.ShiftScheduleController (/manager/shift-schedule).
  */
-@WebServlet(name = "ShiftController", urlPatterns = {"/admin/shifts"})
+@WebServlet(name = "ShiftController", urlPatterns = {"/hr/shifts"})
 public class ShiftController extends HttpServlet {
 
     private static final String ATTR_ERROR     = "error";
     private static final String ATTR_MESSAGE   = "message";
     private static final String PARAM_SHIFT_ID = "shiftId";
     private static final String INVALID_ID     = "ID khong hop le";
-    private static final String SHIFTS_URL     = "/admin/shifts";
+    private static final String SHIFTS_URL     = "/hr/shifts";
 
     private ShiftService shiftService;
 
