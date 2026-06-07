@@ -63,7 +63,51 @@ public class ShiftAssignmentServiceImpl implements ShiftAssignmentService {
 
     @Override
     public int batchAssign(int userId, int shiftId, LocalDate from, LocalDate to) {
-        return assignmentDAO.batchAssign(userId, shiftId, from, to);
+        Shift newShift = shiftDAO.getShiftById(shiftId);
+        if (newShift == null) return 0;
+        
+        List<ShiftAssignment> existing = assignmentDAO.getByUserAndDateRange(userId, from, to);
+        int inserted = 0;
+        
+        LocalDate cursor = from;
+        while (!cursor.isAfter(to)) {
+            final LocalDate currentDate = cursor;
+            boolean overlaps = false;
+            
+            for (ShiftAssignment sa : existing) {
+                if (sa.getAssignedDate().equals(currentDate)) {
+                    Shift existingShift = shiftDAO.getShiftById(sa.getShiftId());
+                    if (existingShift != null && isOverlap(newShift, existingShift)) {
+                        overlaps = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!overlaps) {
+                ShiftAssignment a = new ShiftAssignment();
+                a.setUserId(userId);
+                a.setShiftId(shiftId);
+                a.setAssignedDate(currentDate);
+                if (assignmentDAO.addAssignment(a)) {
+                    inserted++;
+                }
+            }
+            cursor = cursor.plusDays(1);
+        }
+        return inserted;
+    }
+
+    private boolean isOverlap(Shift s1, Shift s2) {
+        long start1 = s1.getStartTime().toSecondOfDay() / 60;
+        long end1 = s1.getEndTime().toSecondOfDay() / 60;
+        if (end1 <= start1 || s1.isNightShift()) end1 += 1440;
+        
+        long start2 = s2.getStartTime().toSecondOfDay() / 60;
+        long end2 = s2.getEndTime().toSecondOfDay() / 60;
+        if (end2 <= start2 || s2.isNightShift()) end2 += 1440;
+        
+        return Math.max(start1, start2) < Math.min(end1, end2);
     }
 
     @Override
@@ -84,13 +128,13 @@ public class ShiftAssignmentServiceImpl implements ShiftAssignmentService {
      * This powers the visual calendar grid in the JSP.
      */
     @Override
-    public Map<Integer, Map<Integer, ShiftAssignment>> buildWeeklyScheduleMatrix(LocalDate weekStart) {
+    public Map<Integer, Map<Integer, List<ShiftAssignment>>> buildWeeklyScheduleMatrix(LocalDate weekStart) {
         LocalDate weekEnd = weekStart.plusDays(6); // Monday to Sunday
 
         List<ShiftAssignment> assignments = assignmentDAO.getByDateRange(weekStart, weekEnd);
 
         // Build the matrix
-        Map<Integer, Map<Integer, ShiftAssignment>> matrix = new LinkedHashMap<>();
+        Map<Integer, Map<Integer, List<ShiftAssignment>>> matrix = new LinkedHashMap<>();
 
         for (ShiftAssignment sa : assignments) {
             int userId = sa.getUserId();
@@ -101,7 +145,7 @@ public class ShiftAssignmentServiceImpl implements ShiftAssignmentService {
                 continue; // Safety bound
             }
             matrix.computeIfAbsent(userId, k -> new HashMap<>());
-            matrix.get(userId).put(dayIndex, sa);
+            matrix.get(userId).computeIfAbsent(dayIndex, k -> new ArrayList<>()).add(sa);
         }
 
         return matrix;

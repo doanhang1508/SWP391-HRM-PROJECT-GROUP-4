@@ -7,30 +7,31 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.User;
-import service.LeaveAndOvertimeService;
-import service.LeaveAndOvertimeServiceImpl;
+import service.LeaveService;
+import service.LeaveServiceImpl;
 
 import java.io.IOException;
 
 /**
- * LeaveOvertimeManagerController — Duyệt nghỉ phép / OT cho Supervisor & Dept Manager.
+ * SupervisorLeaveController — Duyệt nghỉ phép cho Supervisor & Dept Manager.
  *
- * URL: /manager/leave-ot
- * Được phép truy cập: role 2 (HR Manager), 3 (Supervisor), 6 (Dept Manager)
- * JSP: /manager/leave-ot.jsp
+ * URL: /manager/leave
+ * Được phép truy cập: role 1 (Admin), 3 (Supervisor), 6 (Dept Manager)
+ * JSP: /manager/supervisor-leave-approval.jsp
  *
  * Logic lọc dữ liệu theo phạm vi:
  *   - Supervisor (3) và Dept Manager (6): chỉ thấy nhân viên thuộc department của mình
- *   - HR Manager (2) / Admin (1): thấy toàn bộ (filterDeptId = 0)
+ *   - Admin (1): thấy toàn bộ (filterDeptId = 0)
+ *   - HR Manager (2) đã bị GỠ BỎ QUYỀN DUYỆT NGHỈ PHÉP (Chỉ xem lịch sử tại /hr/leave)
  */
-@WebServlet(name = "LeaveOvertimeManagerController", urlPatterns = {"/manager/leave-ot"})
-public class LeaveOvertimeManagerController extends HttpServlet {
+@WebServlet(name = "SupervisorLeaveController", urlPatterns = {"/manager/leave"})
+public class SupervisorLeaveController extends HttpServlet {
 
-    private LeaveAndOvertimeService service;
+    private LeaveService service;
 
     @Override
     public void init() throws ServletException {
-        service = new LeaveAndOvertimeServiceImpl();
+        service = new LeaveServiceImpl();
     }
 
     @Override
@@ -46,16 +47,21 @@ public class LeaveOvertimeManagerController extends HttpServlet {
 
         int filterDeptId = user.getDepartmentId();
 
-        // Admin (1), HR Manager (2): xem tất cả
+        // Khóa HR Manager (Role 2) - HR Manager không còn quyền duyệt nghỉ phép
+        if (user.getRoleId() == 2) {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
+            return;
+        }
+
+        // Admin (1): xem tất cả
         // Supervisor (3), Dept Manager (6): chỉ xem phạm vi department mình
-        if (user.getRoleId() == 1 || user.getRoleId() == 2) {
+        if (user.getRoleId() == 1) {
             filterDeptId = 0; // 0 = không lọc, lấy tất cả
         }
 
         request.setAttribute("pendingLeaves", service.getPendingLeavesByDepartment(filterDeptId));
-        request.setAttribute("pendingOTs",    service.getPendingOTByDepartment(filterDeptId));
 
-        request.getRequestDispatcher("/manager/leave-ot.jsp").forward(request, response);
+        request.getRequestDispatcher("/manager/supervisor-leave-approval.jsp").forward(request, response);
     }
 
     @Override
@@ -66,6 +72,12 @@ public class LeaveOvertimeManagerController extends HttpServlet {
 
         if (user == null) {
             response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        // Khóa HR Manager (Role 2) - HR Manager không còn quyền duyệt nghỉ phép
+        if (user.getRoleId() == 2) {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }
 
@@ -82,19 +94,11 @@ public class LeaveOvertimeManagerController extends HttpServlet {
                     service.rejectLeaveRequest(id, user.getUserId());
                     session.setAttribute("successMessage", "Đã từ chối đơn nghỉ phép.");
                 }
-            } else if ("ot".equals(type)) {
-                if ("approve".equals(action)) {
-                    service.approveOTRequest(id);
-                    session.setAttribute("successMessage", "Đã duyệt yêu cầu tăng ca thành công.");
-                } else if ("reject".equals(action)) {
-                    service.rejectOTRequest(id);
-                    session.setAttribute("successMessage", "Đã từ chối yêu cầu tăng ca.");
-                }
             }
         } catch (Exception e) {
             session.setAttribute("errorMessage", "Lỗi xử lý yêu cầu: " + e.getMessage());
         }
 
-        response.sendRedirect(request.getContextPath() + "/manager/leave-ot");
+        response.sendRedirect(request.getContextPath() + "/manager/leave");
     }
 }

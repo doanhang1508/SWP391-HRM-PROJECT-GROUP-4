@@ -1,7 +1,10 @@
-package controller.hr;
+﻿package controller.hr;
 
+import model.Department;
+import model.DepartmentShift;
 import model.Shift;
 import model.User;
+import dao.DepartmentDAO;
 import service.ShiftService;
 import service.ShiftServiceImpl;
 
@@ -20,13 +23,21 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 
 /**
- * ShiftController — Chỉ quản lý ĐỊNH NGHĨA ca làm việc (CRUD).
+ * ShiftController â€” Manages SHIFT DEFINITIONS and DEPARTMENT-SHIFT MAPPING.
  *
- * URL  : /admin/shifts
- * Role : 2 (HR Manager) — HR Manager tạo/sửa/xóa định nghĩa ca (tên, giờ giấc, bậc công).
+ * URL  : /hr/shifts
+ * Role : 2 (HR Manager) â€” HR Manager táº¡o/sá»­a/xoÃ¡/toggle ca; gÃ¡n ca máº·c Ä‘á»‹nh cho phÃ²ng ban.
  *
- * Việc XẾP CA (gán ca cho công nhân) thuộc về Supervisor (role 3),
- * được xử lý bởi controller.manager.ShiftScheduleController (/manager/shift-schedule).
+ * Use Case Diagram:
+ *   Actor: HR Manager
+ *   - Create Shift         â†’ POST action=create   (<<include>> Validate, <<extend>> AutoDetect)
+ *   - Edit Shift           â†’ POST action=update   (<<include>> Validate, <<extend>> AutoDetect)
+ *   - Activate/Deactivate  â†’ POST action=toggleStatus
+ *   - Assign Default to Dept â†’ POST action=assignDept
+ *   - View Shift List      â†’ GET (default)
+ *
+ * Viá»‡c Xáº¾P CA (gÃ¡n ca cho cÃ´ng nhÃ¢n) thuá»™c vá» Supervisor (role 3),
+ * Ä‘Æ°á»£c xá»­ lÃ½ bá»Ÿi controller.manager.ShiftScheduleController (/manager/shift-schedule).
  */
 @WebServlet(name = "ShiftController", urlPatterns = {"/hr/shifts"})
 public class ShiftController extends HttpServlet {
@@ -34,19 +45,21 @@ public class ShiftController extends HttpServlet {
     private static final String ATTR_ERROR     = "error";
     private static final String ATTR_MESSAGE   = "message";
     private static final String PARAM_SHIFT_ID = "shiftId";
-    private static final String INVALID_ID     = "ID khong hop le";
+    private static final String INVALID_ID     = "ID khÃ´ng há»£p lá»‡";
     private static final String SHIFTS_URL     = "/hr/shifts";
 
     private ShiftService shiftService;
+    private DepartmentDAO departmentDAO;
 
     @Override
     public void init() throws ServletException {
         shiftService = new ShiftServiceImpl();
+        departmentDAO = new DepartmentDAO();
     }
 
-    // ═══════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // HTTP Handlers
-    // ═══════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -57,9 +70,8 @@ public class ShiftController extends HttpServlet {
             return;
         }
 
-        // Chỉ HR Manager (role 2) mới được định nghĩa ca
-        // Supervisor (role 3) xếp lịch tại /manager/shift-schedule
-        if (user.getRoleId() != 2) {
+        // Only HR Manager (role 2) and Admin (role 1) can define shifts
+        if (user.getRoleId() != 2 && user.getRoleId() != 1) {
             resp.sendRedirect(req.getContextPath() + "/dashboard");
             return;
         }
@@ -84,8 +96,8 @@ public class ShiftController extends HttpServlet {
             return;
         }
 
-        // Chỉ HR Manager (role 2)
-        if (user.getRoleId() != 2) {
+        // Only HR Manager (role 2) and Admin (role 1)
+        if (user.getRoleId() != 2 && user.getRoleId() != 1) {
             resp.sendRedirect(req.getContextPath() + "/dashboard");
             return;
         }
@@ -103,15 +115,21 @@ public class ShiftController extends HttpServlet {
             case "toggleStatus":
                 toggleStatus(req, resp);
                 break;
+            case "assignDept":
+                assignDeptShift(req, resp);
+                break;
+            case "removeDeptShift":
+                removeDeptShift(req, resp);
+                break;
             default:
                 resp.sendRedirect(req.getContextPath() + SHIFTS_URL);
                 break;
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // Shift CRUD
-    // ═══════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // View Shift List (with Department Shift mapping data)
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     private void listShifts(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -124,9 +142,17 @@ public class ShiftController extends HttpServlet {
             nightFlags[i] = shiftService.isNightShift(shifts.get(i));
         }
 
+        // Department Shift mapping data
+        List<DepartmentShift> deptShifts = shiftService.getAllDepartmentShifts();
+        List<Department> departments = departmentDAO.getAll();
+        List<Shift> activeShifts = shiftService.getActiveShifts();
+
         req.setAttribute("shifts",       shifts);
         req.setAttribute("workingHours", hours);
         req.setAttribute("nightShifts",  nightFlags);
+        req.setAttribute("deptShifts",   deptShifts);
+        req.setAttribute("departments",  departments);
+        req.setAttribute("activeShifts", activeShifts);
         req.getRequestDispatcher("/hr/shift-list.jsp").forward(req, resp);
     }
 
@@ -140,7 +166,7 @@ public class ShiftController extends HttpServlet {
 
         Shift s = shiftService.getShiftById(id);
         if (s == null) {
-            redirect(resp, req, ATTR_ERROR, "Khong tim thay ca");
+            redirect(resp, req, ATTR_ERROR, "KhÃ´ng tÃ¬m tháº¥y ca");
             return;
         }
 
@@ -148,37 +174,42 @@ public class ShiftController extends HttpServlet {
         listShifts(req, resp);
     }
 
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // Create Shift
+    // Invokes: <<include>> Validate Shift Data
+    //          <<extend>>  Auto Detect Night Shift
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
     private void createShift(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
-        String name = trimParam(req, "shiftName");
-        if (name == null || name.isEmpty()) {
-            redirect(resp, req, ATTR_ERROR, "Ten ca khong duoc de trong");
+        Shift s = buildShiftFromRequest(req);
+        if (s == null) {
+            redirect(resp, req, ATTR_ERROR, "Dá»¯ liá»‡u khÃ´ng há»£p lá»‡");
             return;
         }
-        if (name.length() > 50) {
-            redirect(resp, req, ATTR_ERROR, "Ten ca khong vuot qua 50 ky tu");
-            return;
-        }
-        if (shiftService.isShiftNameExists(name, 0)) {
-            redirect(resp, req, ATTR_ERROR, "Ten ca da ton tai");
-            return;
-        }
-
-        LocalTime start = parseTime(trimParam(req, "startTime"));
-        LocalTime end   = parseTime(trimParam(req, "endTime"));
-        if (start == null || end == null) {
-            redirect(resp, req, ATTR_ERROR, "Gio bat dau va ket thuc la bat buoc");
-            return;
-        }
-
-        Shift s = buildShift(req, new Shift(), name, start, end);
         s.setStatus(1);
+
+        // <<include>> Validate Shift Data
+        String validationError = shiftService.validateShiftData(s, 0);
+        if (validationError != null) {
+            redirect(resp, req, ATTR_ERROR, validationError);
+            return;
+        }
+
+        // <<extend>> Auto Detect Night Shift
+        shiftService.autoDetectNightShift(s);
 
         boolean ok = shiftService.addShift(s);
         redirect(resp, req,
                 ok ? ATTR_MESSAGE : ATTR_ERROR,
-                ok ? "Them ca lam viec thanh cong" : "Them ca that bai");
+                ok ? "ThÃªm ca lÃ m viá»‡c thÃ nh cÃ´ng" : "ThÃªm ca tháº¥t báº¡i");
     }
+
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // Edit Shift
+    // Invokes: <<include>> Validate Shift Data
+    //          <<extend>>  Auto Detect Night Shift
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     private void updateShift(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
@@ -190,34 +221,50 @@ public class ShiftController extends HttpServlet {
 
         Shift existing = shiftService.getShiftById(id);
         if (existing == null) {
-            redirect(resp, req, ATTR_ERROR, "Khong tim thay ca");
+            redirect(resp, req, ATTR_ERROR, "KhÃ´ng tÃ¬m tháº¥y ca");
             return;
         }
 
-        String name = trimParam(req, "shiftName");
-        if (name == null || name.isEmpty()) {
-            redirect(resp, req, ATTR_ERROR, "Ten ca khong duoc de trong");
+        // Build updated shift from request
+        Shift updated = buildShiftFromRequest(req);
+        if (updated == null) {
+            redirect(resp, req, ATTR_ERROR, "Dá»¯ liá»‡u khÃ´ng há»£p lá»‡");
             return;
         }
-        if (shiftService.isShiftNameExists(name, id)) {
-            redirect(resp, req, ATTR_ERROR, "Ten ca da ton tai");
+        updated.setShiftId(id);
+        updated.setStatus(existing.getStatus());
+
+        // <<include>> Validate Shift Data
+        String validationError = shiftService.validateShiftData(updated, id);
+        if (validationError != null) {
+            redirect(resp, req, ATTR_ERROR, validationError);
             return;
         }
 
-        LocalTime start = parseTime(trimParam(req, "startTime"));
-        LocalTime end   = parseTime(trimParam(req, "endTime"));
-        if (start == null || end == null) {
-            redirect(resp, req, ATTR_ERROR, "Gio bat dau va ket thuc la bat buoc");
-            return;
-        }
+        // <<extend>> Auto Detect Night Shift
+        shiftService.autoDetectNightShift(updated);
 
-        buildShift(req, existing, name, start, end);
-        existing.setCoefficient(parseFloatParam(req, "coefficient", existing.getCoefficient()));
-
-        boolean ok = shiftService.updateShift(existing);
+        boolean ok = shiftService.updateShift(updated);
         redirect(resp, req,
                 ok ? ATTR_MESSAGE : ATTR_ERROR,
-                ok ? "Cap nhat ca thanh cong" : "Cap nhat that bai");
+                ok ? "Cáº­p nháº­t ca thÃ nh cÃ´ng" : "Cáº­p nháº­t tháº¥t báº¡i");
+    }
+
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // Activate / Deactivate Shift (Toggle status)
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+    private void toggleStatus(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+        Integer id = parseIntParam(req, PARAM_SHIFT_ID);
+        if (id == null) {
+            redirect(resp, req, ATTR_ERROR, INVALID_ID);
+            return;
+        }
+        boolean ok = shiftService.toggleShiftStatus(id);
+        redirect(resp, req,
+                ok ? ATTR_MESSAGE : ATTR_ERROR,
+                ok ? "Cáº­p nháº­t tráº¡ng thÃ¡i thÃ nh cÃ´ng" : "Cáº­p nháº­t tráº¡ng thÃ¡i tháº¥t báº¡i");
     }
 
     private void deleteShift(HttpServletRequest req, HttpServletResponse resp)
@@ -230,41 +277,69 @@ public class ShiftController extends HttpServlet {
         boolean ok = shiftService.deleteShift(id);
         redirect(resp, req,
                 ok ? ATTR_MESSAGE : ATTR_ERROR,
-                ok ? "Xoa ca thanh cong" : "Xoa that bai");
+                ok ? "XÃ³a ca thÃ nh cÃ´ng" : "XÃ³a tháº¥t báº¡i");
     }
 
-    private void toggleStatus(HttpServletRequest req, HttpServletResponse resp)
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // Assign Default Shift to Department
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+    private void assignDeptShift(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
-        Integer id = parseIntParam(req, PARAM_SHIFT_ID);
+        Integer deptId = parseIntParam(req, "departmentId");
+        Integer shiftId = parseIntParam(req, "shiftId");
+
+        if (deptId == null || shiftId == null) {
+            redirect(resp, req, ATTR_ERROR, "Vui lÃ²ng chá»n phÃ²ng ban vÃ  ca lÃ m viá»‡c");
+            return;
+        }
+
+        boolean ok = shiftService.assignDefaultShiftToDepartment(deptId, shiftId);
+        redirect(resp, req,
+                ok ? ATTR_MESSAGE : ATTR_ERROR,
+                ok ? "GÃ¡n ca máº·c Ä‘á»‹nh cho phÃ²ng ban thÃ nh cÃ´ng" : "Ca nÃ y Ä‘Ã£ Ä‘Æ°á»£c gÃ¡n cho phÃ²ng ban hoáº·c cÃ³ lá»—i xáº£y ra");
+    }
+
+    private void removeDeptShift(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException {
+        Integer id = parseIntParam(req, "deptShiftId");
         if (id == null) {
             redirect(resp, req, ATTR_ERROR, INVALID_ID);
             return;
         }
-        boolean ok = shiftService.toggleShiftStatus(id);
+        boolean ok = shiftService.removeDepartmentShift(id);
         redirect(resp, req,
                 ok ? ATTR_MESSAGE : ATTR_ERROR,
-                ok ? "Cap nhat trang thai thanh cong" : "Cap nhat trang thai that bai");
+                ok ? "XÃ³a ca máº·c Ä‘á»‹nh thÃ nh cÃ´ng" : "XÃ³a tháº¥t báº¡i");
     }
 
-    // ═══════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // Builders
-    // ═══════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-    private Shift buildShift(HttpServletRequest req, Shift s,
-                             String name, LocalTime start, LocalTime end) {
-        s.setShiftName(name);
+    private Shift buildShiftFromRequest(HttpServletRequest req) {
+        String name = trimParam(req, "shiftName");
+        LocalTime start = parseTime(trimParam(req, "startTime"));
+        LocalTime end   = parseTime(trimParam(req, "endTime"));
+
+        if (name == null || start == null || end == null) {
+            return null;
+        }
+
+        Shift s = new Shift();
+        s.setShiftName(name.trim());
         s.setStartTime(start);
         s.setEndTime(end);
         s.setBreakStart(parseTime(trimParam(req, "breakStart")));
         s.setBreakEnd(parseTime(trimParam(req, "breakEnd")));
-        s.setNightShift("on".equals(req.getParameter("isNightShift")) || end.isBefore(start));
+        s.setNightShift("on".equals(req.getParameter("isNightShift")));
         s.setCoefficient(parseFloatParam(req, "coefficient", 1.0f));
         return s;
     }
 
-    // ═══════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // Helpers
-    // ═══════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     private User getLoginUser(HttpServletRequest req) {
         HttpSession s = req.getSession(false);
@@ -327,3 +402,4 @@ public class ShiftController extends HttpServlet {
         return URLEncoder.encode(s, StandardCharsets.UTF_8);
     }
 }
+

@@ -1,5 +1,5 @@
-<%@page contentType="text/html" pageEncoding="UTF-8" %>
-<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@taglib prefix="c" uri="jakarta.tags.core" %>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
@@ -249,7 +249,7 @@ body {
 <div class="dashboard-wrapper">
     <%-- Shared Sidebar --%>
     <jsp:include page="../shared/sidebar.jsp">
-        <jsp:param name="activeMenu" value="leave-ot" />
+        <jsp:param name="activeMenu" value="leave" />
     </jsp:include>
 
     <div class="dash-main">
@@ -322,20 +322,10 @@ body {
                         <div class="stat-mini-label">Đơn nghỉ phép chờ</div>
                     </div>
                 </div>
-                <c:if test="${sessionScope.currentUser.roleId == 3 || sessionScope.currentUser.roleId == 2}">
-                    <%-- OT chỉ có ở xưởng (Supervisor) hoặc HR Manager xem tổng --%>
-                    <div class="stat-mini">
-                        <div class="stat-mini-icon info"><i class="fas fa-business-time"></i></div>
-                        <div>
-                            <div class="stat-mini-val">${fn:length(pendingOTs)}</div>
-                            <div class="stat-mini-label">Phân ca OT chờ duyệt</div>
-                        </div>
-                    </div>
-                </c:if>
                 <div class="stat-mini">
                     <div class="stat-mini-icon success"><i class="fas fa-check-double"></i></div>
                     <div>
-                        <div class="stat-mini-val">${fn:length(pendingLeaves) + fn:length(pendingOTs)}</div>
+                        <div class="stat-mini-val">${fn:length(pendingLeaves)}</div>
                         <div class="stat-mini-label">Tổng chờ xử lý</div>
                     </div>
                 </div>
@@ -345,20 +335,11 @@ body {
             <div class="mgr-card">
                 <div class="mgr-tabs">
                     <button class="mgr-tab active" onclick="switchTab(event, 'leavePane')">
-                        <i class="fas fa-umbrella-beach"></i> Đơn nghỉ phép
+                        <i class="fas fa-umbrella-beach"></i> Đơn Nghỉ phép
                         <c:if test="${fn:length(pendingLeaves) > 0}">
                             <span class="badge-count">${fn:length(pendingLeaves)}</span>
                         </c:if>
                     </button>
-                    <%-- Tab OT chỉ hiện với Supervisor (xưởng) hoặc HR Manager xem tổng --%>
-                    <c:if test="${sessionScope.currentUser.roleId == 3 || sessionScope.currentUser.roleId == 2}">
-                        <button class="mgr-tab" onclick="switchTab(event, 'otPane')">
-                            <i class="fas fa-business-time"></i> Phân ca Tăng ca (OT)
-                            <c:if test="${fn:length(pendingOTs) > 0}">
-                                <span class="badge-count">${fn:length(pendingOTs)}</span>
-                            </c:if>
-                        </button>
-                    </c:if>
                 </div>
 
                 <%-- LEAVE TAB --%>
@@ -400,24 +381,24 @@ body {
                                                 </td>
                                                 <td>
                                                     <div class="action-btns" style="justify-content:center;">
-                                                        <form action="${pageContext.request.contextPath}/manager/leave-ot" method="POST" style="display:inline;">
-                                                            <input type="hidden" name="type" value="leave">
-                                                            <input type="hidden" name="id" value="${lr.requestId}">
-                                                            <input type="hidden" name="action" value="approve">
-                                                            <button type="submit" class="btn-approve"
-                                                                    onclick="return confirm('Duyệt đơn nghỉ phép của ${lr.userName}?');">
-                                                                <i class="fas fa-check"></i> Duyệt
-                                                            </button>
-                                                        </form>
-                                                        <form action="${pageContext.request.contextPath}/manager/leave-ot" method="POST" style="display:inline;">
-                                                            <input type="hidden" name="type" value="leave">
-                                                            <input type="hidden" name="id" value="${lr.requestId}">
-                                                            <input type="hidden" name="action" value="reject">
-                                                            <button type="submit" class="btn-reject"
-                                                                    onclick="return confirm('Từ chối đơn nghỉ phép của ${lr.userName}?');">
-                                                                <i class="fas fa-times"></i> Từ chối
-                                                            </button>
-                                                        </form>
+                                                            <form action="${pageContext.request.contextPath}/manager/leave" method="POST" style="display:inline;">
+                                                                <input type="hidden" name="type" value="leave">
+                                                                <input type="hidden" name="id" value="${lr.requestId}">
+                                                                <input type="hidden" name="action" value="approve">
+                                                                <button type="submit" class="btn-approve" 
+                                                                        onclick="return confirm('Duyệt đơn nghỉ phép cho ${lr.userName}?');">
+                                                                    <i class="fas fa-check"></i> Duyệt
+                                                                </button>
+                                                            </form>
+                                                            <form action="${pageContext.request.contextPath}/manager/leave" method="POST" style="display:inline;">
+                                                                <input type="hidden" name="type" value="leave">
+                                                                <input type="hidden" name="id" value="${lr.requestId}">
+                                                                <input type="hidden" name="action" value="reject">
+                                                                <button type="submit" class="btn-reject"
+                                                                        onclick="return confirm('Từ chối đơn nghỉ phép của ${lr.userName}?');">
+                                                                    <i class="fas fa-times"></i> Từ chối
+                                                                </button>
+                                                            </form>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -435,79 +416,7 @@ body {
                     </c:choose>
                 </div>
 
-                <%-- OT TAB — chỉ Supervisor (3) xưởng và HR Manager (2) xem tổng --%>
-                <c:if test="${sessionScope.currentUser.roleId == 3 || sessionScope.currentUser.roleId == 2}">
-                    <div class="mgr-tab-pane" id="otPane">
-                        <c:choose>
-                            <c:when test="${not empty pendingOTs}">
-                                <div class="table-responsive">
-                                    <table class="mgr-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Nhân viên</th>
-                                                <th>Ngày làm việc</th>
-                                                <th>Ca tăng ca</th>
-                                                <th>Số giờ OT</th>
-                                                <th>Lý do phân ca</th>
-                                                <th>Ngày tạo</th>
-                                                <th style="text-align:center;">Thao tác</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <c:forEach var="ot" items="${pendingOTs}">
-                                                <tr>
-                                                    <td>
-                                                        <div class="emp-cell">
-                                                            <div class="emp-avatar">${fn:substring(ot.userName, 0, 1)}</div>
-                                                            <span class="emp-name">${ot.userName}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td><fmt:formatDate value="${ot.workDate}" pattern="dd/MM/yyyy"/></td>
-                                                    <td><span class="leave-type-badge" style="background:#fef3c7;color:#92400e;">
-                                                        <i class="fas fa-clock"></i> ${ot.shiftName}
-                                                    </span></td>
-                                                    <td><span class="ot-hours">${ot.overtimeHrs}h</span></td>
-                                                    <td class="reason-cell" title="${ot.otReason}">${ot.otReason}</td>
-                                                    <td style="color:#94a3b8;font-size:0.82rem;">
-                                                        <fmt:formatDate value="${ot.createdAt}" pattern="dd/MM/yyyy HH:mm"/>
-                                                    </td>
-                                                    <td>
-                                                        <div class="action-btns" style="justify-content:center;">
-                                                            <form action="${pageContext.request.contextPath}/manager/leave-ot" method="POST" style="display:inline;">
-                                                                <input type="hidden" name="type" value="ot">
-                                                                <input type="hidden" name="id" value="${ot.attendanceId}">
-                                                                <input type="hidden" name="action" value="approve">
-                                                                <button type="submit" class="btn-approve"
-                                                                        onclick="return confirm('Xác nhận phân ca OT cho ${ot.userName}?');">
-                                                                    <i class="fas fa-check"></i> Xác nhận
-                                                                </button>
-                                                            </form>
-                                                            <form action="${pageContext.request.contextPath}/manager/leave-ot" method="POST" style="display:inline;">
-                                                                <input type="hidden" name="type" value="ot">
-                                                                <input type="hidden" name="id" value="${ot.attendanceId}">
-                                                                <input type="hidden" name="action" value="reject">
-                                                                <button type="submit" class="btn-reject"
-                                                                        onclick="return confirm('Huỷ phân ca OT cho ${ot.userName}?');">
-                                                                    <i class="fas fa-times"></i> Huỷ
-                                                                </button>
-                                                            </form>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            </c:forEach>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </c:when>
-                            <c:otherwise>
-                                <div class="empty-state">
-                                    <i class="fas fa-inbox"></i>
-                                    <p>Không có ca tăng ca nào đang chờ xác nhận</p>
-                                </div>
-                            </c:otherwise>
-                        </c:choose>
-                    </div>
-                </c:if>
+
             </div>
 
         </div><%-- end dash-content --%>
@@ -515,11 +424,11 @@ body {
 </div><%-- end dashboard-wrapper --%>
 
 <script>
-function switchTab(event, paneId) {
+function switchTab(evt, tabId) {
     document.querySelectorAll('.mgr-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.mgr-tab-pane').forEach(p => p.classList.remove('active'));
-    event.currentTarget.classList.add('active');
-    document.getElementById(paneId).classList.add('active');
+    evt.currentTarget.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
 }
 </script>
 

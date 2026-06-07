@@ -1,4 +1,4 @@
-package controller.hr;
+﻿package controller.hr;
 
 import dao.DepartmentDAO;
 import jakarta.servlet.ServletException;
@@ -23,7 +23,7 @@ public class DepartmentController extends HttpServlet {
             return;
         }
         User user = (User) session.getAttribute("currentUser");
-        // Chỉ HR Manager (role 2) mới được quản lý phòng ban
+        // ChÃ¡Â»â€° HR Manager (role 2) mÃ¡Â»â€ºi Ã„â€˜Ã†Â°Ã¡Â»Â£c quÃ¡ÂºÂ£n lÃƒÂ½ phÃƒÂ²ng ban
         if (user.getRoleId() != 2) {
             response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
@@ -66,3 +66,5 @@ public class DepartmentController extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/hr/department");
     }
 }
+
+

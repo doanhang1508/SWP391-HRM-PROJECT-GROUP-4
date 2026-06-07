@@ -29,13 +29,10 @@ public interface ShiftAssignmentService {
 
     // ── Schedule Dashboard ──
     /**
-     * Build a weekly schedule matrix for the dashboard. Returns a map: userId →
-     * (Map of dayOfWeek-index → ShiftAssignment). The outer map is keyed by
-     * userId; inner map has 7 entries (Mon=0..Sun=6).
-     *
-     * @param weekStart the Monday of the target week.
+     * Build a matrix: userId -> { dayIndex(0=Mon..6=Sun) -> List<ShiftAssignment> }
+     * This powers the visual calendar grid in the JSP, supporting multiple shifts per day.
      */
-    Map<Integer, Map<Integer, ShiftAssignment>> buildWeeklyScheduleMatrix(LocalDate weekStart);
+    Map<Integer, Map<Integer, List<ShiftAssignment>>> buildWeeklyScheduleMatrix(LocalDate weekStart);
 
     // ── Next-Shift Clock-In Filter ──
     /**

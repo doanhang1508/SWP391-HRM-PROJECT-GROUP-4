@@ -1,4 +1,4 @@
-package controller.hr;
+﻿package controller.hr;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -19,7 +19,7 @@ public class PendingRequestsController extends HttpServlet {
             return;
         }
         User user = (User) session.getAttribute("currentUser");
-        // Chỉ HR Manager (role 2) mới được quản lý đơn chờ xử lý
+        // ChÃ¡Â»â€° HR Manager (role 2) mÃ¡Â»â€ºi Ã„â€˜Ã†Â°Ã¡Â»Â£c quÃ¡ÂºÂ£n lÃƒÂ½ Ã„â€˜Ã†Â¡n chÃ¡Â»Â xÃ¡Â»Â­ lÃƒÂ½
         if (user.getRoleId() != 2) {
             response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
@@ -33,3 +33,5 @@ public class PendingRequestsController extends HttpServlet {
         doGet(request, response);
     }
 }
+
+

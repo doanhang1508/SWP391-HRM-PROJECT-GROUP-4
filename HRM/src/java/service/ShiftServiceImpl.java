@@ -1,7 +1,10 @@
 package service;
 
+import dao.DepartmentShiftDAO;
+import dao.DepartmentShiftDAOImpl;
 import dao.ShiftDAO;
 import dao.ShiftDAOImpl;
+import model.DepartmentShift;
 import model.Shift;
 
 import java.time.Duration;
@@ -9,9 +12,20 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
+import dao.UserDAO;
+import model.User;
+import dao.ShiftAssignmentDAO;
+import dao.ShiftAssignmentDAOImpl;
+
 /**
- * ShiftServiceImpl — ALL business logic for Shift management. Handles midnight
- * crossing, grace periods, lateness, and OT prevention.
+ * ShiftServiceImpl — ALL business logic for Shift management.
+ *
+ * Implements Use Case Diagram relationships:
+ *   <<include>> Validate Shift Data   → validateShiftData()
+ *   <<extend>>  Auto Detect Night Shift → autoDetectNightShift()
+ *
+ * Also handles midnight crossing, grace periods, lateness, OT prevention,
+ * and Department Shift mapping.
  */
 public class ShiftServiceImpl implements ShiftService {
 
@@ -21,13 +35,16 @@ public class ShiftServiceImpl implements ShiftService {
     private static final int GRACE_PERIOD_MINUTES = 5;
 
     private final ShiftDAO shiftDAO;
+    private final DepartmentShiftDAO departmentShiftDAO;
 
     public ShiftServiceImpl() {
         this.shiftDAO = new ShiftDAOImpl();
+        this.departmentShiftDAO = new DepartmentShiftDAOImpl();
     }
 
     public ShiftServiceImpl(ShiftDAO shiftDAO) {
         this.shiftDAO = shiftDAO;
+        this.departmentShiftDAO = new DepartmentShiftDAOImpl();
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -71,6 +88,151 @@ public class ShiftServiceImpl implements ShiftService {
     @Override
     public boolean isShiftNameExists(String n, int exId) {
         return shiftDAO.isShiftNameExists(n, exId);
+    }
+
+    @Override
+    public int findOrCreateCustomShift(LocalTime startTime, LocalTime endTime) {
+        List<Shift> all = shiftDAO.getAllShifts();
+        for (Shift s : all) {
+            if (s.getStartTime() != null && s.getEndTime() != null
+                    && s.getStartTime().equals(startTime) && s.getEndTime().equals(endTime)
+                    && s.getShiftName() != null && s.getShiftName().startsWith("Tăng ca (")) {
+                return s.getShiftId();
+            }
+        }
+        
+        // Not found, create new one
+        Shift newShift = new Shift();
+        newShift.setShiftName("Tăng ca (" + startTime.toString() + " - " + endTime.toString() + ")");
+        newShift.setStartTime(startTime);
+        newShift.setEndTime(endTime);
+        autoDetectNightShift(newShift);
+        newShift.setCoefficient(1.5f); // Overtime default multiplier
+        newShift.setStatus(1); // Active
+        
+        shiftDAO.addShift(newShift);
+        
+        // Fetch it again to get the generated ID
+        all = shiftDAO.getAllShifts();
+        int maxId = -1;
+        for (Shift s : all) {
+            if (s.getShiftId() > maxId) {
+                maxId = s.getShiftId();
+            }
+        }
+        return maxId;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // <<include>> Validate Shift Data
+    //
+    // Use Case: Called by both "Create Shift" and "Edit Shift".
+    // Ensures data integrity before persisting to database.
+    // ═══════════════════════════════════════════════════════════════
+    @Override
+    public String validateShiftData(Shift shift, int excludeShiftId) {
+        // 1. Null check
+        if (shift == null) {
+            return "Dữ liệu ca làm việc không được null";
+        }
+
+        // 2. Shift name validation
+        if (shift.getShiftName() == null || shift.getShiftName().trim().isEmpty()) {
+            return "Tên ca làm việc không được để trống";
+        }
+        if (shift.getShiftName().trim().length() > 50) {
+            return "Tên ca làm việc không được vượt quá 50 ký tự";
+        }
+
+        // 3. Time format validation
+        if (shift.getStartTime() == null) {
+            return "Giờ bắt đầu không được để trống";
+        }
+        if (shift.getEndTime() == null) {
+            return "Giờ kết thúc không được để trống";
+        }
+
+        // 4. Coefficient validation
+        if (shift.getCoefficient() <= 0) {
+            return "Hệ số lương phải lớn hơn 0";
+        }
+
+        // 5. Break time validation
+        if (shift.getBreakStart() != null && shift.getBreakEnd() != null) {
+            if (!shift.getBreakStart().isBefore(shift.getBreakEnd())) {
+                return "Giờ bắt đầu nghỉ phải trước giờ kết thúc nghỉ";
+            }
+        }
+
+        // 6. Duplicate name check (DB query)
+        if (shiftDAO.isShiftNameExists(shift.getShiftName().trim(), excludeShiftId)) {
+            return "Tên ca làm việc đã tồn tại trong hệ thống";
+        }
+
+        return null; // null = valid
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // <<extend>> Auto Detect Night Shift
+    //
+    // Use Case: Conditionally triggered by "Create Shift" and "Edit Shift".
+    // If end_time.isBefore(start_time), this is a night shift that crosses
+    // midnight. The system automatically sets:
+    //   - isNightShift = true
+    //   - coefficient = 1.3 (night shift premium)
+    // ═══════════════════════════════════════════════════════════════
+    @Override
+    public void autoDetectNightShift(Shift shift) {
+        if (shift == null || shift.getStartTime() == null || shift.getEndTime() == null) {
+            return;
+        }
+
+        if (shift.getEndTime().isBefore(shift.getStartTime())) {
+            // End time before start time → crosses midnight → Night Shift
+            shift.setNightShift(true);
+            shift.setCoefficient(1.3f);
+        } else {
+            shift.setNightShift(false);
+            // Keep coefficient as specified by user (default 1.0)
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Department Shift Mapping
+    // ═══════════════════════════════════════════════════════════════
+    @Override
+    public List<DepartmentShift> getAllDepartmentShifts() {
+        return departmentShiftDAO.getAll();
+    }
+
+    @Override
+    public List<DepartmentShift> getDepartmentShiftsByDeptId(int deptId) {
+        return departmentShiftDAO.getByDepartmentId(deptId);
+    }
+
+    @Override
+    public boolean assignDefaultShiftToDepartment(int departmentId, int shiftId) {
+        boolean ok = departmentShiftDAO.add(departmentId, shiftId);
+        if (ok) {
+            // Automatically assign this shift to all users in the department 
+            // for Monday to Friday, spanning the next 90 days.
+            UserDAO userDAO = new UserDAO();
+            List<User> users = userDAO.getByDepartment(departmentId);
+            ShiftAssignmentDAO saDAO = new ShiftAssignmentDAOImpl();
+            
+            LocalDate today = LocalDate.now();
+            LocalDate end = today.plusDays(90); // default to 90 days ahead
+            
+            for (User u : users) {
+                saDAO.batchAssignWeekdays(u.getUserId(), shiftId, today, end);
+            }
+        }
+        return ok;
+    }
+
+    @Override
+    public boolean removeDepartmentShift(int id) {
+        return departmentShiftDAO.delete(id);
     }
 
     // ═══════════════════════════════════════════════════════════════

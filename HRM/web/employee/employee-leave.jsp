@@ -1,5 +1,5 @@
 <%@page contentType="text/html" pageEncoding="UTF-8" %>
-<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@taglib prefix="c" uri="jakarta.tags.core" %>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
 <c:set var="pageTitle" value="Đơn nghỉ phép / OT - Enterprise HRM" scope="request" />
@@ -203,8 +203,8 @@
 
         <!-- Page Banner -->
         <div class="page-banner">
-            <h2><i class="fas fa-paper-plane me-2"></i>Đơn nghỉ phép / OT</h2>
-            <p>Gửi yêu cầu nghỉ phép hoặc đăng ký tăng ca. Theo dõi lịch sử và trạng thái xử lý.</p>
+            <h2><i class="fas fa-paper-plane me-2"></i>Đơn nghỉ phép</h2>
+            <p>Gửi yêu cầu nghỉ phép. Theo dõi lịch sử và trạng thái xử lý.</p>
         </div>
 
         <!-- Alerts -->
@@ -224,22 +224,22 @@
             <c:remove var="errorMessage" scope="session"/>
         </c:if>
 
-        <!-- Row: Leave + OT Forms -->
-        <div class="row g-4">
+        <!-- Row: Leave Form -->
+        <div class="row g-4 justify-content-center">
             <!-- LEAVE REQUEST -->
-            <div class="col-lg-6">
+            <div class="col-lg-8">
                 <div class="leave-card">
                     <div class="leave-card-header bg-leave">
                         <i class="fas fa-umbrella-beach"></i> Gửi đơn nghỉ phép
                     </div>
                     <div class="leave-card-body">
-                        <div class="info-badge">
+                        <div class="info-badge" id="annualLeaveBadge">
                             <i class="fas fa-info-circle"></i>
                             <div>
-                                Phép năm còn lại: <strong><fmt:formatNumber value="${remainingAnnualLeave}" maxFractionDigits="1"/> ngày</strong>
+                                Phép còn lại: <strong id="dynamicBalanceText">...</strong>
                             </div>
                         </div>
-                        <form action="${pageContext.request.contextPath}/employee/leave-ot" method="POST" class="leave-form">
+                        <form action="${pageContext.request.contextPath}/employee/leave" method="POST" class="leave-form">
                             <input type="hidden" name="action" value="submitLeave">
 
                             <div class="mb-3">
@@ -288,49 +288,7 @@
                 </div>
             </div>
 
-            <!-- OVERTIME REQUEST -->
-            <div class="col-lg-6">
-                <div class="leave-card">
-                    <div class="leave-card-header bg-ot">
-                        <i class="fas fa-business-time"></i> Đăng ký tăng ca (OT)
-                    </div>
-                    <div class="leave-card-body">
-                        <form action="${pageContext.request.contextPath}/employee/leave-ot" method="POST" class="leave-form">
-                            <input type="hidden" name="action" value="submitOT">
 
-                            <div class="mb-3">
-                                <label for="workDate" class="form-label">Ngày làm việc</label>
-                                <input type="date" class="form-control" id="workDate" name="workDate" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="shiftId" class="form-label">Ca làm việc</label>
-                                <select class="form-select" id="shiftId" name="shiftId" required>
-                                    <option value="" disabled selected>-- Chọn ca làm việc --</option>
-                                    <c:forEach var="s" items="${shifts}">
-                                        <option value="${s.shiftId}">${s.shiftName} (${s.startTime} - ${s.endTime})</option>
-                                    </c:forEach>
-                                </select>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="estimatedHours" class="form-label">Số giờ OT dự kiến</label>
-                                <input type="number" step="0.5" class="form-control" id="estimatedHours" name="estimatedHours" required placeholder="Ví dụ: 2.0">
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="otReason" class="form-label">Lý do / Mô tả</label>
-                                <textarea class="form-control" id="otReason" name="otReason" rows="3" required placeholder="Nhập lý do tăng ca..."></textarea>
-                            </div>
-
-                            <button type="submit" class="btn-submit-ot">
-                                <i class="fas fa-clock me-2"></i>Gửi yêu cầu OT
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
 
         <!-- History Section -->
         <div class="history-section">
@@ -338,11 +296,6 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="leave-tab" data-bs-toggle="tab" data-bs-target="#leaveHistory" type="button" role="tab">
                         <i class="fas fa-umbrella-beach me-1"></i>Lịch sử nghỉ phép
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="ot-tab" data-bs-toggle="tab" data-bs-target="#otHistory" type="button" role="tab">
-                        <i class="fas fa-business-time me-1"></i>Lịch sử tăng ca
                     </button>
                 </li>
             </ul>
@@ -392,45 +345,6 @@
                         </table>
                     </div>
                 </div>
-
-                <!-- OT History -->
-                <div class="tab-pane fade" id="otHistory" role="tabpanel">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Ngày</th>
-                                    <th>Ca</th>
-                                    <th>Giờ OT</th>
-                                    <th>Trạng thái</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <c:forEach var="ot" items="${otHistory}">
-                                    <tr>
-                                        <td>${ot.workDate}</td>
-                                        <td>${ot.shiftName}</td>
-                                        <td>${ot.overtimeHrs}</td>
-                                        <td>
-                                            <c:choose>
-                                                <c:when test="${ot.status == 'Present'}">
-                                                    <span class="badge bg-success" style="border-radius:6px;padding:5px 10px;">Đã duyệt</span>
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <span class="badge bg-warning text-dark" style="border-radius:6px;padding:5px 10px;">${ot.status}</span>
-                                                </c:otherwise>
-                                            </c:choose>
-                                        </td>
-                                    </tr>
-                                </c:forEach>
-                                <c:if test="${empty otHistory}">
-                                    <tr><td colspan="4" class="text-center text-muted py-4"><i class="fas fa-inbox me-2"></i>Chưa có yêu cầu tăng ca nào.</td></tr>
-                                </c:if>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
         </div>
 
     </div><!-- end .emp-content -->
@@ -453,8 +367,16 @@
             const s = new Date(startDate.value);
             const e = new Date(endDate.value);
             if (e >= s) {
-                const diffMs = e - s;
-                const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
+                let current = new Date(s);
+                let diffDays = 0;
+                while (current <= e) {
+                    const day = current.getDay();
+                    // 0 is Sunday, 6 is Saturday
+                    if (day !== 0 && day !== 6) {
+                        diffDays++;
+                    }
+                    current.setDate(current.getDate() + 1);
+                }
                 if (totalDays) totalDays.value = diffDays;
             }
             // Also enforce endDate >= startDate
@@ -464,6 +386,56 @@
 
     if (startDate) startDate.addEventListener('change', calcDays);
     if (endDate) endDate.addEventListener('change', calcDays);
+
+    // Leave Balances Map from backend
+    <%
+        // Fallback scriptlet to force evaluation even if Tomcat caches the old Controller class
+        service.LeaveService ls = new service.LeaveServiceImpl();
+        model.User currentUser = (model.User) session.getAttribute("currentUser");
+        java.util.Map<Integer, Double> bMap = new java.util.HashMap<>();
+        if (currentUser != null && request.getAttribute("leaveTypes") != null) {
+            for (model.LeaveType t : (java.util.List<model.LeaveType>)request.getAttribute("leaveTypes")) {
+                try {
+                    bMap.put(t.getLeaveTypeId(), ls.checkRemainingLeaveBalance(currentUser.getUserId(), t.getLeaveTypeId()));
+                } catch(Exception e) {
+                    bMap.put(t.getLeaveTypeId(), 0.0);
+                }
+            }
+        }
+        request.setAttribute("fallbackBalances", bMap);
+    %>
+    const leaveBalances = {
+        <c:forEach var="entry" items="${fallbackBalances}">
+            "${entry.key}": ${entry.value},
+        </c:forEach>
+    };
+
+    const leaveTypeSelect = document.getElementById('leaveTypeId');
+    const dynamicBalanceText = document.getElementById('dynamicBalanceText');
+    const annualLeaveBadge = document.getElementById('annualLeaveBadge');
+    
+    function toggleBadge() {
+        if (leaveTypeSelect && dynamicBalanceText) {
+            const typeId = leaveTypeSelect.value;
+            if (typeId) {
+                const bal = leaveBalances[typeId];
+                if (bal !== undefined && bal < 900) { // Assuming 999 is unbounded
+                    dynamicBalanceText.innerText = bal + " ngày";
+                    annualLeaveBadge.style.display = 'flex';
+                } else {
+                    dynamicBalanceText.innerText = "Không giới hạn / Theo quy định";
+                    annualLeaveBadge.style.display = 'flex';
+                }
+            } else {
+                annualLeaveBadge.style.display = 'none';
+            }
+        }
+    }
+    
+    if (leaveTypeSelect) {
+        leaveTypeSelect.addEventListener('change', toggleBadge);
+        toggleBadge();
+    }
 })();
 </script>
 

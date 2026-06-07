@@ -41,6 +41,12 @@ public interface ShiftAssignmentDAO {
     int batchAssign(int userId, int shiftId, LocalDate from, LocalDate to);
 
     /**
+     * Batch-insert assignments for a user across a date range, exclusively for weekdays (Monday to Friday).
+     * @return number of rows actually inserted.
+     */
+    int batchAssignWeekdays(int userId, int shiftId, LocalDate from, LocalDate to);
+
+    /**
      * Update the shift for an existing assignment.
      */
     boolean updateAssignment(int assignmentId, int newShiftId);
