@@ -275,7 +275,7 @@ CREATE TABLE leave_requests (
     approved_by   INT,
     created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_leave_user     FOREIGN KEY (user_id)       REFERENCES users(user_id)                 ON DELETE CASCADE,
-    CONSTRAINT fk_leave_type     FOREIGN KEY (leave_type_id) REFERENCES leave_types(leave_type_id)     ON DELETE RESTRICT,
+    CONSTRAINT fk_leave_type     FOREIGN KEY (leave_type_id) REFERENCES leave_types(leave_type_id)     ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE payroll (

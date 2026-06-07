@@ -122,10 +122,7 @@
         <servlet-name>PositionController</servlet-name>
         <servlet-class>controller.admin.PositionController</servlet-class>
     </servlet>
-    <servlet>
-        <servlet-name>ContractTypeController</servlet-name>
-        <servlet-class>controller.admin.ContractTypeController</servlet-class>
-    </servlet>
+
 
     <!-- ══════════════════════════════════════════════════════
          URL MAPPINGS
@@ -175,9 +172,6 @@
         <servlet-name>PositionController</servlet-name>
         <url-pattern>/admin/position</url-pattern>
     </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>ContractTypeController</servlet-name>
-        <url-pattern>/admin/contract-type</url-pattern>
-    </servlet-mapping>
+
 
 </web-app>

@@ -58,7 +58,7 @@ public class UserValidationTest {
     @Test
     public void TC04EmptyUsernameShouldReturnError() {
         User u = new User();
-        u.setUsername(); // Chỉ có dấu cách
+        u.setUsername(" "); // Chỉ có dấu cách
         u.setPassword("123456");
         u.setEmail("test@gmail.com");
         u.setRoleId(2);
