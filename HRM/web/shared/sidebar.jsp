@@ -358,56 +358,19 @@
                                             </a>
                                         </li>
 
-                                        <%-- ══════ ADMIN (roleId=1) ══════ --%>
+                                        <%-- ══════ ADMIN (roleId=1): CHỈ quản trị hệ thống ══════ --%>
                                             <c:if test="${sessionScope.currentUser.roleId == 1}">
-                                                <li class="sidebar-menu-category">Quản trị hệ thống</li>
+                                                <li class="sidebar-menu-category">Quản trị Hệ thống</li>
                                                 <li class="sidebar-item">
                                                     <a href="${pageContext.request.contextPath}/admin/users"
                                                         class="sidebar-link ${param.activeMenu eq 'users' ? 'active' : ''}">
-                                                        <i class="fas fa-users"></i> Quản lý Người dùng
+                                                        <i class="fas fa-user-plus"></i> Tạo Tài khoản
                                                     </a>
                                                 </li>
                                                 <li class="sidebar-item">
-                                                    <a href="${pageContext.request.contextPath}/admin/department"
-                                                        class="sidebar-link ${param.activeMenu eq 'department' ? 'active' : ''}">
-                                                        <i class="fas fa-building"></i> Phòng ban
-                                                    </a>
-                                                </li>
-                                                <li class="sidebar-item">
-                                                    <a href="${pageContext.request.contextPath}/admin/position"
-                                                        class="sidebar-link ${param.activeMenu eq 'position' ? 'active' : ''}">
-                                                        <i class="fas fa-id-card-alt"></i> Chức vụ
-                                                    </a>
-                                                </li>
-
-                                                <li class="sidebar-item">
-                                                    <a href="${pageContext.request.contextPath}/admin/contract-type"
-                                                        class="sidebar-link ${param.activeMenu eq 'contract-type' ? 'active' : ''}">
-                                                        <i class="fas fa-file-contract"></i> Loại hợp đồng
-                                                    </a>
-                                                </li>
-                                                <li class="sidebar-item">
-                                                    <a href="${pageContext.request.contextPath}/admin/shifts"
-                                                        class="sidebar-link ${param.activeMenu eq 'shifts' ? 'active' : ''}">
-                                                        <i class="fas fa-clock"></i> Quản lý Ca làm việc
-                                                    </a>
-                                                </li>
-                                                <li class="sidebar-item">
-                                                    <a href="${pageContext.request.contextPath}/admin/leave-types"
-                                                        class="sidebar-link ${param.activeMenu eq 'leave-types' ? 'active' : ''}">
-                                                        <i class="fas fa-calendar-times"></i> Loại nghỉ phép
-                                                    </a>
-                                                </li>
-                                                <li class="sidebar-item">
-                                                    <a href="${pageContext.request.contextPath}/admin/shifts?action=schedule"
-                                                        class="sidebar-link ${param.activeMenu eq 'schedule' ? 'active' : ''}">
-                                                        <i class="fas fa-calendar-alt"></i> Xếp lịch ca
-                                                    </a>
-                                                </li>
-                                                <li class="sidebar-item">
-                                                    <a href="${pageContext.request.contextPath}/admin/pending-requests"
-                                                        class="sidebar-link ${param.activeMenu eq 'pending-requests' ? 'active' : ''}">
-                                                        <i class="fas fa-hourglass-half"></i> Đơn chờ xử lý
+                                                    <a href="${pageContext.request.contextPath}/admin/automation"
+                                                        class="sidebar-link ${param.activeMenu eq 'automation' ? 'active' : ''}">
+                                                        <i class="fas fa-robot"></i> Tác vụ Tự động
                                                     </a>
                                                 </li>
                                                 <li class="sidebar-menu-category">Phân quyền</li>
@@ -425,7 +388,7 @@
                                                 </li>
                                             </c:if>
 
-                                            <%-- ══════ HR MANAGER (roleId=2) ══════ --%>
+                                            <%-- ══════ HR MANAGER (roleId=2): Quản lý nhân sự ══════ --%>
                                                 <c:if test="${sessionScope.currentUser.roleId == 2}">
                                                     <li class="sidebar-menu-category">Quản lý nhân viên</li>
                                                     <li class="sidebar-item">
@@ -434,6 +397,57 @@
                                                             <i class="fas fa-users"></i> Danh sách nhân viên
                                                         </a>
                                                     </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/admin/department"
+                                                            class="sidebar-link ${param.activeMenu eq 'department' ? 'active' : ''}">
+                                                            <i class="fas fa-building"></i> Phòng ban
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/admin/position"
+                                                            class="sidebar-link ${param.activeMenu eq 'position' ? 'active' : ''}">
+                                                            <i class="fas fa-id-card-alt"></i> Chức vụ
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/admin/contract-type"
+                                                            class="sidebar-link ${param.activeMenu eq 'contract-type' ? 'active' : ''}">
+                                                            <i class="fas fa-file-contract"></i> Loại hợp đồng
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/admin/pending-requests"
+                                                            class="sidebar-link ${param.activeMenu eq 'pending-requests' ? 'active' : ''}">
+                                                            <i class="fas fa-hourglass-half"></i> Đơn chờ xử lý
+                                                        </a>
+                                                    </li>
+
+                                                    <li class="sidebar-menu-category">Cấu hình Chính sách</li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/admin/shifts"
+                                                            class="sidebar-link ${param.activeMenu eq 'shifts' ? 'active' : ''}">
+                                                            <i class="fas fa-clock"></i> Quản lý Ca làm việc
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/admin/shifts?action=schedule"
+                                                            class="sidebar-link ${param.activeMenu eq 'schedule' ? 'active' : ''}">
+                                                            <i class="fas fa-calendar-alt"></i> Xếp lịch ca
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/admin/leave-types"
+                                                            class="sidebar-link ${param.activeMenu eq 'leave-types' ? 'active' : ''}">
+                                                            <i class="fas fa-calendar-times"></i> Loại nghỉ phép
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/admin/reward-disciplines"
+                                                            class="sidebar-link ${param.activeMenu eq 'reward-disciplines' ? 'active' : ''}">
+                                                            <i class="fas fa-award"></i> Danh mục Thưởng/Phạt
+                                                        </a>
+                                                    </li>
+
                                                     <li class="sidebar-menu-category">Lương &amp; Phúc lợi</li>
                                                     <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/hr/allowance"
@@ -460,52 +474,74 @@
                                                             <i class="fas fa-calendar-check"></i> Duyệt nghỉ phép / OT
                                                         </a>
                                                     </li>
+                                                    <%-- TODO Iteration 2: Xem tổng hợp chấm công toàn công ty --%>
                                                 </c:if>
 
-                                                <%-- ══════ FACTORY MANAGER (roleId=3) ══════ --%>
+                                                <%-- ══════ FACTORY MANAGER / SUPERVISOR (roleId=3) ══════
+                                                     Quyền: xếp ca + phân tăng ca cho công nhân xưởng,
+                                                     duyệt nghỉ phép xưởng, xem/duyệt yêu cầu điều chỉnh CC.
+                                                --%>
                                                     <c:if test="${sessionScope.currentUser.roleId == 3}">
                                                         <li class="sidebar-menu-category">Quản lý xưởng</li>
                                                         <li class="sidebar-item">
-                                                            <a href="${pageContext.request.contextPath}/admin/shifts?action=schedule"
-                                                                class="sidebar-link ${param.activeMenu eq 'schedule' ? 'active' : ''}">
-                                                                <i class="fas fa-calendar-alt"></i> Lịch ca làm việc
+                                                            <a href="${pageContext.request.contextPath}/manager/employees"
+                                                                class="sidebar-link ${param.activeMenu eq 'my-employees' ? 'active' : ''}">
+                                                                <i class="fas fa-users"></i> Nhân viên của tôi
+                                                            </a>
+                                                        </li>
+                                                        <li class="sidebar-item">
+                                                            <a href="${pageContext.request.contextPath}/manager/shift-schedule"
+                                                                class="sidebar-link ${param.activeMenu eq 'shift-schedule' ? 'active' : ''}">
+                                                                <i class="fas fa-calendar-alt"></i> Xếp lịch ca
                                                             </a>
                                                         </li>
                                                         <li class="sidebar-item">
                                                             <a href="${pageContext.request.contextPath}/manager/leave-ot"
                                                                 class="sidebar-link ${param.activeMenu eq 'leave-ot' ? 'active' : ''}">
-                                                                <i class="fas fa-calendar-check"></i> Duyệt nghỉ phép /
-                                                                OT
+                                                                <i class="fas fa-calendar-check"></i> Duyệt nghỉ phép / OT
                                                             </a>
                                                         </li>
+                                                        <li class="sidebar-menu-category">Chấm công</li>
+                                                        <%-- TODO Iteration 2: thêm Duyệt yêu cầu điều chỉnh chấm công --%>
                                                     </c:if>
 
-                                                    <%-- ══════ DIRECTOR (roleId=4) ══════ --%>
+                                                    <%-- ══════ DIRECTOR (roleId=4) ══════
+                                                         Quyền: xem tổng quan nhân sự,
+                                                         duyệt chốt bảng lương (Iteration 2),
+                                                         xem báo cáo tổng hợp (Iteration 2).
+                                                         KHÔNG có quyền vận hành (phòng ban CRUD, etc.)
+                                                    --%>
                                                         <c:if test="${sessionScope.currentUser.roleId == 4}">
-                                                            <li class="sidebar-menu-category">Báo cáo &amp; Tổng quan
-                                                            </li>
+                                                            <li class="sidebar-menu-category">Bảng điều hành</li>
                                                             <li class="sidebar-item">
-                                                                <a href="${pageContext.request.contextPath}/admin/department"
-                                                                    class="sidebar-link ${param.activeMenu eq 'department' ? 'active' : ''}">
-                                                                    <i class="fas fa-building"></i> Phòng ban
+                                                                <a href="${pageContext.request.contextPath}/director/dashboard"
+                                                                    class="sidebar-link ${param.activeMenu eq 'director-dashboard' ? 'active' : ''}">
+                                                                    <i class="fas fa-tachometer-alt"></i> Tổng quan
                                                                 </a>
                                                             </li>
-                                                            <li class="sidebar-item">
-                                                                <a href="#"
-                                                                    class="sidebar-link ${param.activeMenu eq 'reports' ? 'active' : ''}">
-                                                                    <i class="fas fa-chart-pie"></i> Báo cáo nhân sự
-                                                                </a>
+                                                            <li class="sidebar-menu-category">Lương & Phê duyệt</li>
+                                                            <%-- TODO Iteration 2: Duyệt chốt bảng lương --%>
+                                                            <li class="sidebar-item sidebar-item--disabled">
+                                                                <span class="sidebar-link" style="opacity:0.4;cursor:not-allowed;">
+                                                                    <i class="fas fa-file-invoice-dollar"></i> Duyệt bảng lương
+                                                                    <span style="font-size:0.68rem;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;margin-left:6px;">Iter 2</span>
+                                                                </span>
                                                             </li>
-                                                            <li class="sidebar-item">
-                                                                <a href="${pageContext.request.contextPath}/admin/pending-requests"
-                                                                    class="sidebar-link ${param.activeMenu eq 'pending-requests' ? 'active' : ''}">
-                                                                    <i class="fas fa-hourglass-half"></i> Đơn chờ phê
-                                                                    duyệt
-                                                                </a>
+                                                            <li class="sidebar-menu-category">Báo cáo</li>
+                                                            <%-- TODO Iteration 2: Báo cáo nhân sự tổng hợp --%>
+                                                            <li class="sidebar-item sidebar-item--disabled">
+                                                                <span class="sidebar-link" style="opacity:0.4;cursor:not-allowed;">
+                                                                    <i class="fas fa-chart-line"></i> Báo cáo tổng hợp
+                                                                    <span style="font-size:0.68rem;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;margin-left:6px;">Iter 2</span>
+                                                                </span>
                                                             </li>
                                                         </c:if>
 
-                                                        <%-- ══════ HR STAFF (roleId=5) ══════ --%>
+                                                        <%-- ══════ HR STAFF (roleId=5) ══════
+                                                             Quyền: xem danh sách NV, upload/xem chấm công,
+                                                             quản lý hợp đồng, xuất payroll.
+                                                             KHÔNG duyệt nghỉ phép (Supervisor/DeptMgr duyệt).
+                                                        --%>
                                                             <c:if test="${sessionScope.currentUser.roleId == 5}">
                                                                 <li class="sidebar-menu-category">Quản lý nhân sự</li>
                                                                 <li class="sidebar-item">
@@ -514,35 +550,37 @@
                                                                         <i class="fas fa-users"></i> Danh sách nhân viên
                                                                     </a>
                                                                 </li>
-                                                                <li class="sidebar-menu-category">Nghỉ phép &amp; OT
-                                                                </li>
-                                                                <li class="sidebar-item">
-                                                                    <a href="${pageContext.request.contextPath}/manager/leave-ot"
-                                                                        class="sidebar-link ${param.activeMenu eq 'leave-ot' ? 'active' : ''}">
-                                                                        <i class="fas fa-calendar-check"></i> Duyệt nghỉ
-                                                                        phép / OT
-                                                                    </a>
-                                                                </li>
+                                                                <%-- TODO Iteration 2: thêm Onboarding / CCCD OCR --%>
+                                                                <%-- TODO Iteration 2: thêm Quản lý hợp đồng --%>
+                                                                <li class="sidebar-menu-category">Chấm công</li>
+                                                                <%-- TODO Iteration 2: thêm Upload chấm công --%>
+                                                                <%-- TODO Iteration 2: thêm Xem tổng hợp chấm công --%>
+                                                                <li class="sidebar-menu-category">Lương &amp; Phúc lợi</li>
+                                                                <%-- TODO Iteration 2: thêm Bảng lương tháng / Xuất payroll --%>
                                                             </c:if>
 
-                                                            <%-- ══════ DEPARTMENT MANAGER (roleId=6) ══════ --%>
+                                                            <%-- ══════ DEPARTMENT MANAGER (roleId=6) ══════
+                                                             Quyền: duyệt nghỉ phép nhân viên văn phòng,
+                                                             duyệt yêu cầu điều chỉnh chấm công phòng ban.
+                                                             KHÔNG xếp ca (văn phòng chỉ giờ hành chính).
+                                                             KHÔNG có OT (văn phòng không tăng ca).
+                                                        --%>
                                                                 <c:if test="${sessionScope.currentUser.roleId == 6}">
-                                                                    <li class="sidebar-menu-category">Quản lý phòng ban
+                                                                    <li class="sidebar-menu-category">Quản lý phòng ban</li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/manager/employees"
+                                                                            class="sidebar-link ${param.activeMenu eq 'my-employees' ? 'active' : ''}">
+                                                                            <i class="fas fa-users"></i> Nhân viên của tôi
+                                                                        </a>
                                                                     </li>
                                                                     <li class="sidebar-item">
                                                                         <a href="${pageContext.request.contextPath}/manager/leave-ot"
                                                                             class="sidebar-link ${param.activeMenu eq 'leave-ot' ? 'active' : ''}">
-                                                                            <i class="fas fa-calendar-check"></i> Duyệt
-                                                                            nghỉ phép / OT
+                                                                            <i class="fas fa-calendar-check"></i> Duyệt nghỉ phép
                                                                         </a>
                                                                     </li>
-                                                                    <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/admin/shifts?action=schedule"
-                                                                            class="sidebar-link ${param.activeMenu eq 'schedule' ? 'active' : ''}">
-                                                                            <i class="fas fa-calendar-alt"></i> Lịch ca
-                                                                            làm việc
-                                                                        </a>
-                                                                    </li>
+                                                                    <li class="sidebar-menu-category">Chấm công</li>
+                                                                    <%-- TODO Iteration 2: thêm Duyệt yêu cầu điều chỉnh chấm công --%>
                                                                 </c:if>
 
                                                                 <%-- ══════ TÀI KHOẢN (chung) ══════ --%>
@@ -550,8 +588,7 @@
                                                                     <li class="sidebar-item">
                                                                         <a href="${pageContext.request.contextPath}/profile"
                                                                             class="sidebar-link ${param.activeMenu eq 'profile' ? 'active' : ''}">
-                                                                            <i class="fas fa-id-badge"></i> Hồ sơ cá
-                                                                            nhân
+                                                                            <i class="fas fa-id-badge"></i> Thông tin cá nhân
                                                                         </a>
                                                                     </li>
                                                                     <li class="sidebar-item">

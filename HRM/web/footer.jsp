@@ -1,7 +1,49 @@
-﻿<%@page contentType="text/html" pageEncoding="UTF-8" %>
+<%@page contentType="text/html" pageEncoding="UTF-8" %>
     <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
         </main>
+
+        <style>
+            .social-link {
+                width: 36px;
+                height: 36px;
+                border: 1px solid rgba(255,255,255,.15);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: rgba(255,255,255,.5);
+                text-decoration: none;
+                transition: all .3s;
+            }
+            .social-link:hover,
+            .social-link:focus {
+                border-color: #63b3ed;
+                color: #63b3ed;
+                outline: none;
+            }
+            .footer-link {
+                color: rgba(255,255,255,.6);
+                text-decoration: none;
+                font-size: .88rem;
+                transition: color .2s;
+            }
+            .footer-link:hover,
+            .footer-link:focus {
+                color: #fff;
+                outline: none;
+            }
+            .footer-bottom-link {
+                color: rgba(255,255,255,.3);
+                font-size: .8rem;
+                text-decoration: none;
+                transition: color .2s;
+            }
+            .footer-bottom-link:hover,
+            .footer-bottom-link:focus {
+                color: rgba(255,255,255,.6);
+                outline: none;
+            }
+        </style>
 
         <footer style="background:#0a2540;color:#fff">
             <div style="height:1px;background:rgba(255,255,255,.08)"></div>
@@ -22,16 +64,10 @@
                             phát triển năng lực đội ngũ.
                         </p>
                         <div style="display:flex;gap:12px">
-                            <a href="#"
-                                style="width:36px;height:36px;border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);text-decoration:none;transition:all .3s"
-                                onmouseover="this.style.borderColor='#63b3ed';this.style.color='#63b3ed'"
-                                onmouseout="this.style.borderColor='rgba(255,255,255,.15)';this.style.color='rgba(255,255,255,.5)'">
+                            <a href="#" class="social-link">
                                 <i class="fab fa-linkedin-in" style="font-size:.85rem"></i>
                             </a>
-                            <a href="#"
-                                style="width:36px;height:36px;border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);text-decoration:none;transition:all .3s"
-                                onmouseover="this.style.borderColor='#63b3ed';this.style.color='#63b3ed'"
-                                onmouseout="this.style.borderColor='rgba(255,255,255,.15)';this.style.color='rgba(255,255,255,.5)'">
+                            <a href="#" class="social-link">
                                 <i class="fab fa-facebook-f" style="font-size:.85rem"></i>
                             </a>
                         </div>
@@ -43,22 +79,10 @@
                             style="font-size:.75rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:20px">
                             Phân hệ</h6>
                         <ul style="list-style:none;padding:0;margin:0">
-                            <li style="margin-bottom:14px"><a href="#"
-                                    style="color:rgba(255,255,255,.6);text-decoration:none;font-size:.88rem;transition:color .2s"
-                                    onmouseover="this.style.color='#fff'"
-                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">Hồ sơ nhân sự</a></li>
-                            <li style="margin-bottom:14px"><a href="#"
-                                    style="color:rgba(255,255,255,.6);text-decoration:none;font-size:.88rem;transition:color .2s"
-                                    onmouseover="this.style.color='#fff'"
-                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">Chấm công ca kíp</a></li>
-                            <li style="margin-bottom:14px"><a href="#"
-                                    style="color:rgba(255,255,255,.6);text-decoration:none;font-size:.88rem;transition:color .2s"
-                                    onmouseover="this.style.color='#fff'"
-                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">Bảng lương & C&B</a></li>
-                            <li style="margin-bottom:14px"><a href="#"
-                                    style="color:rgba(255,255,255,.6);text-decoration:none;font-size:.88rem;transition:color .2s"
-                                    onmouseover="this.style.color='#fff'"
-                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">Báo cáo & KPI</a></li>
+                            <li style="margin-bottom:14px"><a href="#" class="footer-link">Hồ sơ nhân sự</a></li>
+                            <li style="margin-bottom:14px"><a href="#" class="footer-link">Chấm công ca kíp</a></li>
+                            <li style="margin-bottom:14px"><a href="#" class="footer-link">Bảng lương & C&B</a></li>
+                            <li style="margin-bottom:14px"><a href="#" class="footer-link">Báo cáo & KPI</a></li>
                         </ul>
                     </div>
 
@@ -68,22 +92,10 @@
                             style="font-size:.75rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:20px">
                             Nhân viên</h6>
                         <ul style="list-style:none;padding:0;margin:0">
-                            <li style="margin-bottom:14px"><a href="#"
-                                    style="color:rgba(255,255,255,.6);text-decoration:none;font-size:.88rem"
-                                    onmouseover="this.style.color='#fff'"
-                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">Sổ tay nhân viên</a></li>
-                            <li style="margin-bottom:14px"><a href="#"
-                                    style="color:rgba(255,255,255,.6);text-decoration:none;font-size:.88rem"
-                                    onmouseover="this.style.color='#fff'"
-                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">Quy định công ty</a></li>
-                            <li style="margin-bottom:14px"><a href="#"
-                                    style="color:rgba(255,255,255,.6);text-decoration:none;font-size:.88rem"
-                                    onmouseover="this.style.color='#fff'"
-                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">Biểu mẫu xin nghỉ</a></li>
-                            <li style="margin-bottom:14px"><a href="#"
-                                    style="color:rgba(255,255,255,.6);text-decoration:none;font-size:.88rem"
-                                    onmouseover="this.style.color='#fff'"
-                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">Cổng Helpdesk IT</a></li>
+                            <li style="margin-bottom:14px"><a href="#" class="footer-link">Sổ tay nhân viên</a></li>
+                            <li style="margin-bottom:14px"><a href="#" class="footer-link">Quy định công ty</a></li>
+                            <li style="margin-bottom:14px"><a href="#" class="footer-link">Biểu mẫu xin nghỉ</a></li>
+                            <li style="margin-bottom:14px"><a href="#" class="footer-link">Cổng Helpdesk IT</a></li>
                         </ul>
                     </div>
 
@@ -95,10 +107,7 @@
                         <ul style="list-style:none;padding:0;margin:0">
                             <li style="margin-bottom:16px;display:flex;align-items:center;gap:12px">
                                 <i class="fas fa-envelope" style="color:#63b3ed;width:16px"></i>
-                                <a href="mailto:systemhrm4@gmail.com"
-                                    style="color:rgba(255,255,255,.6);text-decoration:none;font-size:.88rem"
-                                    onmouseover="this.style.color='#fff'"
-                                    onmouseout="this.style.color='rgba(255,255,255,.6)'">systemhrm4@gmail.com</a>
+                                <a href="mailto:systemhrm4@gmail.com" class="footer-link">systemhrm4@gmail.com</a>
                             </li>
                             <li style="margin-bottom:16px;display:flex;align-items:center;gap:12px">
                                 <i class="fas fa-headset" style="color:#63b3ed;width:16px"></i>
@@ -119,9 +128,7 @@
                     <p style="color:rgba(255,255,255,.3);font-size:.8rem;margin:0">
                         &copy; <%= java.time.Year.now().getValue() %> Nhóm 4 — Dự án SWP391 ĐH FPT. All rights reserved.
                     </p>
-                    <a href="#" style="color:rgba(255,255,255,.3);font-size:.8rem;text-decoration:none"
-                        onmouseover="this.style.color='rgba(255,255,255,.6)'"
-                        onmouseout="this.style.color='rgba(255,255,255,.3)'">Chính sách bảo mật nội bộ</a>
+                    <a href="#" class="footer-bottom-link">Chính sách bảo mật nội bộ</a>
                 </div>
             </div>
         </footer>

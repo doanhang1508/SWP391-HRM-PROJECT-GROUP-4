@@ -1,47 +1,45 @@
 package filter;
 
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.FilterConfig;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
+import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.User;
+
 import java.io.IOException;
 
 /**
  * AuthFilter — Bộ lọc xác thực và phân quyền URL.
- *
+ * <p>
  * Mapping URL được đăng ký trong web.xml:
- *   /dashboard         → role 1-6 (management)
- *   /admin/*           → role 1 (Admin only)
- *   /hr/*              → role 2, 5 (HR Manager, HR Staff)
- *   /employee/*        → role 7 (Employee) hoặc đã đăng nhập
- *   /editRolePermission → role 1 (Admin only)
- *   /role/*            → role 1 (Admin only)
- *
+ * /dashboard              → role 1-6 (management)
+ * /admin/users            → role 1 (Admin only) — quản lý tài khoản
+ * /admin/automation       → role 1 (Admin only) — tác vụ tự động
+ * /admin/* (còn lại)      → role 1, 2 (Admin + HR Manager)
+ * /hr/*                   → role 2, 5 (HR Manager, HR Staff)
+ * /employee/*             → mọi role đã đăng nhập
+ * /editRolePermission     → role 1 (Admin only)
+ * /role/*                 → role 1 (Admin only)
+ * <p>
  * Role IDs:
- *   1 = Admin
- *   2 = HR Manager
- *   3 = Factory Manager
- *   4 = Director
- *   5 = HR Staff
- *   6 = Department Manager
- *   7 = Employee
+ * 1 = Admin
+ * 2 = HR Manager (Trưởng phòng nhân sự)
+ * 3 = Factory Manager
+ * 4 = Director
+ * 5 = HR Staff
+ * 6 = Department Manager
+ * 7 = Employee
  */
 public class AuthFilter implements Filter {
 
     // Role constants
-    private static final int ROLE_ADMIN       = 1;
-    private static final int ROLE_HR_MANAGER  = 2;
+    private static final int ROLE_ADMIN = 1;
+    private static final int ROLE_HR_MANAGER = 2;
     private static final int ROLE_FACTORY_MGR = 3;
-    private static final int ROLE_DIRECTOR    = 4;
-    private static final int ROLE_HR_STAFF    = 5;
-    private static final int ROLE_DEPT_MGR    = 6;
-    private static final int ROLE_EMPLOYEE    = 7;
+    private static final int ROLE_DIRECTOR = 4;
+    private static final int ROLE_HR_STAFF = 5;
+    private static final int ROLE_DEPT_MGR = 6;
+    private static final int ROLE_EMPLOYEE = 7;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -54,10 +52,10 @@ public class AuthFilter implements Filter {
                          FilterChain chain)
             throws IOException, ServletException {
 
-        HttpServletRequest  req  = (HttpServletRequest)  servletRequest;
+        HttpServletRequest req = (HttpServletRequest) servletRequest;
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
 
-        HttpSession session  = req.getSession(false);
+        HttpSession session = req.getSession(false);
         User currentUser = (session != null)
                 ? (User) session.getAttribute("currentUser")
                 : null;
@@ -74,11 +72,28 @@ public class AuthFilter implements Filter {
         // Lấy phần path sau context (không có context prefix)
         String path = uri.substring(ctx.length()); // ví dụ: /admin/users
 
-        // ── 2. /admin/* → chỉ Admin (role 1) ──────────────────────────────
+        // ── 2. /admin/* → phân quyền chi tiết ─────────────────────────────
         if (path.startsWith("/admin/")) {
-            if (roleId != ROLE_ADMIN) {
-                redirectToAppropriate(req, resp, roleId);
-                return;
+            // Các path CHỈ Admin (role 1) mới được vào:
+            // - /admin/users    : quản lý tài khoản hệ thống
+            // - /admin/automation : tác vụ tự động hệ thống
+            boolean isAdminOnlyPath = path.startsWith("/admin/users")
+                    || path.startsWith("/admin/automation");
+
+            if (isAdminOnlyPath) {
+                if (roleId != ROLE_ADMIN) {
+                    redirectToAppropriate(req, resp, roleId);
+                    return;
+                }
+            } else {
+                // Các path HR Manager (role 2) cũng được vào:
+                // /admin/department, /admin/position, /admin/contract-type,
+                // /admin/shifts, /admin/leave-types, /admin/reward-disciplines,
+                // /admin/pending-request, v.v.
+                if (roleId != ROLE_ADMIN && roleId != ROLE_HR_MANAGER) {
+                    redirectToAppropriate(req, resp, roleId);
+                    return;
+                }
             }
         }
 
@@ -99,8 +114,16 @@ public class AuthFilter implements Filter {
         }
 
         // ── 4b. /manager/* → role 1-6 (quản lý), không cho Employee (7) ──
-        if (path.startsWith("/manager/")) {
-            if (roleId == ROLE_EMPLOYEE || roleId == 0) {
+        if (path.startsWith("/manager/") && isEmployee(roleId)) {
+
+            redirectToAppropriate(req, resp, roleId);
+            return;
+
+        }
+
+        // ── 4c. /director/* → chỉ Director (4) ───────────────────────────
+        if (path.startsWith("/director/")) {
+            if (roleId != ROLE_DIRECTOR) {
                 redirectToAppropriate(req, resp, roleId);
                 return;
             }
@@ -119,6 +142,13 @@ public class AuthFilter implements Filter {
 
         // ── Tất cả điều kiện pass → tiếp tục chuỗi filter ─────────────────
         chain.doFilter(servletRequest, servletResponse);
+    }
+
+    private boolean isEmployee(int roleId) {
+        if (roleId == ROLE_EMPLOYEE || roleId == 0) {
+            return true;
+        }
+        return false;
     }
 
     /**

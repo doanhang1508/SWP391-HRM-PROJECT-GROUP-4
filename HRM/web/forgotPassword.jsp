@@ -139,8 +139,8 @@
             <input type="hidden" name="step" value="reset_password">
 
             <div class="mb-3">
-                <label>Mật khẩu mới</label>
-                <input type="password" name="newPassword"
+                <label for="newPass">Mật khẩu mới</label>
+                <input type="password" id="newPass" name="newPassword"
                        class="form-control form-control-hrm"
                        placeholder="Tối thiểu 6 ký tự" required minlength="6" autofocus>
             </div>
@@ -186,7 +186,7 @@
             <input type="hidden" name="step" value="verify_otp">
 
             <div class="mb-4">
-                <label>Nhập mã OTP</label>
+                <label for="otpInput">Nhập mã OTP</label>
                 <input type="text" name="otpCode"
                        class="form-control form-control-hrm otp-input"
                        placeholder="000000" maxlength="6" required autofocus

@@ -3,7 +3,7 @@
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<c:set var="pageTitle" value="Duyệt Nghỉ phép / OT - Enterprise HRM" scope="request" />
+<c:set var="pageTitle" value="Duyệt Nghỉ phép / OT" scope="request" />
 <jsp:include page="../header.jsp" />
 
 <style>
@@ -34,6 +34,28 @@ body {
 .page-breadcrumb a { color: #0d9488; text-decoration: none; }
 .page-breadcrumb a:hover { text-decoration: underline; }
 .page-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
+.page-role-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 20px;
+    font-size: 0.8rem; font-weight: 700;
+    background: linear-gradient(135deg, #0d9488, #0369a1);
+    color: #fff; box-shadow: 0 2px 8px rgba(13,148,136,0.3);
+}
+
+/* ── Scope Info Banner ── */
+.scope-banner {
+    background: linear-gradient(135deg, #eff6ff, #f0fdf4);
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: #1e40af;
+    font-weight: 500;
+}
+.scope-banner i { font-size: 1rem; color: #3b82f6; flex-shrink: 0; }
 
 /* ── Stat Cards ── */
 .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
@@ -59,7 +81,6 @@ body {
 .stat-mini-icon.warn { background: #fef3c7; color: #d97706; }
 .stat-mini-icon.info { background: #dbeafe; color: #2563eb; }
 .stat-mini-icon.success { background: #d1fae5; color: #059669; }
-.stat-mini-icon.danger { background: #fee2e2; color: #dc2626; }
 .stat-mini-val { font-size: 1.5rem; font-weight: 800; color: #0f172a; line-height: 1; }
 .stat-mini-label { font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
 
@@ -209,7 +230,7 @@ body {
     gap: 10px;
 }
 .alert-custom.success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-.alert-custom.error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+.alert-custom.error   { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
 
 /* ── OT Hours ── */
 .ot-hours {
@@ -242,9 +263,41 @@ body {
                         <span>/</span>
                         <span>Duyệt nghỉ phép / OT</span>
                     </div>
-                    <div class="page-title">Duyệt Nghỉ phép & Tăng ca</div>
+                    <div class="page-title">Duyệt Nghỉ phép &amp; Tăng ca</div>
+                </div>
+                <div class="page-role-badge">
+                    <c:choose>
+                        <c:when test="${sessionScope.currentUser.roleId == 3}">
+                            <i class="fas fa-industry"></i> Quản đốc xưởng
+                        </c:when>
+                        <c:when test="${sessionScope.currentUser.roleId == 6}">
+                            <i class="fas fa-briefcase"></i> Trưởng phòng
+                        </c:when>
+                        <c:when test="${sessionScope.currentUser.roleId == 2}">
+                            <i class="fas fa-user-tie"></i> HR Manager
+                        </c:when>
+                        <c:otherwise>
+                            <i class="fas fa-user-shield"></i> Quản lý
+                        </c:otherwise>
+                    </c:choose>
                 </div>
             </div>
+
+            <%-- Scope info banner — cho biết đang xem phạm vi nào --%>
+            <c:choose>
+                <c:when test="${sessionScope.currentUser.roleId == 3 || sessionScope.currentUser.roleId == 6}">
+                    <div class="scope-banner">
+                        <i class="fas fa-filter"></i>
+                        Bạn đang xem đơn của nhân viên thuộc phòng ban / khu vực của mình.
+                    </div>
+                </c:when>
+                <c:when test="${sessionScope.currentUser.roleId == 2}">
+                    <div class="scope-banner">
+                        <i class="fas fa-globe"></i>
+                        Bạn đang xem tất cả đơn chờ duyệt toàn công ty.
+                    </div>
+                </c:when>
+            </c:choose>
 
             <%-- Alerts --%>
             <c:if test="${not empty sessionScope.successMessage}">
@@ -269,13 +322,16 @@ body {
                         <div class="stat-mini-label">Đơn nghỉ phép chờ</div>
                     </div>
                 </div>
-                <div class="stat-mini">
-                    <div class="stat-mini-icon info"><i class="fas fa-business-time"></i></div>
-                    <div>
-                        <div class="stat-mini-val">${fn:length(pendingOTs)}</div>
-                        <div class="stat-mini-label">Đơn OT chờ</div>
+                <c:if test="${sessionScope.currentUser.roleId == 3 || sessionScope.currentUser.roleId == 2}">
+                    <%-- OT chỉ có ở xưởng (Supervisor) hoặc HR Manager xem tổng --%>
+                    <div class="stat-mini">
+                        <div class="stat-mini-icon info"><i class="fas fa-business-time"></i></div>
+                        <div>
+                            <div class="stat-mini-val">${fn:length(pendingOTs)}</div>
+                            <div class="stat-mini-label">Phân ca OT chờ duyệt</div>
+                        </div>
                     </div>
-                </div>
+                </c:if>
                 <div class="stat-mini">
                     <div class="stat-mini-icon success"><i class="fas fa-check-double"></i></div>
                     <div>
@@ -294,12 +350,15 @@ body {
                             <span class="badge-count">${fn:length(pendingLeaves)}</span>
                         </c:if>
                     </button>
-                    <button class="mgr-tab" onclick="switchTab(event, 'otPane')">
-                        <i class="fas fa-business-time"></i> Đơn tăng ca (OT)
-                        <c:if test="${fn:length(pendingOTs) > 0}">
-                            <span class="badge-count">${fn:length(pendingOTs)}</span>
-                        </c:if>
-                    </button>
+                    <%-- Tab OT chỉ hiện với Supervisor (xưởng) hoặc HR Manager xem tổng --%>
+                    <c:if test="${sessionScope.currentUser.roleId == 3 || sessionScope.currentUser.roleId == 2}">
+                        <button class="mgr-tab" onclick="switchTab(event, 'otPane')">
+                            <i class="fas fa-business-time"></i> Phân ca Tăng ca (OT)
+                            <c:if test="${fn:length(pendingOTs) > 0}">
+                                <span class="badge-count">${fn:length(pendingOTs)}</span>
+                            </c:if>
+                        </button>
+                    </c:if>
                 </div>
 
                 <%-- LEAVE TAB --%>
@@ -345,7 +404,8 @@ body {
                                                             <input type="hidden" name="type" value="leave">
                                                             <input type="hidden" name="id" value="${lr.requestId}">
                                                             <input type="hidden" name="action" value="approve">
-                                                            <button type="submit" class="btn-approve" onclick="return confirm('Duyệt đơn nghỉ phép của ${lr.userName}?');">
+                                                            <button type="submit" class="btn-approve"
+                                                                    onclick="return confirm('Duyệt đơn nghỉ phép của ${lr.userName}?');">
                                                                 <i class="fas fa-check"></i> Duyệt
                                                             </button>
                                                         </form>
@@ -353,7 +413,8 @@ body {
                                                             <input type="hidden" name="type" value="leave">
                                                             <input type="hidden" name="id" value="${lr.requestId}">
                                                             <input type="hidden" name="action" value="reject">
-                                                            <button type="submit" class="btn-reject" onclick="return confirm('Từ chối đơn nghỉ phép của ${lr.userName}?');">
+                                                            <button type="submit" class="btn-reject"
+                                                                    onclick="return confirm('Từ chối đơn nghỉ phép của ${lr.userName}?');">
                                                                 <i class="fas fa-times"></i> Từ chối
                                                             </button>
                                                         </form>
@@ -374,73 +435,79 @@ body {
                     </c:choose>
                 </div>
 
-                <%-- OT TAB --%>
-                <div class="mgr-tab-pane" id="otPane">
-                    <c:choose>
-                        <c:when test="${not empty pendingOTs}">
-                            <div class="table-responsive">
-                                <table class="mgr-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Nhân viên</th>
-                                            <th>Ngày làm việc</th>
-                                            <th>Ca</th>
-                                            <th>Số giờ OT</th>
-                                            <th>Lý do</th>
-                                            <th>Ngày tạo</th>
-                                            <th style="text-align:center;">Thao tác</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <c:forEach var="ot" items="${pendingOTs}">
+                <%-- OT TAB — chỉ Supervisor (3) xưởng và HR Manager (2) xem tổng --%>
+                <c:if test="${sessionScope.currentUser.roleId == 3 || sessionScope.currentUser.roleId == 2}">
+                    <div class="mgr-tab-pane" id="otPane">
+                        <c:choose>
+                            <c:when test="${not empty pendingOTs}">
+                                <div class="table-responsive">
+                                    <table class="mgr-table">
+                                        <thead>
                                             <tr>
-                                                <td>
-                                                    <div class="emp-cell">
-                                                        <div class="emp-avatar">${fn:substring(ot.userName, 0, 1)}</div>
-                                                        <span class="emp-name">${ot.userName}</span>
-                                                    </div>
-                                                </td>
-                                                <td><fmt:formatDate value="${ot.workDate}" pattern="dd/MM/yyyy"/></td>
-                                                <td><span class="leave-type-badge" style="background:#fef3c7;color:#92400e;"><i class="fas fa-clock"></i> ${ot.shiftName}</span></td>
-                                                <td><span class="ot-hours">${ot.overtimeHrs}h</span></td>
-                                                <td class="reason-cell" title="${ot.otReason}">${ot.otReason}</td>
-                                                <td style="color:#94a3b8;font-size:0.82rem;">
-                                                    <fmt:formatDate value="${ot.createdAt}" pattern="dd/MM/yyyy HH:mm"/>
-                                                </td>
-                                                <td>
-                                                    <div class="action-btns" style="justify-content:center;">
-                                                        <form action="${pageContext.request.contextPath}/manager/leave-ot" method="POST" style="display:inline;">
-                                                            <input type="hidden" name="type" value="ot">
-                                                            <input type="hidden" name="id" value="${ot.attendanceId}">
-                                                            <input type="hidden" name="action" value="approve">
-                                                            <button type="submit" class="btn-approve" onclick="return confirm('Duyệt OT của ${ot.userName}?');">
-                                                                <i class="fas fa-check"></i> Duyệt
-                                                            </button>
-                                                        </form>
-                                                        <form action="${pageContext.request.contextPath}/manager/leave-ot" method="POST" style="display:inline;">
-                                                            <input type="hidden" name="type" value="ot">
-                                                            <input type="hidden" name="id" value="${ot.attendanceId}">
-                                                            <input type="hidden" name="action" value="reject">
-                                                            <button type="submit" class="btn-reject" onclick="return confirm('Từ chối OT của ${ot.userName}?');">
-                                                                <i class="fas fa-times"></i> Từ chối
-                                                            </button>
-                                                        </form>
-                                                    </div>
-                                                </td>
+                                                <th>Nhân viên</th>
+                                                <th>Ngày làm việc</th>
+                                                <th>Ca tăng ca</th>
+                                                <th>Số giờ OT</th>
+                                                <th>Lý do phân ca</th>
+                                                <th>Ngày tạo</th>
+                                                <th style="text-align:center;">Thao tác</th>
                                             </tr>
-                                        </c:forEach>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </c:when>
-                        <c:otherwise>
-                            <div class="empty-state">
-                                <i class="fas fa-inbox"></i>
-                                <p>Không có yêu cầu tăng ca nào đang chờ duyệt</p>
-                            </div>
-                        </c:otherwise>
-                    </c:choose>
-                </div>
+                                        </thead>
+                                        <tbody>
+                                            <c:forEach var="ot" items="${pendingOTs}">
+                                                <tr>
+                                                    <td>
+                                                        <div class="emp-cell">
+                                                            <div class="emp-avatar">${fn:substring(ot.userName, 0, 1)}</div>
+                                                            <span class="emp-name">${ot.userName}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td><fmt:formatDate value="${ot.workDate}" pattern="dd/MM/yyyy"/></td>
+                                                    <td><span class="leave-type-badge" style="background:#fef3c7;color:#92400e;">
+                                                        <i class="fas fa-clock"></i> ${ot.shiftName}
+                                                    </span></td>
+                                                    <td><span class="ot-hours">${ot.overtimeHrs}h</span></td>
+                                                    <td class="reason-cell" title="${ot.otReason}">${ot.otReason}</td>
+                                                    <td style="color:#94a3b8;font-size:0.82rem;">
+                                                        <fmt:formatDate value="${ot.createdAt}" pattern="dd/MM/yyyy HH:mm"/>
+                                                    </td>
+                                                    <td>
+                                                        <div class="action-btns" style="justify-content:center;">
+                                                            <form action="${pageContext.request.contextPath}/manager/leave-ot" method="POST" style="display:inline;">
+                                                                <input type="hidden" name="type" value="ot">
+                                                                <input type="hidden" name="id" value="${ot.attendanceId}">
+                                                                <input type="hidden" name="action" value="approve">
+                                                                <button type="submit" class="btn-approve"
+                                                                        onclick="return confirm('Xác nhận phân ca OT cho ${ot.userName}?');">
+                                                                    <i class="fas fa-check"></i> Xác nhận
+                                                                </button>
+                                                            </form>
+                                                            <form action="${pageContext.request.contextPath}/manager/leave-ot" method="POST" style="display:inline;">
+                                                                <input type="hidden" name="type" value="ot">
+                                                                <input type="hidden" name="id" value="${ot.attendanceId}">
+                                                                <input type="hidden" name="action" value="reject">
+                                                                <button type="submit" class="btn-reject"
+                                                                        onclick="return confirm('Huỷ phân ca OT cho ${ot.userName}?');">
+                                                                    <i class="fas fa-times"></i> Huỷ
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </c:forEach>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </c:when>
+                            <c:otherwise>
+                                <div class="empty-state">
+                                    <i class="fas fa-inbox"></i>
+                                    <p>Không có ca tăng ca nào đang chờ xác nhận</p>
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
+                </c:if>
             </div>
 
         </div><%-- end dash-content --%>
@@ -449,10 +516,8 @@ body {
 
 <script>
 function switchTab(event, paneId) {
-    // Deactivate all tabs and panes
     document.querySelectorAll('.mgr-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.mgr-tab-pane').forEach(p => p.classList.remove('active'));
-    // Activate clicked tab and target pane
     event.currentTarget.classList.add('active');
     document.getElementById(paneId).classList.add('active');
 }

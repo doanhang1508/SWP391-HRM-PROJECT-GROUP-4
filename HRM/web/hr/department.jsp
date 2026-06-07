@@ -343,7 +343,7 @@
                 <input type="text" name="name" id="edit_name" class="form-control" required>
             </div>
             <div class="form-group">
-                <label class="form-label">Mô tả</label>
+                <label class="form-label" for="edit_desc">Mô tả</label>
                 <textarea name="description" id="edit_desc" class="form-control"></textarea>
             </div>
             <div class="modal-footer">

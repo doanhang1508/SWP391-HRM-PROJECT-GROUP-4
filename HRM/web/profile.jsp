@@ -4,7 +4,7 @@
 
 <c:set var="displayUser" value="${sessionScope.currentUser}" />
 
-<c:set var="pageTitle" value="Hồ sơ cá nhân - HRM" scope="request" />
+<c:set var="pageTitle" value="Thông tin cá nhân - HRM" scope="request" />
 <jsp:include page="header.jsp" />
 
 <style>
@@ -329,9 +329,9 @@
         <!-- Page Header -->
         <div class="profile-page-header">
             <div>
-                <h1 class="profile-page-title">Hồ sơ cá nhân</h1>
+                <h1 class="profile-page-title">Thông tin cá nhân</h1>
                 <p class="profile-breadcrumb">
-                    <a href="${pageContext.request.contextPath}/home">Trang chủ</a> &nbsp;>&nbsp; Hồ sơ cá nhân
+                    <a href="${pageContext.request.contextPath}/home">Trang chủ</a> &nbsp;>&nbsp; Thông tin cá nhân
                 </p>
             </div>
         </div>
@@ -385,19 +385,19 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="info-field">
-                            <label>Họ và tên</label>
+                            <label for="fullName">Họ và tên</label>
                             <div class="field-value can-edit">
                                 <i class="fas fa-user"></i>
-                                <input type="text" class="edit-input" name="fullName" value="${displayUser.fullName}" readonly>
+                                <input type="text" id="fullName" class="edit-input" name="fullName" value="${displayUser.fullName}" readonly>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="info-field">
-                            <label>Email</label>
+                            <label for="Email">Email</label>
                             <div class="field-value">
                                 <i class="fas fa-envelope"></i>
-                                <input type="email" class="edit-input" value="${displayUser.email}" disabled style="color: #8f9fbc;">
+                                <input type="email" id="Email" class="edit-input" value="${displayUser.email}" disabled style="color: #8f9fbc;">
                             </div>
                         </div>
                     </div>

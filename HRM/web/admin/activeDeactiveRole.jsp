@@ -2,7 +2,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="model.Role" %>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Active/Deactive Roles</title>

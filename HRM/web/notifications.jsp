@@ -1,8 +1,8 @@
-﻿<%@page contentType="text/html" pageEncoding="UTF-8"%>
+﻿<%@page contentType="text/html" pageEncoding="UTF-8" %>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
-<c:set var="pageTitle" value="Tất cả thông báo" />
-<jsp:include page="header.jsp" />
+<c:set var="pageTitle" value="Tất cả thông báo"/>
+<jsp:include page="header.jsp"/>
 
 <style>
     /* ─── NOTIFICATIONS PAGE STYLES ───────────────────────────────────────── */
@@ -11,9 +11,9 @@
         padding: 40px 0;
         color: #fff;
         margin-bottom: 40px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     }
-    
+
     .notif-page-title {
         font-size: 2rem;
         font-weight: 800;
@@ -22,9 +22,9 @@
         align-items: center;
         gap: 15px;
     }
-    
+
     .notif-page-subtitle {
-        color: rgba(255,255,255,0.8);
+        color: rgba(255, 255, 255, 0.8);
         font-size: 1.05rem;
         margin-top: 10px;
     }
@@ -32,7 +32,7 @@
     .notif-container {
         background: #fff;
         border-radius: 16px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
         overflow: hidden;
         border: 1px solid #e2e8f0;
         margin-bottom: 60px;
@@ -136,7 +136,7 @@
         color: #fff;
         flex-shrink: 0;
         margin-right: 20px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
 
     .notif-content {
@@ -176,17 +176,31 @@
         right: 30px;
         display: none;
     }
-    
+
     .notif-item.unread .notif-unread-dot {
         display: block;
     }
 
     /* Icon Colors */
-    .bg-blue { background: #3b82f6; }
-    .bg-green { background: #10b981; }
-    .bg-orange { background: #f59e0b; }
-    .bg-red { background: #ef4444; }
-    .bg-purple { background: #8b5cf6; }
+    .bg-blue {
+        background: #3b82f6;
+    }
+
+    .bg-green {
+        background: #10b981;
+    }
+
+    .bg-orange {
+        background: #f59e0b;
+    }
+
+    .bg-red {
+        background: #ef4444;
+    }
+
+    .bg-purple {
+        background: #8b5cf6;
+    }
 
     /* Empty State */
     .notif-empty-state {
@@ -194,11 +208,13 @@
         padding: 80px 20px;
         color: #94a3b8;
     }
+
     .notif-empty-state i {
         font-size: 4rem;
         margin-bottom: 20px;
         color: #cbd5e1;
     }
+
     .notif-empty-state h4 {
         font-weight: 700;
         color: #475569;
@@ -210,6 +226,7 @@
         text-align: center;
         padding: 80px;
     }
+
     .spinner-border {
         color: #3b82f6;
     }
@@ -234,7 +251,7 @@
                 <i class="fas fa-check-double"></i> Đánh dấu tất cả đã đọc
             </button>
         </div>
-        
+
         <div class="notif-list-container" id="pageNotifList">
             <div class="notif-loader">
                 <div class="spinner-border" role="status">
@@ -246,79 +263,79 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const CTX = '${pageContext.request.contextPath}';
-    const listContainer = document.getElementById('pageNotifList');
-    const filterBtns = document.querySelectorAll('.notif-filter-btn');
-    const markAllBtn = document.getElementById('pageMarkAllBtn');
-    
-    let allNotifications = [];
-    let currentFilter = 'all';
+    document.addEventListener('DOMContentLoaded', function () {
+        const CTX = '${pageContext.request.contextPath}';
+        const listContainer = document.getElementById('pageNotifList');
+        const filterBtns = document.querySelectorAll('.notif-filter-btn');
+        const markAllBtn = document.getElementById('pageMarkAllBtn');
 
-    const iconMapping = {
-        'attendance': { cls: 'bg-blue', icon: 'fas fa-fingerprint' },
-        'leave':      { cls: 'bg-green', icon: 'fas fa-umbrella-beach' },
-        'overtime':   { cls: 'bg-orange', icon: 'fas fa-business-time' },
-        'payroll':    { cls: 'bg-blue', icon: 'fas fa-file-invoice-dollar' },
-        'kpi':        { cls: 'bg-purple', icon: 'fas fa-bullseye' },
-        'training':   { cls: 'bg-purple', icon: 'fas fa-graduation-cap' },
-        'system':     { cls: 'bg-red', icon: 'fas fa-exclamation-triangle' },
-        'announcement':{ cls: 'bg-red', icon: 'fas fa-bullhorn' },
-        'shift':      { cls: 'bg-orange', icon: 'fas fa-calendar-alt' },
-        'default':    { cls: 'bg-blue', icon: 'fas fa-bell' }
-    };
+        let allNotifications = [];
+        let currentFilter = 'all';
 
-    function escapeHtml(str) {
-        if (!str) return '';
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
-    }
+        const iconMapping = {
+            'attendance': {cls: 'bg-blue', icon: 'fas fa-fingerprint'},
+            'leave': {cls: 'bg-green', icon: 'fas fa-umbrella-beach'},
+            'overtime': {cls: 'bg-orange', icon: 'fas fa-business-time'},
+            'payroll': {cls: 'bg-blue', icon: 'fas fa-file-invoice-dollar'},
+            'kpi': {cls: 'bg-purple', icon: 'fas fa-bullseye'},
+            'training': {cls: 'bg-purple', icon: 'fas fa-graduation-cap'},
+            'system': {cls: 'bg-red', icon: 'fas fa-exclamation-triangle'},
+            'announcement': {cls: 'bg-red', icon: 'fas fa-bullhorn'},
+            'shift': {cls: 'bg-orange', icon: 'fas fa-calendar-alt'},
+            'default': {cls: 'bg-blue', icon: 'fas fa-bell'}
+        };
 
-    function fetchNotifications() {
-        fetch(CTX + '/notifications/list?limit=100')
-            .then(res => res.json())
-            .then(data => {
-                allNotifications = data.notifications || [];
-                renderNotifications();
-            })
-            .catch(err => {
-                listContainer.innerHTML = `
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function fetchNotifications() {
+            fetch(CTX + '/notifications/list?limit=100')
+                .then(res => res.json())
+                .then(data => {
+                    allNotifications = data.notifications || [];
+                    renderNotifications();
+                })
+                .catch(err => {
+                    listContainer.innerHTML = `
                     <div class="notif-empty-state">
                         <i class="fas fa-exclamation-circle" style="color: #ef4444;"></i>
                         <h4>Lỗi tải dữ liệu</h4>
                         <p>Không thể tải thông báo. Vui lòng kiểm tra kết nối mạng hoặc thử lại sau.</p>
                     </div>`;
-            });
-    }
-
-    function renderNotifications() {
-        let filtered = allNotifications;
-        
-        if (currentFilter === 'unread') {
-            filtered = allNotifications.filter(n => !n.isRead);
-        } else if (currentFilter === 'system') {
-            filtered = allNotifications.filter(n => n.type === 'system' || n.type === 'announcement');
+                });
         }
 
-        if (filtered.length === 0) {
-            listContainer.innerHTML = `
+        function renderNotifications() {
+            let filtered = allNotifications;
+
+            if (currentFilter === 'unread') {
+                filtered = allNotifications.filter(n => !n.isRead);
+            } else if (currentFilter === 'system') {
+                filtered = allNotifications.filter(n => n.type === 'system' || n.type === 'announcement');
+            }
+
+            if (filtered.length === 0) {
+                listContainer.innerHTML = `
                 <div class="notif-empty-state">
                     <i class="fas fa-bell-slash"></i>
                     <h4>Không có thông báo</h4>
                     <p>Bạn đã xem hết tất cả thông báo trong mục này.</p>
                 </div>`;
-            return;
-        }
+                return;
+            }
 
-        const html = filtered.map(n => {
-            const ic = iconMapping[n.type] || iconMapping['default'];
-            const link = n.link ? (CTX + n.link) : '#';
-            const unreadClass = n.isRead ? '' : 'unread';
-            
-            return `
+            const html = filtered.map(n => {
+                const ic = iconMapping[n.type] || iconMapping['default'];
+                const link = n.link ? (CTX + n.link) : '#';
+                const unreadClass = n.isRead ? '' : 'unread';
+
+                return `
                 <a href="` + escapeHtml(link) + `" class="notif-item ` + unreadClass + `" data-id="` + n.id + `">
                     <div class="notif-icon-lg ` + ic.cls + `">
                         <i class="` + ic.icon + `"></i>
@@ -334,55 +351,55 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="notif-unread-dot"></div>
                 </a>
             `;
-        }).join('');
+            }).join('');
 
-        listContainer.innerHTML = html;
-        attachClickEvents();
-    }
+            listContainer.innerHTML = html;
+            attachClickEvents();
+        }
 
-    function attachClickEvents() {
-        const items = listContainer.querySelectorAll('.notif-item.unread');
-        items.forEach(item => {
-            item.addEventListener('click', function(e) {
-                const id = this.dataset.id;
-                fetch(CTX + '/notifications/read?id=' + id, { method: 'POST' });
-                
-                // Update local state so it doesn't reappear as unread immediately
-                const notif = allNotifications.find(n => String(n.id) === id);
-                if (notif) notif.isRead = true;
-                
-                this.classList.remove('unread');
+        function attachClickEvents() {
+            const items = listContainer.querySelectorAll('.notif-item.unread');
+            items.forEach(item => {
+                item.addEventListener('click', function (e) {
+                    const id = this.dataset.id;
+                    fetch(CTX + '/notifications/read?id=' + id, {method: 'POST'});
+
+                    // Update local state so it doesn't reappear as unread immediately
+                    const notif = allNotifications.find(n => String(n.id) === id);
+                    if (notif) notif.isRead = true;
+
+                    this.classList.remove('unread');
+                });
             });
-        });
-    }
+        }
 
-    // Filter Buttons
-    filterBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            filterBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            currentFilter = this.dataset.filter;
-            renderNotifications();
-        });
-    });
-
-    // Mark All As Read
-    markAllBtn.addEventListener('click', function() {
-        if (!confirm('Đánh dấu tất cả thông báo là đã đọc?')) return;
-        
-        fetch(CTX + '/notifications/read-all', { method: 'POST' })
-            .then(() => {
-                allNotifications.forEach(n => n.isRead = true);
+        // Filter Buttons
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', function () {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.filter;
                 renderNotifications();
-                // If header script is active, this will also update its badge eventually 
-                // on the next polling, but we can't easily sync them without custom events.
-                // The page will look correct locally.
             });
-    });
+        });
 
-    // Initial load
-    fetchNotifications();
-});
+        // Mark All As Read
+        markAllBtn.addEventListener('click', function () {
+            if (!confirm('Đánh dấu tất cả thông báo là đã đọc?')) return;
+
+            fetch(CTX + '/notifications/read-all', {method: 'POST'})
+                .then(() => {
+                    allNotifications.forEach(n => n.isRead = true);
+                    renderNotifications();
+                    // If header script is active, this will also update its badge eventually
+                    // on the next polling, but we can't easily sync them without custom events.
+                    // The page will look correct locally.
+                });
+        });
+
+        // Initial load
+        fetchNotifications();
+    });
 </script>
 
-<jsp:include page="footer.jsp" />
+<jsp:include page="footer.jsp"/>

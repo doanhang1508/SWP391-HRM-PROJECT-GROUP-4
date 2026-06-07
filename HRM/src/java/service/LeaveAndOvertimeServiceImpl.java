@@ -51,7 +51,7 @@ public class LeaveAndOvertimeServiceImpl implements LeaveAndOvertimeService {
             LocalDate startDate = request.getStartDate().toLocalDate();
             double remaining = getRemainingAnnualLeave(request.getUserId(), startDate.getYear());
             if (request.getTotalDays() > remaining) {
-                throw new Exception("Not enough remaining Annual Leave days. Remaining: " + remaining + " days.");
+                throw new IllegalArgumentException("Not enough remaining Annual Leave days. Remaining: " + remaining + " days.");
             }
         }
         

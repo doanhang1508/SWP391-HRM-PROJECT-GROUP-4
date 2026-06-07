@@ -1,8 +1,6 @@
 package controller.admin;
 
 import dao.RoleDAO;
-import java.io.IOException;
-import java.util.List;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,132 +8,139 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.Role;
 
-/**
- *
- * @author HRM Group 4
- */
+import java.io.IOException;
+import java.util.List;
+
 public class ActiveDeactiveRoleController extends HttpServlet {
+
+    private static final String ROLE_PREFIX = "Role+'";
+    private static final String LOGIN_PAGE = "login.jsp";
+    private static final String MAIN_PAGE = "activeDeactiveRole";
+    private static final String ACTIVATE = "activate";
+    private static final String DEACTIVATE = "deactivate";
 
     private final RoleDAO roleDAO = new RoleDAO();
 
-    /**
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Kiểm tra xem người dùng đã đăng nhập và có quyền quản trị hay chưa
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("currentUser") == null) {
-            response.sendRedirect("login.jsp");
-            return;
-        }
+        if (!isAuthenticated(request, response)) return;
 
-        // Lấy tất cả các vai trò từ cơ sở dữ liệu
         List<Role> roleList = roleDAO.getAllRoles();
-
-        // Với mỗi vai trò, hãy lấy số lượng người dùng được chỉ định cho vai trò đó
         for (Role role : roleList) {
             int userCount = roleDAO.countUsersByRole(role.getRoleId());
             request.setAttribute("userCount_" + role.getRoleId(), userCount);
         }
-
         request.setAttribute("roleList", roleList);
 
-        // Kiểm tra thông báo thành công/lỗi từ các thao tác trước đó
         String message = request.getParameter("message");
         String error = request.getParameter("error");
-        if (message != null) {
-            request.setAttribute("message", message);
-        }
-        if (error != null) {
-            request.setAttribute("error", error);
-        }
+        if (message != null) request.setAttribute("message", message);
+        if (error != null) request.setAttribute("error", error);
 
-        request.getRequestDispatcher("activeDeactiveRole.jsp").forward(request, response);
+        try {
+            request.getRequestDispatcher("activeDeactiveRole.jsp").forward(request, response);
+        } catch (ServletException | IOException e) {
+            try {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Forward failed");
+            } catch (IOException ex) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
-    /**
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Check if user is logged in and is Admin
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("currentUser") == null) {
-            response.sendRedirect("login.jsp");
-            return;
-        }
+        if (!isAuthenticated(request, response)) return;
 
         String roleIdStr = request.getParameter("roleId");
-        String action = request.getParameter("action"); // "activate", "deactivate", or "toggle"
-
-        // Validate roleId parameter
         if (roleIdStr == null || roleIdStr.trim().isEmpty()) {
-            response.sendRedirect("activeDeactiveRole?error=Role+ID+is+required");
+            redirect(response, MAIN_PAGE + "?error=Role+ID+is+required");
+            return;
+        }
+        parseAndProcess(request, response, roleIdStr);
+    }
+
+    private void parseAndProcess(HttpServletRequest request, HttpServletResponse response, String roleIdStr) {
+        try {
+            int roleId = Integer.parseInt(roleIdStr);
+            processRoleAction(request, response, roleId);
+        } catch (NumberFormatException e) {
+            redirect(response, MAIN_PAGE + "?error=Invalid+Role+ID");
+        } catch (IOException e) {
+            redirect(response, MAIN_PAGE + "?error=Internal+server+error");
+        }
+    }
+
+    private void processRoleAction(HttpServletRequest request, HttpServletResponse response, int roleId)
+            throws IOException {
+
+        Role currentRole = roleDAO.getRoleById(roleId);
+        if (currentRole == null) {
+            redirect(response, MAIN_PAGE + "?error=Role+not+found");
             return;
         }
 
+        String action = request.getParameter("action");
+        String source = request.getParameter("source");
+        boolean success = updateRoleByAction(action, roleId);
+        String redirectUrl = resolveRedirectUrl(source);
+        String separator = redirectUrl.contains("?") ? "&" : "?";
+
+        if (success) {
+            String statusMessage = buildStatusMessage(action, currentRole);
+            redirect(response, redirectUrl + separator + "message=" + statusMessage);
+        } else {
+            redirect(response, redirectUrl + separator + "error=Failed+to+update+role+status");
+        }
+    }
+
+    private boolean updateRoleByAction(String action, int roleId) {
+        if (ACTIVATE.equals(action)) return roleDAO.updateRoleStatus(roleId, 1);
+        if (DEACTIVATE.equals(action)) return roleDAO.updateRoleStatus(roleId, 0);
+        return roleDAO.toggleRoleStatus(roleId);
+    }
+
+    private String buildStatusMessage(String action, Role currentRole) {
+        String name = currentRole.getRoleName();
+        if (ACTIVATE.equals(action)) return ROLE_PREFIX + name + "'+has+been+activated";
+        if (DEACTIVATE.equals(action)) return ROLE_PREFIX + name + "'+has+been+deactivated";
+        String newStatus = currentRole.isActive() ? "deactivated" : "activated";
+        return ROLE_PREFIX + name + "'+has+been+" + newStatus;
+    }
+
+    private String resolveRedirectUrl(String source) {
+        if ("roleList".equals(source)) return "role?action=list";
+        if ("dashboard".equals(source)) return "admin/dashboard";
+        return MAIN_PAGE;
+    }
+
+    private boolean isAuthenticated(HttpServletRequest request, HttpServletResponse response) {
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("currentUser") == null) {
+            redirect(response, LOGIN_PAGE);
+            return false;
+        }
+        return true;
+    }
+
+    private void redirect(HttpServletResponse response, String url) {
         try {
-            int roleId = Integer.parseInt(roleIdStr);
-
-            // Lấy thông tin vai trò hiện tại để đăng nhập
-            Role currentRole = roleDAO.getRoleById(roleId);
-            if (currentRole == null) {
-                response.sendRedirect("activeDeactiveRole?error=Role+not+found");
-                return;
+            response.sendRedirect(url);
+        } catch (IOException e) {
+            try {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Redirect failed");
+            } catch (IOException ex) {
+                Thread.currentThread().interrupt();
             }
-
-            boolean success;
-            String statusMessage;
-
-            if ("activate".equals(action)) {
-                // Explicitly set to Active
-                success = roleDAO.updateRoleStatus(roleId, 1);
-                statusMessage = "Role+'" + currentRole.getRoleName() + "'+has+been+activated";
-            } else if ("deactivate".equals(action)) {
-                // Explicitly set to Deactive
-                success = roleDAO.updateRoleStatus(roleId, 0);
-                statusMessage = "Role+'" + currentRole.getRoleName() + "'+has+been+deactivated";
-            } else {
-                // Default: Toggle the status
-                success = roleDAO.toggleRoleStatus(roleId);
-                String newStatus = currentRole.isActive() ? "deactivated" : "activated";
-                statusMessage = "Role+'" + currentRole.getRoleName() + "'+has+been+" + newStatus;
-            }
-
-            String source = request.getParameter("source");
-            String redirectUrl = "activeDeactiveRole";
-            if ("roleList".equals(source)) {
-                redirectUrl = "role?action=list";
-            } else if ("dashboard".equals(source)) {
-                redirectUrl = "admin/dashboard";
-            }
-
-            if (success) {
-                response.sendRedirect(redirectUrl + (redirectUrl.contains("?") ? "&" : "?") + "message=" + statusMessage);
-            } else {
-                response.sendRedirect(redirectUrl + (redirectUrl.contains("?") ? "&" : "?") + "error=Failed+to+update+role+status");
-            }
-
-        } catch (NumberFormatException e) {
-            response.sendRedirect("activeDeactiveRole?error=Invalid+Role+ID");
         }
     }
 
     @Override
     public String getServletInfo() {
-        return "Active/Deactive Role Controller - Enables or disables roles for all assigned users";
+        return "Active/Deactive Role Controller";
     }
 }
