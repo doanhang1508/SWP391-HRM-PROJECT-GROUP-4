@@ -443,7 +443,7 @@
                                                         </a>
                                                     </li>
                                                     <li class="sidebar-item">
->>>>>>> 5f9628b (Refactor: Move HR controllers to correct package, update shift/leave structures, fix bug leave logic)
+
                                                         <a href="${pageContext.request.contextPath}/hr/reward-disciplines"
                                                             class="sidebar-link ${param.activeMenu eq 'reward-disciplines' ? 'active' : ''}">
                                                             <i class="fas fa-award"></i> Danh mục Thưởng/Phạt

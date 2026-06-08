@@ -456,7 +456,7 @@ body {
                 <div class="detail-panel">
                     <div class="dash-card-header" style="margin-bottom: 16px;">
                         <h3 class="dash-card-title"><i class="fas fa-info-circle" style="color:#0d9488;"></i> Chi Tiết Hạng Mục</h3>
-                        <a href="${pageContext.request.contextPath}/admin/reward-disciplines" class="filter-btn">
+                        <a href="${pageContext.request.contextPath}/hr/reward-disciplines" class="filter-btn">
                             <i class="fas fa-times"></i> Đóng
                         </a>
                     </div>
@@ -519,7 +519,7 @@ body {
                 </div>
 
                 <!-- Search & Filter Bar -->
-                <form class="filter-bar" action="${pageContext.request.contextPath}/admin/reward-disciplines" method="GET" id="filterForm">
+                <form class="filter-bar" action="${pageContext.request.contextPath}/hr/reward-disciplines" method="GET" id="filterForm">
                     <input type="text" name="keyword" placeholder="Tìm kiếm theo tên hoặc mô tả..." value="${fn:escapeXml(keyword)}">
                     <select name="typeFilter" onchange="document.getElementById('filterForm').submit();">
                         <option value="all" ${empty typeFilter or typeFilter == 'all' ? 'selected' : ''}>Tất cả</option>
@@ -530,7 +530,7 @@ body {
                         <i class="fas fa-search"></i> Tìm
                     </button>
                     <c:if test="${not empty keyword or (not empty typeFilter and typeFilter != 'all')}">
-                        <a href="${pageContext.request.contextPath}/admin/reward-disciplines" class="filter-btn filter-btn-clear">
+                        <a href="${pageContext.request.contextPath}/hr/reward-disciplines" class="filter-btn filter-btn-clear">
                             <i class="fas fa-times"></i> Xóa lọc
                         </a>
                     </c:if>
@@ -579,7 +579,7 @@ body {
                                         </td>
                                         <td style="white-space: nowrap;">
                                             <!-- View Details -->
-                                            <a href="${pageContext.request.contextPath}/admin/reward-disciplines?viewId=${item.id}" class="action-btn" style="color: #8b5cf6;" title="Xem chi tiết">
+                                            <a href="${pageContext.request.contextPath}/hr/reward-disciplines?viewId=${item.id}" class="action-btn" style="color: #8b5cf6;" title="Xem chi tiết">
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                             <!-- Edit -->
@@ -588,7 +588,7 @@ body {
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             <!-- Delete -->
-                                            <form action="${pageContext.request.contextPath}/admin/reward-disciplines" method="POST" style="display: inline;"
+                                            <form action="${pageContext.request.contextPath}/hr/reward-disciplines" method="POST" style="display: inline;"
                                                   onsubmit="return confirm('Bạn có chắc muốn xóa hạng mục \'${fn:escapeXml(item.name)}\'? Hành động này không thể hoàn tác.');">
                                                 <input type="hidden" name="action" value="delete">
                                                 <input type="hidden" name="id" value="${item.id}">
@@ -630,7 +630,7 @@ body {
             <h3 class="modal-title"><i class="fas fa-plus-circle" style="color:#0d9488;"></i> Thêm Hạng Mục Mới</h3>
             <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
         </div>
-        <form action="${pageContext.request.contextPath}/admin/reward-disciplines" method="POST">
+        <form action="${pageContext.request.contextPath}/hr/reward-disciplines" method="POST">
             <input type="hidden" name="action" value="add">
             <div class="form-group">
                 <label class="form-label">Tên Hạng Mục <span style="color:#e11d48;">*</span></label>
@@ -673,7 +673,7 @@ body {
             <h3 class="modal-title"><i class="fas fa-edit" style="color:#3b82f6;"></i> Cập Nhật Hạng Mục</h3>
             <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
         </div>
-        <form action="${pageContext.request.contextPath}/admin/reward-disciplines" method="POST">
+        <form action="${pageContext.request.contextPath}/hr/reward-disciplines" method="POST">
             <input type="hidden" name="action" value="edit">
             <input type="hidden" name="id" id="edit_id">
             <div class="form-group">

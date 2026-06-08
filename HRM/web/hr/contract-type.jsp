@@ -251,7 +251,7 @@
                                             </button>
                                             <c:choose>
                                                 <c:when test="${ct.status}">
-                                                    <form action="${pageContext.request.contextPath}/admin/contract-type" method="POST" style="display:inline;" onsubmit="return confirm('Vô hiệu hóa loại hợp đồng \'${fn:escapeXml(ct.typeName)}\'?');">
+                                                    <form action="${pageContext.request.contextPath}/hr/contract-type" method="POST" style="display:inline;" onsubmit="return confirm('Vô hiệu hóa loại hợp đồng \'${fn:escapeXml(ct.typeName)}\'?');">
                                                         <input type="hidden" name="action" value="deactivate">
                                                         <input type="hidden" name="id" value="${ct.contractTypeId}">
                                                         <button type="submit" class="action-btn btn-deactivate" title="Vô hiệu hóa">
@@ -260,7 +260,7 @@
                                                     </form>
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <form action="${pageContext.request.contextPath}/admin/contract-type" method="POST" style="display:inline;" onsubmit="return confirm('Kích hoạt lại loại hợp đồng \'${fn:escapeXml(ct.typeName)}\'?');">
+                                                    <form action="${pageContext.request.contextPath}/hr/contract-type" method="POST" style="display:inline;" onsubmit="return confirm('Kích hoạt lại loại hợp đồng \'${fn:escapeXml(ct.typeName)}\'?');">
                                                         <input type="hidden" name="action" value="activate">
                                                         <input type="hidden" name="id" value="${ct.contractTypeId}">
                                                         <button type="submit" class="action-btn btn-activate" title="Kích hoạt">
@@ -337,7 +337,7 @@
             <h3 class="modal-title"><i class="fas fa-plus-circle" style="color:var(--blue);margin-right:8px;"></i>Thêm Loại Hợp Đồng Mới</h3>
             <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
         </div>
-        <form action="${pageContext.request.contextPath}/admin/contract-type" method="POST">
+        <form action="${pageContext.request.contextPath}/hr/contract-type" method="POST">
             <input type="hidden" name="action" value="add">
             <div class="form-group">
                 <label class="form-label">Tên loại hợp đồng <span style="color:#e11d48;">*</span></label>
@@ -379,7 +379,7 @@
             <h3 class="modal-title"><i class="fas fa-edit" style="color:var(--blue);margin-right:8px;"></i>Cập Nhật Loại Hợp Đồng</h3>
             <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
         </div>
-        <form action="${pageContext.request.contextPath}/admin/contract-type" method="POST">
+        <form action="${pageContext.request.contextPath}/hr/contract-type" method="POST">
             <input type="hidden" name="action" value="edit">
             <input type="hidden" name="id" id="edit_id">
             <div class="form-group">

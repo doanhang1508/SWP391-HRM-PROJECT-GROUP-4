@@ -44,6 +44,14 @@
         <filter-name>AuthFilter</filter-name>
         <url-pattern>/settings</url-pattern>
     </filter-mapping>
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/editRolePermission</url-pattern>
+    </filter-mapping>
+    <filter-mapping>
+        <filter-name>AuthFilter</filter-name>
+        <url-pattern>/role/*</url-pattern>
+    </filter-mapping>
     <!-- Filter mappings for legacy paths removed -->
 
     <!-- ══════════════════════════════════════════════════════

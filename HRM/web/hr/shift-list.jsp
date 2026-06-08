@@ -378,7 +378,7 @@
                                                         <c:set var="hasDept" value="true" />
                                                         <span class="badge" style="background:#f1f5f9;color:var(--txt);border:1px solid #e2e8f0;padding:5px 8px;font-weight:500;font-size:0.75rem;">
                                                             ${ds.departmentName}
-                                                            <form action="${pageContext.request.contextPath}/admin/shifts" method="POST" style="display:inline;margin-left:6px;" onsubmit="return confirm('Xóa ca mặc định này khỏi phòng ban ${ds.departmentName}?');">
+                                                            <form action="${pageContext.request.contextPath}/hr/shifts" method="POST" style="display:inline;margin-left:6px;" onsubmit="return confirm('Xóa ca mặc định này khỏi phòng ban ${ds.departmentName}?');">
                                                                 <input type="hidden" name="action" value="removeDeptShift">
                                                                 <input type="hidden" name="deptShiftId" value="${ds.id}">
                                                                 <button type="submit" style="background:none;border:none;color:var(--ng);padding:0;cursor:pointer;" title="Xóa"><i class="fas fa-times"></i></button>
@@ -400,14 +400,14 @@
                                                 <td class="text-end">
                                                     <div class="d-flex justify-content-end gap-2">
                                                             <button class="btn-a btn-edit" title="Chỉnh sửa thông tin ca làm việc này" onclick="openEditModal(${s.shiftId}, '${s.shiftName}', '${s.startTime}', '${s.endTime}', '${s.breakStart}', '${s.breakEnd}',${s.nightShift},${s.coefficient})"><i class="fas fa-edit"></i></button>
-                                                <form action="${pageContext.request.contextPath}/admin/shifts" method="POST" style="display:inline;" onsubmit="return confirm('${s.status==1?'Bạn có chắc chắn muốn KHÓA (Vô hiệu hóa) ca làm việc này không?':'Bạn có chắc chắn muốn MỞ KHÓA (Kích hoạt) ca làm việc này không?'}');">
+                                                <form action="${pageContext.request.contextPath}/hr/shifts" method="POST" style="display:inline;" onsubmit="return confirm('${s.status==1?'Bạn có chắc chắn muốn KHÓA (Vô hiệu hóa) ca làm việc này không?':'Bạn có chắc chắn muốn MỞ KHÓA (Kích hoạt) ca làm việc này không?'}');">
                                                     <input type="hidden" name="action" value="toggleStatus">
                                                     <input type="hidden" name="shiftId" value="${s.shiftId}">
                                                     <button type="submit" class="btn-a ${s.status==1?'btn-tog-on':'btn-tog-off'}" title="${s.status==1?'Khóa (Vô hiệu hóa) ca làm việc này':'Mở khóa (Kích hoạt) ca làm việc này'}">
                                                         <i class="fas ${s.status==1?'fa-lock':'fa-unlock'}"></i>
                                                     </button>
                                                 </form>
-                                                <form action="${pageContext.request.contextPath}/admin/shifts" method="POST" style="display:inline;" onsubmit="return confirm('Bạn có chắc chắn muốn XÓA VĨNH VIỄN ca làm việc này không? Hành động này không thể hoàn tác!');">
+                                                <form action="${pageContext.request.contextPath}/hr/shifts" method="POST" style="display:inline;" onsubmit="return confirm('Bạn có chắc chắn muốn XÓA VĨNH VIỄN ca làm việc này không? Hành động này không thể hoàn tác!');">
                                                     <input type="hidden" name="action" value="delete">
                                                     <input type="hidden" name="shiftId" value="${s.shiftId}">
                                                     <button type="submit" class="btn-a btn-del" title="Xóa vĩnh viễn ca làm việc này">
@@ -454,7 +454,7 @@
 
 <!-- Assign Dept Shift Modal -->
 <div class="modal fade" id="deptShiftModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
-    <form action="${pageContext.request.contextPath}/admin/shifts" method="POST">
+    <form action="${pageContext.request.contextPath}/hr/shifts" method="POST">
         <input type="hidden" name="action" value="assignDept">
         <div class="modal-header"><h5 class="modal-title"><i class="fas fa-building me-2" style="color:var(--ok)"></i>Gán Ca Mặc Định Cho Phòng Ban</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body">
