@@ -56,7 +56,7 @@ public class PositionDAO {
     }
 
     public void delete(int id) {
-        String sql = "UPDATE positions SET status = 0 WHERE position_id=?";
+        String sql = "DELETE FROM positions WHERE position_id=?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);

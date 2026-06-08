@@ -4,10 +4,10 @@ import dao.UserDAO;
 import model.Shift;
 import model.ShiftAssignment;
 import model.User;
-import service.ShiftAssignmentService;
-import service.ShiftAssignmentServiceImpl;
-import service.ShiftService;
-import service.ShiftServiceImpl;
+import dao.ShiftAssignmentDAO;
+import dao.ShiftAssignmentDAOImpl;
+import dao.ShiftDAO;
+import dao.ShiftDAOImpl;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -43,14 +43,14 @@ public class ShiftScheduleController extends HttpServlet {
 
     private static final int ROLE_SUPERVISOR = 3;
 
-    private ShiftService           shiftService;
-    private ShiftAssignmentService assignmentService;
+    private ShiftDAO           shiftService;
+    private ShiftAssignmentDAO assignmentService;
     private UserDAO                userDAO;
 
     @Override
     public void init() throws ServletException {
-        shiftService      = new ShiftServiceImpl();
-        assignmentService = new ShiftAssignmentServiceImpl();
+        shiftService      = new ShiftDAOImpl();
+        assignmentService = new ShiftAssignmentDAOImpl();
         userDAO           = new UserDAO();
     }
 

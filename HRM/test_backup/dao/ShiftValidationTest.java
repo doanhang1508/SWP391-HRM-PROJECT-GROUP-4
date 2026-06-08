@@ -2,8 +2,8 @@ package dao;
 
 import model.Shift;
 import java.time.LocalTime;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit Test cho hàm Shift.validate()
@@ -24,7 +24,7 @@ public class ShiftValidationTest {
         s.setEndTime(LocalTime.of(12, 0));
         s.setCoefficient(1.0f);
         s.setNightShift(false);
-        assertNull("Ca làm không có giờ nghỉ hợp lệ phải trả null", Shift.validate(s));
+        assertNull(Shift.validate(s), "Ca làm không có giờ nghỉ hợp lệ phải trả null");
     }
 
     @Test
@@ -37,7 +37,7 @@ public class ShiftValidationTest {
         s.setBreakEnd(LocalTime.of(13, 0));
         s.setCoefficient(1.0f);
         s.setNightShift(false);
-        assertNull("Ca có giờ nghỉ hợp lệ phải trả null", Shift.validate(s));
+        assertNull(Shift.validate(s), "Ca có giờ nghỉ hợp lệ phải trả null");
     }
 
     // ==========================================
@@ -51,7 +51,7 @@ public class ShiftValidationTest {
         s.setStartTime(LocalTime.of(8, 0));
         s.setEndTime(LocalTime.of(12, 0));
         s.setCoefficient(1.0f);
-        assertNotNull("ShiftName null phải báo lỗi", Shift.validate(s));
+        assertNotNull(Shift.validate(s), "ShiftName null phải báo lỗi");
     }
 
     @Test
@@ -61,7 +61,7 @@ public class ShiftValidationTest {
         s.setStartTime(LocalTime.of(8, 0));
         s.setEndTime(LocalTime.of(12, 0));
         s.setCoefficient(1.0f);
-        assertNotNull("ShiftName rỗng phải báo lỗi", Shift.validate(s));
+        assertNotNull(Shift.validate(s), "ShiftName rỗng phải báo lỗi");
     }
 
     @Test
@@ -71,7 +71,7 @@ public class ShiftValidationTest {
         s.setStartTime(null);
         s.setEndTime(LocalTime.of(12, 0));
         s.setCoefficient(1.0f);
-        assertNotNull("StartTime null phải báo lỗi", Shift.validate(s));
+        assertNotNull(Shift.validate(s), "StartTime null phải báo lỗi");
     }
 
     @Test
@@ -81,7 +81,7 @@ public class ShiftValidationTest {
         s.setStartTime(LocalTime.of(8, 0));
         s.setEndTime(null);
         s.setCoefficient(1.0f);
-        assertNotNull("EndTime null phải báo lỗi", Shift.validate(s));
+        assertNotNull(Shift.validate(s), "EndTime null phải báo lỗi");
     }
 
     // ==========================================
@@ -96,7 +96,7 @@ public class ShiftValidationTest {
         s.setEndTime(LocalTime.of(8, 0));
         s.setCoefficient(1.0f);
         s.setNightShift(false);
-        assertNotNull("StartTime > EndTime phải báo lỗi", Shift.validate(s));
+        assertNotNull(Shift.validate(s), "StartTime > EndTime phải báo lỗi");
     }
 
     @Test
@@ -106,7 +106,7 @@ public class ShiftValidationTest {
         s.setStartTime(LocalTime.of(8, 0));
         s.setEndTime(LocalTime.of(12, 0));
         s.setCoefficient(-1.5f); // Hệ số âm
-        assertNotNull("Coefficient âm phải báo lỗi", Shift.validate(s));
+        assertNotNull(Shift.validate(s), "Coefficient âm phải báo lỗi");
     }
 
     @Test
@@ -118,7 +118,7 @@ public class ShiftValidationTest {
         s.setBreakStart(LocalTime.of(13, 0)); // Giờ nghỉ nằm ngoài ca làm
         s.setBreakEnd(LocalTime.of(14, 0));
         s.setCoefficient(1.0f);
-        assertNotNull("Break nằm ngoài ca làm phải báo lỗi", Shift.validate(s));
+        assertNotNull(Shift.validate(s), "Break nằm ngoài ca làm phải báo lỗi");
     }
 
     @Test
@@ -130,6 +130,7 @@ public class ShiftValidationTest {
         s.setBreakStart(LocalTime.of(14, 0)); // Giờ bắt đầu nghỉ sau giờ kết thúc nghỉ
         s.setBreakEnd(LocalTime.of(12, 0));
         s.setCoefficient(1.0f);
-        assertNotNull("BreakStart > BreakEnd phải báo lỗi", Shift.validate(s));
+        assertNotNull(Shift.validate(s), "BreakStart > BreakEnd phải báo lỗi");
     }
 }
+

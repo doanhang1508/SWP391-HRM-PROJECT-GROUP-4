@@ -430,12 +430,7 @@
                                                         </a>
                                                     </li>
 
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/shifts?action=schedule"
-                                                            class="sidebar-link ${param.activeMenu eq 'schedule' ? 'active' : ''}">
-                                                            <i class="fas fa-calendar-alt"></i> Xếp lịch ca
-                                                        </a>
-                                                    </li>
+
                                                     <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/hr/leave"
                                                             class="sidebar-link ${param.activeMenu eq 'leaveManagement' ? 'active' : ''}">
@@ -594,12 +589,7 @@
                                                                             <i class="fas fa-history"></i> Lịch sử làm việc
                                                                         </a>
                                                                     </li>
-                                                                    <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/employee/overtime"
-                                                                            class="sidebar-link ${param.activeMenu eq 'overtime' ? 'active' : ''}">
-                                                                            <i class="fas fa-clock"></i> Tăng ca
-                                                                        </a>
-                                                                    </li>
+
                                                                     <li class="sidebar-menu-category">Phúc lợi & Nghỉ phép</li>
                                                                     <li class="sidebar-item">
                                                                         <a href="${pageContext.request.contextPath}/employee/leave"

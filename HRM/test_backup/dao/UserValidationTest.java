@@ -1,8 +1,8 @@
 package dao;
 
 import model.User;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit Test cho hàm User.validate()
@@ -25,7 +25,7 @@ public class UserValidationTest {
         u.setPhone("0901234567");
         u.setRoleId(2);
         u.setStatus(1);
-        assertNull("Dữ liệu hợp lệ, validate phải trả null", User.validate(u));
+        assertNull(User.validate(u), "Dữ liệu hợp lệ, validate phải trả null");
     }
 
     @Test
@@ -37,7 +37,7 @@ public class UserValidationTest {
         u.setEmail("tranthib@gmail.com");
         u.setRoleId(3);
         u.setStatus(0); // Status = 0 (inactive) vẫn hợp lệ
-        assertNull("Status = 0 vẫn hợp lệ", User.validate(u));
+        assertNull(User.validate(u), "Status = 0 vẫn hợp lệ");
     }
 
     // ==========================================
@@ -52,7 +52,7 @@ public class UserValidationTest {
         u.setEmail("test@gmail.com");
         u.setRoleId(2);
         u.setStatus(1);
-        assertNotNull("Username null phải báo lỗi", User.validate(u));
+        assertNotNull(User.validate(u), "Username null phải báo lỗi");
     }
 
     @Test
@@ -63,7 +63,7 @@ public class UserValidationTest {
         u.setEmail("test@gmail.com");
         u.setRoleId(2);
         u.setStatus(1);
-        assertNotNull("Username rỗng phải báo lỗi", User.validate(u));
+        assertNotNull(User.validate(u), "Username rỗng phải báo lỗi");
     }
 
     @Test
@@ -74,7 +74,7 @@ public class UserValidationTest {
         u.setEmail("test@gmail.com");
         u.setRoleId(2);
         u.setStatus(1);
-        assertNotNull("Password null phải báo lỗi", User.validate(u));
+        assertNotNull(User.validate(u), "Password null phải báo lỗi");
     }
 
     @Test
@@ -85,7 +85,7 @@ public class UserValidationTest {
         u.setEmail(null);
         u.setRoleId(2);
         u.setStatus(1);
-        assertNotNull("Email null phải báo lỗi", User.validate(u));
+        assertNotNull(User.validate(u), "Email null phải báo lỗi");
     }
 
     @Test
@@ -96,7 +96,7 @@ public class UserValidationTest {
         u.setEmail("emailkhongcoat"); // Không có ký tự @
         u.setRoleId(2);
         u.setStatus(1);
-        assertNotNull("Email sai định dạng phải báo lỗi", User.validate(u));
+        assertNotNull(User.validate(u), "Email sai định dạng phải báo lỗi");
     }
 
     // ==========================================
@@ -111,7 +111,7 @@ public class UserValidationTest {
         u.setEmail("test@gmail.com");
         u.setRoleId(-1); // RoleId âm = sai
         u.setStatus(1);
-        assertNotNull("RoleId âm phải báo lỗi", User.validate(u));
+        assertNotNull(User.validate(u), "RoleId âm phải báo lỗi");
     }
 
     @Test
@@ -122,7 +122,7 @@ public class UserValidationTest {
         u.setEmail("test@gmail.com");
         u.setRoleId(2);
         u.setStatus(99); // Status chỉ được là 0 hoặc 1
-        assertNotNull("Status = 99 phải báo lỗi", User.validate(u));
+        assertNotNull(User.validate(u), "Status = 99 phải báo lỗi");
     }
 
     @Test
@@ -134,6 +134,7 @@ public class UserValidationTest {
         u.setRoleId(2);
         u.setStatus(1);
         u.setPhone("0123456789012345678"); // Dài hơn 15 ký tự
-        assertNotNull("Số điện thoại quá dài phải báo lỗi", User.validate(u));
+        assertNotNull(User.validate(u), "Số điện thoại quá dài phải báo lỗi");
     }
 }
+

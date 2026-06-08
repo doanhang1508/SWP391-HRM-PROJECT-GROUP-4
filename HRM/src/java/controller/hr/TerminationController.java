@@ -7,13 +7,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.LocalDate;
-import service.EmployeeLifecycleService;
-import service.EmployeeLifecycleServiceImpl;
+import dao.UserDAO;
+
 
 @WebServlet("/hr/terminate-employee")
 public class TerminationController extends HttpServlet {
 
-    private EmployeeLifecycleService lifecycleService = new EmployeeLifecycleServiceImpl();
+    private UserDAO lifecycleService = new UserDAO();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {

@@ -58,7 +58,7 @@ public class ActiveDeactiveRoleController extends HttpServlet {
 
         String roleIdStr = request.getParameter("roleId");
         if (roleIdStr == null || roleIdStr.trim().isEmpty()) {
-            redirect(response, MAIN_PAGE + "?error=Role+ID+is+required");
+            redirect(request, response, MAIN_PAGE + "?error=Role+ID+is+required");
             return;
         }
         parseAndProcess(request, response, roleIdStr);
@@ -69,9 +69,9 @@ public class ActiveDeactiveRoleController extends HttpServlet {
             int roleId = Integer.parseInt(roleIdStr);
             processRoleAction(request, response, roleId);
         } catch (NumberFormatException e) {
-            redirect(response, MAIN_PAGE + "?error=Invalid+Role+ID");
+            redirect(request, response, MAIN_PAGE + "?error=Invalid+Role+ID");
         } catch (IOException e) {
-            redirect(response, MAIN_PAGE + "?error=Internal+server+error");
+            redirect(request, response, MAIN_PAGE + "?error=Internal+server+error");
         }
     }
 
@@ -80,7 +80,7 @@ public class ActiveDeactiveRoleController extends HttpServlet {
 
         Role currentRole = roleDAO.getRoleById(roleId);
         if (currentRole == null) {
-            redirect(response, MAIN_PAGE + "?error=Role+not+found");
+            redirect(request, response, MAIN_PAGE + "?error=Role+not+found");
             return;
         }
 
@@ -92,9 +92,9 @@ public class ActiveDeactiveRoleController extends HttpServlet {
 
         if (success) {
             String statusMessage = buildStatusMessage(action, currentRole);
-            redirect(response, redirectUrl + separator + "message=" + statusMessage);
+            redirect(request, response, redirectUrl + separator + "message=" + statusMessage);
         } else {
-            redirect(response, redirectUrl + separator + "error=Failed+to+update+role+status");
+            redirect(request, response, redirectUrl + separator + "error=Failed+to+update+role+status");
         }
     }
 
@@ -121,15 +121,15 @@ public class ActiveDeactiveRoleController extends HttpServlet {
     private boolean isAuthenticated(HttpServletRequest request, HttpServletResponse response) {
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("currentUser") == null) {
-            redirect(response, LOGIN_PAGE);
+            redirect(request, response, LOGIN_PAGE);
             return false;
         }
         return true;
     }
 
-    private void redirect(HttpServletResponse response, String url) {
+    private void redirect(HttpServletRequest request, HttpServletResponse response, String url) {
         try {
-            response.sendRedirect(url);
+            response.sendRedirect(request.getContextPath() + "/" + url);
         } catch (IOException e) {
             try {
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Redirect failed");

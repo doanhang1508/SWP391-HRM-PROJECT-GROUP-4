@@ -1,5 +1,5 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%@page import="java.sql.*, dao.DBContext, util.PasswordUtil"%>
+<%@page import="java.sql.*, util.DBContext, util.PasswordUtil"%>
 <html>
 <body>
     <h3>Employee Users (Role = 7)</h3>
@@ -24,3 +24,4 @@
     </table>
 </body>
 </html>
+

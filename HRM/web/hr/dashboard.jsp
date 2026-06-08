@@ -218,7 +218,7 @@ body {
                                     </td>
                                     <td style="color:#64748b;">${emp.email}</td>
                                     <td>
-                                        <a href="${pageContext.request.contextPath}/hr/employee-detail?id=${emp.userId}" class="dash-btn dash-btn-primary">Xem</a>
+                                        <a href="${pageContext.request.contextPath}/employee-detail?userId=${emp.userId}" class="dash-btn dash-btn-primary">Xem</a>
                                     </td>
                                 </tr>
                             </c:forEach>

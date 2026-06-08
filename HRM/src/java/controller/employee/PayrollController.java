@@ -9,12 +9,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.LocalDate;
 import model.Payroll;
-import service.PayrollService;
-import service.PayrollServiceImpl;
+import dao.PayrollDAO;
+
 
 @WebServlet("/employee/payroll")
 public class PayrollController extends HttpServlet {
-    private PayrollService payrollService = new PayrollServiceImpl();
+    private PayrollDAO payrollService = new PayrollDAO();
     private PayrollDAO payrollDAO = new PayrollDAO();
 
     @Override

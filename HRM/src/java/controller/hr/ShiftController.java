@@ -5,8 +5,8 @@ import model.DepartmentShift;
 import model.Shift;
 import model.User;
 import dao.DepartmentDAO;
-import service.ShiftService;
-import service.ShiftServiceImpl;
+import dao.ShiftDAO;
+import dao.ShiftDAOImpl;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -48,12 +48,12 @@ public class ShiftController extends HttpServlet {
     private static final String INVALID_ID     = "ID khÃ´ng há»£p lá»‡";
     private static final String SHIFTS_URL     = "/hr/shifts";
 
-    private ShiftService shiftService;
+    private ShiftDAO shiftService;
     private DepartmentDAO departmentDAO;
 
     @Override
     public void init() throws ServletException {
-        shiftService = new ShiftServiceImpl();
+        shiftService = new ShiftDAOImpl();
         departmentDAO = new DepartmentDAO();
     }
 
@@ -387,7 +387,8 @@ public class ShiftController extends HttpServlet {
 
     private void redirect(HttpServletResponse resp, HttpServletRequest req,
             String key, String msg) throws IOException {
-        resp.sendRedirect(req.getContextPath() + SHIFTS_URL + "?" + key + "=" + encode(msg));
+        req.getSession().setAttribute(key, msg);
+        resp.sendRedirect(req.getContextPath() + SHIFTS_URL);
     }
 
     private void setEncoding(HttpServletRequest req) {

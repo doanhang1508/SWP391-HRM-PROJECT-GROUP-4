@@ -5,10 +5,10 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import service.PayrollService;
-import service.PayrollServiceImpl;
-import service.RewardDisciplineService;
-import service.RewardDisciplineServiceImpl;
+import dao.PayrollDAO;
+
+import dao.RewardDisciplineDAO;
+
 
 import java.io.IOException;
 
@@ -19,8 +19,8 @@ public class AdminAutomationController extends HttpServlet {
     private static final String ATTR_ERROR   = "error";
     private static final String VIEW_PAGE    = "/admin/automation.jsp";
 
-    private final PayrollService          payrollService = new PayrollServiceImpl();
-    private final RewardDisciplineService rdService      = new RewardDisciplineServiceImpl();
+    private final PayrollDAO          payrollService = new PayrollDAO();
+    private final RewardDisciplineDAO rdService      = new RewardDisciplineDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)

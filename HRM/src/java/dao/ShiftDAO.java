@@ -2,6 +2,9 @@ package dao;
 
 import model.Shift;
 import java.util.List;
+import java.time.LocalTime;
+import java.time.LocalDate;
+import model.DepartmentShift;
 
 /**
  * ShiftDAO — Data Access Object interface for the `shifts` table (v2 schema).
@@ -24,4 +27,19 @@ public interface ShiftDAO {
     boolean toggleShiftStatus(int shiftId);
 
     boolean isShiftNameExists(String shiftName, int excludeShiftId);
+
+    int findOrCreateCustomShift(LocalTime startTime, LocalTime endTime);
+    String validateShiftData(Shift shift, int excludeShiftId);
+    void autoDetectNightShift(Shift shift);
+    List<DepartmentShift> getAllDepartmentShifts();
+    List<DepartmentShift> getDepartmentShiftsByDeptId(int deptId);
+    boolean assignDefaultShiftToDepartment(int departmentId, int shiftId);
+    boolean removeDepartmentShift(int id);
+    double calculateTotalWorkingHours(Shift shift);
+    boolean isNightShift(Shift shift);
+    LocalDate resolveWorkDate(Shift shift, LocalDate assignedDate);
+    boolean isWithinGracePeriod(LocalTime shiftStart, LocalTime clockIn);
+    long calculateLatenessMinutes(LocalTime shiftStart, LocalTime clockIn);
+    long calculateEarlyCheckInOvertimeMinutes(LocalTime shiftStart, LocalTime clockIn, boolean hasOvertimeRequest);
 }
+

@@ -8,8 +8,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.LeaveRequest;
 import model.User;
-import service.LeaveService;
-import service.LeaveServiceImpl;
+import dao.LeaveRequestDAO;
+import dao.LeaveRequestDAOImpl;
 
 import java.io.IOException;
 import java.sql.Date;
@@ -19,11 +19,11 @@ import model.LeaveType;
 @WebServlet(name = "EmployeeLeaveController", urlPatterns = {"/employee/leave"})
 public class EmployeeLeaveController extends HttpServlet {
 
-    private LeaveService service;
+    private LeaveRequestDAO service;
 
     @Override
     public void init() throws ServletException {
-        service = new LeaveServiceImpl();
+        service = new LeaveRequestDAOImpl();
     }
 
     @Override
@@ -39,7 +39,7 @@ public class EmployeeLeaveController extends HttpServlet {
         }
 
         if (service == null) {
-            service = new LeaveServiceImpl();
+            service = new LeaveRequestDAOImpl();
         }
 
         List<LeaveType> leaveTypes = service.getAllLeaveTypes();
@@ -73,7 +73,7 @@ public class EmployeeLeaveController extends HttpServlet {
         }
 
         if (service == null) {
-            service = new LeaveServiceImpl();
+            service = new LeaveRequestDAOImpl();
         }
 
         String action = request.getParameter("action");

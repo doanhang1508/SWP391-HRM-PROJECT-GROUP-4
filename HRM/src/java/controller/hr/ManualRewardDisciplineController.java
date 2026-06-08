@@ -12,13 +12,13 @@ import java.sql.Date;
 import java.util.List;
 import model.EmployeeRewardDiscipline;
 import model.RewardDiscipline;
-import service.RewardDisciplineService;
-import service.RewardDisciplineServiceImpl;
+import dao.RewardDisciplineDAO;
+
 
 @WebServlet("/hr/manual-reward-discipline")
 public class ManualRewardDisciplineController extends HttpServlet {
 
-    private RewardDisciplineService rdService = new RewardDisciplineServiceImpl();
+    private RewardDisciplineDAO rdService = new RewardDisciplineDAO();
     private RewardDisciplineDAO rdDAO = new RewardDisciplineDAO();
 
     @Override
