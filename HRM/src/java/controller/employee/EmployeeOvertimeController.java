@@ -2,8 +2,8 @@ package controller.employee;
 
 import model.OvertimeAssignment;
 import model.User;
-import service.OvertimeService;
-import service.OvertimeServiceImpl;
+import dao.OvertimeAssignmentDAO;
+import dao.OvertimeAssignmentDAOImpl;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -28,11 +28,11 @@ import java.util.List;
 @WebServlet(name = "EmployeeOvertimeController", urlPatterns = {"/employee/overtime"})
 public class EmployeeOvertimeController extends HttpServlet {
 
-    private OvertimeService overtimeService;
+    private OvertimeAssignmentDAO overtimeService;
 
     @Override
     public void init() throws ServletException {
-        overtimeService = new OvertimeServiceImpl();
+        overtimeService = new OvertimeAssignmentDAOImpl();
     }
 
     @Override

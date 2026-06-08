@@ -2,8 +2,8 @@ package dao;
 
 import model.Attendance;
 import java.sql.Date;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit Test cho hàm Attendance.validateOTRequest()
@@ -27,7 +27,7 @@ public class OvertimeValidationTest {
         a.setWorkDate(Date.valueOf("2026-06-15"));
         a.setOvertimeHrs(2.0);
         a.setOtReason("Dự án gấp deadline");
-        assertNull("OT hợp lệ phải trả null", Attendance.validateOTRequest(a));
+        assertNull(Attendance.validateOTRequest(a), "OT hợp lệ phải trả null");
     }
 
     @Test
@@ -38,7 +38,7 @@ public class OvertimeValidationTest {
         a.setWorkDate(Date.valueOf("2026-06-20"));
         a.setOvertimeHrs(1.5); // 1 tiếng rưỡi
         a.setOtReason("Hỗ trợ khách hàng");
-        assertNull("OT 1.5h hợp lệ phải trả null", Attendance.validateOTRequest(a));
+        assertNull(Attendance.validateOTRequest(a), "OT 1.5h hợp lệ phải trả null");
     }
 
     // ==========================================
@@ -53,7 +53,7 @@ public class OvertimeValidationTest {
         a.setWorkDate(null); // Thiếu ngày làm
         a.setOvertimeHrs(2.0);
         a.setOtReason("Test");
-        assertNotNull("WorkDate null phải báo lỗi", Attendance.validateOTRequest(a));
+        assertNotNull(Attendance.validateOTRequest(a), "WorkDate null phải báo lỗi");
     }
 
     @Test
@@ -64,7 +64,7 @@ public class OvertimeValidationTest {
         a.setWorkDate(Date.valueOf("2026-06-15"));
         a.setOvertimeHrs(2.0);
         a.setOtReason(null); // Không có lý do
-        assertNotNull("OtReason null phải báo lỗi", Attendance.validateOTRequest(a));
+        assertNotNull(Attendance.validateOTRequest(a), "OtReason null phải báo lỗi");
     }
 
     @Test
@@ -75,7 +75,7 @@ public class OvertimeValidationTest {
         a.setWorkDate(Date.valueOf("2026-06-15"));
         a.setOvertimeHrs(2.0);
         a.setOtReason("   "); // Lý do chỉ có dấu cách
-        assertNotNull("OtReason rỗng phải báo lỗi", Attendance.validateOTRequest(a));
+        assertNotNull(Attendance.validateOTRequest(a), "OtReason rỗng phải báo lỗi");
     }
 
     // ==========================================
@@ -90,7 +90,7 @@ public class OvertimeValidationTest {
         a.setWorkDate(Date.valueOf("2026-06-15"));
         a.setOvertimeHrs(2.0);
         a.setOtReason("Test");
-        assertNotNull("UserId âm phải báo lỗi", Attendance.validateOTRequest(a));
+        assertNotNull(Attendance.validateOTRequest(a), "UserId âm phải báo lỗi");
     }
 
     @Test
@@ -101,7 +101,7 @@ public class OvertimeValidationTest {
         a.setWorkDate(Date.valueOf("2026-06-15"));
         a.setOvertimeHrs(2.0);
         a.setOtReason("Test");
-        assertNotNull("ShiftId = 0 phải báo lỗi", Attendance.validateOTRequest(a));
+        assertNotNull(Attendance.validateOTRequest(a), "ShiftId = 0 phải báo lỗi");
     }
 
     @Test
@@ -112,7 +112,7 @@ public class OvertimeValidationTest {
         a.setWorkDate(Date.valueOf("2026-06-15"));
         a.setOvertimeHrs(0); // OT = 0 không có nghĩa lý
         a.setOtReason("Test");
-        assertNotNull("OT = 0 phải báo lỗi", Attendance.validateOTRequest(a));
+        assertNotNull(Attendance.validateOTRequest(a), "OT = 0 phải báo lỗi");
     }
 
     @Test
@@ -123,7 +123,7 @@ public class OvertimeValidationTest {
         a.setWorkDate(Date.valueOf("2026-06-15"));
         a.setOvertimeHrs(-3.0); // Giờ OT âm
         a.setOtReason("Test");
-        assertNotNull("OT âm phải báo lỗi", Attendance.validateOTRequest(a));
+        assertNotNull(Attendance.validateOTRequest(a), "OT âm phải báo lỗi");
     }
 
     @Test
@@ -134,6 +134,7 @@ public class OvertimeValidationTest {
         a.setWorkDate(Date.valueOf("2026-06-15"));
         a.setOvertimeHrs(25.0); // Không thể làm thêm hơn 24h/ngày
         a.setOtReason("Test");
-        assertNotNull("OT > 24h phải báo lỗi", Attendance.validateOTRequest(a));
+        assertNotNull(Attendance.validateOTRequest(a), "OT > 24h phải báo lỗi");
     }
 }
+

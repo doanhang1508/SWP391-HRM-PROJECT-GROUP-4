@@ -3,6 +3,7 @@ package dao;
 import model.LeaveRequest;
 import model.LeaveType;
 import java.util.List;
+import java.time.LocalDate;
 
 public interface LeaveRequestDAO {
     List<LeaveType> getAllLeaveTypes();
@@ -21,4 +22,15 @@ public interface LeaveRequestDAO {
     // Validation
     boolean hasOverlappingLeave(int userId, java.sql.Date startDate, java.sql.Date endDate);
     LeaveType getLeaveTypeById(int leaveTypeId);
+
+    double calculateTotalLeaveDays(LocalDate startDate, LocalDate endDate);
+    double checkRemainingLeaveBalance(int userId, int leaveTypeId) throws Exception;
+    void validateLeaveRequestData(LeaveRequest request) throws Exception;
+    boolean submitLeaveRequest(LeaveRequest request) throws Exception;
+    List<LeaveRequest> getLeaveHistoryByUserId(int userId);
+    List<LeaveRequest> getPendingLeavesByDepartment(int departmentId);
+    boolean approveLeaveRequest(int requestId, int approvedBy) throws Exception;
+    boolean rejectLeaveRequest(int requestId, int approvedBy) throws Exception;
+    List<LeaveRequest> getAllLeaveRequests();
 }
+

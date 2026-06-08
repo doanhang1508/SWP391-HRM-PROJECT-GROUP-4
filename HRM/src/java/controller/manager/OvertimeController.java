@@ -4,8 +4,8 @@ import dao.UserDAO;
 import model.OvertimeAssignment;
 import model.OvertimePlan;
 import model.User;
-import service.OvertimeService;
-import service.OvertimeServiceImpl;
+import dao.OvertimeAssignmentDAO;
+import dao.OvertimeAssignmentDAOImpl;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -41,12 +41,12 @@ public class OvertimeController extends HttpServlet {
     private static final int ROLE_SUPERVISOR = 3;
     private static final String OT_URL = "/manager/overtime";
 
-    private OvertimeService overtimeService;
+    private OvertimeAssignmentDAO overtimeService;
     private UserDAO userDAO;
 
     @Override
     public void init() throws ServletException {
-        overtimeService = new OvertimeServiceImpl();
+        overtimeService = new OvertimeAssignmentDAOImpl();
         userDAO = new UserDAO();
     }
 

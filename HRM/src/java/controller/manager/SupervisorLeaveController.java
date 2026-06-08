@@ -7,8 +7,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.User;
-import service.LeaveService;
-import service.LeaveServiceImpl;
+import dao.LeaveRequestDAO;
+import dao.LeaveRequestDAOImpl;
 
 import java.io.IOException;
 
@@ -27,11 +27,11 @@ import java.io.IOException;
 @WebServlet(name = "SupervisorLeaveController", urlPatterns = {"/manager/leave"})
 public class SupervisorLeaveController extends HttpServlet {
 
-    private LeaveService service;
+    private LeaveRequestDAO service;
 
     @Override
     public void init() throws ServletException {
-        service = new LeaveServiceImpl();
+        service = new LeaveRequestDAOImpl();
     }
 
     @Override

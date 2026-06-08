@@ -2,6 +2,8 @@ package dao;
 
 import model.OvertimeAssignment;
 import java.util.List;
+import model.OvertimePlan;
+import java.sql.Date;
 
 /**
  * OvertimeAssignmentDAO — Data Access interface for `overtime_assignments` table.
@@ -32,4 +34,21 @@ public interface OvertimeAssignmentDAO {
      * Get total approved OT hours for a user on a specific date.
      */
     double getTotalOTHoursForDate(int userId, java.sql.Date date);
+
+    List<OvertimePlan> getPlansByDepartment(int deptId);
+    OvertimePlan getPlanById(int planId);
+    boolean createPlan(OvertimePlan plan);
+    boolean cancelPlan(int planId);
+    List<OvertimeAssignment> getAssignmentsByPlan(int planId);
+    List<OvertimeAssignment> getAssignmentsByDepartment(int deptId);
+    List<OvertimeAssignment> getPendingAssignmentsByDepartment(int deptId);
+    OvertimeAssignment getAssignmentById(int assignmentId);
+    boolean createAssignment(OvertimeAssignment assignment) throws Exception;
+    String validateOTRules(int userId, double assignedHours, Date targetDate);
+    boolean approveOTAssignment(int assignmentId) throws Exception;
+    boolean cancelOTAssignment(int assignmentId);
+    List<OvertimeAssignment> getAssignmentsByUser(int userId);
+    List<OvertimeAssignment> getUpcomingAssignmentsByUser(int userId);
+    List<OvertimeAssignment> getPastAssignmentsByUser(int userId);
 }
+

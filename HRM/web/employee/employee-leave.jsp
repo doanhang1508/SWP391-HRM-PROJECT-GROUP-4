@@ -390,7 +390,7 @@
     // Leave Balances Map from backend
     <%
         // Fallback scriptlet to force evaluation even if Tomcat caches the old Controller class
-        service.LeaveService ls = new service.LeaveServiceImpl();
+        dao.LeaveRequestDAO ls = new dao.LeaveRequestDAOImpl();
         model.User currentUser = (model.User) session.getAttribute("currentUser");
         java.util.Map<Integer, Double> bMap = new java.util.HashMap<>();
         if (currentUser != null && request.getAttribute("leaveTypes") != null) {
@@ -440,3 +440,4 @@
 </script>
 
 <jsp:include page="../footer.jsp" />
+

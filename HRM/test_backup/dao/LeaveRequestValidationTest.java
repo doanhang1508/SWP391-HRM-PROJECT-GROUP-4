@@ -2,8 +2,8 @@ package dao;
 
 import model.LeaveRequest;
 import java.sql.Date;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit Test cho hàm LeaveRequest.validate()
@@ -25,7 +25,7 @@ public class LeaveRequestValidationTest {
         r.setEndDate(Date.valueOf("2026-06-12"));
         r.setTotalDays(3.0);
         r.setReason("Nghỉ ốm");
-        assertNull("Dữ liệu hợp lệ phải trả null", LeaveRequest.validate(r));
+        assertNull(LeaveRequest.validate(r), "Dữ liệu hợp lệ phải trả null");
     }
 
     @Test
@@ -37,7 +37,7 @@ public class LeaveRequestValidationTest {
         r.setEndDate(Date.valueOf("2026-07-01")); // Nghỉ đúng 1 ngày
         r.setTotalDays(1.0);
         r.setReason("Việc gia đình");
-        assertNull("Nghỉ 1 ngày hợp lệ phải trả null", LeaveRequest.validate(r));
+        assertNull(LeaveRequest.validate(r), "Nghỉ 1 ngày hợp lệ phải trả null");
     }
 
     // ==========================================
@@ -53,7 +53,7 @@ public class LeaveRequestValidationTest {
         r.setEndDate(Date.valueOf("2026-06-12"));
         r.setTotalDays(3.0);
         r.setReason("Test");
-        assertNotNull("StartDate null phải báo lỗi", LeaveRequest.validate(r));
+        assertNotNull(LeaveRequest.validate(r), "StartDate null phải báo lỗi");
     }
 
     @Test
@@ -65,7 +65,7 @@ public class LeaveRequestValidationTest {
         r.setEndDate(null); // Thiếu ngày kết thúc
         r.setTotalDays(3.0);
         r.setReason("Test");
-        assertNotNull("EndDate null phải báo lỗi", LeaveRequest.validate(r));
+        assertNotNull(LeaveRequest.validate(r), "EndDate null phải báo lỗi");
     }
 
     @Test
@@ -77,7 +77,7 @@ public class LeaveRequestValidationTest {
         r.setEndDate(Date.valueOf("2026-06-12"));
         r.setTotalDays(3.0);
         r.setReason(""); // Lý do rỗng
-        assertNotNull("Reason rỗng phải báo lỗi", LeaveRequest.validate(r));
+        assertNotNull(LeaveRequest.validate(r), "Reason rỗng phải báo lỗi");
     }
 
     @Test
@@ -89,7 +89,7 @@ public class LeaveRequestValidationTest {
         r.setEndDate(Date.valueOf("2026-06-12"));
         r.setTotalDays(3.0);
         r.setReason(null);
-        assertNotNull("Reason null phải báo lỗi", LeaveRequest.validate(r));
+        assertNotNull(LeaveRequest.validate(r), "Reason null phải báo lỗi");
     }
 
     // ==========================================
@@ -105,7 +105,7 @@ public class LeaveRequestValidationTest {
         r.setEndDate(Date.valueOf("2026-06-12"));
         r.setTotalDays(3.0);
         r.setReason("Test");
-        assertNotNull("UserId <= 0 phải báo lỗi", LeaveRequest.validate(r));
+        assertNotNull(LeaveRequest.validate(r), "UserId <= 0 phải báo lỗi");
     }
 
     @Test
@@ -117,7 +117,7 @@ public class LeaveRequestValidationTest {
         r.setEndDate(Date.valueOf("2026-06-10"));
         r.setTotalDays(3.0);
         r.setReason("Lỗi logic ngày");
-        assertNotNull("StartDate > EndDate phải báo lỗi", LeaveRequest.validate(r));
+        assertNotNull(LeaveRequest.validate(r), "StartDate > EndDate phải báo lỗi");
     }
 
     @Test
@@ -129,7 +129,7 @@ public class LeaveRequestValidationTest {
         r.setEndDate(Date.valueOf("2026-06-12"));
         r.setTotalDays(-1.0); // Số ngày âm
         r.setReason("Test");
-        assertNotNull("TotalDays âm phải báo lỗi", LeaveRequest.validate(r));
+        assertNotNull(LeaveRequest.validate(r), "TotalDays âm phải báo lỗi");
     }
 
     @Test
@@ -141,6 +141,7 @@ public class LeaveRequestValidationTest {
         r.setEndDate(Date.valueOf("2026-06-12"));
         r.setTotalDays(3.0);
         r.setReason("Test");
-        assertNotNull("LeaveTypeId <= 0 phải báo lỗi", LeaveRequest.validate(r));
+        assertNotNull(LeaveRequest.validate(r), "LeaveTypeId <= 0 phải báo lỗi");
     }
 }
+

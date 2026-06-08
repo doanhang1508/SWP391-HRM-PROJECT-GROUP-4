@@ -1,8 +1,13 @@
 package dao;
 
 import model.ShiftAssignment;
+import java.util.Map;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
+import model.Shift;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 /**
  * ShiftAssignmentDAO — Data Access interface for `shift_assignments`.
@@ -60,4 +65,9 @@ public interface ShiftAssignmentDAO {
      * Delete all assignments for a user on a specific date.
      */
     boolean deleteByUserAndDate(int userId, LocalDate date);
+
+    Map<Integer, Map<Integer, List<ShiftAssignment>>> buildWeeklyScheduleMatrix(LocalDate weekStart);
+    String resolveSwipeIntent(int userId, LocalTime swipeTime, LocalDate swipeDate);
 }
+
+

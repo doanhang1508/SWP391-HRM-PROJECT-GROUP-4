@@ -3,10 +3,10 @@ package controller.employee;
 import model.Shift;
 import model.ShiftAssignment;
 import model.User;
-import service.ShiftAssignmentService;
-import service.ShiftAssignmentServiceImpl;
-import service.ShiftService;
-import service.ShiftServiceImpl;
+import dao.ShiftAssignmentDAO;
+import dao.ShiftAssignmentDAOImpl;
+import dao.ShiftDAO;
+import dao.ShiftDAOImpl;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -34,13 +34,13 @@ import java.util.List;
 @WebServlet(name = "EmployeeShiftScheduleController", urlPatterns = {"/employee/schedule"})
 public class EmployeeShiftScheduleController extends HttpServlet {
 
-    private ShiftAssignmentService assignmentService;
-    private ShiftService shiftService;
+    private ShiftAssignmentDAO assignmentService;
+    private ShiftDAO shiftService;
 
     @Override
     public void init() throws ServletException {
-        assignmentService = new ShiftAssignmentServiceImpl();
-        shiftService = new ShiftServiceImpl();
+        assignmentService = new ShiftAssignmentDAOImpl();
+        shiftService = new ShiftDAOImpl();
     }
 
     @Override

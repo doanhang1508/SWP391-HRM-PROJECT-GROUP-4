@@ -15,8 +15,8 @@ import jakarta.servlet.http.HttpSession;
 
 import model.ShiftAssignment;
 import model.User;
-import service.ShiftAssignmentService;
-import service.ShiftAssignmentServiceImpl;
+import dao.ShiftAssignmentDAO;
+import dao.ShiftAssignmentDAOImpl;
 
 /**
  * EmployeeDashboardController — Employee dashboard with real shift data.
@@ -25,11 +25,11 @@ import service.ShiftAssignmentServiceImpl;
 @WebServlet(name = "EmployeeDashboardController", urlPatterns = {"/employee/dashboard"})
 public class employeeDashboardController extends HttpServlet {
 
-    private ShiftAssignmentService assignmentService;
+    private ShiftAssignmentDAO assignmentService;
 
     @Override
     public void init() throws ServletException {
-        assignmentService = new ShiftAssignmentServiceImpl();
+        assignmentService = new ShiftAssignmentDAOImpl();
     }
 
     @Override

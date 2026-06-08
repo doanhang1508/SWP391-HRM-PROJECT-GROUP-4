@@ -8,19 +8,19 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.LeaveType;
 import model.User;
-import service.LeaveService;
-import service.LeaveServiceImpl;
+import dao.LeaveRequestDAO;
+import dao.LeaveRequestDAOImpl;
 
 import java.io.IOException;
 
 @WebServlet(name = "HrLeaveController", urlPatterns = {"/hr/leave"})
 public class HrLeaveController extends HttpServlet {
 
-    private LeaveService service;
+    private LeaveRequestDAO service;
 
     @Override
     public void init() throws ServletException {
-        service = new LeaveServiceImpl();
+        service = new LeaveRequestDAOImpl();
     }
 
     @Override
@@ -36,7 +36,7 @@ public class HrLeaveController extends HttpServlet {
         }
 
         if (service == null) {
-            service = new LeaveServiceImpl();
+            service = new LeaveRequestDAOImpl();
         }
 
         String action = request.getParameter("action");
@@ -58,7 +58,7 @@ public class HrLeaveController extends HttpServlet {
         }
 
         if (service == null) {
-            service = new LeaveServiceImpl();
+            service = new LeaveRequestDAOImpl();
         }
 
         String action = request.getParameter("action");
