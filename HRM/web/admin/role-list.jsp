@@ -437,7 +437,7 @@
                                     </a>
 
                                     <form method="post"
-                                          action="${pageContext.request.contextPath}/activeDeactiveRole"
+                                          action="${pageContext.request.contextPath}/admin/activeDeactiveRole"
                                           class="m-0"
                                           onsubmit="return confirm('Bạn có chắc chắn muốn <%= r.getStatus() == 1 ? "VÔ HIỆU HÓA" : "KÍCH HOẠT" %> vai trò <%= h(r.getRoleName()) %> không?');">
 

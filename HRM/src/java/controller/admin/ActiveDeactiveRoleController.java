@@ -15,7 +15,7 @@ public class ActiveDeactiveRoleController extends HttpServlet {
 
     private static final String ROLE_PREFIX = "Role+'";
     private static final String LOGIN_PAGE = "login.jsp";
-    private static final String MAIN_PAGE = "activeDeactiveRole";
+    private static final String MAIN_PAGE = "admin/activeDeactiveRole";
     private static final String ACTIVATE = "activate";
     private static final String DEACTIVATE = "deactivate";
 
@@ -40,7 +40,7 @@ public class ActiveDeactiveRoleController extends HttpServlet {
         if (error != null) request.setAttribute("error", error);
 
         try {
-            request.getRequestDispatcher("activeDeactiveRole.jsp").forward(request, response);
+            request.getRequestDispatcher("/admin/activeDeactiveRole.jsp").forward(request, response);
         } catch (ServletException | IOException e) {
             try {
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Forward failed");

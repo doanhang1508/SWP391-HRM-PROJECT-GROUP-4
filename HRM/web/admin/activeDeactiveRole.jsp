@@ -1,4 +1,4 @@
-﻿<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="java.util.List" %>
 <%@ page import="model.Role" %>
 <!DOCTYPE html>
@@ -43,7 +43,7 @@
             </td>
             <td><%= count %> users</td>
             <td>
-                <form action="activeDeactiveRole" method="POST" style="margin:0;">
+                <form action="${pageContext.request.contextPath}/admin/activeDeactiveRole" method="POST" style="margin:0;">
                     <input type="hidden" name="roleId" value="<%= r.getRoleId() %>" />
                     <input type="hidden" name="action" value="toggle" />
                     <% if (r.getStatus() == 1) { %>
