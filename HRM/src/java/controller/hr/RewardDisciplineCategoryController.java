@@ -1,4 +1,4 @@
-package controller.admin;
+﻿package controller.hr;
 
 import dao.RewardDisciplineDAO;
 import jakarta.servlet.annotation.WebServlet;
@@ -13,11 +13,12 @@ import java.util.List;
 import model.RewardDiscipline;
 import model.User;
 
-@WebServlet("/admin/reward-disciplines")
+
+@WebServlet("/hr/reward-disciplines")
 public class RewardDisciplineCategoryController extends HttpServlet {
 
     private static final String ATTR_CURRENT_USER = "currentUser";
-    private static final String BASE_URL          = "/admin/reward-disciplines";
+    private static final String BASE_URL          = "/hr/reward-disciplines";
     private static final String VIEW_PAGE         = "/hr/reward-discipline-category.jsp";
 
     private final RewardDisciplineDAO rdDAO = new RewardDisciplineDAO();
@@ -52,7 +53,7 @@ public class RewardDisciplineCategoryController extends HttpServlet {
         redirect(response, request.getContextPath() + BASE_URL);
     }
 
-    // ── doGet helpers ─────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬ doGet helpers Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
     private void loadViewDetail(HttpServletRequest request) {
         String viewId = request.getParameter("viewId");
@@ -90,7 +91,7 @@ public class RewardDisciplineCategoryController extends HttpServlet {
         return rdDAO.getAllRewardDisciplines();
     }
 
-    // ── doPost handlers ───────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬ doPost handlers Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
     private void handleDelete(HttpServletResponse response, String idStr) {
         try {
@@ -160,7 +161,7 @@ public class RewardDisciplineCategoryController extends HttpServlet {
         if (user != null) rd.setCreatedBy(user.getUserId());
     }
 
-    // ── Auth ──────────────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬ Auth Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
     private boolean isAuthorized(HttpServletRequest request, HttpServletResponse response) {
         HttpSession session = request.getSession(false);
@@ -176,7 +177,7 @@ public class RewardDisciplineCategoryController extends HttpServlet {
         return true;
     }
 
-    // ── I/O helpers ───────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬ I/O helpers Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
     private void forwardToView(HttpServletRequest request, HttpServletResponse response) {
         try {
@@ -224,3 +225,4 @@ public class RewardDisciplineCategoryController extends HttpServlet {
         }
     }
 }
+

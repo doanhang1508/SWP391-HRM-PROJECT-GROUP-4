@@ -72,7 +72,12 @@ public class ShiftScheduleController extends HttpServlet {
             return;
         }
 
-        showSchedule(req, resp, user);
+        String action = getAction(req);
+        if ("delete".equals(action)) {
+            deleteAssignment(req, resp);
+        } else {
+            showSchedule(req, resp, user);
+        }
     }
 
     // ════════════════════════════════════════════════════════
@@ -123,7 +128,7 @@ public class ShiftScheduleController extends HttpServlet {
         LocalDate weekStart = targetDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
 
         // Ma trận lịch tuần
-        Map<Integer, Map<Integer, ShiftAssignment>> matrix =
+        Map<Integer, Map<Integer, List<ShiftAssignment>>> matrix =
                 assignmentService.buildWeeklyScheduleMatrix(weekStart);
 
         // Danh sách ca đang hoạt động (để Supervisor chọn khi gán)
@@ -154,21 +159,32 @@ public class ShiftScheduleController extends HttpServlet {
             throws IOException {
 
         Integer  userId  = parseIntParam(req, "userId");
-        Integer  shiftId = parseIntParam(req, "shiftId");
         LocalDate from   = parseDate(req.getParameter("fromDate"));
         LocalDate to     = parseDate(req.getParameter("toDate"));
+        String startTimeStr = req.getParameter("startTime");
+        String endTimeStr   = req.getParameter("endTime");
 
-        if (userId == null || shiftId == null || from == null || to == null) {
+        if (userId == null || from == null || to == null || startTimeStr == null || endTimeStr == null || startTimeStr.isEmpty() || endTimeStr.isEmpty()) {
             redirectSchedule(req, resp, "error", "Vui lòng điền đầy đủ thông tin");
             return;
         }
+        
+        java.time.LocalTime startTime = java.time.LocalTime.parse(startTimeStr);
+        java.time.LocalTime endTime   = java.time.LocalTime.parse(endTimeStr);
+        
+        // Find or create the OT shift dynamically
+        int shiftId = shiftService.findOrCreateCustomShift(startTime, endTime);
         if (to.isBefore(from)) {
             redirectSchedule(req, resp, "error", "Ngày kết thúc phải sau ngày bắt đầu");
             return;
         }
 
         int inserted = assignmentService.batchAssign(userId, shiftId, from, to);
-        redirectSchedule(req, resp, "message", "Đã xếp lịch " + inserted + " ngày thành công");
+        if (inserted > 0) {
+            redirectSchedule(req, resp, "message", "Đã xếp lịch " + inserted + " ngày thành công.");
+        } else {
+            redirectSchedule(req, resp, "error", "Lỗi: Ca mới bị trùng giờ với ca cũ hoặc đã tồn tại.");
+        }
     }
 
     /** Xoá một lịch ca đã gán. */

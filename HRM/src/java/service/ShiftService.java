@@ -1,5 +1,6 @@
 package service;
 
+import model.DepartmentShift;
 import model.Shift;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -8,6 +9,10 @@ import java.util.List;
 /**
  * ShiftService — Service interface for Shift definition & business logic.
  * All computational logic lives here, NOT in the Model entity.
+ *
+ * Implements <<include>> and <<extend>> relationships from the Use Case Diagram:
+ *  - <<include>> Validate Shift Data
+ *  - <<extend>>  Auto Detect Night Shift
  */
 public interface ShiftService {
 
@@ -20,6 +25,48 @@ public interface ShiftService {
     boolean deleteShift(int shiftId);
     boolean toggleShiftStatus(int shiftId);
     boolean isShiftNameExists(String shiftName, int excludeShiftId);
+
+    /**
+     * Finds an existing shift with the exact start and end times, or creates a new one
+     * dynamically (e.g., for custom Overtime). Returns the shift ID.
+     */
+    int findOrCreateCustomShift(LocalTime startTime, LocalTime endTime);
+
+    // ═══════════════════════════════════════════════════════════════
+    // <<include>> Validate Shift Data
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * <<include>> Validate Shift Data — Called by Create Shift and Edit Shift.
+     * Checks for nulls, valid time formats, prevents duplicate shift names.
+     *
+     * @param shift the shift to validate
+     * @param excludeShiftId the shift ID to exclude from duplicate name check (0 for new shifts)
+     * @return null if valid, error message string otherwise
+     */
+    String validateShiftData(Shift shift, int excludeShiftId);
+
+    // ═══════════════════════════════════════════════════════════════
+    // <<extend>> Auto Detect Night Shift
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * <<extend>> Auto Detect Night Shift — Conditionally invoked before saving.
+     * If end_time.isBefore(start_time), sets isNightShift=true and coefficient=1.3.
+     * Otherwise sets isNightShift=false.
+     *
+     * @param shift the shift to evaluate (modified in place)
+     */
+    void autoDetectNightShift(Shift shift);
+
+    // ═══════════════════════════════════════════════════════════════
+    // Department Shift Mapping
+    // ═══════════════════════════════════════════════════════════════
+
+    List<DepartmentShift> getAllDepartmentShifts();
+    List<DepartmentShift> getDepartmentShiftsByDeptId(int deptId);
+    boolean assignDefaultShiftToDepartment(int departmentId, int shiftId);
+    boolean removeDepartmentShift(int id);
 
     // ═══════════════════════════════════════════════════════════════
     // Business Logic

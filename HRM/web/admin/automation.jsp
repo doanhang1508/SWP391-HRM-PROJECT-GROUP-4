@@ -185,7 +185,7 @@ body {
 
 <div class="dashboard-wrapper">
     <%-- Sidebar chung --%>
-    <jsp:include page="sidebar.jsp">
+    <jsp:include page="../shared/sidebar.jsp">
         <jsp:param name="activeMenu" value="automation" />
     </jsp:include>
 

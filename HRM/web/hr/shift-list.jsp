@@ -326,13 +326,14 @@
                     <p class="breadcrumb-c"><a href="${pageContext.request.contextPath}/dashboard">Bảng điều khiển</a> &gt; Ca làm việc</p>
             </div>
             <div class="d-flex gap-2">
-                <a href="${pageContext.request.contextPath}/admin/shifts?action=schedule" class="btn-add" style="background:#0d9488"><i class="fas fa-calendar-alt"></i> Xếp Lịch</a>
+                <button class="btn-add" data-bs-toggle="modal" data-bs-target="#deptShiftModal" style="background:#10b981"><i class="fas fa-building"></i> Gán Ca Cho PB</button>
                 <button class="btn-add" data-bs-toggle="modal" data-bs-target="#shiftModal" onclick="openCreateModal()"><i class="fas fa-plus"></i> Thêm Ca Mới</button>
             </div>
         </div>
 
         <c:if test="${not empty param.message}"><div class="alert alert-c a-ok alert-dismissible fade show" role="alert"><i class="fas fa-check-circle me-2"></i>${param.message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div></c:if>
         <c:if test="${not empty param.error}"><div class="alert alert-c a-err alert-dismissible fade show" role="alert"><i class="fas fa-exclamation-circle me-2"></i>${param.error}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div></c:if>
+
 
             <div class="admin-panel">
                 <div class="panel-header">
@@ -363,12 +364,33 @@
                         <c:otherwise>
                     <div class="table-responsive">
                         <table class="tbl">
-                            <thead><tr><th>ID</th><th>Tên Ca</th><th>Thời Gian</th><th>Nghỉ Giữa Ca</th><th>Loại</th><th>Giờ Làm</th><th>Hệ số</th><th>Trạng Thái</th><th class="text-end">Hành Động</th></tr></thead>
+                            <thead><tr><th>ID</th><th>Tên Ca</th><th>Phòng Ban Áp Dụng</th><th>Thời Gian</th><th>Nghỉ Giữa Ca</th><th>Loại</th><th>Giờ Làm</th><th>Hệ số</th><th>Trạng Thái</th><th class="text-end">Hành Động</th></tr></thead>
                             <tbody>
                                 <c:forEach var="s" items="${shifts}" varStatus="i">
                                     <tr>
                                         <td class="fw-bold" style="color:var(--txt)">#${s.shiftId}</td>
                                         <td><span class="fw-bold" style="color:var(--pri)">${s.shiftName}</span></td>
+                                        <td>
+                                            <div class="d-flex flex-wrap gap-1">
+                                                <c:set var="hasDept" value="false" />
+                                                <c:forEach var="ds" items="${deptShifts}">
+                                                    <c:if test="${ds.shiftId == s.shiftId}">
+                                                        <c:set var="hasDept" value="true" />
+                                                        <span class="badge" style="background:#f1f5f9;color:var(--txt);border:1px solid #e2e8f0;padding:5px 8px;font-weight:500;font-size:0.75rem;">
+                                                            ${ds.departmentName}
+                                                            <form action="${pageContext.request.contextPath}/admin/shifts" method="POST" style="display:inline;margin-left:6px;" onsubmit="return confirm('Xóa ca mặc định này khỏi phòng ban ${ds.departmentName}?');">
+                                                                <input type="hidden" name="action" value="removeDeptShift">
+                                                                <input type="hidden" name="deptShiftId" value="${ds.id}">
+                                                                <button type="submit" style="background:none;border:none;color:var(--ng);padding:0;cursor:pointer;" title="Xóa"><i class="fas fa-times"></i></button>
+                                                            </form>
+                                                        </span>
+                                                    </c:if>
+                                                </c:forEach>
+                                                <c:if test="${!hasDept}">
+                                                    <span style="color:var(--muted);font-size:.82rem">—</span>
+                                                </c:if>
+                                            </div>
+                                        </td>
                                         <td><span class="time-d">${s.startTime}</span><span class="time-a"><i class="fas fa-arrow-right"></i></span><span class="time-d">${s.endTime}</span></td>
                                         <td><c:choose><c:when test="${not empty s.breakStart and not empty s.breakEnd}"><span class="time-d" style="font-size:.85rem">${s.breakStart} - ${s.breakEnd}</span></c:when><c:otherwise><span style="color:var(--muted);font-size:.82rem">—</span></c:otherwise></c:choose></td>
                                         <td><c:choose><c:when test="${nightShifts[i.index]}"><span class="b-night"><i class="fas fa-moon"></i> Ca Đêm</span></c:when><c:otherwise><span class="b-day"><i class="fas fa-sun"></i> Ca Ngày</span></c:otherwise></c:choose></td>
@@ -429,6 +451,29 @@
                 <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius:8px">Hủy</button><button type="submit" class="btn" id="modalBtn" style="background:var(--pri);color:#fff;border:none;border-radius:8px;font-weight:600"><i class="fas fa-save me-1"></i>Lưu</button></div>
             </form>
         </div></div></div>
+
+<!-- Assign Dept Shift Modal -->
+<div class="modal fade" id="deptShiftModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+    <form action="${pageContext.request.contextPath}/admin/shifts" method="POST">
+        <input type="hidden" name="action" value="assignDept">
+        <div class="modal-header"><h5 class="modal-title"><i class="fas fa-building me-2" style="color:var(--ok)"></i>Gán Ca Mặc Định Cho Phòng Ban</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+            <div class="mb-3"><label class="form-label">Phòng Ban <span class="text-danger">*</span></label>
+                <select class="form-select" name="departmentId" required>
+                    <option value="">-- Chọn phòng ban --</option>
+                    <c:forEach var="d" items="${departments}"><option value="${d.departmentId}">${d.departmentName}</option></c:forEach>
+                </select>
+            </div>
+            <div class="mb-3"><label class="form-label">Ca Làm Việc <span class="text-danger">*</span></label>
+                <select class="form-select" name="shiftId" required>
+                    <option value="">-- Chọn ca làm việc --</option>
+                    <c:forEach var="s" items="${activeShifts}"><option value="${s.shiftId}">${s.shiftName}</option></c:forEach>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius:8px">Hủy</button><button type="submit" class="btn" style="background:var(--ok);color:#fff;border:none;border-radius:8px;font-weight:600"><i class="fas fa-check me-1"></i>Gán Ca</button></div>
+    </form>
+</div></div></div>
 
 <script>
     // Context path từ JSP, dùng cho các request AJAX nếu cần

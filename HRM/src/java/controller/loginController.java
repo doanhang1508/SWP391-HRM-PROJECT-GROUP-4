@@ -135,14 +135,16 @@ public class loginController extends HttpServlet {
                 ? user.getFullName() : user.getEmail();
         session.setAttribute("toastSuccess", "Đăng nhập thành công! Chào mừng, " + displayName + ".");
 
-        // --- Redirect theo role ---
-        // Admin (1), HR Manager (2), Factory Manager (3), Director (4),
-        // HR Staff (5), Dept Manager (6) → /dashboard (unified management)
-        // Employee (7) / không xác định → /employee/dashboard
         String redirect;
         int roleId = user.getRoleId();
-        if (roleId >= 1 && roleId <= 6) {
-            redirect = "/dashboard";
+        if (roleId == 1) {
+            redirect = "/admin/dashboard";
+        } else if (roleId == 2 || roleId == 5) {
+            redirect = "/hr/dashboard";
+        } else if (roleId == 3 || roleId == 6) {
+            redirect = "/manager/dashboard";
+        } else if (roleId == 4) {
+            redirect = "/director/dashboard";
         } else {
             redirect = "/employee/dashboard";
         }

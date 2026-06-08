@@ -128,8 +128,8 @@ body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-top: 0 !im
     String[] dayNames = {"T2", "T3", "T4", "T5", "T6", "T7", "CN"};
 
     @SuppressWarnings("unchecked")
-    Map<Integer, Map<Integer, ShiftAssignment>> matrix =
-        (Map<Integer, Map<Integer, ShiftAssignment>>) request.getAttribute("matrix");
+    Map<Integer, Map<Integer, java.util.List<ShiftAssignment>>> matrix =
+        (Map<Integer, Map<Integer, java.util.List<ShiftAssignment>>>) request.getAttribute("matrix");
 %>
 
 <div class="dashboard-wrapper">
@@ -188,14 +188,14 @@ body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-top: 0 !im
                             </c:forEach>
                         </select>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Ca làm việc</label>
-                        <select name="shiftId" class="form-select" required>
-                            <option value="">-- Chọn ca --</option>
-                            <c:forEach var="sh" items="${activeShifts}">
-                                <option value="${sh.shiftId}">${sh.shiftName} (${sh.startTime}–${sh.endTime})</option>
-                            </c:forEach>
-                        </select>
+                    <!-- Time selection for custom OT -->
+                    <div class="col-md-2">
+                        <label class="form-label">Giờ bắt đầu (OT)</label>
+                        <input type="time" name="startTime" class="form-control" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Giờ kết thúc (OT)</label>
+                        <input type="time" name="endTime" class="form-control" required>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Từ ngày</label>
@@ -259,7 +259,7 @@ body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-top: 0 !im
                             java.util.List<model.User> workers =
                                 (java.util.List<model.User>) request.getAttribute("workers");
                             for (model.User w : workers) {
-                                Map<Integer, ShiftAssignment> row = matrix.get(w.getUserId());
+                                Map<Integer, java.util.List<ShiftAssignment>> row = matrix.get(w.getUserId());
                                 if (row == null) continue; %>
                         <tr>
                             <td class="emp-name">
@@ -268,19 +268,31 @@ body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-top: 0 !im
                             </td>
                             <% for (int d = 0; d < 7; d++) {
                                 boolean isToday = weekDates[d].equals(today);
-                                ShiftAssignment sa = (row != null) ? row.get(d) : null; %>
+                                java.util.List<ShiftAssignment> saList = (row != null) ? row.get(d) : null; %>
                             <td class="<%= isToday ? "today-col" : "" %>">
-                                <% if (sa != null) {
-                                    String sName = sa.getShiftName() != null ? sa.getShiftName() : "";
-                                    String css = "default";
-                                    if (sName.contains("Hành chính"))       css = "office";
-                                    else if (sName.contains("18h-20h") || sName.contains("18h-20")) css = "ot-short";
-                                    else if (sName.contains("18h-22h") || sName.contains("18h-22")) css = "ot-long";
+                                <% if (saList != null && !saList.isEmpty()) {
+                                    for (ShiftAssignment sa : saList) {
+                                        String sName = sa.getShiftName() != null ? sa.getShiftName() : "";
+                                        String css = "default";
+                                        if (sName.contains("Hành chính"))       css = "office";
+                                        else if (sName.contains("18h-20h") || sName.contains("18h-20")) css = "ot-short";
+                                        else if (sName.contains("18h-22h") || sName.contains("18h-22")) css = "ot-long";
                                 %>
-                                    <span class="shift-badge <%= css %>" title="<%= sName %>">
-                                        <%= sName %>
-                                    </span>
-                                <% } else { %>
+                                        <div style="margin-bottom: 4px; display: inline-block;">
+                                            <span class="shift-badge <%= css %>" title="<%= sName %>">
+                                                <%= sName %>
+                                                <form action="${pageContext.request.contextPath}/manager/shift-schedule" method="POST" style="display:inline; margin-left: 6px;">
+                                                    <input type="hidden" name="action" value="delete">
+                                                    <input type="hidden" name="assignmentId" value="<%= sa.getAssignmentId() %>">
+                                                    <button type="submit" onclick="return confirm('Bạn có chắc muốn xóa ca <%= sName %> này không?');"
+                                                            style="background: none; border: none; padding: 0; color: inherit; opacity: 0.8; cursor: pointer; text-decoration: none;">
+                                                        <i class="fas fa-times-circle"></i>
+                                                    </button>
+                                                </form>
+                                            </span>
+                                        </div><br/>
+                                <%  } 
+                                   } else { %>
                                     <span class="empty-cell">—</span>
                                 <% } %>
                             </td>

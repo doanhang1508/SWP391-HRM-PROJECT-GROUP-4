@@ -3,7 +3,7 @@
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<c:set var="pageTitle" value="Bảng Điều Khiển Giám Đốc" scope="request"/>
+<c:set var="pageTitle" value="Bảng Điều Khiển Quản Lý" scope="request"/>
 <jsp:include page="../header.jsp" />
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -65,8 +65,6 @@ body {
 .dash-stat-card.stat-success .dash-stat-icon { background: #d1fae5; color: #059669; }
 .dash-stat-card.stat-teal { border-left: 4px solid #0d9488; }
 .dash-stat-card.stat-teal .dash-stat-icon { background: #ccfbf1; color: #0d9488; }
-.dash-stat-card.stat-purple { border-left: 4px solid #8b5cf6; }
-.dash-stat-card.stat-purple .dash-stat-icon { background: #ede9fe; color: #7c3aed; }
 
 /* ── Charts ── */
 .dash-charts-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; }
@@ -99,63 +97,63 @@ body {
                         <span>Dashboard</span>
                     </div>
                     <div class="dash-page-title">
-                        Tổng Quan Doanh Nghiệp
+                        Tổng Quan Hoạt Động
                     </div>
                 </div>
                 <div class="dash-role-badge">
-                    <i class="fas fa-building"></i> Giám đốc
+                    <i class="fas fa-briefcase"></i> Quản lý
                 </div>
             </div>
 
-            <%-- ── DIRECTOR STATS ── --%>
+            <%-- ── FACTORY / DEPT MANAGER STATS ── --%>
             <div class="dash-stat-grid">
                 <div class="dash-stat-card stat-teal">
                     <div class="dash-stat-header">
-                        <span class="dash-stat-title">Quy Mô Nhân Sự</span>
-                        <div class="dash-stat-icon"><i class="fas fa-users"></i></div>
+                        <span class="dash-stat-title">Nhân Sự Quản Lý</span>
+                        <div class="dash-stat-icon"><i class="fas fa-users-cog"></i></div>
                     </div>
                     <div class="dash-stat-val">${not empty totalEmployees ? totalEmployees : '—'}</div>
-                    <div class="dash-stat-change up"><i class="fas fa-arrow-up"></i> Tăng trưởng 5%</div>
+                    <div class="dash-stat-change up">Nhân viên / Công nhân</div>
                 </div>
                 <div class="dash-stat-card stat-success">
                     <div class="dash-stat-header">
-                        <span class="dash-stat-title">Phòng Ban / Xưởng</span>
-                        <div class="dash-stat-icon"><i class="fas fa-sitemap"></i></div>
+                        <span class="dash-stat-title">Chấm Công Hôm Nay</span>
+                        <div class="dash-stat-icon"><i class="fas fa-user-clock"></i></div>
                     </div>
-                    <div class="dash-stat-val">${not empty totalDepartments ? totalDepartments : '—'}</div>
-                    <div class="dash-stat-change neutral">Hoạt động ổn định</div>
-                </div>
-                <div class="dash-stat-card stat-purple">
-                    <div class="dash-stat-header">
-                        <span class="dash-stat-title">Quỹ Lương Dự Kiến</span>
-                        <div class="dash-stat-icon"><i class="fas fa-money-bill-wave"></i></div>
-                    </div>
-                    <div class="dash-stat-val">${not empty monthlyRevenue ? monthlyRevenue : '0'} VNĐ</div>
-                    <div class="dash-stat-change neutral">Tháng hiện tại</div>
+                    <div class="dash-stat-val">${not empty todayAttendance ? todayAttendance : '0'}</div>
+                    <div class="dash-stat-change neutral">Đã điểm danh</div>
                 </div>
                 <div class="dash-stat-card stat-warning">
                     <div class="dash-stat-header">
-                        <span class="dash-stat-title">Báo Cáo Cần Duyệt</span>
-                        <div class="dash-stat-icon"><i class="fas fa-clipboard-check"></i></div>
+                        <span class="dash-stat-title">Yêu Cầu Làm Thêm (OT)</span>
+                        <div class="dash-stat-icon"><i class="fas fa-business-time"></i></div>
                     </div>
-                    <div class="dash-stat-val">0</div>
-                    <div class="dash-stat-change neutral">Chờ xem xét</div>
+                    <div class="dash-stat-val">${not empty pendingOT ? pendingOT : '0'}</div>
+                    <div class="dash-stat-change down">Chờ phê duyệt</div>
+                </div>
+                <div class="dash-stat-card stat-danger">
+                    <div class="dash-stat-header">
+                        <span class="dash-stat-title">Đơn Xin Nghỉ Phép</span>
+                        <div class="dash-stat-icon"><i class="fas fa-calendar-times"></i></div>
+                    </div>
+                    <div class="dash-stat-val">${not empty pendingLeaves ? pendingLeaves : '0'}</div>
+                    <div class="dash-stat-change neutral">Chờ duyệt</div>
                 </div>
             </div>
 
-            <%-- Director Charts --%>
+            <%-- Manager Charts --%>
             <div class="dash-charts-grid">
                 <div class="dash-card">
                     <div class="dash-card-header">
-                        <h3 class="dash-card-title">Biểu Đồ Chi Phí Nhân Sự</h3>
+                        <h3 class="dash-card-title">Hiệu Suất Sản Xuất / Công Việc</h3>
                     </div>
-                    <div style="height:300px;"><canvas id="costChart"></canvas></div>
+                    <div style="height:300px;"><canvas id="performanceChart"></canvas></div>
                 </div>
                 <div class="dash-card">
                     <div class="dash-card-header">
-                        <h3 class="dash-card-title">Cơ Cấu Phòng Ban</h3>
+                        <h3 class="dash-card-title">Phân Bổ Ca Làm Việc</h3>
                     </div>
-                    <div style="height:300px;"><canvas id="deptChart"></canvas></div>
+                    <div style="height:300px;"><canvas id="shiftChart"></canvas></div>
                 </div>
             </div>
 
@@ -166,24 +164,24 @@ body {
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    new Chart(document.getElementById('costChart').getContext('2d'), {
-        type: 'line',
+    new Chart(document.getElementById('performanceChart').getContext('2d'), {
+        type: 'bar',
         data: {
-            labels: ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6'],
+            labels: ['Tuần 1','Tuần 2','Tuần 3','Tuần 4'],
             datasets: [
-                { label: 'Chi phí Lương', data: [150, 160, 155, 170, 165, 180],
-                  borderColor:'#8b5cf6', backgroundColor:'rgba(139,92,246,0.1)', fill:true, tension:0.4 }
+                { label:'Mục tiêu', data:[100,100,100,100], backgroundColor:'rgba(148,163,184,0.3)', borderRadius:4 },
+                { label:'Thực tế', data:[95,102,98,105], backgroundColor:'#0d9488', borderRadius:4 }
             ]
         },
         options: { responsive:true, maintainAspectRatio:false }
     });
-    new Chart(document.getElementById('deptChart').getContext('2d'), {
-        type: 'doughnut',
+    new Chart(document.getElementById('shiftChart').getContext('2d'), {
+        type: 'pie',
         data: {
-            labels: ['Sản xuất','Kinh doanh','Hành chính','Kỹ thuật'],
-            datasets: [{ data:[45,30,15,10], backgroundColor:['#0d9488','#3b82f6','#f59e0b','#ec4899'] }]
+            labels: ['Ca Hành Chính','Ca Sáng','Ca Chiều','Ca Đêm'],
+            datasets: [{ data:[40,25,20,15], backgroundColor:['#3b82f6','#10b981','#f59e0b','#6366f1'], borderWidth:2 }]
         },
-        options: { responsive:true, maintainAspectRatio:false, cutout:'65%' }
+        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right' } } }
     });
 });
 </script>

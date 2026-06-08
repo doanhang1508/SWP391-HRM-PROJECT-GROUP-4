@@ -22,17 +22,17 @@
     List<ShiftAssignment> weekAssignments = (List<ShiftAssignment>) request.getAttribute("weekAssignments");
     double[] workingHours = (double[]) request.getAttribute("workingHours");
 
-    // Build a map: dayOfWeek-index → ShiftAssignment for quick lookup
-    Map<Integer, ShiftAssignment> dayMap = new LinkedHashMap<>();
-    Map<Integer, Double> hoursMap = new LinkedHashMap<>();
+    // Build a map: dayOfWeek-index -> List<ShiftAssignment> for quick lookup
+    Map<Integer, List<ShiftAssignment>> dayMap = new LinkedHashMap<>();
+    Map<Integer, List<Double>> hoursMap = new LinkedHashMap<>();
     if (weekAssignments != null) {
         for (int i = 0; i < weekAssignments.size(); i++) {
             ShiftAssignment sa = weekAssignments.get(i);
             int dayIdx = (int) (sa.getAssignedDate().toEpochDay() - weekStart.toEpochDay());
             if (dayIdx >= 0 && dayIdx < 7) {
-                dayMap.put(dayIdx, sa);
+                dayMap.computeIfAbsent(dayIdx, k -> new ArrayList<>()).add(sa);
                 if (workingHours != null && i < workingHours.length) {
-                    hoursMap.put(dayIdx, workingHours[i]);
+                    hoursMap.computeIfAbsent(dayIdx, k -> new ArrayList<>()).add(workingHours[i]);
                 }
             }
         }
@@ -165,13 +165,19 @@
 
         <!-- Summary Banner -->
         <%
-            int totalShifts = dayMap.size();
+            int totalShifts = 0;
             int nightCount = 0;
             double totalHours = 0;
-            for (Map.Entry<Integer, ShiftAssignment> entry : dayMap.entrySet()) {
-                if (entry.getValue().isNightShift()) nightCount++;
-                Double h = hoursMap.get(entry.getKey());
-                if (h != null) totalHours += h;
+            for (Map.Entry<Integer, List<ShiftAssignment>> entry : dayMap.entrySet()) {
+                List<ShiftAssignment> listSa = entry.getValue();
+                totalShifts += listSa.size();
+                for (ShiftAssignment sa : listSa) {
+                    if (sa.isNightShift()) nightCount++;
+                }
+                List<Double> listH = hoursMap.get(entry.getKey());
+                if (listH != null) {
+                    for (Double h : listH) totalHours += h;
+                }
             }
         %>
         <div class="summary-banner">
@@ -213,8 +219,8 @@
                 <% for (int d = 0; d < 7; d++) {
                     boolean isToday = weekDates[d].equals(today);
                     boolean isPast  = weekDates[d].isBefore(today);
-                    ShiftAssignment sa = dayMap.get(d);
-                    boolean isOff = (sa == null);
+                    List<ShiftAssignment> saList = dayMap.get(d);
+                    boolean isOff = (saList == null || saList.isEmpty());
 
                     String cardClass = "day-card";
                     if (isToday) cardClass += " is-today";
@@ -232,21 +238,24 @@
                         </div>
                     </div>
 
-                    <% if (sa != null) {
-                        String sName = sa.getShiftName() != null ? sa.getShiftName() : "";
-                        String badgeClass = "default-badge";
-                        String badgeIcon = "fa-clock";
-                        if (sName.contains("Sáng") || sName.contains("Ca 1")) { badgeClass = "morning"; badgeIcon = "fa-sun"; }
-                        else if (sName.contains("Chiều") || sName.contains("Ca 2")) { badgeClass = "afternoon"; badgeIcon = "fa-cloud-sun"; }
-                        else if (sName.contains("Đêm") || sName.contains("Ca 3") || sa.isNightShift()) { badgeClass = "night"; badgeIcon = "fa-moon"; }
-                        else if (sName.contains("Hành chính")) { badgeClass = "office"; badgeIcon = "fa-building"; }
+                    <% if (!isOff) {
+                        for (int sIdx = 0; sIdx < saList.size(); sIdx++) {
+                            ShiftAssignment sa = saList.get(sIdx);
+                            String sName = sa.getShiftName() != null ? sa.getShiftName() : "";
+                            String badgeClass = "default-badge";
+                            String badgeIcon = "fa-clock";
+                            if (sName.contains("Sáng") || sName.contains("Ca 1")) { badgeClass = "morning"; badgeIcon = "fa-sun"; }
+                            else if (sName.contains("Chiều") || sName.contains("Ca 2")) { badgeClass = "afternoon"; badgeIcon = "fa-cloud-sun"; }
+                            else if (sName.contains("Đêm") || sName.contains("Ca 3") || sa.isNightShift()) { badgeClass = "night"; badgeIcon = "fa-moon"; }
+                            else if (sName.contains("Hành chính")) { badgeClass = "office"; badgeIcon = "fa-building"; }
 
-                        String startStr = sa.getStartTime() != null ? sa.getStartTime().toString() : "--:--";
-                        String endStr   = sa.getEndTime()   != null ? sa.getEndTime().toString()   : "--:--";
-                        Double hours = hoursMap.get(d);
+                            String startStr = sa.getStartTime() != null ? sa.getStartTime().toString() : "--:--";
+                            String endStr   = sa.getEndTime()   != null ? sa.getEndTime().toString()   : "--:--";
+                            List<Double> listH = hoursMap.get(d);
+                            Double hours = (listH != null && sIdx < listH.size()) ? listH.get(sIdx) : null;
                     %>
-                    <div class="shift-info">
-                        <span class="shift-badge-lg <%= badgeClass %>">
+                    <div class="shift-info" style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: <%= sIdx < saList.size() - 1 ? "1px dashed #e2e8f0" : "none" %>;">
+                        <span class="shift-badge-lg <%= badgeClass %>" style="display:inline-flex; width: fit-content;">
                             <i class="fas <%= badgeIcon %>"></i> <%= sName %>
                         </span>
                         <div class="shift-time-row">
@@ -267,7 +276,8 @@
                         </div>
                         <% } %>
                     </div>
-                    <% } else { %>
+                    <%  } // end for saList
+                       } else { %>
                     <div class="off-label">
                         <i class="fas fa-bed"></i> Nghỉ
                     </div>

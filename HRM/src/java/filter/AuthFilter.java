@@ -115,10 +115,8 @@ public class AuthFilter implements Filter {
 
         // ── 4b. /manager/* → role 1-6 (quản lý), không cho Employee (7) ──
         if (path.startsWith("/manager/") && isEmployee(roleId)) {
-
             redirectToAppropriate(req, resp, roleId);
             return;
-
         }
 
         // ── 4c. /director/* → chỉ Director (4) ───────────────────────────
@@ -172,4 +170,4 @@ public class AuthFilter implements Filter {
     public void destroy() {
         // Không cần dọn dẹp
     }
-}
+} 

@@ -116,15 +116,15 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
     }
 
     @Override
-    public double getUsedAnnualLeaveDays(int userId, int year) {
-        // 1 is 'Nghỉ phép năm' (Annual Leave)
+    public double getUsedLeaveDaysByType(int userId, int leaveTypeId, int year) {
         String sql = "SELECT SUM(total_days) as used_days FROM leave_requests " +
-                     "WHERE user_id = ? AND leave_type_id = 1 AND status = 'Approved' " +
+                     "WHERE user_id = ? AND leave_type_id = ? AND status IN ('Approved', 'Pending') " +
                      "AND YEAR(start_date) = ?";
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, userId);
-            ps.setInt(2, year);
+            ps.setInt(2, leaveTypeId);
+            ps.setInt(3, year);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return rs.getDouble("used_days");
@@ -134,6 +134,125 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
             e.printStackTrace();
         }
         return 0;
+    }
+
+    @Override
+    public List<LeaveRequest> getAllRequests() {
+        List<LeaveRequest> list = new ArrayList<>();
+        String sql = "SELECT lr.*, lt.type_name, u.full_name FROM leave_requests lr " +
+                     "JOIN leave_types lt ON lr.leave_type_id = lt.leave_type_id " +
+                     "JOIN users u ON lr.user_id = u.user_id " +
+                     "ORDER BY lr.created_at DESC";
+        try (Connection c = DBContext.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapRow(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    @Override
+    public boolean addLeaveType(LeaveType leaveType) {
+        String sql = "INSERT INTO leave_types (type_name, description, paid_leave, max_days_per_year, status) VALUES (?, ?, ?, ?, ?)";
+        try (Connection c = DBContext.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, leaveType.getTypeName());
+            ps.setString(2, leaveType.getDescription());
+            ps.setInt(3, leaveType.getPaidLeave());
+            if (leaveType.getMaxDaysPerYear() == null) {
+                ps.setNull(4, Types.INTEGER);
+            } else {
+                ps.setInt(4, leaveType.getMaxDaysPerYear());
+            }
+            ps.setInt(5, leaveType.getStatus());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    @Override
+    public boolean updateLeaveType(LeaveType leaveType) {
+        String sql = "UPDATE leave_types SET type_name = ?, description = ?, paid_leave = ?, max_days_per_year = ?, status = ? WHERE leave_type_id = ?";
+        try (Connection c = DBContext.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, leaveType.getTypeName());
+            ps.setString(2, leaveType.getDescription());
+            ps.setInt(3, leaveType.getPaidLeave());
+            if (leaveType.getMaxDaysPerYear() == null) {
+                ps.setNull(4, Types.INTEGER);
+            } else {
+                ps.setInt(4, leaveType.getMaxDaysPerYear());
+            }
+            ps.setInt(5, leaveType.getStatus());
+            ps.setInt(6, leaveType.getLeaveTypeId());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    @Override
+    public boolean deleteLeaveType(int leaveTypeId) {
+        String sql = "UPDATE leave_types SET status = 0 WHERE leave_type_id = ?";
+        try (Connection c = DBContext.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, leaveTypeId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    @Override
+    public boolean hasOverlappingLeave(int userId, java.sql.Date startDate, java.sql.Date endDate) {
+        String sql = "SELECT COUNT(*) FROM leave_requests WHERE user_id = ? AND status IN ('Approved', 'Pending') " +
+                     "AND start_date <= ? AND end_date >= ?";
+        try (Connection c = DBContext.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setDate(2, endDate);
+            ps.setDate(3, startDate);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    @Override
+    public LeaveType getLeaveTypeById(int leaveTypeId) {
+        String sql = "SELECT * FROM leave_types WHERE leave_type_id = ?";
+        try (Connection c = DBContext.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, leaveTypeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    LeaveType type = new LeaveType();
+                    type.setLeaveTypeId(rs.getInt("leave_type_id"));
+                    type.setTypeName(rs.getString("type_name"));
+                    type.setDescription(rs.getString("description"));
+                    type.setPaidLeave(rs.getInt("paid_leave"));
+                    type.setMaxDaysPerYear((Integer) rs.getObject("max_days_per_year"));
+                    type.setStatus(rs.getInt("status"));
+                    return type;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private LeaveRequest mapRow(ResultSet rs) throws SQLException {

@@ -8,25 +8,22 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.LeaveRequest;
 import model.User;
-import service.LeaveAndOvertimeService;
-import service.LeaveAndOvertimeServiceImpl;
-import dao.ShiftDAO;
-import dao.ShiftDAOImpl;
+import service.LeaveService;
+import service.LeaveServiceImpl;
 
 import java.io.IOException;
 import java.sql.Date;
-import java.time.LocalDate;
+import java.util.List;
+import model.LeaveType;
 
-@WebServlet(name = "LeaveOvertimeEmployeeController", urlPatterns = {"/employee/leave-ot"})
-public class LeaveOvertimeEmployeeController extends HttpServlet {
+@WebServlet(name = "EmployeeLeaveController", urlPatterns = {"/employee/leave"})
+public class EmployeeLeaveController extends HttpServlet {
 
-    private LeaveAndOvertimeService service;
-    private ShiftDAO shiftDAO;
+    private LeaveService service;
 
     @Override
     public void init() throws ServletException {
-        service = new LeaveAndOvertimeServiceImpl();
-        shiftDAO = new ShiftDAOImpl();
+        service = new LeaveServiceImpl();
     }
 
     @Override
@@ -36,26 +33,31 @@ public class LeaveOvertimeEmployeeController extends HttpServlet {
         User user = (User) session.getAttribute("currentUser");
         
         if (user == null) {
-            System.out.println("User is null in LeaveOvertimeEmployeeController! Redirecting to login...");
+            System.out.println("User is null in EmployeeLeaveController! Redirecting to login...");
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
 
         if (service == null) {
-            service = new LeaveAndOvertimeServiceImpl();
-        }
-        if (shiftDAO == null) {
-            shiftDAO = new ShiftDAOImpl();
+            service = new LeaveServiceImpl();
         }
 
-        int year = LocalDate.now().getYear();
-        request.setAttribute("remainingAnnualLeave", service.getRemainingAnnualLeave(user.getUserId(), year));
-        request.setAttribute("leaveTypes", service.getAllLeaveTypes());
+        List<LeaveType> leaveTypes = service.getAllLeaveTypes();
+        java.util.Map<Integer, Double> balances = new java.util.HashMap<>();
+        
+        for (model.LeaveType t : leaveTypes) {
+            try {
+                balances.put(t.getLeaveTypeId(), service.checkRemainingLeaveBalance(user.getUserId(), t.getLeaveTypeId()));
+            } catch (Exception e) {
+                balances.put(t.getLeaveTypeId(), 0.0);
+            }
+        }
+        
+        request.setAttribute("leaveBalances", balances);
+        request.setAttribute("leaveTypes", leaveTypes);
         request.setAttribute("leaveHistory", service.getLeaveHistoryByUserId(user.getUserId()));
-        request.setAttribute("otHistory", service.getOTHistoryByUserId(user.getUserId()));
-        request.setAttribute("shifts", shiftDAO.getActiveShifts());
 
-        request.getRequestDispatcher("/employee/leave-ot.jsp").forward(request, response);
+        request.getRequestDispatcher("/employee/employee-leave.jsp").forward(request, response);
     }
 
     @Override
@@ -65,13 +67,13 @@ public class LeaveOvertimeEmployeeController extends HttpServlet {
         User user = (User) session.getAttribute("currentUser");
         
         if (user == null) {
-            System.out.println("User is null in LeaveOvertimeEmployeeController doPost! Redirecting to login...");
+            System.out.println("User is null in EmployeeLeaveController doPost! Redirecting to login...");
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
 
         if (service == null) {
-            service = new LeaveAndOvertimeServiceImpl();
+            service = new LeaveServiceImpl();
         }
 
         String action = request.getParameter("action");
@@ -88,19 +90,11 @@ public class LeaveOvertimeEmployeeController extends HttpServlet {
                 service.submitLeaveRequest(lr);
                 session.setAttribute("successMessage", "Leave request submitted successfully.");
 
-            } else if ("submitOT".equals(action)) {
-                int shiftId = Integer.parseInt(request.getParameter("shiftId"));
-                Date workDate = Date.valueOf(request.getParameter("workDate"));
-                double hours = Double.parseDouble(request.getParameter("estimatedHours"));
-                String reason = request.getParameter("otReason");
-
-                service.submitOTRequest(user.getUserId(), shiftId, workDate, hours, reason);
-                session.setAttribute("successMessage", "Overtime request submitted successfully.");
             }
         } catch (Exception e) {
             session.setAttribute("errorMessage", "Error: " + e.getMessage());
         }
 
-        response.sendRedirect(request.getContextPath() + "/employee/leave-ot");
+        response.sendRedirect(request.getContextPath() + "/employee/leave");
     }
 }

@@ -110,7 +110,6 @@ public class ShiftAssignmentDAOImpl implements ShiftAssignmentDAO {
 
     @Override
     public boolean addAssignment(ShiftAssignment a) {
-        // INSERT IGNORE skips duplicates on UNIQUE(user_id, assigned_date)
         String sql = "INSERT IGNORE INTO shift_assignments (user_id, shift_id, assigned_date) "
                    + "VALUES (?, ?, ?)";
         try (Connection c = DBContext.getConnection();
@@ -127,9 +126,9 @@ public class ShiftAssignmentDAOImpl implements ShiftAssignmentDAO {
 
     @Override
     public int batchAssign(int userId, int shiftId, LocalDate from, LocalDate to) {
-        // Batch-insert one row per date in the range, skipping duplicates
-        String sql = "INSERT IGNORE INTO shift_assignments (user_id, shift_id, assigned_date) "
-                   + "VALUES (?, ?, ?)";
+        // Overwrite existing assignments with the new shift if there's a conflict
+        String sql = "INSERT INTO shift_assignments (user_id, shift_id, assigned_date) "
+                   + "VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE shift_id = VALUES(shift_id)";
         int inserted = 0;
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -148,6 +147,35 @@ public class ShiftAssignmentDAOImpl implements ShiftAssignmentDAO {
             }
         } catch (SQLException e) {
             System.err.println("Lỗi batchAssign: " + e.getMessage());
+        }
+        return inserted;
+    }
+
+    @Override
+    public int batchAssignWeekdays(int userId, int shiftId, LocalDate from, LocalDate to) {
+        String sql = "INSERT IGNORE INTO shift_assignments (user_id, shift_id, assigned_date) "
+                   + "VALUES (?, ?, ?)";
+        int inserted = 0;
+        try (Connection c = DBContext.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+
+            LocalDate cursor = from;
+            while (!cursor.isAfter(to)) {
+                java.time.DayOfWeek day = cursor.getDayOfWeek();
+                if (day != java.time.DayOfWeek.SATURDAY && day != java.time.DayOfWeek.SUNDAY) {
+                    ps.setInt(1, userId);
+                    ps.setInt(2, shiftId);
+                    ps.setDate(3, Date.valueOf(cursor));
+                    ps.addBatch();
+                }
+                cursor = cursor.plusDays(1);
+            }
+            int[] results = ps.executeBatch();
+            for (int r : results) {
+                if (r > 0) inserted++;
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi batchAssignWeekdays: " + e.getMessage());
         }
         return inserted;
     }

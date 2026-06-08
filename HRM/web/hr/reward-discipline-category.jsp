@@ -422,7 +422,7 @@ body {
 </style>
 
 <div class="dashboard-wrapper">
-    <jsp:include page="sidebar.jsp">
+    <jsp:include page="../shared/sidebar.jsp">
         <jsp:param name="activeMenu" value="reward-disciplines" />
     </jsp:include>
 

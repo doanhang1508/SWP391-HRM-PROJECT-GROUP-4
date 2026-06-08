@@ -873,3 +873,96 @@ INSERT INTO employee_allowances (user_id, allowance_id, amount) VALUES
 
 -- Phụ cấp Chuyên cần (allowance_id = 5): 500,000đ - Không nghỉ, không đi muộn
 (9,  5, 500000);
+
+/* ================================================================
+   MIGRATION V2: Shift & Overtime Management Module
+   
+   New Tables:
+     - department_shifts   (default shift → department mapping)
+     - overtime_plans      (supervisor OT plans)
+     - overtime_assignments (employee OT assignments)
+   
+   Prerequisites: HRM_database.sql must be run first.
+   ================================================================ */
+
+USE HRM_System;
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ══════════════════════════════════════════════════════
+-- TABLE 1: department_shifts
+-- Maps a default/standard shift to a department.
+-- HR Manager assigns these via the admin panel.
+-- ══════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS department_shifts (
+    id            INT PRIMARY KEY AUTO_INCREMENT,
+    department_id INT NOT NULL,
+    shift_id      INT NOT NULL,
+    created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_dept_shift (department_id, shift_id),
+    CONSTRAINT fk_ds_dept  FOREIGN KEY (department_id) REFERENCES departments(department_id) ON DELETE CASCADE,
+    CONSTRAINT fk_ds_shift FOREIGN KEY (shift_id)      REFERENCES shifts(shift_id)           ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ══════════════════════════════════════════════════════
+-- TABLE 2: overtime_plans
+-- Created by Supervisor (role 3) for their department.
+-- Represents a general OT plan for a specific date.
+-- ══════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS overtime_plans (
+    plan_id       INT          PRIMARY KEY AUTO_INCREMENT,
+    dept_id       INT          NOT NULL,
+    supervisor_id INT          NOT NULL,
+    target_date   DATE         NOT NULL,
+    description   VARCHAR(500),
+    status        VARCHAR(20)  NOT NULL DEFAULT 'Active',
+    created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_otp_dept FOREIGN KEY (dept_id)       REFERENCES departments(department_id) ON DELETE CASCADE,
+    CONSTRAINT fk_otp_user FOREIGN KEY (supervisor_id) REFERENCES users(user_id)             ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ══════════════════════════════════════════════════════
+-- TABLE 3: overtime_assignments
+-- Individual employee assignments within an OT plan.
+-- Status: Pending → Approved / Cancelled
+-- ══════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS overtime_assignments (
+    assignment_id  INT           PRIMARY KEY AUTO_INCREMENT,
+    plan_id        INT           NOT NULL,
+    user_id        INT           NOT NULL,
+    assigned_hours DECIMAL(5,2)  NOT NULL,
+    status         VARCHAR(20)   NOT NULL DEFAULT 'Pending',
+    created_at     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_plan_user (plan_id, user_id),
+    CONSTRAINT fk_ota_plan FOREIGN KEY (plan_id) REFERENCES overtime_plans(plan_id) ON DELETE CASCADE,
+    CONSTRAINT fk_ota_user FOREIGN KEY (user_id) REFERENCES users(user_id)          ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- ══════════════════════════════════════════════════════
+-- SEED DATA
+-- ══════════════════════════════════════════════════════
+
+-- Default shift assignments for departments
+INSERT INTO department_shifts (department_id, shift_id) VALUES
+(1, 1),  -- Hành chính → Ca Hành Chính
+(2, 1),  -- Nhân sự → Ca Hành Chính
+(3, 1),  -- Kế toán → Ca Hành Chính
+(4, 1),  -- Kinh doanh → Ca Hành Chính
+(5, 1),  -- Xưởng sản xuất → Ca Hành Chính (default)
+(5, 2),  -- Xưởng sản xuất → Ca 1 (Sáng)
+(5, 3),  -- Xưởng sản xuất → Ca 2 (Chiều)
+(5, 4);  -- Xưởng sản xuất → Ca 3 (Đêm)
+
+-- Sample overtime plan (created by Quản đốc - user 4)
+INSERT INTO overtime_plans (plan_id, dept_id, supervisor_id, target_date, description, status) VALUES
+(1, 5, 4, '2026-06-10', 'Tăng ca hoàn thành đơn hàng xuất khẩu gấp', 'Active'),
+(2, 5, 4, '2026-06-12', 'Tăng ca bảo trì máy móc cuối tuần', 'Active');
+
+-- Sample overtime assignments
+INSERT INTO overtime_assignments (assignment_id, plan_id, user_id, assigned_hours, status) VALUES
+(1, 1, 5,  3.0, 'Pending'),   -- Phạm Công Nhân: 3h OT
+(2, 1, 29, 2.0, 'Approved'),  -- Tổ trưởng 1: 2h OT (approved)
+(3, 1, 30, 2.5, 'Pending'),   -- Tổ trưởng 2: 2.5h OT
+(4, 2, 31, 2.0, 'Cancelled'), -- Tổ trưởng 3: cancelled
+(5, 2, 32, 3.0, 'Pending');   -- Tổ phó: 3h OT

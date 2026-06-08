@@ -398,25 +398,25 @@
                                                         </a>
                                                     </li>
                                                     <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/admin/department"
+                                                        <a href="${pageContext.request.contextPath}/hr/department"
                                                             class="sidebar-link ${param.activeMenu eq 'department' ? 'active' : ''}">
                                                             <i class="fas fa-building"></i> Phòng ban
                                                         </a>
                                                     </li>
                                                     <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/admin/position"
+                                                        <a href="${pageContext.request.contextPath}/hr/position"
                                                             class="sidebar-link ${param.activeMenu eq 'position' ? 'active' : ''}">
                                                             <i class="fas fa-id-card-alt"></i> Chức vụ
                                                         </a>
                                                     </li>
                                                     <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/admin/contract-type"
+                                                        <a href="${pageContext.request.contextPath}/hr/contract-type"
                                                             class="sidebar-link ${param.activeMenu eq 'contract-type' ? 'active' : ''}">
                                                             <i class="fas fa-file-contract"></i> Loại hợp đồng
                                                         </a>
                                                     </li>
                                                     <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/admin/pending-requests"
+                                                        <a href="${pageContext.request.contextPath}/hr/pending-requests"
                                                             class="sidebar-link ${param.activeMenu eq 'pending-requests' ? 'active' : ''}">
                                                             <i class="fas fa-hourglass-half"></i> Đơn chờ xử lý
                                                         </a>
@@ -424,25 +424,27 @@
 
                                                     <li class="sidebar-menu-category">Cấu hình Chính sách</li>
                                                     <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/admin/shifts"
+                                                        <a href="${pageContext.request.contextPath}/hr/shifts"
                                                             class="sidebar-link ${param.activeMenu eq 'shifts' ? 'active' : ''}">
                                                             <i class="fas fa-clock"></i> Quản lý Ca làm việc
                                                         </a>
                                                     </li>
+
                                                     <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/admin/shifts?action=schedule"
+                                                        <a href="${pageContext.request.contextPath}/hr/shifts?action=schedule"
                                                             class="sidebar-link ${param.activeMenu eq 'schedule' ? 'active' : ''}">
                                                             <i class="fas fa-calendar-alt"></i> Xếp lịch ca
                                                         </a>
                                                     </li>
                                                     <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/admin/leave-types"
-                                                            class="sidebar-link ${param.activeMenu eq 'leave-types' ? 'active' : ''}">
-                                                            <i class="fas fa-calendar-times"></i> Loại nghỉ phép
+                                                        <a href="${pageContext.request.contextPath}/hr/leave"
+                                                            class="sidebar-link ${param.activeMenu eq 'leaveManagement' ? 'active' : ''}">
+                                                            <i class="fas fa-calendar-times"></i> Quản lý Nghỉ phép
                                                         </a>
                                                     </li>
                                                     <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/admin/reward-disciplines"
+>>>>>>> 5f9628b (Refactor: Move HR controllers to correct package, update shift/leave structures, fix bug leave logic)
+                                                        <a href="${pageContext.request.contextPath}/hr/reward-disciplines"
                                                             class="sidebar-link ${param.activeMenu eq 'reward-disciplines' ? 'active' : ''}">
                                                             <i class="fas fa-award"></i> Danh mục Thưởng/Phạt
                                                         </a>
@@ -467,13 +469,7 @@
                                                             <i class="fas fa-shield-alt"></i> Bảo hiểm
                                                         </a>
                                                     </li>
-                                                    <li class="sidebar-menu-category">Nghỉ phép &amp; OT</li>
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/manager/leave-ot"
-                                                            class="sidebar-link ${param.activeMenu eq 'leave-ot' ? 'active' : ''}">
-                                                            <i class="fas fa-calendar-check"></i> Duyệt nghỉ phép / OT
-                                                        </a>
-                                                    </li>
+
                                                     <%-- TODO Iteration 2: Xem tổng hợp chấm công toàn công ty --%>
                                                 </c:if>
 
@@ -496,9 +492,9 @@
                                                             </a>
                                                         </li>
                                                         <li class="sidebar-item">
-                                                            <a href="${pageContext.request.contextPath}/manager/leave-ot"
-                                                                class="sidebar-link ${param.activeMenu eq 'leave-ot' ? 'active' : ''}">
-                                                                <i class="fas fa-calendar-check"></i> Duyệt nghỉ phép / OT
+                                                            <a href="${pageContext.request.contextPath}/manager/leave"
+                                                                class="sidebar-link ${param.activeMenu eq 'leave' ? 'active' : ''}">
+                                                                <i class="fas fa-calendar-check"></i> Duyệt nghỉ phép
                                                             </a>
                                                         </li>
                                                         <li class="sidebar-menu-category">Chấm công</li>
@@ -574,8 +570,8 @@
                                                                         </a>
                                                                     </li>
                                                                     <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/manager/leave-ot"
-                                                                            class="sidebar-link ${param.activeMenu eq 'leave-ot' ? 'active' : ''}">
+                                                                        <a href="${pageContext.request.contextPath}/manager/leave"
+                                                                            class="sidebar-link ${param.activeMenu eq 'leave' ? 'active' : ''}">
                                                                             <i class="fas fa-calendar-check"></i> Duyệt nghỉ phép
                                                                         </a>
                                                                     </li>
