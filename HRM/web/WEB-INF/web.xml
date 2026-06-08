@@ -46,29 +46,13 @@
     </filter-mapping>
     <filter-mapping>
         <filter-name>AuthFilter</filter-name>
-        <url-pattern>/payroll</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>AuthFilter</filter-name>
         <url-pattern>/editRolePermission</url-pattern>
     </filter-mapping>
-    <!-- FIX: đổi /role thành /role/* để bắt cả sub-path -->
     <filter-mapping>
         <filter-name>AuthFilter</filter-name>
         <url-pattern>/role/*</url-pattern>
     </filter-mapping>
-    <filter-mapping>
-        <filter-name>AuthFilter</filter-name>
-        <url-pattern>/terminate-employee</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>AuthFilter</filter-name>
-        <url-pattern>/manual-reward-discipline</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>AuthFilter</filter-name>
-        <url-pattern>/work-history</url-pattern>
-    </filter-mapping>
+    <!-- Filter mappings for legacy paths removed -->
 
     <!-- ══════════════════════════════════════════════════════
          SERVLET DECLARATIONS
@@ -154,7 +138,7 @@
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>ActiveDeactiveRoleController</servlet-name>
-        <url-pattern>/activeDeactiveRole</url-pattern>
+        <url-pattern>/admin/activeDeactiveRole</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>EditRolePermissionController</servlet-name>

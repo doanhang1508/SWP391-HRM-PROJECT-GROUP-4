@@ -1,4 +1,4 @@
-﻿package controller.hr;
+package controller.hr;
 
 import model.Department;
 import model.DepartmentShift;
@@ -402,4 +402,5 @@ public class ShiftController extends HttpServlet {
         return URLEncoder.encode(s, StandardCharsets.UTF_8);
     }
 }
+
 

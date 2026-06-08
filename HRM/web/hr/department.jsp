@@ -254,21 +254,21 @@
                                             </c:choose>
                                         </td>
                                         <td style="text-align:center;">
-                                            <a href="${pageContext.request.contextPath}/admin/users?departmentId=${dept.departmentId}" class="action-btn btn-view" style="display:inline-flex;" title="Xem danh sách nhân viên">
+                                            <a href="${pageContext.request.contextPath}${sessionScope.currentUser.roleId == 1 ? '/admin/users' : '/hr/employees'}?departmentId=${dept.departmentId}" class="action-btn btn-view" style="display:inline-flex;" title="Xem danh sách nhân viên">
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                             <button class="action-btn btn-edit" title="Sửa"
                                                     onclick="openEditModal('${dept.departmentId}','${dept.departmentName}','${dept.description}')">
                                                 <i class="fas fa-pen"></i>
                                             </button>
-                                            <form action="${pageContext.request.contextPath}/admin/department" method="POST" style="display:inline;" onsubmit="return confirm('${dept.status ? "Vô hiệu hóa" : "Kích hoạt"} phòng ban \'${dept.departmentName}\'?');">
+                                            <form action="${pageContext.request.contextPath}/hr/department" method="POST" style="display:inline;" onsubmit="return confirm('${dept.status ? "Vô hiệu hóa" : "Kích hoạt"} phòng ban \'${dept.departmentName}\'?');">
                                                 <input type="hidden" name="action" value="toggleStatus">
                                                 <input type="hidden" name="id" value="${dept.departmentId}">
                                                 <button type="submit" class="action-btn" style="color:${dept.status ? '#f59e0b' : '#1e293b'};" title="${dept.status ? 'Vô hiệu hóa' : 'Kích hoạt'}">
                                                     <i class="fas ${dept.status ? 'fa-lock' : 'fa-unlock'}"></i>
                                                 </button>
                                             </form>
-                                            <form action="${pageContext.request.contextPath}/admin/department" method="POST" style="display:inline;" onsubmit="return confirm('Xóa phòng ban \'${dept.departmentName}\'?');">
+                                            <form action="${pageContext.request.contextPath}/hr/department" method="POST" style="display:inline;" onsubmit="return confirm('Xóa phòng ban \'${dept.departmentName}\'?');">
                                                 <input type="hidden" name="action" value="delete">
                                                 <input type="hidden" name="id" value="${dept.departmentId}">
                                                 <button type="submit" class="action-btn btn-delete" title="Xóa">
@@ -310,7 +310,7 @@
             <h3 class="modal-title"><i class="fas fa-plus-circle" style="color:var(--blue);margin-right:8px;"></i>Thêm Phòng Ban Mới</h3>
             <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
         </div>
-        <form action="${pageContext.request.contextPath}/admin/department" method="POST">
+        <form action="${pageContext.request.contextPath}/hr/department" method="POST">
             <input type="hidden" name="action" value="add">
             <div class="form-group">
                 <label class="form-label">Tên phòng ban <span style="color:#e11d48;">*</span></label>
@@ -335,7 +335,7 @@
             <h3 class="modal-title"><i class="fas fa-edit" style="color:var(--blue);margin-right:8px;"></i>Cập Nhật Phòng Ban</h3>
             <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
         </div>
-        <form action="${pageContext.request.contextPath}/admin/department" method="POST">
+        <form action="${pageContext.request.contextPath}/hr/department" method="POST">
             <input type="hidden" name="action" value="edit">
             <input type="hidden" name="id" id="edit_id">
             <div class="form-group">

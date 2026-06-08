@@ -1,4 +1,4 @@
-﻿package controller.hr;
+package controller.hr;
 
 import dao.RewardDisciplineDAO;
 import jakarta.servlet.annotation.WebServlet;
@@ -41,7 +41,7 @@ public class RewardDisciplineCategoryController extends HttpServlet {
         String idStr  = request.getParameter("id");
 
         if ("delete".equals(action) && idStr != null) {
-            handleDelete(response, idStr);
+            handleDelete(request, response, idStr);
             return;
         }
 
@@ -93,13 +93,13 @@ public class RewardDisciplineCategoryController extends HttpServlet {
 
     // Ã¢â€â‚¬Ã¢â€â‚¬ doPost handlers Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
-    private void handleDelete(HttpServletResponse response, String idStr) {
+    private void handleDelete(HttpServletRequest request, HttpServletResponse response, String idStr) {
         try {
             rdDAO.deleteCategory(parseInt(idStr));
         } catch (Exception e) {
             // Log suppressed; redirect proceeds regardless
         }
-        redirect(response, BASE_URL);
+        redirect(response, request.getContextPath() + BASE_URL);
     }
 
     private void handleAddOrEdit(HttpServletRequest request, HttpServletResponse response,
@@ -170,7 +170,7 @@ public class RewardDisciplineCategoryController extends HttpServlet {
             return false;
         }
         User user = (User) session.getAttribute(ATTR_CURRENT_USER);
-        if (user.getRoleId() != 2) {
+        if (user.getRoleId() != 1 && user.getRoleId() != 2) {
             redirect(response, request.getContextPath() + "/dashboard");
             return false;
         }

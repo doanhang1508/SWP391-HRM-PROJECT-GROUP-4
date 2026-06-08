@@ -272,7 +272,7 @@
 
 <div class="wh-layout">
     <!-- Sidebar chung phân quyền theo role -->
-    <jsp:include page="sidebar.jsp">
+    <jsp:include page="../shared/sidebar.jsp">
         <jsp:param name="activeMenu" value="work-history"/>
     </jsp:include>
 

@@ -218,7 +218,7 @@
 
 <div class="emp-layout">
     <!-- Sidebar -->
-    <jsp:include page="sidebar.jsp">
+    <jsp:include page="../shared/sidebar.jsp">
         <jsp:param name="activeMenu" value="dashboard" />
     </jsp:include>
 

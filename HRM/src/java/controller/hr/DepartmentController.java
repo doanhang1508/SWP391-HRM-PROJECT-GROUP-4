@@ -1,4 +1,4 @@
-﻿package controller.hr;
+package controller.hr;
 
 import dao.DepartmentDAO;
 import jakarta.servlet.ServletException;

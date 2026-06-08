@@ -37,7 +37,7 @@
     @media(max-width:768px){.main-content{width:100%!important;padding:20px 16px!important}}
 </style>
 <div class="dashboard-wrapper">
-    <jsp:include page="sidebar.jsp"><jsp:param name="activeMenu" value="overtime"/></jsp:include>
+    <jsp:include page="../shared/sidebar.jsp"><jsp:param name="activeMenu" value="overtime"/></jsp:include>
     <div class="main-content">
         <div style="margin-bottom:28px">
             <h1 class="page-title"><i class="fas fa-clock me-2" style="color:var(--pri)"></i>Tăng Ca Của Tôi</h1>
