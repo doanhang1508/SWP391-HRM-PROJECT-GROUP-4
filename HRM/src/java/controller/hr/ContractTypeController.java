@@ -1,4 +1,4 @@
-﻿package controller.hr;
+package controller.hr;
 
 import dao.ContractTypeDAO;
 import jakarta.servlet.annotation.WebServlet;
@@ -17,16 +17,18 @@ import model.User;
 public class ContractTypeController extends HttpServlet {
 
     private static final String ATTR_CURRENT_USER = "currentUser";
-    private static final String LOGIN_URL         = "/login";
-    private static final String DASHBOARD_URL     = "/dashboard";
-    private static final String REDIRECT_URL      = "/hr/contract-type";
-    private static final String VIEW_PAGE         = "/hr/contract-type.jsp";
+    private static final String LOGIN_URL = "/login";
+    private static final String DASHBOARD_URL = "/dashboard";
+    private static final String REDIRECT_URL = "/hr/contract-type";
+    private static final String VIEW_PAGE = "/hr/contract-type.jsp";
 
     private final ContractTypeDAO dao = new ContractTypeDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) {
-        if (!isAuthorized(request, response)) return;
+        if (!isAuthorized(request, response)) {
+            return;
+        }
 
         List<ContractType> contractTypeList = dao.getAllIncludingInactive();
         Map<Integer, Integer> empCountMap = new HashMap<>();
@@ -49,10 +51,10 @@ public class ContractTypeController extends HttpServlet {
             return;
         }
 
-        String action      = request.getParameter("action");
-        String name        = request.getParameter("name");
-        String desc        = request.getParameter("description");
-        String idStr       = request.getParameter("id");
+        String action = request.getParameter("action");
+        String name = request.getParameter("name");
+        String desc = request.getParameter("description");
+        String idStr = request.getParameter("id");
         String durationStr = request.getParameter("duration");
         String durationUnit = request.getParameter("durationUnit");
 
@@ -62,10 +64,9 @@ public class ContractTypeController extends HttpServlet {
     }
 
     // Ã¢â€â‚¬Ã¢â€â‚¬ Action processing Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-
     private void processAction(String action, String idStr,
-                               String name, String desc,
-                               Integer duration, String durationUnit) {
+            String name, String desc,
+            Integer duration, String durationUnit) {
         if ("delete".equals(action) || "deactivate".equals(action)) {
             changeStatusIfIdPresent(idStr, false);
         } else if ("activate".equals(action)) {
@@ -84,7 +85,6 @@ public class ContractTypeController extends HttpServlet {
     }
 
     // Ã¢â€â‚¬Ã¢â€â‚¬ Auth Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-
     private boolean isAuthorized(HttpServletRequest request, HttpServletResponse response) {
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute(ATTR_CURRENT_USER) == null) {
@@ -100,7 +100,6 @@ public class ContractTypeController extends HttpServlet {
     }
 
     // Ã¢â€â‚¬Ã¢â€â‚¬ Helpers Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-
     private Integer parseDuration(String durationStr) {
         if (durationStr != null && !durationStr.trim().isEmpty()) {
             try {
@@ -152,4 +151,3 @@ public class ContractTypeController extends HttpServlet {
         }
     }
 }
-

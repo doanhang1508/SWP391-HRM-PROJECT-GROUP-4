@@ -1,4 +1,4 @@
-﻿package controller.hr;
+package controller.hr;
 
 import dao.RewardDisciplineDAO;
 import jakarta.servlet.annotation.WebServlet;
