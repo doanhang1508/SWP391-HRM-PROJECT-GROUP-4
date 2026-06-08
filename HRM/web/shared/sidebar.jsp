@@ -583,7 +583,7 @@
                                                                 <c:if test="${sessionScope.currentUser.roleId == 7}">
                                                                     <li class="sidebar-menu-category">Ca làm & Chấm công</li>
                                                                     <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/employee/shift-schedule"
+                                                                        <a href="${pageContext.request.contextPath}/employee/schedule"
                                                                             class="sidebar-link ${param.activeMenu eq 'schedule' ? 'active' : ''}">
                                                                             <i class="fas fa-calendar-alt"></i> Lịch phân ca
                                                                         </a>
@@ -608,8 +608,8 @@
                                                                         </a>
                                                                     </li>
                                                                     <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/employee/payslip"
-                                                                            class="sidebar-link ${param.activeMenu eq 'payslip' ? 'active' : ''}">
+                                                                        <a href="${pageContext.request.contextPath}/employee/payroll"
+                                                                            class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
                                                                             <i class="fas fa-file-invoice-dollar"></i> Bảng lương
                                                                         </a>
                                                                     </li>

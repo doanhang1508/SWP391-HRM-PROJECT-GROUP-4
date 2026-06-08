@@ -3,7 +3,7 @@
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
 <c:set var="pageTitle" value="Lịch sử công tác - HRM" scope="request" />
-<jsp:include page="header.jsp" />
+<jsp:include page="../header.jsp" />
 
 <style>
     body { background-color: #f0f4f8; }
@@ -449,4 +449,4 @@
     </div><!-- end .wh-content -->
 </div><!-- end .wh-layout -->
 
-<jsp:include page="footer.jsp" />
+<jsp:include page="../footer.jsp" />
