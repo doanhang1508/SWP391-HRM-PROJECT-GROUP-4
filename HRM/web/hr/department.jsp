@@ -258,7 +258,10 @@
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                             <button class="action-btn btn-edit" title="Sửa"
-                                                    onclick="openEditModal('${dept.departmentId}','${dept.departmentName}','${dept.description}')">
+                                                    data-id="${dept.departmentId}"
+                                                    data-name="${fn:escapeXml(dept.departmentName)}"
+                                                    data-desc="${fn:escapeXml(dept.description)}"
+                                                    onclick="openEditModal(this)">
                                                 <i class="fas fa-pen"></i>
                                             </button>
                                             <form action="${pageContext.request.contextPath}/hr/department" method="POST" style="display:inline;" onsubmit="return confirm('${dept.status ? "Vô hiệu hóa" : "Kích hoạt"} phòng ban \'${dept.departmentName}\'?');">
@@ -358,10 +361,10 @@
     function openAddModal()  { document.getElementById('addModal').style.display = 'block'; }
     function closeModal(id)  { document.getElementById(id).style.display = 'none'; }
 
-    function openEditModal(id, name, desc) {
-        document.getElementById('edit_id').value  = id;
-        document.getElementById('edit_name').value = name;
-        document.getElementById('edit_desc').value = desc;
+    function openEditModal(btn) {
+        document.getElementById('edit_id').value  = btn.getAttribute('data-id');
+        document.getElementById('edit_name').value = btn.getAttribute('data-name');
+        document.getElementById('edit_desc').value = btn.getAttribute('data-desc');
         document.getElementById('editModal').style.display = 'block';
     }
 

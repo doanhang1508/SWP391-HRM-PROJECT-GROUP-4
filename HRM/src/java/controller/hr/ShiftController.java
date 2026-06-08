@@ -387,7 +387,8 @@ public class ShiftController extends HttpServlet {
 
     private void redirect(HttpServletResponse resp, HttpServletRequest req,
             String key, String msg) throws IOException {
-        resp.sendRedirect(req.getContextPath() + SHIFTS_URL + "?" + key + "=" + encode(msg));
+        req.getSession().setAttribute(key, msg);
+        resp.sendRedirect(req.getContextPath() + SHIFTS_URL);
     }
 
     private void setEncoding(HttpServletRequest req) {

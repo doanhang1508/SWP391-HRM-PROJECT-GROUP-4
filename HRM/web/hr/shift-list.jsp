@@ -331,8 +331,8 @@
             </div>
         </div>
 
-        <c:if test="${not empty param.message}"><div class="alert alert-c a-ok alert-dismissible fade show" role="alert"><i class="fas fa-check-circle me-2"></i>${param.message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div></c:if>
-        <c:if test="${not empty param.error}"><div class="alert alert-c a-err alert-dismissible fade show" role="alert"><i class="fas fa-exclamation-circle me-2"></i>${param.error}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div></c:if>
+        <c:if test="${not empty sessionScope.message}"><div class="alert alert-c a-ok alert-dismissible fade show" role="alert"><i class="fas fa-check-circle me-2"></i>${sessionScope.message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><c:remove var="message" scope="session"/></c:if>
+        <c:if test="${not empty sessionScope.error}"><div class="alert alert-c a-err alert-dismissible fade show" role="alert"><i class="fas fa-exclamation-circle me-2"></i>${sessionScope.error}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><c:remove var="error" scope="session"/></c:if>
 
 
             <div class="admin-panel">
@@ -458,16 +458,16 @@
         <input type="hidden" name="action" value="assignDept">
         <div class="modal-header"><h5 class="modal-title"><i class="fas fa-building me-2" style="color:var(--ok)"></i>Gán Ca Mặc Định Cho Phòng Ban</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body">
-            <div class="mb-3"><label class="form-label">Phòng Ban <span class="text-danger">*</span></label>
-                <select class="form-select" name="departmentId" required>
-                    <option value="">-- Chọn phòng ban --</option>
-                    <c:forEach var="d" items="${departments}"><option value="${d.departmentId}">${d.departmentName}</option></c:forEach>
-                </select>
-            </div>
             <div class="mb-3"><label class="form-label">Ca Làm Việc <span class="text-danger">*</span></label>
-                <select class="form-select" name="shiftId" required>
+                <select class="form-select" name="shiftId" id="assignShiftId" onchange="onShiftSelect()" required>
                     <option value="">-- Chọn ca làm việc --</option>
                     <c:forEach var="s" items="${activeShifts}"><option value="${s.shiftId}">${s.shiftName}</option></c:forEach>
+                </select>
+            </div>
+            <div class="mb-3"><label class="form-label">Phòng Ban <span class="text-danger">*</span></label>
+                <select class="form-select" name="departmentId" id="assignDeptId" required>
+                    <option value="">-- Chọn phòng ban --</option>
+                    <c:forEach var="d" items="${departments}"><option value="${d.departmentId}">${d.departmentName}</option></c:forEach>
                 </select>
             </div>
         </div>
@@ -653,5 +653,32 @@
         filteredRows = Array.from(document.querySelectorAll('.tbl tbody tr'));
         updatePagination();
     });
+
+    const deptShiftsData = [
+<c:forEach var="ds" items="${deptShifts}" varStatus="st">
+    { deptId: ${ds.departmentId}, shiftId: ${ds.shiftId} }${!st.last ? ',' : ''}
+</c:forEach>
+    ];
+
+    function onShiftSelect() {
+        const shiftId = document.getElementById('assignShiftId').value;
+        const deptSelect = document.getElementById('assignDeptId');
+        
+        Array.from(deptSelect.options).forEach(opt => {
+            opt.style.display = '';
+        });
+
+        if(shiftId) {
+            const assignedDeptIds = deptShiftsData.filter(ds => ds.shiftId == shiftId).map(ds => ds.deptId);
+            Array.from(deptSelect.options).forEach(opt => {
+                if(opt.value && assignedDeptIds.includes(parseInt(opt.value))) {
+                    opt.style.display = 'none';
+                }
+            });
+            if(deptSelect.options[deptSelect.selectedIndex].style.display === 'none') {
+                deptSelect.value = '';
+            }
+        }
+    }
 </script>
 <jsp:include page="../footer.jsp"/>

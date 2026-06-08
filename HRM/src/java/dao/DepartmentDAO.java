@@ -56,7 +56,7 @@ public class DepartmentDAO {
     }
 
     public void delete(int id) {
-        String sql = "UPDATE departments SET status = 0 WHERE department_id=?";
+        String sql = "DELETE FROM departments WHERE department_id=?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
