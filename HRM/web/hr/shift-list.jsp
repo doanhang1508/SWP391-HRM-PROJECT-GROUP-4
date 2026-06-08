@@ -628,7 +628,7 @@
 
     function openCreateModal() {
         document.getElementById('modalTitle').textContent = 'Thêm Ca Mới';
-        document.getElementById('shiftForm').action = ctx + '/admin/shifts?action=create';
+        document.getElementById('shiftForm').action = ctx + '/hr/shifts?action=create';
         ['fId', 'fName', 'fStart', 'fEnd', 'fBS', 'fBE'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('fCoeff').value = '1.0';
         document.getElementById('fNight').checked = false;
@@ -636,7 +636,7 @@
     }
     function openEditModal(id, n, st, en, bs, be, night, coeff) {
         document.getElementById('modalTitle').textContent = 'Chỉnh Sửa Ca';
-        document.getElementById('shiftForm').action = ctx + '/admin/shifts?action=update';
+        document.getElementById('shiftForm').action = ctx + '/hr/shifts?action=update';
         document.getElementById('fId').value = id;
         document.getElementById('fName').value = n;
         document.getElementById('fStart').value = st;

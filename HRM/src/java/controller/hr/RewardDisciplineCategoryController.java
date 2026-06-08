@@ -170,7 +170,7 @@ public class RewardDisciplineCategoryController extends HttpServlet {
             return false;
         }
         User user = (User) session.getAttribute(ATTR_CURRENT_USER);
-        if (user.getRoleId() != 2) {
+        if (user.getRoleId() != 1 && user.getRoleId() != 2) {
             redirect(response, request.getContextPath() + "/dashboard");
             return false;
         }

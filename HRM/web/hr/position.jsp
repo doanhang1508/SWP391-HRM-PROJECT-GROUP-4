@@ -257,7 +257,7 @@
                                             </c:choose>
                                         </td>
                                         <td style="text-align:center;">
-                                            <a href="${pageContext.request.contextPath}/admin/users?positionId=${pos.positionId}" class="action-btn btn-view" style="display:inline-flex;" title="Xem danh sách nhân viên">
+                                            <a href="${pageContext.request.contextPath}${sessionScope.currentUser.roleId == 1 ? '/admin/users' : '/hr/employees'}?positionId=${pos.positionId}" class="action-btn btn-view" style="display:inline-flex;" title="Xem danh sách nhân viên">
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                             <button class="action-btn btn-edit" title="Sửa"
