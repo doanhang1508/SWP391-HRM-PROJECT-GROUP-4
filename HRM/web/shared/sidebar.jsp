@@ -579,6 +579,42 @@
                                                                     <%-- TODO Iteration 2: thêm Duyệt yêu cầu điều chỉnh chấm công --%>
                                                                 </c:if>
 
+                                                                <%-- ══════ EMPLOYEE (roleId=7) ══════ --%>
+                                                                <c:if test="${sessionScope.currentUser.roleId == 7}">
+                                                                    <li class="sidebar-menu-category">Ca làm & Chấm công</li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/employee/shift-schedule"
+                                                                            class="sidebar-link ${param.activeMenu eq 'schedule' ? 'active' : ''}">
+                                                                            <i class="fas fa-calendar-alt"></i> Lịch phân ca
+                                                                        </a>
+                                                                    </li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/employee/work-history"
+                                                                            class="sidebar-link ${param.activeMenu eq 'work-history' ? 'active' : ''}">
+                                                                            <i class="fas fa-history"></i> Lịch sử làm việc
+                                                                        </a>
+                                                                    </li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/employee/overtime"
+                                                                            class="sidebar-link ${param.activeMenu eq 'overtime' ? 'active' : ''}">
+                                                                            <i class="fas fa-clock"></i> Tăng ca
+                                                                        </a>
+                                                                    </li>
+                                                                    <li class="sidebar-menu-category">Phúc lợi & Nghỉ phép</li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/employee/leave"
+                                                                            class="sidebar-link ${param.activeMenu eq 'leave' ? 'active' : ''}">
+                                                                            <i class="fas fa-calendar-times"></i> Nghỉ phép
+                                                                        </a>
+                                                                    </li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/employee/payslip"
+                                                                            class="sidebar-link ${param.activeMenu eq 'payslip' ? 'active' : ''}">
+                                                                            <i class="fas fa-file-invoice-dollar"></i> Bảng lương
+                                                                        </a>
+                                                                    </li>
+                                                                </c:if>
+
                                                                 <%-- ══════ TÀI KHOẢN (chung) ══════ --%>
                                                                     <li class="sidebar-menu-category">Tài khoản</li>
                                                                     <li class="sidebar-item">
