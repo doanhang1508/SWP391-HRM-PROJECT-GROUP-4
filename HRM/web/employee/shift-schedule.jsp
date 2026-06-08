@@ -151,7 +151,7 @@
 </style>
 
 <div class="emp-layout">
-    <jsp:include page="sidebar.jsp">
+    <jsp:include page="../shared/sidebar.jsp">
         <jsp:param name="activeMenu" value="schedule" />
     </jsp:include>
 
