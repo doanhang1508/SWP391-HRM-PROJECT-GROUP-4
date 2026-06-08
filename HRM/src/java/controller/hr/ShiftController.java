@@ -1,4 +1,4 @@
-﻿package controller.hr;
+package controller.hr;
 
 import model.Department;
 import model.DepartmentShift;
