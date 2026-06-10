@@ -1,5 +1,0 @@
-dao\StubShiftDAO.class
-model\Shift.class
-service\ShiftServiceImpl.class
-dao\ShiftDAO.class
-service\ShiftService.class

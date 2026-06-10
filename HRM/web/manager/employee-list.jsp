@@ -129,8 +129,102 @@
                 </table>
             </div>
 
+            <!-- PAGINATION -->
+            <div class="pagination-container" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+                <div class="pagination-info" style="font-size: 0.85rem; color: #64748b;">
+                    Hiển thị <span id="pageStart" style="font-weight: 600; color: #0f172a;">0</span> - <span id="pageEnd" style="font-weight: 600; color: #0f172a;">0</span> trong tổng số <span id="totalItems" style="font-weight: 600; color: #0f172a;">0</span> nhân viên
+                </div>
+                <div class="pagination-controls" style="display: flex; gap: 8px;">
+                    <button class="btn-page" id="btnPrevPage" onclick="prevPage()"><i class="fas fa-chevron-left"></i></button>
+                    <div id="pageNumbers" style="display: flex; gap: 4px;"></div>
+                    <button class="btn-page" id="btnNextPage" onclick="nextPage()"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
+
+<script>
+    // Pagination Logic
+    let currentPage = 1;
+    const itemsPerPage = 8;
+    let filteredRows = [];
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initPagination();
+    });
+
+    function initPagination() {
+        const rows = document.querySelectorAll('.table-custom tbody tr:not(.empty-state-row)');
+        filteredRows = Array.from(rows);
+        updatePagination();
+    }
+
+    function updatePagination() {
+        if(filteredRows.length === 0) {
+            document.getElementById('pageStart').textContent = 0;
+            document.getElementById('pageEnd').textContent = 0;
+            document.getElementById('totalItems').textContent = 0;
+            document.getElementById('pageNumbers').innerHTML = '';
+            document.getElementById('btnPrevPage').disabled = true;
+            document.getElementById('btnNextPage').disabled = true;
+            return;
+        }
+
+        const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, filteredRows.length);
+
+        // Hide all rows first
+        document.querySelectorAll('.table-custom tbody tr:not(.empty-state-row)').forEach(row => row.style.display = 'none');
+        
+        // Show only rows for current page
+        for (let i = startIndex; i < endIndex; i++) {
+            filteredRows[i].style.display = '';
+        }
+
+        document.getElementById('pageStart').textContent = startIndex + 1;
+        document.getElementById('pageEnd').textContent = endIndex;
+        document.getElementById('totalItems').textContent = filteredRows.length;
+
+        // Render page numbers
+        let pageHtml = '';
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === currentPage) {
+                pageHtml += '<button class="btn-page active">' + i + '</button>';
+            } else {
+                pageHtml += '<button class="btn-page" onclick="goToPage(' + i + ')">' + i + '</button>';
+            }
+        }
+        document.getElementById('pageNumbers').innerHTML = pageHtml;
+
+        document.getElementById('btnPrevPage').disabled = currentPage === 1;
+        document.getElementById('btnNextPage').disabled = currentPage === totalPages;
+    }
+
+    function goToPage(page) {
+        currentPage = page;
+        updatePagination();
+    }
+    
+    function prevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            updatePagination();
+        }
+    }
+    
+    function nextPage() {
+        const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            updatePagination();
+        }
+    }
+</script>
 
 <jsp:include page="../footer.jsp" />

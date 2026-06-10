@@ -99,13 +99,12 @@
         <servlet-class>controller.hr.DepartmentController</servlet-class>
     </servlet>
     <servlet>
-        <servlet-name>PendingRequestsController</servlet-name>
-        <servlet-class>controller.hr.PendingRequestsController</servlet-class>
-    </servlet>
-    <servlet>
         <servlet-name>PositionController</servlet-name>
         <servlet-class>controller.hr.PositionController</servlet-class>
     </servlet>
+
+    <!-- Onboarding —— HR side (@WebServlet đã dùng, không cần khai báo ở đây) -->
+    <!-- Onboarding —— Admin side (@WebServlet đã dùng, không cần khai báo ở đây) -->
 
 
     <!-- ══════════════════════════════════════════════════════
@@ -147,10 +146,6 @@
     <servlet-mapping>
         <servlet-name>DepartmentsController</servlet-name>
         <url-pattern>/hr/department</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>PendingRequestsController</servlet-name>
-        <url-pattern>/hr/pending-requests</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>PositionController</servlet-name>

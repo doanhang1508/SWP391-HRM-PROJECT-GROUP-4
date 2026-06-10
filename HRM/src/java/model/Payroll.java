@@ -20,7 +20,6 @@ public class Payroll {
     private BigDecimal netSalary;
     private String status;
     private Timestamp createdAt;
-    
     // New fields for approval and payment flow
     private Integer approvedBy;
     private Timestamp approvedAt;
@@ -28,6 +27,9 @@ public class Payroll {
     private Integer paidBy;
     private Timestamp paidAt;
     private String paymentNote;
+
+    // Transient: dùng để hiển thị, không lưu DB
+    private String fullName;
 
     public Payroll() {}
 
@@ -142,4 +144,7 @@ public class Payroll {
 
     public String getPaymentNote() { return paymentNote; }
     public void setPaymentNote(String paymentNote) { this.paymentNote = paymentNote; }
+
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
 }

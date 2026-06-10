@@ -337,8 +337,9 @@
                                         <c:when test="${sessionScope.currentUser.roleId == 3}">Quản đốc xưởng</c:when>
                                         <c:when test="${sessionScope.currentUser.roleId == 4}">Giám đốc</c:when>
                                         <c:when test="${sessionScope.currentUser.roleId == 5}">Nhân viên HR</c:when>
-                                        <c:when test="${sessionScope.currentUser.roleId == 6}">Quản lý phòng ban
-                                        </c:when>
+                                        <c:when test="${sessionScope.currentUser.roleId == 6}">Quản lý phòng ban</c:when>
+                                        <c:when test="${sessionScope.currentUser.roleId == 7}">Nhân viên</c:when>
+                                        <c:when test="${sessionScope.currentUser.roleId == 8}">Kế Toán</c:when>
                                         <c:otherwise>Nhân viên</c:otherwise>
                                     </c:choose>
                                 </div>
@@ -364,15 +365,16 @@
                                                 <li class="sidebar-item">
                                                     <a href="${pageContext.request.contextPath}/admin/users"
                                                         class="sidebar-link ${param.activeMenu eq 'users' ? 'active' : ''}">
-                                                        <i class="fas fa-user-plus"></i> Tạo Tài khoản
+                                                        <i class="fas fa-users-cog"></i> Quản lý Người dùng
                                                     </a>
                                                 </li>
                                                 <li class="sidebar-item">
-                                                    <a href="${pageContext.request.contextPath}/admin/automation"
-                                                        class="sidebar-link ${param.activeMenu eq 'automation' ? 'active' : ''}">
-                                                        <i class="fas fa-robot"></i> Tác vụ Tự động
+                                                    <a href="${pageContext.request.contextPath}/admin/onboarding/list"
+                                                        class="sidebar-link ${param.activeMenu eq 'onboarding-admin' ? 'active' : ''}">
+                                                        <i class="fas fa-user-clock"></i> Tiếp nhận nhân viên
                                                     </a>
                                                 </li>
+
                                                 <li class="sidebar-menu-category">Phân quyền</li>
                                                 <li class="sidebar-item">
                                                     <a href="${pageContext.request.contextPath}/role?action=list"
@@ -416,9 +418,9 @@
                                                         </a>
                                                     </li>
                                                     <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/pending-requests"
-                                                            class="sidebar-link ${param.activeMenu eq 'pending-requests' ? 'active' : ''}">
-                                                            <i class="fas fa-hourglass-half"></i> Đơn chờ xử lý
+                                                        <a href="${pageContext.request.contextPath}/hr/onboarding/list"
+                                                            class="sidebar-link ${param.activeMenu eq 'onboarding' ? 'active' : ''}">
+                                                            <i class="fas fa-user-clock"></i> Tiếp nhận nhân viên
                                                         </a>
                                                     </li>
 
@@ -612,6 +614,19 @@
                                                                         <a href="${pageContext.request.contextPath}/employee/payroll"
                                                                             class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
                                                                             <i class="fas fa-file-invoice-dollar"></i> Bảng lương
+                                                                        </a>
+                                                                    </li>
+                                                                </c:if>
+
+                                                                <%-- ══════ ACCOUNTANT (roleId=8) ══════
+                                                                     Quyền: xem bảng lương, xác nhận chuyển khoản
+                                                                --%>
+                                                                <c:if test="${sessionScope.currentUser.roleId == 8}">
+                                                                    <li class="sidebar-menu-category">Kế Toán</li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/accountant/payroll"
+                                                                            class="sidebar-link ${param.activeMenu eq 'accountant-payroll' ? 'active' : ''}">
+                                                                            <i class="fas fa-file-invoice-dollar"></i> Bảng Lương
                                                                         </a>
                                                                     </li>
                                                                 </c:if>

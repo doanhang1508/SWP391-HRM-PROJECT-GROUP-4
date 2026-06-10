@@ -582,12 +582,46 @@ public class PayrollDAO {
         return false;
     }
 
+    /**
+     * Kế toán xác nhận đã chuyển khoản cho 1 nhân viên → status: Approved → Paid
+     */
+    public boolean markAsPaid(int payrollId) {
+        String sql = "UPDATE payroll SET status = 'Paid' WHERE payroll_id = ? AND status = 'Approved'";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, payrollId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public int submitMonthlyPayrollForApproval(int month, int year) {
         if (month < 1 || month > 12 || year < 2000) {
             throw new IllegalArgumentException("Tháng hoặc năm không hợp lệ");
         }
         String sql = "UPDATE payroll SET status = 'Pending', reject_reason = NULL " +
                      "WHERE month = ? AND year = ? AND (status = 'Draft' OR status = 'Rejected')";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    /**
+     * Kế toán xác nhận đã chuyển khoản cho TẤT CẢ nhân viên có status=Approved trong tháng
+     * @return số bản ghi được cập nhật
+     */
+    public int markAllApprovedAsPaid(int month, int year) {
+        String sql = "UPDATE payroll SET status = 'Paid' WHERE month = ? AND year = ? AND status = 'Approved'";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {

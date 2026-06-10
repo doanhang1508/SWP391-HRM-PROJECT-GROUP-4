@@ -14,9 +14,9 @@ import java.io.IOException;
  * Mapping URL được đăng ký trong web.xml:
  * /dashboard              → role 1-6 (management)
  * /admin/users            → role 1 (Admin only) — quản lý tài khoản
- * /admin/automation       → role 1 (Admin only) — tác vụ tự động
  * /admin/* (còn lại)      → role 1, 2 (Admin + HR Manager)
  * /hr/*                   → role 2, 5 (HR Manager, HR Staff)
+ * /accountant/*           → role 8 (Accountant only)
  * /employee/*             → mọi role đã đăng nhập
  * /editRolePermission     → role 1 (Admin only)
  * /role/*                 → role 1 (Admin only)
@@ -29,17 +29,19 @@ import java.io.IOException;
  * 5 = HR Staff
  * 6 = Department Manager
  * 7 = Employee
+ * 8 = Accountant (Kế toán)
  */
 public class AuthFilter implements Filter {
 
     // Role constants
-    private static final int ROLE_ADMIN = 1;
-    private static final int ROLE_HR_MANAGER = 2;
+    private static final int ROLE_ADMIN       = 1;
+    private static final int ROLE_HR_MANAGER  = 2;
     private static final int ROLE_FACTORY_MGR = 3;
-    private static final int ROLE_DIRECTOR = 4;
-    private static final int ROLE_HR_STAFF = 5;
-    private static final int ROLE_DEPT_MGR = 6;
-    private static final int ROLE_EMPLOYEE = 7;
+    private static final int ROLE_DIRECTOR    = 4;
+    private static final int ROLE_HR_STAFF    = 5;
+    private static final int ROLE_DEPT_MGR    = 6;
+    private static final int ROLE_EMPLOYEE    = 7;
+    private static final int ROLE_ACCOUNTANT  = 8;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -76,9 +78,7 @@ public class AuthFilter implements Filter {
         if (path.startsWith("/admin/")) {
             // Các path CHỈ Admin (role 1) mới được vào:
             // - /admin/users    : quản lý tài khoản hệ thống
-            // - /admin/automation : tác vụ tự động hệ thống
-            boolean isAdminOnlyPath = path.startsWith("/admin/users")
-                    || path.startsWith("/admin/automation");
+            boolean isAdminOnlyPath = path.startsWith("/admin/users");
 
             if (isAdminOnlyPath) {
                 if (roleId != ROLE_ADMIN) {
@@ -127,8 +127,20 @@ public class AuthFilter implements Filter {
             }
         }
 
-        // ── 5. /dashboard → role 1-6 (management); role 7 → employee ──────
+        // ── 4d. /accountant/* → chỉ Accountant (8) ─────────────────────────
+        if (path.startsWith("/accountant/")) {
+            if (roleId != ROLE_ACCOUNTANT) {
+                redirectToAppropriate(req, resp, roleId);
+                return;
+            }
+        }
+
+        // ── 5. /dashboard → role 1-6: management; role 7 → employee; role 8 → accountant ──
         if (path.equals("/dashboard")) {
+            if (roleId == ROLE_ACCOUNTANT) {
+                resp.sendRedirect(ctx + "/accountant/payroll");
+                return;
+            }
             if (roleId == ROLE_EMPLOYEE || roleId == 0) {
                 resp.sendRedirect(ctx + "/employee/dashboard");
                 return;
@@ -157,7 +169,9 @@ public class AuthFilter implements Filter {
                                        HttpServletResponse resp,
                                        int roleId) throws IOException {
         String ctx = req.getContextPath();
-        if (roleId >= ROLE_ADMIN && roleId <= ROLE_DEPT_MGR) {
+        if (roleId == ROLE_ACCOUNTANT) {
+            resp.sendRedirect(ctx + "/accountant/payroll");
+        } else if (roleId >= ROLE_ADMIN && roleId <= ROLE_DEPT_MGR) {
             // Role 1-6: vào management dashboard
             resp.sendRedirect(ctx + "/dashboard");
         } else {

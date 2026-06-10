@@ -358,6 +358,35 @@ CREATE TABLE employee_rewards_disciplines (
     FOREIGN KEY (reward_discipline_id) REFERENCES reward_disciplines(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE onboarding_requests (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    full_name       VARCHAR(150)    NOT NULL,
+    email           VARCHAR(150)    NOT NULL,
+    phone           VARCHAR(20),
+    cccd_number     VARCHAR(20),
+    date_of_birth   DATE,
+    address         TEXT,
+    gender          TINYINT(1)      DEFAULT NULL COMMENT '1=Nam, 0=Nữ',
+    department_id   INT             DEFAULT NULL,
+    position_id     INT             DEFAULT NULL,
+    role_id         INT             DEFAULT 7    COMMENT 'Mặc định: Nhân viên',
+    status          ENUM('DRAFT','PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'DRAFT',
+    reject_reason   TEXT            DEFAULT NULL COMMENT 'Lý do từ chối (Admin ghi)',
+    created_by      INT             NOT NULL     COMMENT 'HR user_id gửi yêu cầu',
+    processed_by    INT             DEFAULT NULL COMMENT 'Admin user_id xử lý',
+    created_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_onb_dept     FOREIGN KEY (department_id) REFERENCES departments(department_id) ON DELETE SET NULL,
+    CONSTRAINT fk_onb_pos      FOREIGN KEY (position_id)   REFERENCES positions(position_id)     ON DELETE SET NULL,
+    CONSTRAINT fk_onb_creator  FOREIGN KEY (created_by)    REFERENCES users(user_id),
+    CONSTRAINT fk_onb_processor FOREIGN KEY (processed_by) REFERENCES users(user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX idx_onb_status     ON onboarding_requests(status);
+CREATE INDEX idx_onb_created_by ON onboarding_requests(created_by);
+CREATE INDEX idx_onb_cccd       ON onboarding_requests(cccd_number);
+CREATE INDEX idx_onb_email      ON onboarding_requests(email);
+
 -- 3. BẬT LẠI KIỂM TRA KHÓA NGOẠI
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -451,7 +480,7 @@ INSERT INTO reward_disciplines (id, name, type, description, apply_level, create
 (4, 'Đi muộn/Về sớm',     'Discipline','Phạt đi muộn theo quy định',                     'Cá nhân',    1),
 (5, 'Vi phạm An toàn LĐ', 'Discipline','Phạt do không tuân thủ an toàn tại xưởng',      'Cá nhân',    1);
 
--- ── 13. Roles (7 roles) ──
+-- ── 13. Roles (8 roles) ──
 INSERT INTO roles (role_id, role_name, description) VALUES
 (1, 'Admin',              'Quản trị hệ thống toàn quyền'),
 (2, 'HR Manager',         'Trưởng phòng Nhân sự - duyệt attendance, payroll'),
@@ -459,7 +488,8 @@ INSERT INTO roles (role_id, role_name, description) VALUES
 (4, 'Director',           'Giám đốc - xem tổng quan, duyệt lương cuối'),
 (5, 'HR Staff',           'Nhân viên Nhân sự - upload Excel, quản lý hồ sơ'),
 (6, 'Department Manager', 'Trưởng phòng / Tổ trưởng - duyệt nghỉ phép'),
-(7, 'Employee',           'Nhân viên / Công nhân');
+(7, 'Employee',           'Nhân viên / Công nhân'),
+(8, 'Accountant',         'Kế toán - xem bảng lương, xác nhận chuyển khoản thủ công');
 
 -- ── 14. Permissions (29 permissions) ──
 INSERT INTO permissions (permission_id, permission_name, description, module) VALUES
@@ -579,13 +609,13 @@ INSERT INTO users (user_id,username,password,full_name,email,role_id,department_
 (12,'hr_staff_03','@123456','Lý Thị Loan',  'hrs3@hrm.com',5,2,8),
 (13,'hr_staff_04','@123456','Tạ Văn Sơn',   'hrs4@hrm.com',5,2,8);
 
--- Phòng Kế Toán (dept=3): 5 mới
+-- Phòng Kế Toán (dept=3): 5 mới — kế toán dùng roleId=8 (Accountant)
 INSERT INTO users (user_id,username,password,full_name,email,role_id,department_id,position_id) VALUES
-(14,'ke_toan_truong','@123456','Phan Thị Khánh','ktt@hrm.com',    6,3,6),
-(15,'pp_ke_toan',    '@123456','Trịnh Văn Hùng','pp_kt@hrm.com',  7,3,3),
-(16,'cv_kt_01',      '@123456','Cao Thị Lan',   'cv_kt1@hrm.com', 7,3,7),
-(17,'cv_kt_02',      '@123456','Bùi Văn Tuấn',  'cv_kt2@hrm.com', 7,3,7),
-(18,'cv_kt_03',      '@123456','Đinh Thị Mai',  'cv_kt3@hrm.com', 7,3,7);
+(14,'ke_toan_truong','@123456','Phan Thị Khánh','ktt@hrm.com',    8,3,6),
+(15,'pp_ke_toan',    '@123456','Trịnh Văn Hùng','pp_kt@hrm.com',  8,3,3),
+(16,'cv_kt_01',      '@123456','Cao Thị Lan',   'cv_kt1@hrm.com', 8,3,7),
+(17,'cv_kt_02',      '@123456','Bùi Văn Tuấn',  'cv_kt2@hrm.com', 8,3,7),
+(18,'cv_kt_03',      '@123456','Đinh Thị Mai',  'cv_kt3@hrm.com', 8,3,7);
 
 -- Phòng Kinh Doanh (dept=4): 10 mới
 INSERT INTO users (user_id,username,password,full_name,email,role_id,department_id,position_id) VALUES

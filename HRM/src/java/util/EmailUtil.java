@@ -95,4 +95,51 @@ public class EmailUtil {
              + "<p style='color:#94a3b8;font-size:12px;margin:0'>Email này được gửi tự động từ HRM System. Vui lòng không trả lời.</p>"
              + "</div></div>";
     }
+
+    /**
+     * Gửi email chào mừng khi Admin duyệt yêu cầu Onboarding và tạo tài khoản thành công
+     */
+    public static void sendWelcomeEmail(String toEmail, String fullName, String username, String password) throws MessagingException {
+        Properties props = new Properties();
+        props.put("mail.smtp.auth",            "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.host",            "smtp.gmail.com");
+        props.put("mail.smtp.port",            "587");
+        props.put("mail.smtp.ssl.trust",       "smtp.gmail.com");
+
+        Session session = Session.getInstance(props, new Authenticator() {
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(FROM_EMAIL, APP_PASSWORD);
+            }
+        });
+
+        Message message = new MimeMessage(session);
+        message.setFrom(new InternetAddress(FROM_EMAIL));
+        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
+        message.setSubject("[HRM System] Chào mừng bạn gia nhập công ty! (Thông tin đăng nhập)");
+        message.setContent(buildWelcomeBody(toEmail, fullName, password), "text/html; charset=UTF-8");
+
+        Transport.send(message);
+    }
+
+    private static String buildWelcomeBody(String toEmail, String fullName, String password) {
+        return "<div style='font-family:sans-serif;max-width:500px;margin:0 auto;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden'>"
+             + "<div style='background:linear-gradient(135deg,#0d9488,#0f766e);padding:28px;text-align:center'>"
+             + "<h2 style='color:white;margin:0;font-size:22px'>🎉 Chào mừng gia nhập công ty!</h2></div>"
+             + "<div style='padding:32px'>"
+             + "<p style='color:#334155;font-size:16px;line-height:1.6'>Xin chào <strong>" + fullName + "</strong>,</p>"
+             + "<p style='color:#334155;font-size:15px;line-height:1.6'>Tài khoản nhân sự của bạn đã được tạo thành công. Dưới đây là thông tin đăng nhập vào hệ thống HRM:</p>"
+             + "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin:20px 0'>"
+             + "<div style='margin-bottom:12px'><span style='color:#64748b;font-size:13px;display:block;margin-bottom:4px'>Tài khoản Email:</span>"
+             + "<span style='font-size:18px;font-weight:700;color:#0f172a;'>" + toEmail + "</span></div>"
+             + "<div><span style='color:#64748b;font-size:13px;display:block;margin-bottom:4px'>Mật khẩu:</span>"
+             + "<span style='font-size:18px;font-weight:700;color:#0f172a;font-family:monospace;letter-spacing:2px'>" + password + "</span></div>"
+             + "</div>"
+             + "<p style='color:#ef4444;font-size:14px;font-weight:600'>⚠️ Lưu ý: Vì lý do bảo mật, vui lòng đăng nhập và ĐỔI MẬT KHẨU ngay trong lần truy cập đầu tiên.</p>"
+             + "</div>"
+             + "<div style='background:#f8fafc;padding:16px;text-align:center;border-top:1px solid #e2e8f0'>"
+             + "<p style='color:#94a3b8;font-size:12px;margin:0'>Email này được gửi tự động từ HRM System. Vui lòng không trả lời.</p>"
+             + "</div></div>";
+    }
 }
