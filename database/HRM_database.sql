@@ -293,9 +293,18 @@ CREATE TABLE payroll (
     tax_amount       DECIMAL(15,2),
     gross_salary     DECIMAL(15,2),
     net_salary       DECIMAL(15,2),
-    status           ENUM('Draft','Approved','Paid') DEFAULT 'Draft',
+    status           ENUM('Draft','Pending','Approved','Rejected','Paid') DEFAULT 'Draft',
+    approved_by      INT NULL,
+    approved_at      DATETIME NULL,
+    reject_reason    VARCHAR(255) NULL,
+    paid_by          INT NULL,
+    paid_at          DATETIME NULL,
+    payment_note     VARCHAR(255) NULL,
     created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (approved_by) REFERENCES users(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (paid_by) REFERENCES users(user_id) ON DELETE SET NULL,
+    UNIQUE KEY uk_user_month_year (user_id, month, year)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE notifications (
