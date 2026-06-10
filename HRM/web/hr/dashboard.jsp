@@ -177,6 +177,14 @@ body {
                     <div class="dash-stat-val">${not empty pendingLeaves ? pendingLeaves : '0'}</div>
                     <div class="dash-stat-change neutral">Chờ duyệt</div>
                 </div>
+                <div class="dash-stat-card stat-blue" onclick="window.location.href='${pageContext.request.contextPath}/hr/payroll'" style="cursor: pointer;">
+                    <div class="dash-stat-header">
+                        <span class="dash-stat-title">Quản Lý Bảng Lương</span>
+                        <div class="dash-stat-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                    </div>
+                    <div class="dash-stat-val">Lương</div>
+                    <div class="dash-stat-change neutral">Click để quản lý nháp</div>
+                </div>
             </div>
 
             <%-- HR Charts --%>

@@ -464,6 +464,12 @@
                                                             <i class="fas fa-shield-alt"></i> Bảo hiểm
                                                         </a>
                                                     </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/payroll"
+                                                            class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
+                                                            <i class="fas fa-file-invoice-dollar"></i> Bảng lương
+                                                        </a>
+                                                    </li>
 
                                                     <%-- TODO Iteration 2: Xem tổng hợp chấm công toàn công ty --%>
                                                 </c:if>
@@ -547,7 +553,12 @@
                                                                 <%-- TODO Iteration 2: thêm Upload chấm công --%>
                                                                 <%-- TODO Iteration 2: thêm Xem tổng hợp chấm công --%>
                                                                 <li class="sidebar-menu-category">Lương &amp; Phúc lợi</li>
-                                                                <%-- TODO Iteration 2: thêm Bảng lương tháng / Xuất payroll --%>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/payroll"
+                                                                        class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
+                                                                        <i class="fas fa-file-invoice-dollar"></i> Bảng lương
+                                                                    </a>
+                                                                </li>
                                                             </c:if>
 
                                                             <%-- ══════ DEPARTMENT MANAGER (roleId=6) ══════

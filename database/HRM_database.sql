@@ -975,3 +975,14 @@ INSERT INTO overtime_assignments (assignment_id, plan_id, user_id, assigned_hour
 (3, 1, 30, 2.5, 'Pending'),   -- Tổ trưởng 2: 2.5h OT
 (4, 2, 31, 2.0, 'Cancelled'), -- Tổ trưởng 3: cancelled
 (5, 2, 32, 3.0, 'Pending');   -- Tổ phó: 3h OT
+
+-- ══════════════════════════════════════════════════════
+-- PAYROLL MODULE MIGRATION
+-- Run these SQL statements to update your existing database 
+-- without resetting the entire schema.
+-- ══════════════════════════════════════════════════════
+-- ALTER TABLE payroll MODIFY COLUMN status ENUM('Draft','Pending','Approved','Rejected','Paid') DEFAULT 'Draft';
+-- ALTER TABLE payroll ADD COLUMN approved_by INT NULL, ADD COLUMN approved_at DATETIME NULL, ADD COLUMN reject_reason VARCHAR(255) NULL, ADD COLUMN paid_by INT NULL, ADD COLUMN paid_at DATETIME NULL, ADD COLUMN payment_note VARCHAR(255) NULL;
+-- ALTER TABLE payroll ADD CONSTRAINT fk_payroll_approved_by FOREIGN KEY (approved_by) REFERENCES users(user_id) ON DELETE SET NULL;
+-- ALTER TABLE payroll ADD CONSTRAINT fk_payroll_paid_by FOREIGN KEY (paid_by) REFERENCES users(user_id) ON DELETE SET NULL;
+-- ALTER TABLE payroll ADD CONSTRAINT uk_user_month_year UNIQUE (user_id, month, year);
