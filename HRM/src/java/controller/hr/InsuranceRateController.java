@@ -114,7 +114,9 @@ public class InsuranceRateController extends HttpServlet {
             Date effectiveFrom = (fromStr != null && !fromStr.isBlank()) ? Date.valueOf(fromStr) : null;
             Date effectiveTo   = (toStr   != null && !toStr.isBlank())   ? Date.valueOf(toStr)   : null;
 
-            if ("add".equals(action)) {
+            if (effectiveFrom != null && effectiveTo != null && effectiveFrom.after(effectiveTo)) {
+                request.getSession().setAttribute("errorMsg", "Ngày bắt đầu áp dụng không được lớn hơn ngày kết thúc.");
+            } else if ("add".equals(action)) {
                 if (dao.isDuplicate(insuranceName, 0)) {
                     request.getSession().setAttribute("errorMsg", "Tên loại bảo hiểm đã tồn tại.");
                 } else if (dao.isCodeDuplicate(insuranceCode, 0)) {

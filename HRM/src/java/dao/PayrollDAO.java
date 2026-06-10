@@ -39,6 +39,17 @@ public class PayrollDAO {
         p.setNetSalary(rs.getBigDecimal("net_salary"));
         p.setStatus(rs.getString("status"));
         p.setCreatedAt(rs.getTimestamp("created_at"));
+        
+        int approvedByVal = rs.getInt("approved_by");
+        p.setApprovedBy(rs.wasNull() ? null : approvedByVal);
+        p.setApprovedAt(rs.getTimestamp("approved_at"));
+        p.setRejectReason(rs.getString("reject_reason"));
+        
+        int paidByVal = rs.getInt("paid_by");
+        p.setPaidBy(rs.wasNull() ? null : paidByVal);
+        p.setPaidAt(rs.getTimestamp("paid_at"));
+        p.setPaymentNote(rs.getString("payment_note"));
+        
         return p;
     }
 
@@ -70,15 +81,19 @@ public class PayrollDAO {
         String sql = "INSERT INTO payroll " +
                      "(user_id, month, year, base_salary, working_days, overtime_amount, " +
                      " allowance_amount, bonus_amount, deduction_amount, insurance_amount, " +
-                     " tax_amount, gross_salary, net_salary, status) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                     " tax_amount, gross_salary, net_salary, status, " +
+                     " approved_by, approved_at, reject_reason, paid_by, paid_at, payment_note) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
                      "ON DUPLICATE KEY UPDATE " +
                      "base_salary=VALUES(base_salary), working_days=VALUES(working_days), " +
                      "overtime_amount=VALUES(overtime_amount), allowance_amount=VALUES(allowance_amount), " +
                      "bonus_amount=VALUES(bonus_amount), deduction_amount=VALUES(deduction_amount), " +
                      "insurance_amount=VALUES(insurance_amount), tax_amount=VALUES(tax_amount), " +
                      "gross_salary=VALUES(gross_salary), net_salary=VALUES(net_salary), " +
-                     "status=VALUES(status)";
+                     "status=VALUES(status), " +
+                     "approved_by=VALUES(approved_by), approved_at=VALUES(approved_at), " +
+                     "reject_reason=VALUES(reject_reason), paid_by=VALUES(paid_by), " +
+                     "paid_at=VALUES(paid_at), payment_note=VALUES(payment_note)";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -95,7 +110,24 @@ public class PayrollDAO {
             ps.setBigDecimal(11, p.getTaxAmount() != null ? p.getTaxAmount() : BigDecimal.ZERO);
             ps.setBigDecimal(12, p.getGrossSalary() != null ? p.getGrossSalary() : BigDecimal.ZERO);
             ps.setBigDecimal(13, p.getNetSalary() != null ? p.getNetSalary() : BigDecimal.ZERO);
-            ps.setString(14, p.getStatus() != null ? p.getStatus() : "draft");
+            ps.setString(14, p.getStatus() != null ? p.getStatus() : "Draft");
+            
+            if (p.getApprovedBy() != null) {
+                ps.setInt(15, p.getApprovedBy());
+            } else {
+                ps.setNull(15, java.sql.Types.INTEGER);
+            }
+            ps.setTimestamp(16, p.getApprovedAt());
+            ps.setString(17, p.getRejectReason());
+            
+            if (p.getPaidBy() != null) {
+                ps.setInt(18, p.getPaidBy());
+            } else {
+                ps.setNull(18, java.sql.Types.INTEGER);
+            }
+            ps.setTimestamp(19, p.getPaidAt());
+            ps.setString(20, p.getPaymentNote());
+            
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -245,7 +277,169 @@ public class PayrollDAO {
         }
     }
 
+    public Payroll getById(int payrollId) {
+        String sql = "SELECT * FROM payroll WHERE payroll_id = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, payrollId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapRow(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public Payroll getByUserMonthYear(int userId, int month, int year) {
+        if (month < 1 || month > 12 || year < 2000) {
+            throw new IllegalArgumentException("Tháng hoặc năm không hợp lệ");
+        }
+        return getPayroll(userId, month, year);
+    }
+
+    public List<Integer> getAllActiveEmployeeIds() {
+        List<Integer> list = new ArrayList<>();
+        String sql = "SELECT user_id FROM users WHERE status = 1";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(rs.getInt("user_id"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public int generatePayrollDraft(int month, int year) {
+        if (month < 1 || month > 12 || year < 2000) {
+            throw new IllegalArgumentException("Tháng hoặc năm không hợp lệ");
+        }
+        List<Integer> activeIds = getAllActiveEmployeeIds();
+        int createdCount = 0;
+        for (int userId : activeIds) {
+            Payroll existing = getPayroll(userId, month, year);
+            if (existing == null) {
+                EmployeeSalaryInfo salaryInfo = getEmployeeSalaryInfo(userId);
+                BigDecimal baseSalary = (salaryInfo != null && salaryInfo.baseSalary != null) ? salaryInfo.baseSalary : BigDecimal.ZERO;
+                
+                Payroll p = new Payroll();
+                p.setUserId(userId);
+                p.setMonth(month);
+                p.setYear(year);
+                p.setBaseSalary(baseSalary);
+                p.setWorkingDays(22); // Default to 22
+                p.setOvertimeAmount(BigDecimal.ZERO);
+                p.setAllowanceAmount(BigDecimal.ZERO);
+                p.setBonusAmount(BigDecimal.ZERO);
+                p.setDeductionAmount(BigDecimal.ZERO);
+                p.setInsuranceAmount(BigDecimal.ZERO);
+                p.setTaxAmount(BigDecimal.ZERO);
+                p.setGrossSalary(baseSalary);
+                p.setNetSalary(baseSalary);
+                p.setStatus("Draft");
+                
+                if (insertOrUpdatePayroll(p)) {
+                    createdCount++;
+                }
+            }
+        }
+        return createdCount;
+    }
+
+    public boolean updatePayrollDraft(Payroll payroll) {
+        if (payroll == null) return false;
+        Payroll current = getById(payroll.getPayrollId());
+        if (current == null) return false;
+        
+        String currentStatus = current.getStatus();
+        if (!"Draft".equals(currentStatus) && !"Rejected".equals(currentStatus)) {
+            return false;
+        }
+        
+        BigDecimal baseSalary = current.getBaseSalary() != null ? current.getBaseSalary() : BigDecimal.ZERO;
+        BigDecimal overtime = payroll.getOvertimeAmount() != null ? payroll.getOvertimeAmount() : BigDecimal.ZERO;
+        BigDecimal allowance = payroll.getAllowanceAmount() != null ? payroll.getAllowanceAmount() : BigDecimal.ZERO;
+        BigDecimal bonus = payroll.getBonusAmount() != null ? payroll.getBonusAmount() : BigDecimal.ZERO;
+        BigDecimal deduction = payroll.getDeductionAmount() != null ? payroll.getDeductionAmount() : BigDecimal.ZERO;
+        BigDecimal insurance = payroll.getInsuranceAmount() != null ? payroll.getInsuranceAmount() : BigDecimal.ZERO;
+        BigDecimal tax = payroll.getTaxAmount() != null ? payroll.getTaxAmount() : BigDecimal.ZERO;
+        
+        BigDecimal grossSalary = baseSalary.add(overtime).add(allowance).add(bonus);
+        BigDecimal totalDeductions = deduction.add(insurance).add(tax);
+        BigDecimal netSalary = grossSalary.subtract(totalDeductions);
+        
+        String sql = "UPDATE payroll SET " +
+                     "working_days = ?, " +
+                     "overtime_amount = ?, " +
+                     "allowance_amount = ?, " +
+                     "bonus_amount = ?, " +
+                     "deduction_amount = ?, " +
+                     "insurance_amount = ?, " +
+                     "tax_amount = ?, " +
+                     "gross_salary = ?, " +
+                     "net_salary = ? " +
+                     "WHERE payroll_id = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, payroll.getWorkingDays());
+            ps.setBigDecimal(2, overtime);
+            ps.setBigDecimal(3, allowance);
+            ps.setBigDecimal(4, bonus);
+            ps.setBigDecimal(5, deduction);
+            ps.setBigDecimal(6, insurance);
+            ps.setBigDecimal(7, tax);
+            ps.setBigDecimal(8, grossSalary);
+            ps.setBigDecimal(9, netSalary);
+            ps.setInt(10, payroll.getPayrollId());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean submitPayrollForApproval(int payrollId) {
+        Payroll current = getById(payrollId);
+        if (current == null) return false;
+        
+        String currentStatus = current.getStatus();
+        if (!"Draft".equals(currentStatus) && !"Rejected".equals(currentStatus)) {
+            return false;
+        }
+        
+        String sql = "UPDATE payroll SET status = 'Pending', reject_reason = NULL WHERE payroll_id = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, payrollId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public int submitMonthlyPayrollForApproval(int month, int year) {
+        if (month < 1 || month > 12 || year < 2000) {
+            throw new IllegalArgumentException("Tháng hoặc năm không hợp lệ");
+        }
+        String sql = "UPDATE payroll SET status = 'Pending', reject_reason = NULL " +
+                     "WHERE month = ? AND year = ? AND (status = 'Draft' OR status = 'Rejected')";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
 }
-
-
-

@@ -20,6 +20,14 @@ public class Payroll {
     private BigDecimal netSalary;
     private String status;
     private Timestamp createdAt;
+    
+    // New fields for approval and payment flow
+    private Integer approvedBy;
+    private Timestamp approvedAt;
+    private String rejectReason;
+    private Integer paidBy;
+    private Timestamp paidAt;
+    private String paymentNote;
 
     public Payroll() {}
 
@@ -116,4 +124,22 @@ public class Payroll {
 
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+
+    public Integer getApprovedBy() { return approvedBy; }
+    public void setApprovedBy(Integer approvedBy) { this.approvedBy = approvedBy; }
+
+    public Timestamp getApprovedAt() { return approvedAt; }
+    public void setApprovedAt(Timestamp approvedAt) { this.approvedAt = approvedAt; }
+
+    public String getRejectReason() { return rejectReason; }
+    public void setRejectReason(String rejectReason) { this.rejectReason = rejectReason; }
+
+    public Integer getPaidBy() { return paidBy; }
+    public void setPaidBy(Integer paidBy) { this.paidBy = paidBy; }
+
+    public Timestamp getPaidAt() { return paidAt; }
+    public void setPaidAt(Timestamp paidAt) { this.paidAt = paidAt; }
+
+    public String getPaymentNote() { return paymentNote; }
+    public void setPaymentNote(String paymentNote) { this.paymentNote = paymentNote; }
 }

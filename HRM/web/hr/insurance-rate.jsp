@@ -412,7 +412,7 @@
             <h3 class="modal-title"><i class="fas fa-plus-circle" style="color:var(--blue);"></i> Thêm Mức Bảo Hiểm Mới</h3>
             <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
         </div>
-        <form method="post" action="${pageContext.request.contextPath}/hr/insurance-rate">
+        <form method="post" action="${pageContext.request.contextPath}/hr/insurance-rate" onsubmit="return validateDateRange(this)">
             <input type="hidden" name="action" value="add">
             <div class="form-row">
                 <div class="form-group">
@@ -463,7 +463,7 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Mô Tả</label>
-                <textarea name="description" class="form-control" placeholder="Mô tả chi tiết về loại bảo hiểm..."></textarea>
+                <textarea name="description" class="form-control" maxlength="255" placeholder="Mô tả chi tiết về loại bảo hiểm..."></textarea>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-cancel" onclick="closeModal('addModal')">Hủy</button>
@@ -480,7 +480,7 @@
             <h3 class="modal-title"><i class="fas fa-pen" style="color:var(--blue);"></i> Cập Nhật Mức Bảo Hiểm</h3>
             <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
         </div>
-        <form method="post" action="${pageContext.request.contextPath}/hr/insurance-rate">
+        <form method="post" action="${pageContext.request.contextPath}/hr/insurance-rate" onsubmit="return validateDateRange(this)">
             <input type="hidden" name="action" value="edit">
             <input type="hidden" name="id" id="editId">
             <div class="form-row">
@@ -528,7 +528,7 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Mô Tả</label>
-                <textarea name="description" id="editDesc" class="form-control"></textarea>
+                <textarea name="description" id="editDesc" class="form-control"  maxlength="255" ></textarea>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-cancel" onclick="closeModal('editModal')">Hủy</button>
@@ -539,6 +539,21 @@
 </div>
 
 <script>
+/* ─── Date validation helper ─── */
+function validateDateRange(form) {
+    var fromVal = form.querySelector('[name="effectiveFrom"]').value;
+    var toVal = form.querySelector('[name="effectiveTo"]').value;
+    if (fromVal && toVal) {
+        var fromDate = new Date(fromVal);
+        var toDate = new Date(toVal);
+        if (fromDate > toDate) {
+            alert('Ngày bắt đầu áp dụng không được lớn hơn ngày kết thúc áp dụng!');
+            return false;
+        }
+    }
+    return true;
+}
+
 /* ─── Modal helpers ─── */
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 function openAddModal() { document.getElementById('addModal').classList.add('show'); }
