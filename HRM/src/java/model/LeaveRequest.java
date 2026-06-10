@@ -14,10 +14,13 @@ public class LeaveRequest {
     private String status; // Pending, Approved, Rejected
     private Integer approvedBy; // Nullable
     private Timestamp createdAt;
+    private String attachment; // Document attachment (DOC, PDF)
+    private String rejectReason; // Reason for rejection
 
     // Additional fields for display/join
     private String leaveTypeName;
     private String userName;
+    private String departmentName;
 
     public LeaveRequest() {
     }
@@ -102,6 +105,22 @@ public class LeaveRequest {
         this.createdAt = createdAt;
     }
 
+    public String getAttachment() {
+        return attachment;
+    }
+
+    public void setAttachment(String attachment) {
+        this.attachment = attachment;
+    }
+
+    public String getRejectReason() {
+        return rejectReason;
+    }
+
+    public void setRejectReason(String rejectReason) {
+        this.rejectReason = rejectReason;
+    }
+
     public String getLeaveTypeName() {
         return leaveTypeName;
     }
@@ -116,6 +135,14 @@ public class LeaveRequest {
 
     public void setUserName(String userName) {
         this.userName = userName;
+    }
+
+    public String getDepartmentName() {
+        return departmentName;
+    }
+
+    public void setDepartmentName(String departmentName) {
+        this.departmentName = departmentName;
     }
 
     /**

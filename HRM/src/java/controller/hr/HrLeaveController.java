@@ -10,6 +10,7 @@ import model.LeaveType;
 import model.User;
 import dao.LeaveRequestDAO;
 import dao.LeaveRequestDAOImpl;
+import dao.DepartmentDAO;
 
 import java.io.IOException;
 
@@ -43,6 +44,7 @@ public class HrLeaveController extends HttpServlet {
 
         request.setAttribute("leaveTypes", service.getAllLeaveTypes());
         request.setAttribute("allRequests", service.getAllLeaveRequests());
+        request.setAttribute("departments", new DepartmentDAO().getAll());
         request.getRequestDispatcher("/hr/hr-leave-management.jsp").forward(request, response);
     }
 

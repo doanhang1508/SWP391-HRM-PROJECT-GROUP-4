@@ -84,10 +84,63 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
         return list;
     }
 
+    public List<LeaveRequest> getApprovedRequestsByDepartment(int departmentId) {
+        List<LeaveRequest> list = new ArrayList<>();
+        String sql = "SELECT lr.*, lt.type_name, u.full_name FROM leave_requests lr " +
+                     "JOIN leave_types lt ON lr.leave_type_id = lt.leave_type_id " +
+                     "JOIN users u ON lr.user_id = u.user_id " +
+                     "WHERE lr.status = 'Approved' ";
+        if (departmentId > 0) {
+            sql += "AND u.department_id = ? ";
+        }
+        sql += "ORDER BY lr.start_date ASC";
+        
+        try (Connection c = DBContext.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            if (departmentId > 0) {
+                ps.setInt(1, departmentId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<LeaveRequest> getAllRequestsByDepartment(int departmentId) {
+        List<LeaveRequest> list = new ArrayList<>();
+        String sql = "SELECT lr.*, lt.type_name, u.full_name FROM leave_requests lr " +
+                     "JOIN leave_types lt ON lr.leave_type_id = lt.leave_type_id " +
+                     "JOIN users u ON lr.user_id = u.user_id ";
+        if (departmentId > 0) {
+            sql += "WHERE u.department_id = ? ";
+        }
+        sql += "ORDER BY lr.created_at DESC";
+        
+        try (Connection c = DBContext.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            if (departmentId > 0) {
+                ps.setInt(1, departmentId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     @Override
     public boolean submitRequest(LeaveRequest request) {
-        String sql = "INSERT INTO leave_requests (user_id, leave_type_id, start_date, end_date, total_days, reason, status) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, 'Pending')";
+        String sql = "INSERT INTO leave_requests (user_id, leave_type_id, start_date, end_date, total_days, reason, status, attachment) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, 'Pending', ?)";
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, request.getUserId());
@@ -96,6 +149,7 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
             ps.setDate(4, request.getEndDate());
             ps.setDouble(5, request.getTotalDays());
             ps.setString(6, request.getReason());
+            ps.setString(7, request.getAttachment());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -142,9 +196,10 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
     @Override
     public List<LeaveRequest> getAllRequests() {
         List<LeaveRequest> list = new ArrayList<>();
-        String sql = "SELECT lr.*, lt.type_name, u.full_name FROM leave_requests lr " +
+        String sql = "SELECT lr.*, lt.type_name, u.full_name, d.department_name FROM leave_requests lr " +
                      "JOIN leave_types lt ON lr.leave_type_id = lt.leave_type_id " +
                      "JOIN users u ON lr.user_id = u.user_id " +
+                     "LEFT JOIN departments d ON u.department_id = d.department_id " +
                      "ORDER BY lr.created_at DESC";
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql);
@@ -269,6 +324,15 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
         lr.setReason(rs.getString("reason"));
         lr.setStatus(rs.getString("status"));
         
+        // try to get attachment if column exists
+        try {
+            lr.setAttachment(rs.getString("attachment"));
+        } catch (Exception e) {}
+        
+        try {
+            lr.setRejectReason(rs.getString("reject_reason"));
+        } catch (Exception e) {}
+        
         int approvedBy = rs.getInt("approved_by");
         if (!rs.wasNull()) {
             lr.setApprovedBy(approvedBy);
@@ -278,6 +342,9 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
         // Joined columns
         lr.setLeaveTypeName(rs.getString("type_name"));
         lr.setUserName(rs.getString("full_name"));
+        try {
+            lr.setDepartmentName(rs.getString("department_name"));
+        } catch(Exception e) {}
         return lr;
     }
 
@@ -289,19 +356,20 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
     // ═══════════════════════════════════════════════════════════════
 
     @Override
-    public double calculateTotalLeaveDays(LocalDate startDate, LocalDate endDate) {
+    public double calculateTotalLeaveDays(int userId, LocalDate startDate, LocalDate endDate) {
         if (startDate == null || endDate == null || startDate.isAfter(endDate)) {
             return 0;
         }
-        double days = 0;
-        LocalDate current = startDate;
-        while (!current.isAfter(endDate)) {
-            if (current.getDayOfWeek() != DayOfWeek.SATURDAY && current.getDayOfWeek() != DayOfWeek.SUNDAY) {
-                days += 1.0;
-            }
-            current = current.plusDays(1);
+        
+        dao.ShiftAssignmentDAO shiftAssignmentDAO = new dao.ShiftAssignmentDAOImpl();
+        List<model.ShiftAssignment> assignments = shiftAssignmentDAO.getByUserAndDateRange(userId, startDate, endDate);
+        
+        java.util.Set<LocalDate> workingDays = new java.util.HashSet<>();
+        for (model.ShiftAssignment sa : assignments) {
+            workingDays.add(sa.getAssignedDate());
         }
-        return days;
+        
+        return workingDays.size();
     }
 
     @Override
@@ -342,14 +410,14 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
         }
         
         // <<include>> calculateTotalLeaveDays
-        double calculatedDays = calculateTotalLeaveDays(startDate, endDate);
+        double calculatedDays = calculateTotalLeaveDays(request.getUserId(), startDate, endDate);
         if (calculatedDays <= 0) {
-            throw new Exception("Số ngày làm việc không hợp lệ (có thể bạn chỉ chọn ngày cuối tuần).");
+            throw new Exception("Bạn không có lịch làm việc nào trong khoảng thời gian này để xin nghỉ.");
         }
-        // Force the total days to be exactly the working days calculated
-        // Unless the user requested a half-day, which we might support, but for strictness:
-        if (request.getTotalDays() > calculatedDays) {
-            throw new Exception("Số ngày nghỉ vượt quá số ngày làm việc thực tế trong khoảng thời gian này.");
+        
+        // Tự động điều chỉnh lại tổng số ngày nghỉ dựa trên lịch phân ca
+        if (request.getTotalDays() != calculatedDays) {
+            request.setTotalDays(calculatedDays);
         }
         
         // Check overlapping
@@ -413,13 +481,33 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
     }
 
     @Override
-    public boolean rejectLeaveRequest(int requestId, int approvedBy) throws Exception {
-        return this.updateRequestStatus(requestId, "Rejected", approvedBy);
+    public boolean rejectLeaveRequest(int requestId, int approvedBy, String rejectReason) throws Exception {
+        String sql = "UPDATE leave_requests SET status = 'Rejected', approved_by = ?, reject_reason = ? WHERE request_id = ?";
+        try (Connection c = DBContext.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, approvedBy);
+            ps.setString(2, rejectReason);
+            ps.setInt(3, requestId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     @Override
     public List<LeaveRequest> getPendingLeavesByDepartment(int departmentId) {
         return this.getPendingRequestsByDepartment(departmentId);
+    }
+
+    @Override
+    public List<LeaveRequest> getApprovedLeavesByDepartment(int departmentId) {
+        return this.getApprovedRequestsByDepartment(departmentId);
+    }
+
+    @Override
+    public List<LeaveRequest> getAllLeavesByDepartment(int departmentId) {
+        return this.getAllRequestsByDepartment(departmentId);
     }
 
     @Override

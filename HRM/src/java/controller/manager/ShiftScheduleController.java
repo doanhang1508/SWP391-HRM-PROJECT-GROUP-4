@@ -137,6 +137,8 @@ public class ShiftScheduleController extends HttpServlet {
         // Danh sách nhân viên: lọc theo department của Supervisor
         // getByDepartment lọc nhân viên đang active theo department_id của Supervisor
         List<User> workers = userDAO.getByDepartment(supervisor.getDepartmentId());
+        // Exclude the supervisor themselves from the list
+        workers.removeIf(w -> w.getUserId() == supervisor.getUserId());
 
         // Build mảng ngày trong tuần
         LocalDate[] weekDates = new LocalDate[7];
@@ -172,8 +174,9 @@ public class ShiftScheduleController extends HttpServlet {
         java.time.LocalTime startTime = java.time.LocalTime.parse(startTimeStr);
         java.time.LocalTime endTime   = java.time.LocalTime.parse(endTimeStr);
         
-        // Find or create the OT shift dynamically
+        // Create a custom shift for OT so it saves the actual times, but hides from HR Manager
         int shiftId = shiftService.findOrCreateCustomShift(startTime, endTime);
+        
         if (to.isBefore(from)) {
             redirectSchedule(req, resp, "error", "Ngày kết thúc phải sau ngày bắt đầu");
             return;

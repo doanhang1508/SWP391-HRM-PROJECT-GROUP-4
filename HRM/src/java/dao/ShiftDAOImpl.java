@@ -54,7 +54,8 @@ public class ShiftDAOImpl implements ShiftDAO {
     @Override
     public List<Shift> getAllShifts() {
         List<Shift> list = new ArrayList<>();
-        String sql = "SELECT * FROM shifts ORDER BY shift_id";
+        // Exclude OT custom shifts (coefficient >= 1.5) from HR manager view
+        String sql = "SELECT * FROM shifts WHERE coefficient < 1.5 ORDER BY shift_id";
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -68,7 +69,8 @@ public class ShiftDAOImpl implements ShiftDAO {
     @Override
     public List<Shift> getActiveShifts() {
         List<Shift> list = new ArrayList<>();
-        String sql = "SELECT * FROM shifts WHERE status = 1 ORDER BY start_time";
+        // Exclude OT custom shifts (coefficient >= 1.5) from HR manager view
+        String sql = "SELECT * FROM shifts WHERE status = 1 AND coefficient < 1.5 ORDER BY start_time";
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -141,11 +143,36 @@ public class ShiftDAOImpl implements ShiftDAO {
 
     @Override
     public boolean deleteShift(int shiftId) {
-        String sql = "DELETE FROM shifts WHERE shift_id = ?";
-        try (Connection c = DBContext.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, shiftId);
-            return ps.executeUpdate() > 0;
+        String[] cascadeSqls = {
+            "DELETE FROM attendance WHERE shift_id = ?",
+            "DELETE FROM department_shifts WHERE shift_id = ?",
+            "DELETE FROM employee_shifts WHERE shift_id = ?",
+            "DELETE FROM shift_assignments WHERE shift_id = ?"
+        };
+        String deleteSql = "DELETE FROM shifts WHERE shift_id = ?";
+        
+        try (Connection c = DBContext.getConnection()) {
+            c.setAutoCommit(false);
+            try {
+                for (String sql : cascadeSqls) {
+                    try (PreparedStatement ps = c.prepareStatement(sql)) {
+                        ps.setInt(1, shiftId);
+                        ps.executeUpdate();
+                    }
+                }
+                boolean result = false;
+                try (PreparedStatement ps = c.prepareStatement(deleteSql)) {
+                    ps.setInt(1, shiftId);
+                    result = ps.executeUpdate() > 0;
+                }
+                c.commit();
+                return result;
+            } catch (SQLException e) {
+                c.rollback();
+                System.err.println("Lỗi deleteShift transaction: " + e.getMessage());
+            } finally {
+                c.setAutoCommit(true);
+            }
         } catch (SQLException e) {
             System.err.println("Lỗi deleteShift: " + e.getMessage());
         }
@@ -204,38 +231,7 @@ public class ShiftDAOImpl implements ShiftDAO {
 
     
 
-    @Override
-    public int findOrCreateCustomShift(LocalTime startTime, LocalTime endTime) {
-        List<Shift> all = this.getAllShifts();
-        for (Shift s : all) {
-            if (s.getStartTime() != null && s.getEndTime() != null
-                    && s.getStartTime().equals(startTime) && s.getEndTime().equals(endTime)
-                    && s.getShiftName() != null && s.getShiftName().startsWith("Tăng ca (")) {
-                return s.getShiftId();
-            }
-        }
-        
-        // Not found, create new one
-        Shift newShift = new Shift();
-        newShift.setShiftName("Tăng ca (" + startTime.toString() + " - " + endTime.toString() + ")");
-        newShift.setStartTime(startTime);
-        newShift.setEndTime(endTime);
-        autoDetectNightShift(newShift);
-        newShift.setCoefficient(1.5f); // Overtime default multiplier
-        newShift.setStatus(1); // Active
-        
-        this.addShift(newShift);
-        
-        // Fetch it again to get the generated ID
-        all = this.getAllShifts();
-        int maxId = -1;
-        for (Shift s : all) {
-            if (s.getShiftId() > maxId) {
-                maxId = s.getShiftId();
-            }
-        }
-        return maxId;
-    }
+
 
     // ═══════════════════════════════════════════════════════════════
     // <<include>> Validate Shift Data
@@ -508,6 +504,66 @@ public class ShiftDAOImpl implements ShiftDAO {
         return hasOvertimeRequest ? diffMinutes : 0;
     }
 
+    @Override
+    public int findOrCreateCustomShift(LocalTime start, LocalTime end) {
+        String expectedName = "Ca Hành Chính";
+        boolean expectedIsNight = false;
+        if (start.getHour() >= 18 || start.getHour() < 6 || end.isBefore(start)) {
+            expectedName = "Ca 3 (Đêm)";
+            expectedIsNight = true;
+        }
+
+        // 1. Find if an OT shift with these exact times already exists
+        String sqlFind = "SELECT shift_id, shift_name FROM shifts WHERE start_time = ? AND end_time = ? AND coefficient > 1.0";
+        try (Connection c = DBContext.getConnection();
+             PreparedStatement ps = c.prepareStatement(sqlFind)) {
+            ps.setTime(1, java.sql.Time.valueOf(start));
+            ps.setTime(2, java.sql.Time.valueOf(end));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int id = rs.getInt("shift_id");
+                    String currentName = rs.getString("shift_name");
+                    if (!currentName.equals(expectedName)) {
+                        String sqlUpdate = "UPDATE shifts SET shift_name = ?, is_night_shift = ? WHERE shift_id = ?";
+                        try (PreparedStatement updatePs = c.prepareStatement(sqlUpdate)) {
+                            updatePs.setString(1, expectedName);
+                            updatePs.setBoolean(2, expectedIsNight);
+                            updatePs.setInt(3, id);
+                            updatePs.executeUpdate();
+                        }
+                    }
+                    return id;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        // 2. If not, insert new OT custom shift
+        String sqlInsert = "INSERT INTO shifts (shift_name, start_time, end_time, "
+                         + "break_start, break_end, is_night_shift, coefficient, status) "
+                         + "VALUES (?, ?, ?, null, null, ?, 1.5, 1)";
+        try (Connection c = DBContext.getConnection();
+             PreparedStatement ps = c.prepareStatement(sqlInsert, PreparedStatement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, expectedName);
+            ps.setTime(2, java.sql.Time.valueOf(start));
+            ps.setTime(3, java.sql.Time.valueOf(end));
+            ps.setBoolean(4, expectedIsNight);
+
+            if (ps.executeUpdate() > 0) {
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        return rs.getInt(1);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        // Default fallback if insertion fails
+        return expectedIsNight ? 4 : 1;
+    }
 }
 
 

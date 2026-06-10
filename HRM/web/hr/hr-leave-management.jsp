@@ -372,6 +372,12 @@
                                 <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.85rem;"></i>
                                 <input type="text" id="reqSearch" placeholder="Tìm nhân viên, loại..." oninput="filterReqTable()" style="width:100%;padding:9px 14px 9px 36px;border:1px solid #e2e8f0;border-radius:8px;font-size:.88rem;outline:none;font-family:'Inter',sans-serif;">
                             </div>
+                            <select id="reqDept" onchange="filterReqTable()" style="padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:.88rem;outline:none;cursor:pointer;font-family:'Inter',sans-serif;">
+                                <option value="all">Tất cả phòng ban</option>
+                                <c:forEach var="d" items="${departments}">
+                                    <option value="${d.departmentName}">${d.departmentName}</option>
+                                </c:forEach>
+                            </select>
                             <select id="reqStatus" onchange="filterReqTable()" style="padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:.88rem;outline:none;cursor:pointer;font-family:'Inter',sans-serif;">
                                 <option value="all">Tất cả trạng thái</option>
                                 <option value="Chờ duyệt">Chờ duyệt</option>
@@ -385,10 +391,13 @@
                             <thead>
                                 <tr>
                                     <th>Nhân viên</th>
+                                    <th>Phòng ban</th>
                                     <th>Loại nghỉ</th>
                                     <th>Từ ngày</th>
                                     <th>Đến ngày</th>
                                     <th>Số ngày</th>
+                                    <th>Đính kèm</th>
+                                    <th>Ngày gửi</th>
                                     <th>Trạng thái</th>
                                     <th>Người duyệt</th>
                                 </tr>
@@ -397,10 +406,26 @@
                                 <c:forEach var="r" items="${allRequests}">
                                     <tr>
                                         <td><span class="fw-bold" style="color:var(--pri)">${r.userName}</span></td>
+                                        <td>${empty r.departmentName ? '-' : r.departmentName}</td>
                                         <td>${r.leaveTypeName}</td>
                                         <td>${r.startDate}</td>
                                         <td>${r.endDate}</td>
                                         <td><span style="font-weight:600">${r.totalDays}</span></td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${not empty r.attachment}">
+                                                    <a href="${pageContext.request.contextPath}/${r.attachment}" target="_blank" class="badge-s b-active" style="text-decoration:none;">
+                                                        <i class="fas fa-file-download"></i> Xem
+                                                    </a>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span style="color:var(--muted);">-</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td style="color:var(--muted);font-size:0.85rem;">
+                                            <fmt:formatDate value="${r.createdAt}" pattern="dd/MM/yyyy HH:mm"/>
+                                        </td>
                                         <td>
                                             <c:choose>
                                                 <c:when test="${r.status == 'Approved'}"><span class="badge-s b-active"><i class="fas fa-check"></i> Đã duyệt</span></c:when>
@@ -585,6 +610,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function filterReqTable() {
     const query = document.getElementById('reqSearch').value.toLowerCase();
     const status = document.getElementById('reqStatus').value;
+    const dept = document.getElementById('reqDept') ? document.getElementById('reqDept').value : 'all';
 
     reqFilteredRows = reqAllRows.filter(row => {
         const textMatch = row.textContent.toLowerCase().includes(query);
@@ -596,7 +622,14 @@ function filterReqTable() {
                 statusMatch = (rowStatus.includes(status));
             }
         }
-        return textMatch && statusMatch;
+        let deptMatch = true;
+        if (dept !== 'all') {
+            const deptCell = row.cells[1];
+            if (deptCell) {
+                deptMatch = (deptCell.textContent.trim() === dept);
+            }
+        }
+        return textMatch && statusMatch && deptMatch;
     });
 
     reqCurrentPage = 1;

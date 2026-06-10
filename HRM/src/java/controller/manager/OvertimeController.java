@@ -137,6 +137,8 @@ public class OvertimeController extends HttpServlet {
 
         // Workers in department (for assignment dropdown)
         List<User> workers = userDAO.getByDepartment(deptId);
+        // Exclude the supervisor themselves from the list
+        workers.removeIf(w -> w.getUserId() == supervisor.getUserId());
 
         req.setAttribute("plans", plans);
         req.setAttribute("allAssignments", allAssignments);
@@ -166,6 +168,8 @@ public class OvertimeController extends HttpServlet {
 
         List<OvertimeAssignment> assignments = overtimeService.getAssignmentsByPlan(planId);
         List<User> workers = userDAO.getByDepartment(supervisor.getDepartmentId());
+        // Exclude the supervisor themselves from the list
+        workers.removeIf(w -> w.getUserId() == supervisor.getUserId());
 
         req.setAttribute("plan", plan);
         req.setAttribute("assignments", assignments);

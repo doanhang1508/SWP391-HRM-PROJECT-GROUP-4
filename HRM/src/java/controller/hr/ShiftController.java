@@ -45,7 +45,7 @@ public class ShiftController extends HttpServlet {
     private static final String ATTR_ERROR     = "error";
     private static final String ATTR_MESSAGE   = "message";
     private static final String PARAM_SHIFT_ID = "shiftId";
-    private static final String INVALID_ID     = "ID khÃ´ng há»£p lá»‡";
+    private static final String INVALID_ID     = "ID không hợp lệ";
     private static final String SHIFTS_URL     = "/hr/shifts";
 
     private ShiftDAO shiftService;
@@ -57,9 +57,9 @@ public class ShiftController extends HttpServlet {
         departmentDAO = new DepartmentDAO();
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // 
     // HTTP Handlers
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // 
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -127,9 +127,9 @@ public class ShiftController extends HttpServlet {
         }
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // 
     // View Shift List (with Department Shift mapping data)
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // 
 
     private void listShifts(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -166,7 +166,7 @@ public class ShiftController extends HttpServlet {
 
         Shift s = shiftService.getShiftById(id);
         if (s == null) {
-            redirect(resp, req, ATTR_ERROR, "KhÃ´ng tÃ¬m tháº¥y ca");
+            redirect(resp, req, ATTR_ERROR, "Không tìm thấy ca");
             return;
         }
 
@@ -174,17 +174,17 @@ public class ShiftController extends HttpServlet {
         listShifts(req, resp);
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // 
     // Create Shift
     // Invokes: <<include>> Validate Shift Data
     //          <<extend>>  Auto Detect Night Shift
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // 
 
     private void createShift(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
         Shift s = buildShiftFromRequest(req);
         if (s == null) {
-            redirect(resp, req, ATTR_ERROR, "Dá»¯ liá»‡u khÃ´ng há»£p lá»‡");
+            redirect(resp, req, ATTR_ERROR, "Dữ liệu không hợp lệ");
             return;
         }
         s.setStatus(1);
@@ -202,14 +202,14 @@ public class ShiftController extends HttpServlet {
         boolean ok = shiftService.addShift(s);
         redirect(resp, req,
                 ok ? ATTR_MESSAGE : ATTR_ERROR,
-                ok ? "ThÃªm ca lÃ m viá»‡c thÃ nh cÃ´ng" : "ThÃªm ca tháº¥t báº¡i");
+                ok ? "Thêm ca làm việc thành công" : "Thêm ca thất bại");
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // -------------------------------------------------------------------------
     // Edit Shift
     // Invokes: <<include>> Validate Shift Data
     //          <<extend>>  Auto Detect Night Shift
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // -------------------------------------------------------------------------
 
     private void updateShift(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
@@ -221,14 +221,14 @@ public class ShiftController extends HttpServlet {
 
         Shift existing = shiftService.getShiftById(id);
         if (existing == null) {
-            redirect(resp, req, ATTR_ERROR, "KhÃ´ng tÃ¬m tháº¥y ca");
+            redirect(resp, req, ATTR_ERROR, "Không tìm thấy ca");
             return;
         }
 
         // Build updated shift from request
         Shift updated = buildShiftFromRequest(req);
         if (updated == null) {
-            redirect(resp, req, ATTR_ERROR, "Dá»¯ liá»‡u khÃ´ng há»£p lá»‡");
+            redirect(resp, req, ATTR_ERROR, "Dữ liệu không hợp lệ");
             return;
         }
         updated.setShiftId(id);
@@ -247,12 +247,12 @@ public class ShiftController extends HttpServlet {
         boolean ok = shiftService.updateShift(updated);
         redirect(resp, req,
                 ok ? ATTR_MESSAGE : ATTR_ERROR,
-                ok ? "Cáº­p nháº­t ca thÃ nh cÃ´ng" : "Cáº­p nháº­t tháº¥t báº¡i");
+                ok ? "Cập nhật ca thành công" : "Cập nhật thất bại");
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // -------------------------------------------------------------------------
     // Activate / Deactivate Shift (Toggle status)
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // -------------------------------------------------------------------------
 
     private void toggleStatus(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
@@ -264,7 +264,7 @@ public class ShiftController extends HttpServlet {
         boolean ok = shiftService.toggleShiftStatus(id);
         redirect(resp, req,
                 ok ? ATTR_MESSAGE : ATTR_ERROR,
-                ok ? "Cáº­p nháº­t tráº¡ng thÃ¡i thÃ nh cÃ´ng" : "Cáº­p nháº­t tráº¡ng thÃ¡i tháº¥t báº¡i");
+                ok ? "Cập nhật trạng thái thành công" : "Cập nhật trạng thái thất bại");
     }
 
     private void deleteShift(HttpServletRequest req, HttpServletResponse resp)
@@ -277,12 +277,12 @@ public class ShiftController extends HttpServlet {
         boolean ok = shiftService.deleteShift(id);
         redirect(resp, req,
                 ok ? ATTR_MESSAGE : ATTR_ERROR,
-                ok ? "XÃ³a ca thÃ nh cÃ´ng" : "XÃ³a tháº¥t báº¡i");
+                ok ? "Xóa ca thành công" : "Xóa thất bại");
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // -------------------------------------------------------------------------
     // Assign Default Shift to Department
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // -------------------------------------------------------------------------
 
     private void assignDeptShift(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
@@ -290,14 +290,14 @@ public class ShiftController extends HttpServlet {
         Integer shiftId = parseIntParam(req, "shiftId");
 
         if (deptId == null || shiftId == null) {
-            redirect(resp, req, ATTR_ERROR, "Vui lÃ²ng chá»n phÃ²ng ban vÃ  ca lÃ m viá»‡c");
+            redirect(resp, req, ATTR_ERROR, "Vui lòng chọn phòng ban và ca làm việc");
             return;
         }
 
         boolean ok = shiftService.assignDefaultShiftToDepartment(deptId, shiftId);
         redirect(resp, req,
                 ok ? ATTR_MESSAGE : ATTR_ERROR,
-                ok ? "GÃ¡n ca máº·c Ä‘á»‹nh cho phÃ²ng ban thÃ nh cÃ´ng" : "Ca nÃ y Ä‘Ã£ Ä‘Æ°á»£c gÃ¡n cho phÃ²ng ban hoáº·c cÃ³ lá»—i xáº£y ra");
+                ok ? "Gán ca mặc định cho phòng ban thành công" : "Ca này đã được gán cho phòng ban hoặc có lỗi xảy ra");
     }
 
     private void removeDeptShift(HttpServletRequest req, HttpServletResponse resp)
@@ -310,12 +310,12 @@ public class ShiftController extends HttpServlet {
         boolean ok = shiftService.removeDepartmentShift(id);
         redirect(resp, req,
                 ok ? ATTR_MESSAGE : ATTR_ERROR,
-                ok ? "XÃ³a ca máº·c Ä‘á»‹nh thÃ nh cÃ´ng" : "XÃ³a tháº¥t báº¡i");
+                ok ? "Xóa ca mặc định thành công" : "Xóa thất bại");
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // -------------------------------------------------------------------------
     // Builders
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // -------------------------------------------------------------------------
 
     private Shift buildShiftFromRequest(HttpServletRequest req) {
         String name = trimParam(req, "shiftName");
@@ -337,9 +337,9 @@ public class ShiftController extends HttpServlet {
         return s;
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // 
     // Helpers
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // 
 
     private User getLoginUser(HttpServletRequest req) {
         HttpSession s = req.getSession(false);
