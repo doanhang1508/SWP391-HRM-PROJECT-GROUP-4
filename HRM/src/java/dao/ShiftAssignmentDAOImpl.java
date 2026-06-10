@@ -79,7 +79,7 @@ public class ShiftAssignmentDAOImpl implements ShiftAssignmentDAO {
     @Override
     public List<ShiftAssignment> getByDateRange(LocalDate from, LocalDate to) {
         List<ShiftAssignment> list = new ArrayList<>();
-        String sql = "SELECT sa.*, u.full_name, s.shift_name "
+        String sql = "SELECT sa.*, u.full_name, s.shift_name, s.start_time, s.end_time, s.is_night_shift, s.coefficient "
                    + "FROM shift_assignments sa "
                    + "JOIN users u ON sa.user_id = u.user_id "
                    + "JOIN shifts s ON sa.shift_id = s.shift_id "
@@ -119,14 +119,25 @@ public class ShiftAssignmentDAOImpl implements ShiftAssignmentDAO {
 
     @Override
     public boolean addAssignment(ShiftAssignment a) {
-        String sql = "INSERT IGNORE INTO shift_assignments (user_id, shift_id, assigned_date) "
-                   + "VALUES (?, ?, ?)";
+        // Check if exact same assignment (user + shift + date) already exists
+        String checkSql = "SELECT 1 FROM shift_assignments WHERE user_id = ? AND shift_id = ? AND assigned_date = ?";
         try (Connection c = DBContext.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, a.getUserId());
-            ps.setInt(2, a.getShiftId());
-            ps.setDate(3, Date.valueOf(a.getAssignedDate()));
-            return ps.executeUpdate() > 0;
+             PreparedStatement checkPs = c.prepareStatement(checkSql)) {
+            checkPs.setInt(1, a.getUserId());
+            checkPs.setInt(2, a.getShiftId());
+            checkPs.setDate(3, Date.valueOf(a.getAssignedDate()));
+            try (ResultSet rs = checkPs.executeQuery()) {
+                if (rs.next()) return false; // Exact duplicate exists
+            }
+            // Insert new assignment (allows multiple different shifts per day)
+            String sql = "INSERT INTO shift_assignments (user_id, shift_id, assigned_date) "
+                       + "VALUES (?, ?, ?)";
+            try (PreparedStatement ps = c.prepareStatement(sql)) {
+                ps.setInt(1, a.getUserId());
+                ps.setInt(2, a.getShiftId());
+                ps.setDate(3, Date.valueOf(a.getAssignedDate()));
+                return ps.executeUpdate() > 0;
+            }
         } catch (SQLException e) {
             System.err.println("Lỗi addAssignment: " + e.getMessage());
         }
