@@ -277,7 +277,6 @@ public class PayrollDAO {
 
     // --- Merged from Service ---
 
-
     private RewardDisciplineDAO rewardDisciplineDAO = new RewardDisciplineDAO();
 
     public void calculateMonthlyPayroll(int userId, int month, int year) {
@@ -405,13 +404,81 @@ public class PayrollDAO {
         return list;
     }
 
+    public List<Integer> getAllEligibleEmployeeIds(int month, int year) {
+        List<Integer> list = new ArrayList<>();
+        java.time.LocalDate firstDay = java.time.LocalDate.of(year, month, 1);
+        java.time.LocalDate lastDay = firstDay.with(java.time.temporal.TemporalAdjusters.lastDayOfMonth());
+        java.sql.Date sqlFirstDay = java.sql.Date.valueOf(firstDay);
+        java.sql.Date sqlLastDay = java.sql.Date.valueOf(lastDay);
+
+        String sql = "SELECT DISTINCT u.user_id " +
+                     "FROM users u " +
+                     "LEFT JOIN employee_profiles ep ON u.user_id = ep.user_id " +
+                     "WHERE u.status = 1 " +
+                     "   OR (u.status = 0 " +
+                     "       AND ( " +
+                     "           EXISTS ( " +
+                     "               SELECT 1 FROM attendance a " +
+                     "               WHERE a.user_id = u.user_id " +
+                     "                 AND a.work_date >= ? AND a.work_date <= ? " +
+                     "           ) " +
+                     "           OR EXISTS ( " +
+                     "               SELECT 1 FROM shift_assignments sa " +
+                     "               WHERE sa.user_id = u.user_id " +
+                     "                 AND sa.assigned_date >= ? AND sa.assigned_date <= ? " +
+                     "           ) " +
+                     "           OR EXISTS ( " +
+                     "               SELECT 1 FROM employee_shifts es " +
+                     "               WHERE es.user_id = u.user_id " +
+                     "                 AND es.work_date >= ? AND es.work_date <= ? " +
+                     "           ) " +
+                     "           OR EXISTS ( " +
+                     "               SELECT 1 FROM work_history wh " +
+                     "               WHERE wh.user_id = u.user_id " +
+                     "                 AND (wh.end_date >= ? OR wh.end_date IS NULL) " +
+                     "                 AND wh.start_date <= ? " +
+                     "           ) " +
+                     "           OR EXISTS ( " +
+                     "               SELECT 1 FROM employee_rewards_disciplines erd " +
+                     "               JOIN reward_disciplines rd ON erd.reward_discipline_id = rd.id " +
+                     "               WHERE erd.user_id = u.user_id " +
+                     "                 AND rd.name = 'Dismissal' " +
+                     "                 AND erd.applied_date >= ? " +
+                     "           ) " +
+                     "       ) " +
+                     "   )";
+
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, sqlFirstDay);
+            ps.setDate(2, sqlLastDay);
+            ps.setDate(3, sqlFirstDay);
+            ps.setDate(4, sqlLastDay);
+            ps.setDate(5, sqlFirstDay);
+            ps.setDate(6, sqlLastDay);
+            ps.setDate(7, sqlFirstDay);
+            ps.setDate(8, sqlLastDay);
+            ps.setDate(9, sqlFirstDay);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(rs.getInt("user_id"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     public int generatePayrollDraft(int month, int year) {
         if (month < 1 || month > 12 || year < 2000) {
             throw new IllegalArgumentException("Tháng hoặc năm không hợp lệ");
         }
-        List<Integer> activeIds = getAllActiveEmployeeIds();
+        List<Integer> eligibleIds = getAllEligibleEmployeeIds(month, year);
         int createdCount = 0;
-        for (int userId : activeIds) {
+        for (int userId : eligibleIds) {
             Payroll existing = getPayroll(userId, month, year);
             if (existing == null) {
                 EmployeeSalaryInfo salaryInfo = getEmployeeSalaryInfo(userId);
