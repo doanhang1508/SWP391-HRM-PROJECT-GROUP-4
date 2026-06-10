@@ -20,6 +20,54 @@ public class PayrollDAO {
         public BigDecimal baseSalary;
     }
 
+    public static class PayrollMonthSummary {
+        private int month;
+        private int year;
+        private int totalEmployees;
+        private BigDecimal totalNet;
+        private String status;
+
+        public int getMonth() {
+            return month;
+        }
+
+        public void setMonth(int month) {
+            this.month = month;
+        }
+
+        public int getYear() {
+            return year;
+        }
+
+        public void setYear(int year) {
+            this.year = year;
+        }
+
+        public int getTotalEmployees() {
+            return totalEmployees;
+        }
+
+        public void setTotalEmployees(int totalEmployees) {
+            this.totalEmployees = totalEmployees;
+        }
+
+        public BigDecimal getTotalNet() {
+            return totalNet;
+        }
+
+        public void setTotalNet(BigDecimal totalNet) {
+            this.totalNet = totalNet;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+    }
+
     // Helper map đầy đủ tất cả cột DB
     private Payroll mapRow(ResultSet rs) throws SQLException {
         Payroll p = new Payroll();
@@ -178,6 +226,48 @@ public class PayrollDAO {
             ps.setInt(2, year);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) list.add(mapRow(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<PayrollMonthSummary> getMonthlySummaries() {
+        List<PayrollMonthSummary> list = new ArrayList<>();
+        String sql = "SELECT month, year, COUNT(user_id) as total_employees, SUM(net_salary) as total_net, " +
+                     "       MAX(CASE " +
+                     "           WHEN status = 'Rejected' THEN 5 " +
+                     "           WHEN status = 'Pending' THEN 4 " +
+                     "           WHEN status = 'Draft' THEN 3 " +
+                     "           WHEN status = 'Approved' THEN 2 " +
+                     "           WHEN status = 'Paid' THEN 1 " +
+                     "           ELSE 0 " +
+                     "       END) as max_status_val " +
+                     "FROM payroll " +
+                     "GROUP BY year, month " +
+                     "ORDER BY year DESC, month DESC";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                PayrollMonthSummary summary = new PayrollMonthSummary();
+                summary.month = rs.getInt("month");
+                summary.year = rs.getInt("year");
+                summary.totalEmployees = rs.getInt("total_employees");
+                summary.totalNet = rs.getBigDecimal("total_net");
+                
+                int maxStatusVal = rs.getInt("max_status_val");
+                summary.status = switch (maxStatusVal) {
+                    case 5 -> "Rejected";
+                    case 4 -> "Pending";
+                    case 3 -> "Draft";
+                    case 2 -> "Approved";
+                    case 1 -> "Paid";
+                    default -> "Unknown";
+                };
+                list.add(summary);
             }
         } catch (SQLException e) {
             e.printStackTrace();

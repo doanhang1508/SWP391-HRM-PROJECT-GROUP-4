@@ -53,13 +53,25 @@ public class HrPayrollController extends HttpServlet {
 
     private void showList(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        int month = getParamOrDefault(request, "month", getCurrentMonth());
-        int year = getParamOrDefault(request, "year", getCurrentYear());
+        String monthStr = request.getParameter("month");
+        String yearStr = request.getParameter("year");
+
+        if (monthStr == null || monthStr.isBlank() || yearStr == null || yearStr.isBlank()) {
+            List<dao.PayrollDAO.PayrollMonthSummary> summaries = payrollDAO.getMonthlySummaries();
+            request.setAttribute("monthlySummaries", summaries);
+            request.setAttribute("viewMode", "months");
+            request.getRequestDispatcher("/hr/payroll-list.jsp").forward(request, response);
+            return;
+        }
+
+        int month = Integer.parseInt(monthStr);
+        int year = Integer.parseInt(yearStr);
 
         List<Payroll> list = payrollDAO.getByMonthYear(month, year);
         request.setAttribute("payrollList", list);
         request.setAttribute("selectedMonth", month);
         request.setAttribute("selectedYear", year);
+        request.setAttribute("viewMode", "employees");
 
         // Fetch employee names mapping
         List<User> users = userDAO.getAllUsers();
