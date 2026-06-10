@@ -363,7 +363,7 @@
                                                             <i class="fas fa-eye"></i> Xem danh sách nhân viên
                                                         </a>
                                                         <c:if test="${s.status == 'Draft' || s.status == 'Rejected'}">
-                                                            <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" style="display:inline;" onsubmit="return confirm('Bạn có chắc muốn gửi duyệt tất cả bảng lương của tháng ${s.month}/${s.year}?');">
+                                                            <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" style="display:inline;" onsubmit="showConfirmModal(event, 'Bạn có chắc muốn gửi duyệt tất cả bảng lương của tháng ${s.month}/${s.year}?');">
                                                                 <input type="hidden" name="action" value="submit">
                                                                 <input type="hidden" name="month" value="${s.month}">
                                                                 <input type="hidden" name="year" value="${s.year}">
@@ -405,7 +405,7 @@
                         </a>
                         
                         <c:if test="${not empty payrollList}">
-                            <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" style="display:inline;" onsubmit="return confirm('Bạn có chắc muốn gửi duyệt tất cả bảng lương của tháng này?');">
+                            <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" style="display:inline;" onsubmit="showConfirmModal(event, 'Bạn có chắc muốn gửi duyệt tất cả bảng lương của tháng này?');">
                                 <input type="hidden" name="action" value="submit">
                                 <input type="hidden" name="month" value="${selectedMonth}">
                                 <input type="hidden" name="year" value="${selectedYear}">
@@ -501,7 +501,7 @@
                                                         <c:choose>
                                                             <c:when test="${p.status == 'Draft' || p.status == 'Rejected'}">
                                                                 <a href="${pageContext.request.contextPath}/hr/payroll?action=edit&id=${p.payrollId}" class="btn-a btn-edit" title="Chỉnh sửa"><i class="fas fa-edit"></i> Sửa</a>
-                                                                <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" style="display:inline;">
+                                                                <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" style="display:inline;" onsubmit="showConfirmModal(event, 'Bạn có chắc muốn gửi duyệt bảng lương của nhân viên này?');">
                                                                     <input type="hidden" name="action" value="submit">
                                                                     <input type="hidden" name="payrollId" value="${p.payrollId}">
                                                                     <button type="submit" class="btn-a btn-submit" title="Gửi duyệt"><i class="fas fa-paper-plane"></i> Gửi duyệt</button>
@@ -542,7 +542,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" onsubmit="return confirmGeneratePayroll();">
+            <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" onsubmit="confirmGeneratePayroll(event);">
                 <input type="hidden" name="action" value="generateDraft">
 
                 <div class="modal-body" style="padding:28px;">
@@ -691,17 +691,86 @@
     </div>
 </div>
 
+<!-- Custom Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+        <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 15px 35px rgba(0,0,0,0.15); overflow: hidden;">
+            <div class="modal-body text-center" style="padding: 35px 24px 28px;">
+                <div class="mb-3 d-inline-flex align-items-center justify-content-center" 
+                     id="confirmModalIconContainer"
+                     style="width: 70px; height: 70px; border-radius: 50%; background-color: var(--pri-l); color: var(--pri); font-size: 1.8rem; transition: all 0.3s ease;">
+                    <i class="fas fa-paper-plane" id="confirmModalIcon"></i>
+                </div>
+                <h5 class="fw-bold mb-2" id="confirmModalTitle" style="color: var(--txt); font-size: 1.2rem;">Xác nhận gửi duyệt</h5>
+                <p class="text-muted mb-4" id="confirmModalMessage" style="font-size: 0.9rem; line-height: 1.5; padding: 0 10px;"></p>
+                
+                <div class="d-flex gap-3 justify-content-center">
+                    <button type="button" 
+                            class="btn px-4 py-2 fw-semibold text-secondary" 
+                            data-bs-dismiss="modal" 
+                            style="border-radius: 10px; background-color: #f1f5f9; border: 1px solid #e2e8f0; font-size: 0.88rem; transition: all 0.2s; min-width: 110px;">
+                        Hủy
+                    </button>
+                    <button type="button" 
+                            id="btnConfirmSubmit" 
+                            class="btn px-4 py-2 fw-semibold text-white" 
+                            style="border-radius: 10px; background: linear-gradient(135deg, var(--pri), #4f46e5); border: none; font-size: 0.88rem; transition: all 0.2s; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2); min-width: 110px;">
+                        Xác nhận
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
 <script>
-function confirmGeneratePayroll() {
+let pendingFormToSubmit = null;
+
+function showConfirmModal(event, message, title = 'Xác nhận gửi duyệt', iconClass = 'fa-paper-plane', themeColor = 'var(--pri)', themeBg = 'var(--pri-l)') {
+    event.preventDefault();
+    pendingFormToSubmit = event.currentTarget || event.target;
+    
+    document.getElementById('confirmModalTitle').textContent = title;
+    document.getElementById('confirmModalMessage').textContent = message;
+    
+    const iconEl = document.getElementById('confirmModalIcon');
+    iconEl.className = 'fas ' + iconClass;
+    
+    const iconContainer = document.getElementById('confirmModalIconContainer');
+    iconContainer.style.color = themeColor;
+    iconContainer.style.backgroundColor = themeBg;
+    
+    const submitBtn = document.getElementById('btnConfirmSubmit');
+    if (themeColor === 'var(--ok)') {
+        submitBtn.style.background = 'linear-gradient(135deg, var(--ok), #059669)';
+        submitBtn.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.2)';
+    } else {
+        submitBtn.style.background = 'linear-gradient(135deg, var(--pri), #4f46e5)';
+        submitBtn.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.2)';
+    }
+    
+    const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    confirmModal.show();
+}
+
+function confirmGeneratePayroll(event) {
     const month = document.getElementById('generateMonth').value;
     const year = document.getElementById('generateYear').value;
-    return confirm('Bạn có chắc muốn khởi tạo bảng lương tháng ' + month + '/' + year + '?');
+    showConfirmModal(event, 'Bạn có chắc muốn khởi tạo bảng lương tháng ' + month + '/' + year + '?', 'Khởi tạo kỳ lương', 'fa-magic', 'var(--ok)', 'var(--ok-l)');
 }
 
 document.addEventListener("DOMContentLoaded", function() {
+    const btnConfirmSubmit = document.getElementById('btnConfirmSubmit');
+    if (btnConfirmSubmit) {
+        btnConfirmSubmit.addEventListener('click', function() {
+            if (pendingFormToSubmit) {
+                pendingFormToSubmit.submit();
+            }
+        });
+    }
     const detailModal = document.getElementById('payrollDetailModal');
     if (detailModal) {
         detailModal.addEventListener('show.bs.modal', function(event) {
