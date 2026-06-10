@@ -60,6 +60,8 @@ public class SupervisorLeaveController extends HttpServlet {
         }
 
         request.setAttribute("pendingLeaves", service.getPendingLeavesByDepartment(filterDeptId));
+        request.setAttribute("approvedLeaves", service.getApprovedLeavesByDepartment(filterDeptId));
+        request.setAttribute("allLeaves", service.getAllLeavesByDepartment(filterDeptId));
 
         request.getRequestDispatcher("/manager/supervisor-leave-approval.jsp").forward(request, response);
     }
@@ -91,7 +93,8 @@ public class SupervisorLeaveController extends HttpServlet {
                     service.approveLeaveRequest(id, user.getUserId());
                     session.setAttribute("successMessage", "Đã duyệt đơn nghỉ phép thành công.");
                 } else if ("reject".equals(action)) {
-                    service.rejectLeaveRequest(id, user.getUserId());
+                    String rejectReason = request.getParameter("rejectReason");
+                    service.rejectLeaveRequest(id, user.getUserId(), rejectReason);
                     session.setAttribute("successMessage", "Đã từ chối đơn nghỉ phép.");
                 }
             }

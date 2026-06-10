@@ -173,7 +173,7 @@ body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-top: 0 !im
             <%-- Ghi chú OT --%>
             <div class="ot-hint">
                 <i class="fas fa-info-circle"></i>
-                <span>Tăng ca (OT) do quản đốc phân — chọn ca <strong>Tăng ca 18h-20h</strong> hoặc <strong>Tăng ca 18h-22h</strong> từ danh sách bên dưới.</span>
+                <span>Tăng ca (OT) do quản đốc phân sẽ được tự động hiển thị dưới dạng <strong>Ca hành chính</strong> (ban ngày) hoặc <strong>Ca 3 (Đêm)</strong> (ban đêm) dựa trên khung giờ.</span>
             </div>
 
             <form method="POST" action="${pageContext.request.contextPath}/manager/shift-schedule?action=assign"
@@ -274,9 +274,11 @@ body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-top: 0 !im
                                     for (ShiftAssignment sa : saList) {
                                         String sName = sa.getShiftName() != null ? sa.getShiftName() : "";
                                         String css = "default";
-                                        if (sName.contains("Hành chính"))       css = "office";
-                                        else if (sName.contains("18h-20h") || sName.contains("18h-20")) css = "ot-short";
-                                        else if (sName.contains("18h-22h") || sName.contains("18h-22")) css = "ot-long";
+                                        if (sName.toLowerCase().contains("hành chính")) css = "office";
+                                        else if (sName.toLowerCase().contains("đêm"))   css = "ot-long";
+                                        else css = "default";
+                                        
+                                        // Set display name explicitly if needed or rely on sName
                                 %>
                                         <div style="margin-bottom: 4px; display: inline-block;">
                                             <span class="shift-badge <%= css %>" title="<%= sName %>">

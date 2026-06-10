@@ -273,6 +273,8 @@ CREATE TABLE leave_requests (
     reason        VARCHAR(255),
     status        VARCHAR(20)  DEFAULT 'Pending',
     approved_by   INT,
+    attachment    VARCHAR(255) NULL,
+    reject_reason VARCHAR(255) NULL,
     created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_leave_user     FOREIGN KEY (user_id)       REFERENCES users(user_id)                 ON DELETE CASCADE,
     CONSTRAINT fk_leave_type     FOREIGN KEY (leave_type_id) REFERENCES leave_types(leave_type_id)     ON DELETE RESTRICT
@@ -436,10 +438,10 @@ INSERT INTO shifts (shift_id, shift_name, start_time, end_time, break_start, bre
 
 -- ── 11. Leave Types ──
 INSERT INTO leave_types (leave_type_id, type_name, description, paid_leave, max_days_per_year) VALUES
-(1, 'Nghỉ phép năm',           'Nghỉ phép theo quy định',                 1, 12),
-(2, 'Nghỉ ốm (Hưởng BHXH)',    'Nghỉ ốm hưởng chế độ BHXH',               0, NULL),
-(3, 'Nghỉ thai sản',           'Chế độ thai sản theo quy định',           0, NULL),
-(4, 'Nghỉ việc riêng có lương','Nghỉ việc riêng vẫn tính lương',          1, NULL),
+(1, 'Nghỉ phép năm',           'Nghỉ phép theo quy định',                 0, 18),
+(2, 'Nghỉ ốm (Hưởng BHXH)',    'Số ngày nghỉ ốm hưởng Bảo hiểm xã hội (BHXH) tối đa được chia thành 2 hạn mức: số ngày cấp trên mỗi tờ giấy nghỉ ốm (lần khám) và tổng số ngày được hưởng trong năm',               0, NULL),
+(3, 'Nghỉ thai sản',           'Chế độ thai sản theo quy định. Thời gian nghỉ thai sản tối đa của lao động nữ khi sinh con là 6 tháng (nếu sinh đôi trở lên thì từ con thứ 2 cứ mỗi con được nghỉ thêm 1 tháng).',           0, 180),
+(4, 'Nghỉ việc riêng có lương','Nghỉ việc riêng vẫn tính lương',          1, 5),
 (5, 'Nghỉ không lương',        'Nghỉ không hưởng lương',                  0, NULL);
 
 -- ── 12. Reward Disciplines ──

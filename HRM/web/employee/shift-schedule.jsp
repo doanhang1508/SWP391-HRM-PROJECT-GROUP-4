@@ -168,8 +168,12 @@
             int totalShifts = 0;
             int nightCount = 0;
             double totalHours = 0;
+            int workingDaysCount = 0;
             for (Map.Entry<Integer, List<ShiftAssignment>> entry : dayMap.entrySet()) {
                 List<ShiftAssignment> listSa = entry.getValue();
+                if (listSa != null && !listSa.isEmpty()) {
+                    workingDaysCount++;
+                }
                 totalShifts += listSa.size();
                 for (ShiftAssignment sa : listSa) {
                     if (sa.isNightShift()) nightCount++;
@@ -199,7 +203,7 @@
                     <div class="stat-label">Ca đêm</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-num"><%= 7 - totalShifts %></div>
+                    <div class="stat-num"><%= 7 - workingDaysCount %></div>
                     <div class="stat-label">Ngày nghỉ</div>
                 </div>
             </div>

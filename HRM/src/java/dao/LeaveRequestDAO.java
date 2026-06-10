@@ -23,14 +23,16 @@ public interface LeaveRequestDAO {
     boolean hasOverlappingLeave(int userId, java.sql.Date startDate, java.sql.Date endDate);
     LeaveType getLeaveTypeById(int leaveTypeId);
 
-    double calculateTotalLeaveDays(LocalDate startDate, LocalDate endDate);
+    double calculateTotalLeaveDays(int userId, LocalDate startDate, LocalDate endDate);
     double checkRemainingLeaveBalance(int userId, int leaveTypeId) throws Exception;
     void validateLeaveRequestData(LeaveRequest request) throws Exception;
     boolean submitLeaveRequest(LeaveRequest request) throws Exception;
     List<LeaveRequest> getLeaveHistoryByUserId(int userId);
     List<LeaveRequest> getPendingLeavesByDepartment(int departmentId);
+    List<LeaveRequest> getApprovedLeavesByDepartment(int departmentId);
+    List<LeaveRequest> getAllLeavesByDepartment(int departmentId);
     boolean approveLeaveRequest(int requestId, int approvedBy) throws Exception;
-    boolean rejectLeaveRequest(int requestId, int approvedBy) throws Exception;
+    boolean rejectLeaveRequest(int requestId, int approvedBy, String rejectReason) throws Exception;
     List<LeaveRequest> getAllLeaveRequests();
 }
 

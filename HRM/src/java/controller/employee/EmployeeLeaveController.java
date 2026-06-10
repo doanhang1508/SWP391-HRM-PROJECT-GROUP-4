@@ -11,12 +11,17 @@ import model.User;
 import dao.LeaveRequestDAO;
 import dao.LeaveRequestDAOImpl;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.sql.Date;
 import java.util.List;
+import jakarta.servlet.annotation.MultipartConfig;
+import jakarta.servlet.http.Part;
 import model.LeaveType;
 
 @WebServlet(name = "EmployeeLeaveController", urlPatterns = {"/employee/leave"})
+@MultipartConfig(fileSizeThreshold = 1024 * 1024 * 2, maxFileSize = 1024 * 1024 * 10, maxRequestSize = 1024 * 1024 * 50)
 public class EmployeeLeaveController extends HttpServlet {
 
     private LeaveRequestDAO service;
@@ -86,6 +91,20 @@ public class EmployeeLeaveController extends HttpServlet {
                 lr.setEndDate(Date.valueOf(request.getParameter("endDate")));
                 lr.setTotalDays(Double.parseDouble(request.getParameter("totalDays")));
                 lr.setReason(request.getParameter("reason"));
+
+                Part filePart = request.getPart("attachment");
+                if (filePart != null && filePart.getSize() > 0) {
+                    String fileName = Paths.get(filePart.getSubmittedFileName()).getFileName().toString();
+                    if (fileName != null && !fileName.isEmpty()) {
+                        String uploadPath = getServletContext().getRealPath("") + File.separator + "uploads";
+                        File uploadDir = new File(uploadPath);
+                        if (!uploadDir.exists()) uploadDir.mkdir();
+                        
+                        String finalFileName = System.currentTimeMillis() + "_" + fileName.replaceAll("[^a-zA-Z0-9.-]", "_");
+                        filePart.write(uploadPath + File.separator + finalFileName);
+                        lr.setAttachment("uploads/" + finalFileName);
+                    }
+                }
 
                 service.submitLeaveRequest(lr);
                 session.setAttribute("successMessage", "Leave request submitted successfully.");
