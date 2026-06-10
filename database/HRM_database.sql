@@ -189,6 +189,7 @@ CREATE TABLE users (
 CREATE TABLE employee_profiles (
     profile_id           INT          PRIMARY KEY AUTO_INCREMENT,
     user_id              INT          NOT NULL UNIQUE,
+    department_id        INT,
     id_card              VARCHAR(20),
     dob                  DATE,
     gender               TINYINT(1),
@@ -203,6 +204,7 @@ CREATE TABLE employee_profiles (
     employment_status_id INT,
     education_level_id   INT,
     CONSTRAINT fk_profile_user FOREIGN KEY (user_id)              REFERENCES users(user_id)                         ON DELETE CASCADE,
+    CONSTRAINT fk_profile_dept FOREIGN KEY (department_id)        REFERENCES departments(department_id)             ON DELETE SET NULL,
     CONSTRAINT fk_profile_ct   FOREIGN KEY (contract_type_id)     REFERENCES contract_types(contract_type_id)       ON DELETE SET NULL,
     CONSTRAINT fk_profile_sg   FOREIGN KEY (salary_grade_id)      REFERENCES salary_grades(salary_grade_id)         ON DELETE SET NULL,
     CONSTRAINT fk_profile_es   FOREIGN KEY (employment_status_id) REFERENCES employment_statuses(status_id)         ON DELETE SET NULL,
@@ -245,8 +247,7 @@ CREATE TABLE shift_assignments (
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_sa_user  FOREIGN KEY (user_id)  REFERENCES users(user_id)   ON DELETE CASCADE,
     CONSTRAINT fk_sa_shift FOREIGN KEY (shift_id) REFERENCES shifts(shift_id) ON DELETE CASCADE,
-    INDEX idx_user_date (user_id, assigned_date),
-    UNIQUE KEY idx_user_shift_date (user_id, shift_id, assigned_date)
+    UNIQUE KEY idx_user_date (user_id, assigned_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE attendance (
@@ -274,8 +275,6 @@ CREATE TABLE leave_requests (
     reason        VARCHAR(255),
     status        VARCHAR(20)  DEFAULT 'Pending',
     approved_by   INT,
-    attachment    VARCHAR(255) NULL,
-    reject_reason VARCHAR(255) NULL,
     created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_leave_user     FOREIGN KEY (user_id)       REFERENCES users(user_id)                 ON DELETE CASCADE,
     CONSTRAINT fk_leave_type     FOREIGN KEY (leave_type_id) REFERENCES leave_types(leave_type_id)     ON DELETE RESTRICT
@@ -296,18 +295,9 @@ CREATE TABLE payroll (
     tax_amount       DECIMAL(15,2),
     gross_salary     DECIMAL(15,2),
     net_salary       DECIMAL(15,2),
-    status           ENUM('Draft','Pending','Approved','Rejected','Paid') DEFAULT 'Draft',
-    approved_by      INT NULL,
-    approved_at      DATETIME NULL,
-    reject_reason    VARCHAR(255) NULL,
-    paid_by          INT NULL,
-    paid_at          DATETIME NULL,
-    payment_note     VARCHAR(255) NULL,
+    status           ENUM('Draft','Approved','Paid') DEFAULT 'Draft',
     created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id),
-    FOREIGN KEY (approved_by) REFERENCES users(user_id) ON DELETE SET NULL,
-    FOREIGN KEY (paid_by) REFERENCES users(user_id) ON DELETE SET NULL,
-    UNIQUE KEY uk_user_month_year (user_id, month, year)
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE notifications (
@@ -334,6 +324,37 @@ CREATE TABLE employee_shifts (
     FOREIGN KEY (shift_id) REFERENCES shifts(shift_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- BẢNG: attendance_claims (Đơn khiếu nại chấm công)
+CREATE TABLE attendance_claims (
+    claim_id     INT          PRIMARY KEY AUTO_INCREMENT,
+    attendance_id INT         NOT NULL,
+    user_id      INT          NOT NULL,
+    work_date    DATE         NOT NULL,
+    claim_type   VARCHAR(30)  NOT NULL DEFAULT 'OTHER',
+    description  TEXT,
+    status       VARCHAR(20)  NOT NULL DEFAULT 'PENDING',
+    hr_note      VARCHAR(500),
+    resolved_by  INT,
+    resolved_at  TIMESTAMP    NULL,
+    created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_claim_att  FOREIGN KEY (attendance_id) REFERENCES attendance(attendance_id) ON DELETE CASCADE,
+    CONSTRAINT fk_claim_user FOREIGN KEY (user_id)       REFERENCES users(user_id)            ON DELETE CASCADE,
+    CONSTRAINT fk_claim_res  FOREIGN KEY (resolved_by)   REFERENCES users(user_id)            ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- BẢNG: timesheet_lock (Khóa bảng chấm công theo tháng)
+CREATE TABLE timesheet_lock (
+    lock_id   INT       PRIMARY KEY AUTO_INCREMENT,
+    month     INT       NOT NULL,
+    year      INT       NOT NULL,
+    status    VARCHAR(20) NOT NULL DEFAULT 'UNLOCKED',
+    locked_by INT,
+    locked_at TIMESTAMP NULL,
+    note      VARCHAR(500),
+    UNIQUE KEY uk_month_year (month, year),
+    CONSTRAINT fk_lock_user FOREIGN KEY (locked_by) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- =============================================================
 -- NHÓM 5: LƯƠNG - C&B
 -- =============================================================
@@ -357,35 +378,6 @@ CREATE TABLE employee_rewards_disciplines (
     FOREIGN KEY (user_id)              REFERENCES users(user_id),
     FOREIGN KEY (reward_discipline_id) REFERENCES reward_disciplines(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE onboarding_requests (
-    id              INT AUTO_INCREMENT PRIMARY KEY,
-    full_name       VARCHAR(150)    NOT NULL,
-    email           VARCHAR(150)    NOT NULL,
-    phone           VARCHAR(20),
-    cccd_number     VARCHAR(20),
-    date_of_birth   DATE,
-    address         TEXT,
-    gender          TINYINT(1)      DEFAULT NULL COMMENT '1=Nam, 0=Nữ',
-    department_id   INT             DEFAULT NULL,
-    position_id     INT             DEFAULT NULL,
-    role_id         INT             DEFAULT 7    COMMENT 'Mặc định: Nhân viên',
-    status          ENUM('DRAFT','PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'DRAFT',
-    reject_reason   TEXT            DEFAULT NULL COMMENT 'Lý do từ chối (Admin ghi)',
-    created_by      INT             NOT NULL     COMMENT 'HR user_id gửi yêu cầu',
-    processed_by    INT             DEFAULT NULL COMMENT 'Admin user_id xử lý',
-    created_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_onb_dept     FOREIGN KEY (department_id) REFERENCES departments(department_id) ON DELETE SET NULL,
-    CONSTRAINT fk_onb_pos      FOREIGN KEY (position_id)   REFERENCES positions(position_id)     ON DELETE SET NULL,
-    CONSTRAINT fk_onb_creator  FOREIGN KEY (created_by)    REFERENCES users(user_id),
-    CONSTRAINT fk_onb_processor FOREIGN KEY (processed_by) REFERENCES users(user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE INDEX idx_onb_status     ON onboarding_requests(status);
-CREATE INDEX idx_onb_created_by ON onboarding_requests(created_by);
-CREATE INDEX idx_onb_cccd       ON onboarding_requests(cccd_number);
-CREATE INDEX idx_onb_email      ON onboarding_requests(email);
 
 -- 3. BẬT LẠI KIỂM TRA KHÓA NGOẠI
 SET FOREIGN_KEY_CHECKS = 1;
@@ -462,25 +454,30 @@ INSERT INTO education_levels (education_level_id, level_name) VALUES
 -- ── 10. Shifts ──
 INSERT INTO shifts (shift_id, shift_name, start_time, end_time, break_start, break_end, is_night_shift, coefficient, working_days) VALUES
 (1, 'Ca Hành Chính','08:00:00','17:00:00','12:00:00','13:00:00', 0, 1.00,'2,3,4,5,6,7'),
+(2, 'Ca 1 (Sáng)',  '06:00:00','14:00:00','11:00:00','11:30:00', 0, 1.00,'2,3,4,5,6,7'),
+(3, 'Ca 2 (Chiều)', '14:00:00','22:00:00','17:30:00','18:00:00', 0, 1.00,'2,3,4,5,6,7'),
 (4, 'Ca 3 (Đêm)',   '22:00:00','06:00:00','02:00:00','02:30:00', 1, 1.30,'2,3,4,5,6,7');
 
 -- ── 11. Leave Types ──
 INSERT INTO leave_types (leave_type_id, type_name, description, paid_leave, max_days_per_year) VALUES
-(1, 'Nghỉ phép năm',           'Nghỉ phép theo quy định',                 0, 18),
-(2, 'Nghỉ ốm (Hưởng BHXH)',    'Số ngày nghỉ ốm hưởng Bảo hiểm xã hội (BHXH) tối đa được chia thành 2 hạn mức: số ngày cấp trên mỗi tờ giấy nghỉ ốm (lần khám) và tổng số ngày được hưởng trong năm',               0, NULL),
-(3, 'Nghỉ thai sản',           'Chế độ thai sản theo quy định. Thời gian nghỉ thai sản tối đa của lao động nữ khi sinh con là 6 tháng (nếu sinh đôi trở lên thì từ con thứ 2 cứ mỗi con được nghỉ thêm 1 tháng).',           0, 180),
-(4, 'Nghỉ việc riêng có lương','Nghỉ việc riêng vẫn tính lương',          1, 5),
+(1, 'Nghỉ phép năm',           'Nghỉ phép theo quy định',                 1, 12),
+(2, 'Nghỉ ốm (Hưởng BHXH)',    'Nghỉ ốm hưởng chế độ BHXH',               0, NULL),
+(3, 'Nghỉ thai sản',           'Chế độ thai sản theo quy định',           0, NULL),
+(4, 'Nghỉ việc riêng có lương','Nghỉ việc riêng vẫn tính lương',          1, NULL),
 (5, 'Nghỉ không lương',        'Nghỉ không hưởng lương',                  0, NULL);
 
 -- ── 12. Reward Disciplines ──
 INSERT INTO reward_disciplines (id, name, type, description, apply_level, created_by) VALUES
-(1, 'Thưởng KPI Tháng',   'Reward',    'Thưởng dựa trên đánh giá hiệu suất',           'Cá nhân',    1),
-(2, 'Thưởng Dự án',       'Reward',    'Thưởng hoàn thành xuất sắc dự án',             'Nhóm/Dự án', 1),
-(3, 'Thưởng Chuyên cần',  'Reward',    'Không đi muộn, không nghỉ phép trong tháng',   'Cá nhân',    1),
-(4, 'Đi muộn/Về sớm',     'Discipline','Phạt đi muộn theo quy định',                     'Cá nhân',    1),
-(5, 'Vi phạm An toàn LĐ', 'Discipline','Phạt do không tuân thủ an toàn tại xưởng',      'Cá nhân',    1);
+(1, 'Thưởng KPI Tháng',      'Reward',    'Thưởng dựa trên đánh giá hiệu suất',                           'Cá nhân',    1),
+(2, 'Thưởng Dự án',          'Reward',    'Thưởng hoàn thành xuất sắc dự án',                             'Nhóm/Dự án', 1),
+(3, 'Thưởng Chuyên cần',     'Reward',    'Không đi muộn, không nghỉ phép trong tháng',                   'Cá nhân',    1),
+(4, 'Đi muộn/Về sớm',        'Discipline','Phạt đi muộn theo quy định',                                    'Cá nhân',    1),
+(5, 'Vi phạm An toàn LĐ',    'Discipline','Phạt do không tuân thủ an toàn tại xưởng',                     'Cá nhân',    1),
+(6, 'Warning',               'Discipline','Cảnh báo vi phạm kỷ luật',                                     'Cá nhân',    1),
+(7, 'Vi phạm kỷ luật khác',  'Discipline','Các hình thức vi phạm nội quy khác',                           'Cá nhân',    1),
+(8, 'Dismissal',             'Discipline','Sa thải / Chấm dứt hợp đồng lao động do vi phạm nghiêm trọng','Cá nhân',    1);
 
--- ── 13. Roles (8 roles) ──
+-- ── 13. Roles (7 roles) ──
 INSERT INTO roles (role_id, role_name, description) VALUES
 (1, 'Admin',              'Quản trị hệ thống toàn quyền'),
 (2, 'HR Manager',         'Trưởng phòng Nhân sự - duyệt attendance, payroll'),
@@ -488,8 +485,7 @@ INSERT INTO roles (role_id, role_name, description) VALUES
 (4, 'Director',           'Giám đốc - xem tổng quan, duyệt lương cuối'),
 (5, 'HR Staff',           'Nhân viên Nhân sự - upload Excel, quản lý hồ sơ'),
 (6, 'Department Manager', 'Trưởng phòng / Tổ trưởng - duyệt nghỉ phép'),
-(7, 'Employee',           'Nhân viên / Công nhân'),
-(8, 'Accountant',         'Kế toán - xem bảng lương, xác nhận chuyển khoản thủ công');
+(7, 'Employee',           'Nhân viên / Công nhân');
 
 -- ── 14. Permissions (29 permissions) ──
 INSERT INTO permissions (permission_id, permission_name, description, module) VALUES
@@ -574,19 +570,19 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 -- ── 16. Users & Profiles ──
 
 -- ── 16a. Users cốt lõi (user_id 1-5) ──
-INSERT INTO users (user_id,username,password,full_name,email,role_id,department_id,position_id) VALUES
-(1,'admin',     '@123456','Quản Trị Viên',          'admin@hrm.com',     1,NULL,NULL),
-(2,'giam_doc',  '@123456','Nguyễn Văn Giám Đốc',    'giamdoc@hrm.com',   4,1,1),
-(3,'hr_manager','@123456','Trần Thị Nhân Sự',       'hr@hrm.com',        2,2,2),
-(4,'quan_doc',  '@123456','Lê Văn Quản Đốc',        'quandoc@hrm.com',   3,5,4),
-(5,'cong_nhan', '@123456','Phạm Công Nhân',          'cn1@hrm.com',       7,5,9);
+INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
+(1,'admin',     '@123456','Quản Trị Viên',          'admin@hrm.com',     '0900000001',1,NULL,NULL),
+(2,'giam_doc',  '@123456','Nguyễn Văn Giám Đốc',    'giamdoc@hrm.com',   '0901000002',4,1,1),
+(3,'hr_manager','@123456','Trần Thị Nhân Sự',       'hr@hrm.com',        '0901000003',2,2,2),
+(4,'quan_doc',  '@123456','Lê Văn Quản Đốc',        'quandoc@hrm.com',   '0901000004',3,5,4),
+(5,'cong_nhan', '@123456','Phạm Công Nhân',          'cn1@hrm.com',       '0901000005',7,5,9);
 
 -- ── 16b. Profiles users 2-5 ──
-INSERT INTO employee_profiles (user_id,id_card,dob,gender,address,hire_date,tax_code,bank_account,contract_type_id,salary_grade_id,employment_status_id,education_level_id) VALUES
-(2,'001085000001','1985-01-01',1,'Hà Nội',     '2020-01-01','8012345678','190300001',4,1,2,1),
-(3,'001090000002','1990-05-15',0,'Hà Nội',     '2021-03-10','8012345679','190300002',4,2,2,2),
-(4,'001088000003','1988-08-20',1,'Hải Phòng',  '2020-06-01','8012345680','190300003',4,2,2,2),
-(5,'001095000004','1995-12-10',1,'Bắc Ninh',   '2022-02-15','8012345681','190300004',2,4,2,5);
+INSERT INTO employee_profiles (user_id,department_id,id_card,dob,gender,address,hire_date,tax_code,social_insurance_no,bank_account,bank_name,contract_type_id,salary_grade_id,employment_status_id,education_level_id) VALUES
+(2,1,'001085000001','1985-01-01',1,'Hà Nội',     '2020-01-01','8012345678','0100001001','190300001','Vietcombank',4,1,2,1),
+(3,2,'001090000002','1990-05-15',0,'Hà Nội',     '2021-03-10','8012345679','0100001002','190300002','BIDV',        4,2,2,2),
+(4,5,'001088000003','1988-08-20',1,'Hải Phòng',  '2020-06-01','8012345680','0100001003','190300003','Techcombank',4,2,2,2),
+(5,5,'001095000004','1995-12-10',1,'Bắc Ninh',   '2022-02-15','8012345681','0100001004','190300004','Agribank',   2,4,2,5);
 
 -- ── 16c. Dependents ──
 INSERT INTO dependents (user_id, full_name, relationship, dob) VALUES
@@ -596,77 +592,78 @@ INSERT INTO dependents (user_id, full_name, relationship, dob) VALUES
 -- ── 17. Nhân viên Quản lý (user_id 6-32, 27 người) ──
 
 -- Phòng Hành Chính (dept=1): 4 mới + giam_doc = 5
-INSERT INTO users (user_id,username,password,full_name,email,role_id,department_id,position_id) VALUES
-(6, 'tp_hanh_chinh','@123456','Đỗ Thị Hà',    'tp_hc@hrm.com',  6,1,2),
-(7, 'pp_hanh_chinh','@123456','Ngô Văn Tài',   'pp_hc@hrm.com',  7,1,3),
-(8, 'cv_hc_01',     '@123456','Vũ Thị Nga',    'cv_hc1@hrm.com', 7,1,7),
-(9, 'cv_hc_02',     '@123456','Đinh Văn Phúc', 'cv_hc2@hrm.com', 7,1,7);
+INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
+(6, 'tp_hanh_chinh','@123456','Đỗ Thị Hà',    'tp_hc@hrm.com',  '0901000006',6,1,2),
+(7, 'pp_hanh_chinh','@123456','Ngô Văn Tài',   'pp_hc@hrm.com',  '0901000007',7,1,3),
+(8, 'cv_hc_01',     '@123456','Vũ Thị Nga',    'cv_hc1@hrm.com', '0901000008',7,1,7),
+(9, 'cv_hc_02',     '@123456','Đinh Văn Phúc', 'cv_hc2@hrm.com', '0901000009',7,1,7);
 
 -- Phòng Nhân Sự (dept=2): 4 HR Staff + hr_manager = 5
-INSERT INTO users (user_id,username,password,full_name,email,role_id,department_id,position_id) VALUES
-(10,'hr_staff_01','@123456','Đặng Thị Hồng','hrs1@hrm.com',5,2,8),
-(11,'hr_staff_02','@123456','Chu Văn Minh', 'hrs2@hrm.com',5,2,8),
-(12,'hr_staff_03','@123456','Lý Thị Loan',  'hrs3@hrm.com',5,2,8),
-(13,'hr_staff_04','@123456','Tạ Văn Sơn',   'hrs4@hrm.com',5,2,8);
+INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
+(10,'hr_staff_01','@123456','Đặng Thị Hồng','hrs1@hrm.com','0901000010',5,2,8),
+(11,'hr_staff_02','@123456','Chu Văn Minh', 'hrs2@hrm.com','0901000011',5,2,8),
+(12,'hr_staff_03','@123456','Lý Thị Loan',  'hrs3@hrm.com','0901000012',5,2,8),
+(13,'hr_staff_04','@123456','Tạ Văn Sơn',   'hrs4@hrm.com','0901000013',5,2,8);
 
--- Phòng Kế Toán (dept=3): 5 mới — kế toán dùng roleId=8 (Accountant)
-INSERT INTO users (user_id,username,password,full_name,email,role_id,department_id,position_id) VALUES
-(14,'ke_toan_truong','@123456','Phan Thị Khánh','ktt@hrm.com',    8,3,6),
-(15,'pp_ke_toan',    '@123456','Trịnh Văn Hùng','pp_kt@hrm.com',  8,3,3),
-(16,'cv_kt_01',      '@123456','Cao Thị Lan',   'cv_kt1@hrm.com', 8,3,7),
-(17,'cv_kt_02',      '@123456','Bùi Văn Tuấn',  'cv_kt2@hrm.com', 8,3,7),
-(18,'cv_kt_03',      '@123456','Đinh Thị Mai',  'cv_kt3@hrm.com', 8,3,7);
+-- Phòng Kế Toán (dept=3): 5 mới
+INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
+(14,'ke_toan_truong','@123456','Phan Thị Khánh','ktt@hrm.com',    '0901000014',6,3,6),
+(15,'pp_ke_toan',    '@123456','Trịnh Văn Hùng','pp_kt@hrm.com',  '0901000015',7,3,3),
+(16,'cv_kt_01',      '@123456','Cao Thị Lan',   'cv_kt1@hrm.com', '0901000016',7,3,7),
+(17,'cv_kt_02',      '@123456','Bùi Văn Tuấn',  'cv_kt2@hrm.com', '0901000017',7,3,7),
+(18,'cv_kt_03',      '@123456','Đinh Thị Mai',  'cv_kt3@hrm.com', '0901000018',7,3,7);
 
 -- Phòng Kinh Doanh (dept=4): 10 mới
-INSERT INTO users (user_id,username,password,full_name,email,role_id,department_id,position_id) VALUES
-(19,'tp_kinh_doanh','@123456','Hoàng Văn Lộc', 'tp_kd@hrm.com',  6,4,2),
-(20,'pp_kinh_doanh','@123456','Vũ Thị Thủy',   'pp_kd@hrm.com',  7,4,3),
-(21,'nv_kd_01',     '@123456','Nguyễn Văn Phú','nv_kd1@hrm.com', 7,4,8),
-(22,'nv_kd_02',     '@123456','Trần Thị Bích', 'nv_kd2@hrm.com', 7,4,8),
-(23,'nv_kd_03',     '@123456','Lê Văn Sáng',   'nv_kd3@hrm.com', 7,4,8),
-(24,'nv_kd_04',     '@123456','Phạm Thị Dung', 'nv_kd4@hrm.com', 7,4,8),
-(25,'nv_kd_05',     '@123456','Đỗ Văn Hòa',    'nv_kd5@hrm.com', 7,4,8),
-(26,'nv_kd_06',     '@123456','Ngô Thị Xuân',  'nv_kd6@hrm.com', 7,4,8),
-(27,'nv_kd_07',     '@123456','Bùi Văn Cường', 'nv_kd7@hrm.com', 7,4,8),
-(28,'nv_kd_08',     '@123456','Hoàng Thị Ánh', 'nv_kd8@hrm.com', 7,4,8);
+INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
+(19,'tp_kinh_doanh','@123456','Hoàng Văn Lộc', 'tp_kd@hrm.com',  '0901000019',6,4,2),
+(20,'pp_kinh_doanh','@123456','Vũ Thị Thủy',   'pp_kd@hrm.com',  '0901000020',7,4,3),
+(21,'nv_kd_01',     '@123456','Nguyễn Văn Phú','nv_kd1@hrm.com', '0901000021',7,4,8),
+(22,'nv_kd_02',     '@123456','Trần Thị Bích', 'nv_kd2@hrm.com', '0901000022',7,4,8),
+(23,'nv_kd_03',     '@123456','Lê Văn Sáng',   'nv_kd3@hrm.com', '0901000023',7,4,8),
+(24,'nv_kd_04',     '@123456','Phạm Thị Dung', 'nv_kd4@hrm.com', '0901000024',7,4,8),
+(25,'nv_kd_05',     '@123456','Đỗ Văn Hòa',    'nv_kd5@hrm.com', '0901000025',7,4,8),
+(26,'nv_kd_06',     '@123456','Ngô Thị Xuân',  'nv_kd6@hrm.com', '0901000026',7,4,8),
+(27,'nv_kd_07',     '@123456','Bùi Văn Cường', 'nv_kd7@hrm.com', '0901000027',7,4,8),
+(28,'nv_kd_08',     '@123456','Hoàng Thị Ánh', 'nv_kd8@hrm.com', '0901000028',7,4,8);
 
 -- Xưởng Sản Xuất - Quản lý (dept=5): 4 mới + quan_doc = 5
-INSERT INTO users (user_id,username,password,full_name,email,role_id,department_id,position_id) VALUES
-(29,'to_truong_01','@123456','Lý Văn Dũng',   'tt1@hrm.com',  6,5,5),
-(30,'to_truong_02','@123456','Tống Văn Thắng','tt2@hrm.com',  6,5,5),
-(31,'to_truong_03','@123456','Hà Thị Giang',  'tt3@hrm.com',  6,5,5),
-(32,'to_pho_01',   '@123456','Đinh Văn Khoa', 'tp_x@hrm.com', 7,5,5);
+INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
+(29,'to_truong_01','@123456','Lý Văn Dũng',   'tt1@hrm.com',  '0901000029',6,5,5),
+(30,'to_truong_02','@123456','Tống Văn Thắng','tt2@hrm.com',  '0901000030',6,5,5),
+(31,'to_truong_03','@123456','Hà Thị Giang',  'tt3@hrm.com',  '0901000031',6,5,5),
+(32,'to_pho_01',   '@123456','Đinh Văn Khoa', 'tp_x@hrm.com', '0901000032',7,5,5);
 
 -- ── Profiles quản lý (user_id 6-32) ──
 -- Format: (uid, id_card, dob, gender, address, hire_date, tax_code, bank_account, ct, sg, es, el)
-INSERT INTO employee_profiles (user_id,id_card,dob,gender,address,hire_date,tax_code,bank_account,contract_type_id,salary_grade_id,employment_status_id,education_level_id) VALUES
-(6, '024880000006','1988-06-20',0,'Cầu Giấy, Hà Nội',     '2018-03-01','8012345706','0011234506',4,1,2,2),
-(7, '024920000007','1992-04-10',1,'Đống Đa, Hà Nội',       '2020-05-01','8012345707','0011234507',4,2,2,2),
-(8, '024950000008','1995-08-15',0,'Ba Đình, Hà Nội',        '2021-01-10','8012345708','0011234508',3,2,2,2),
-(9, '024930000009','1993-11-22',1,'Hoàn Kiếm, Hà Nội',     '2022-03-15','8012345709','0011234509',2,2,2,2),
-(10,'024940000010','1994-02-28',0,'Hà Nội',                 '2021-06-01','8012345710','0011234510',4,2,2,2),
-(11,'024960000011','1996-07-14',1,'Hà Nội',                 '2022-08-01','8012345711','0011234511',3,2,2,2),
-(12,'024970000012','1997-03-05',0,'Hà Nội',                 '2023-01-10','8012345712','0011234512',2,2,2,3),
-(13,'024980000013','1998-09-20',1,'Hà Nội',                 '2023-07-01','8012345713','0011234513',1,2,1,3),
-(14,'024820000014','1982-12-10',0,'Hai Bà Trưng, Hà Nội',  '2015-02-01','8012345714','0011234514',4,1,2,1),
-(15,'024870000015','1987-05-18',1,'Thanh Xuân, Hà Nội',    '2018-10-01','8012345715','0011234515',4,2,2,2),
-(16,'024910000016','1991-01-25',0,'Cầu Giấy, Hà Nội',      '2019-04-01','8012345716','0011234516',4,2,2,2),
-(17,'024930000017','1993-08-30',1,'Nam Từ Liêm, Hà Nội',   '2020-01-15','8012345717','0011234517',4,2,2,2),
-(18,'024950000018','1995-04-12',0,'Hà Nội',                 '2021-09-01','8012345718','0011234518',3,2,2,2),
-(19,'024830000019','1983-07-22',1,'Đống Đa, Hà Nội',       '2016-01-01','8012345719','0011234519',4,1,2,2),
-(20,'024890000020','1989-11-08',0,'Hà Nội',                 '2019-03-01','8012345720','0011234520',4,2,2,2),
-(21,'024910000021','1991-05-15',1,'Hà Nội',                 '2020-06-01','8012345721','0011234521',3,3,2,2),
-(22,'024930000022','1993-02-28',0,'Hà Nội',                 '2020-10-01','8012345722','0011234522',3,3,2,2),
-(23,'024940000023','1994-09-10',1,'Hà Nội',                 '2021-03-01','8012345723','0011234523',2,3,2,2),
-(24,'024960000024','1996-06-20',0,'TP. Hồ Chí Minh',       '2021-08-15','8012345724','0011234524',2,3,2,2),
-(25,'024920000025','1992-12-01',1,'TP. Hồ Chí Minh',       '2022-01-10','8012345725','0011234525',3,3,2,2),
-(26,'024980000026','1998-04-05',0,'Hà Nội',                 '2022-07-01','8012345726','0011234526',2,3,2,3),
-(27,'024970000027','1997-08-18',1,'Hà Nội',                 '2023-01-05','8012345727','0011234527',2,3,2,2),
-(28,'024990000028','1999-03-22',0,'Hà Nội',                 '2023-06-01','8012345728','0011234528',1,3,1,2),
-(29,'056800000029','1980-08-15',1,'Từ Sơn, Bắc Ninh',      '2015-06-01','8012345729','0011234529',4,2,2,3),
-(30,'056820000030','1982-03-10',1,'Từ Sơn, Bắc Ninh',      '2017-01-01','8012345730','0011234530',4,2,2,3),
-(31,'056850000031','1985-11-25',0,'Từ Sơn, Bắc Ninh',      '2018-04-01','8012345731','0011234531',4,2,2,3),
-(32,'056880000032','1988-06-30',1,'Từ Sơn, Bắc Ninh',      '2020-09-01','8012345732','0011234532',4,2,2,3);
+-- Format: (uid, dept_id, id_card, dob, gender, address, hire_date, tax_code, social_insurance_no, bank_account, bank_name, ct, sg, es, el)
+INSERT INTO employee_profiles (user_id,department_id,id_card,dob,gender,address,hire_date,tax_code,social_insurance_no,bank_account,bank_name,contract_type_id,salary_grade_id,employment_status_id,education_level_id) VALUES
+(6, 1,'024880000006','1988-06-20',0,'Cầu Giấy, Hà Nội',     '2018-03-01','8012345706','0200001006','0011234506','Vietcombank',4,1,2,2),
+(7, 1,'024920000007','1992-04-10',1,'Đống Đa, Hà Nội',       '2020-05-01','8012345707','0200001007','0011234507','BIDV',        4,2,2,2),
+(8, 1,'024950000008','1995-08-15',0,'Ba Đình, Hà Nội',        '2021-01-10','8012345708','0200001008','0011234508','Techcombank', 3,2,2,2),
+(9, 1,'024930000009','1993-11-22',1,'Hoàn Kiếm, Hà Nội',     '2022-03-15','8012345709','0200001009','0011234509','Agribank',    2,2,2,2),
+(10,2,'024940000010','1994-02-28',0,'Hà Nội',                 '2021-06-01','8012345710','0200001010','0011234510','VPBank',      4,2,2,2),
+(11,2,'024960000011','1996-07-14',1,'Hà Nội',                 '2022-08-01','8012345711','0200001011','0011234511','Techcombank', 3,2,2,2),
+(12,2,'024970000012','1997-03-05',0,'Hà Nội',                 '2023-01-10','8012345712','0200001012','0011234512','BIDV',        2,2,2,3),
+(13,2,'024980000013','1998-09-20',1,'Hà Nội',                 '2023-07-01','8012345713','0200001013','0011234513','Agribank',    1,2,1,3),
+(14,3,'024820000014','1982-12-10',0,'Hai Bà Trưng, Hà Nội',  '2015-02-01','8012345714','0200001014','0011234514','Vietcombank', 4,1,2,1),
+(15,3,'024870000015','1987-05-18',1,'Thanh Xuân, Hà Nội',    '2018-10-01','8012345715','0200001015','0011234515','BIDV',        4,2,2,2),
+(16,3,'024910000016','1991-01-25',0,'Cầu Giấy, Hà Nội',      '2019-04-01','8012345716','0200001016','0011234516','VPBank',      4,2,2,2),
+(17,3,'024930000017','1993-08-30',1,'Nam Từ Liêm, Hà Nội',   '2020-01-15','8012345717','0200001017','0011234517','Techcombank', 4,2,2,2),
+(18,3,'024950000018','1995-04-12',0,'Hà Nội',                 '2021-09-01','8012345718','0200001018','0011234518','Agribank',    3,2,2,2),
+(19,4,'024830000019','1983-07-22',1,'Đống Đa, Hà Nội',       '2016-01-01','8012345719','0200001019','0011234519','Vietcombank', 4,1,2,2),
+(20,4,'024890000020','1989-11-08',0,'Hà Nội',                 '2019-03-01','8012345720','0200001020','0011234520','BIDV',        4,2,2,2),
+(21,4,'024910000021','1991-05-15',1,'Hà Nội',                 '2020-06-01','8012345721','0200001021','0011234521','VPBank',      3,3,2,2),
+(22,4,'024930000022','1993-02-28',0,'Hà Nội',                 '2020-10-01','8012345722','0200001022','0011234522','Agribank',    3,3,2,2),
+(23,4,'024940000023','1994-09-10',1,'Hà Nội',                 '2021-03-01','8012345723','0200001023','0011234523','Techcombank', 2,3,2,2),
+(24,4,'024960000024','1996-06-20',0,'TP. Hồ Chí Minh',       '2021-08-15','8012345724','0200001024','0011234524','Vietcombank', 2,3,2,2),
+(25,4,'024920000025','1992-12-01',1,'TP. Hồ Chí Minh',       '2022-01-10','8012345725','0200001025','0011234525','BIDV',        3,3,2,2),
+(26,4,'024980000026','1998-04-05',0,'Hà Nội',                 '2022-07-01','8012345726','0200001026','0011234526','VPBank',      2,3,2,3),
+(27,4,'024970000027','1997-08-18',1,'Hà Nội',                 '2023-01-05','8012345727','0200001027','0011234527','Agribank',    2,3,2,2),
+(28,4,'024990000028','1999-03-22',0,'Hà Nội',                 '2023-06-01','8012345728','0200001028','0011234528','Techcombank', 1,3,1,2),
+(29,5,'056800000029','1980-08-15',1,'Từ Sơn, Bắc Ninh',      '2015-06-01','8012345729','0200001029','0011234529','Vietcombank', 4,2,2,3),
+(30,5,'056820000030','1982-03-10',1,'Từ Sơn, Bắc Ninh',      '2017-01-01','8012345730','0200001030','0011234530','BIDV',        4,2,2,3),
+(31,5,'056850000031','1985-11-25',0,'Từ Sơn, Bắc Ninh',      '2018-04-01','8012345731','0200001031','0011234531','Agribank',    4,2,2,3),
+(32,5,'056880000032','1988-06-30',1,'Từ Sơn, Bắc Ninh',      '2020-09-01','8012345732','0200001032','0011234532','Techcombank', 4,2,2,3);
 
 -- ================================================================
 -- 18. CÔNG NHÂN (user_id 33-181, 149 người)
@@ -1006,14 +1003,3 @@ INSERT INTO overtime_assignments (assignment_id, plan_id, user_id, assigned_hour
 (3, 1, 30, 2.5, 'Pending'),   -- Tổ trưởng 2: 2.5h OT
 (4, 2, 31, 2.0, 'Cancelled'), -- Tổ trưởng 3: cancelled
 (5, 2, 32, 3.0, 'Pending');   -- Tổ phó: 3h OT
-
--- ══════════════════════════════════════════════════════
--- PAYROLL MODULE MIGRATION
--- Run these SQL statements to update your existing database 
--- without resetting the entire schema.
--- ══════════════════════════════════════════════════════
--- ALTER TABLE payroll MODIFY COLUMN status ENUM('Draft','Pending','Approved','Rejected','Paid') DEFAULT 'Draft';
--- ALTER TABLE payroll ADD COLUMN approved_by INT NULL, ADD COLUMN approved_at DATETIME NULL, ADD COLUMN reject_reason VARCHAR(255) NULL, ADD COLUMN paid_by INT NULL, ADD COLUMN paid_at DATETIME NULL, ADD COLUMN payment_note VARCHAR(255) NULL;
--- ALTER TABLE payroll ADD CONSTRAINT fk_payroll_approved_by FOREIGN KEY (approved_by) REFERENCES users(user_id) ON DELETE SET NULL;
--- ALTER TABLE payroll ADD CONSTRAINT fk_payroll_paid_by FOREIGN KEY (paid_by) REFERENCES users(user_id) ON DELETE SET NULL;
--- ALTER TABLE payroll ADD CONSTRAINT uk_user_month_year UNIQUE (user_id, month, year);
