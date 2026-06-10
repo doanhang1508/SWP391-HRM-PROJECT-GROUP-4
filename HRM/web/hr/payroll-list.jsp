@@ -273,23 +273,12 @@
                     </div>
                     
                     <div class="d-flex gap-2">
-                        <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" class="d-flex gap-2 align-items-center bg-white p-2 rounded shadow-sm" style="border: 1px solid #e2e8f0;">
-                            <input type="hidden" name="action" value="generateDraft">
-                            <span class="text-muted small fw-bold">Tạo kỳ lương mới:</span>
-                            <select name="month" style="padding:5px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:.82rem;outline:none;cursor:pointer;">
-                                <c:forEach var="m" begin="1" end="12">
-                                    <option value="${m}">Tháng ${m}</option>
-                                </c:forEach>
-                            </select>
-                            <select name="year" style="padding:5px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:.82rem;outline:none;cursor:pointer;">
-                                <c:forEach var="y" begin="2024" end="2030">
-                                    <option value="${y}">Năm ${y}</option>
-                                </c:forEach>
-                            </select>
-                            <button type="submit" class="btn-add" style="padding: 6px 12px; font-size: 0.82rem; border-radius: 6px;">
-                                <i class="fas fa-magic"></i> Khởi tạo
-                            </button>
-                        </form>
+                        <button type="button"
+                                class="btn-add"
+                                data-bs-toggle="modal"
+                                data-bs-target="#generatePayrollModal">
+                            <i class="fas fa-magic"></i> Khởi tạo kỳ lương
+                        </button>
                     </div>
                 </div>
 
@@ -541,6 +530,70 @@
     </div>
 </div>
 
+
+<!-- Generate Payroll Modal -->
+<div class="modal fade" id="generatePayrollModal" tabindex="-1" aria-labelledby="generatePayrollModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:16px;border:none;box-shadow:0 10px 30px rgba(0,0,0,.12);">
+            <div class="modal-header" style="background:linear-gradient(135deg,var(--pri),#4f46e5);color:#fff;border-radius:16px 16px 0 0;padding:20px 24px;">
+                <h5 class="modal-title fw-bold" id="generatePayrollModalLabel">
+                    <i class="fas fa-magic me-2"></i> Khởi tạo kỳ lương mới
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" onsubmit="return confirmGeneratePayroll();">
+                <input type="hidden" name="action" value="generateDraft">
+
+                <div class="modal-body" style="padding:28px;">
+                    <p class="text-muted mb-4" style="font-size:.9rem;">
+                        Chọn tháng và năm để hệ thống khởi tạo bảng lương nháp cho kỳ lương mới.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tháng</label>
+                        <select id="generateMonth" name="month" class="form-select" style="border-radius:10px;padding:10px 12px;">
+                            <c:forEach var="m" begin="1" end="12">
+                                <option value="${m}">Tháng ${m}</option>
+                            </c:forEach>
+                        </select>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold">Năm</label>
+                        <select id="generateYear" name="year" class="form-select" style="border-radius:10px;padding:10px 12px;">
+                            <c:forEach var="y" begin="2024" end="2030">
+                                <option value="${y}">Năm ${y}</option>
+                            </c:forEach>
+                        </select>
+                    </div>
+
+                    <div class="mt-4 p-3" style="background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;">
+                        <div class="fw-semibold mb-1" style="color:var(--txt);">
+                            <i class="fas fa-circle-info me-1 text-primary"></i> Lưu ý
+                        </div>
+                        <div class="text-muted" style="font-size:.86rem;">
+                            Sau khi khởi tạo, bảng lương sẽ ở trạng thái <b>Draft</b> và có thể kiểm tra trước khi gửi duyệt.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="background:#f8fafc;border-top:1px solid #e2e8f0;border-radius:0 0 16px 16px;padding:16px 24px;">
+                    <button type="button"
+                            class="btn btn-secondary px-4 fw-semibold"
+                            data-bs-dismiss="modal"
+                            style="border-radius:8px;">
+                        Hủy
+                    </button>
+                    <button type="submit" class="btn-add" style="border-radius:8px;">
+                        <i class="fas fa-magic"></i> Khởi tạo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Payroll Detail Modal -->
 <div class="modal fade" id="payrollDetailModal" tabindex="-1" aria-labelledby="payrollDetailModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -642,6 +695,12 @@
 <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
 <script>
+function confirmGeneratePayroll() {
+    const month = document.getElementById('generateMonth').value;
+    const year = document.getElementById('generateYear').value;
+    return confirm('Bạn có chắc muốn khởi tạo bảng lương tháng ' + month + '/' + year + '?');
+}
+
 document.addEventListener("DOMContentLoaded", function() {
     const detailModal = document.getElementById('payrollDetailModal');
     if (detailModal) {
