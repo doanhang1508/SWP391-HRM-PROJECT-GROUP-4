@@ -247,7 +247,8 @@ CREATE TABLE shift_assignments (
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_sa_user  FOREIGN KEY (user_id)  REFERENCES users(user_id)   ON DELETE CASCADE,
     CONSTRAINT fk_sa_shift FOREIGN KEY (shift_id) REFERENCES shifts(shift_id) ON DELETE CASCADE,
-    UNIQUE KEY idx_user_date (user_id, assigned_date)
+    INDEX idx_user_date (user_id, assigned_date),
+    UNIQUE KEY idx_user_shift_date (user_id, shift_id, assigned_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE attendance (
