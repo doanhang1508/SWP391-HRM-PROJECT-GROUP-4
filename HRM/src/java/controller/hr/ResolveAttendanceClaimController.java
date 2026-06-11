@@ -20,7 +20,7 @@ import java.util.List;
  * Roles: HR (2), Admin (1)
  */
 @WebServlet(name = "ResolveAttendanceClaimController", urlPatterns = {"/hr/attendance-claims"})
-public class  extends HttpServlet {
+public class ResolveAttendanceClaimController extends HttpServlet {
 
     private final AttendanceDAO attendanceDAO = new AttendanceDAO();
 
