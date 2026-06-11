@@ -473,7 +473,25 @@
                                                         </a>
                                                     </li>
 
-                                                    <%-- TODO Iteration 2: Xem tổng hợp chấm công toàn công ty --%>
+                                                    <li class="sidebar-menu-category">Chấm công</li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/timesheet-lock"
+                                                            class="sidebar-link ${param.activeMenu eq 'timesheet-lock' ? 'active' : ''}">
+                                                            <i class="fas fa-lock"></i> Khóa công
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/attendance-claims"
+                                                            class="sidebar-link ${param.activeMenu eq 'attendance-claims' ? 'active' : ''}">
+                                                            <i class="fas fa-clipboard-check"></i> Yêu cầu chấm lại công
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/import-attendance"
+                                                            class="sidebar-link ${param.activeMenu eq 'import-attendance' ? 'active' : ''}">
+                                                            <i class="fas fa-file-import"></i> Import chấm công
+                                                        </a>
+                                                    </li>
                                                 </c:if>
 
                                                 <%-- ══════ FACTORY MANAGER / SUPERVISOR (roleId=3) ══════
@@ -594,6 +612,18 @@
                                                                         <a href="${pageContext.request.contextPath}/employee/schedule"
                                                                             class="sidebar-link ${param.activeMenu eq 'schedule' ? 'active' : ''}">
                                                                             <i class="fas fa-calendar-alt"></i> Lịch phân ca
+                                                                        </a>
+                                                                    </li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/employee/attendance"
+                                                                            class="sidebar-link ${param.activeMenu eq 'attendance' ? 'active' : ''}">
+                                                                            <i class="fas fa-fingerprint"></i> Bảng chấm công
+                                                                        </a>
+                                                                    </li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/employee/attendance-claim"
+                                                                            class="sidebar-link ${param.activeMenu eq 'attendance-claim' ? 'active' : ''}">
+                                                                            <i class="fas fa-paper-plane"></i> Yêu cầu chấm lại công
                                                                         </a>
                                                                     </li>
                                                                     <li class="sidebar-item">
