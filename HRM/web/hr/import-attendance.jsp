@@ -134,19 +134,19 @@
 
         <!-- Upload Panel -->
         <div class="panel">
-            <div class="panel-title"><i class="fas fa-upload"></i> Upload File CSV</div>
+            <div class="panel-title"><i class="fas fa-upload"></i> Upload File Excel / CSV</div>
 
             <form method="post" action="${pageContext.request.contextPath}/hr/import-attendance"
                   enctype="multipart/form-data" id="importForm">
                 <input type="hidden" name="action" value="import">
 
                 <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
-                    <i class="fas fa-file-csv"></i>
-                    <h4>Kéo thả hoặc click để chọn file CSV</h4>
-                    <p>Hỗ trợ file .csv (tối đa 5MB)</p>
+                    <i class="fas fa-file-excel" style="color:#1D6F42"></i>
+                    <h4>Kéo thả hoặc click để chọn file</h4>
+                    <p>Hỗ trợ <strong>.xlsx</strong>, <strong>.xls</strong> (Excel) và <strong>.csv</strong> — tối đa 10MB</p>
                     <div id="fileName"></div>
                 </div>
-                <input type="file" id="fileInput" name="attendanceFile" accept=".csv">
+                <input type="file" id="fileInput" name="attendanceFile" accept=".xlsx,.xls,.csv">
 
                 <div class="form-row">
                     <div class="form-group">
@@ -176,15 +176,21 @@
         <!-- Format Guide -->
         <div class="panel">
             <div class="panel-title" style="justify-content:space-between">
-                <span><i class="fas fa-info-circle"></i> Hướng dẫn định dạng CSV</span>
-                <a href="${pageContext.request.contextPath}/hr/attendance-template.csv"
-                   class="download-link">
-                    <i class="fas fa-download"></i> Tải file mẫu
-                </a>
+                <span><i class="fas fa-info-circle"></i> Hướng dẫn định dạng file</span>
+            </div>
+
+            <%-- Excel tip --%>
+            <div style="margin-bottom:16px;padding:12px 16px;background:#f0fdf4;border-radius:8px;border-left:4px solid #10b981;display:flex;align-items:flex-start;gap:10px">
+                <i class="fas fa-file-excel" style="color:#10b981;margin-top:2px"></i>
+                <div style="font-size:.85rem;color:#065f46">
+                    <strong>Excel (.xlsx/.xls):</strong> Mở file Excel bình thường, đảm bảo <strong>Sheet đầu tiên</strong> chứa dữ liệu với hàng đầu là tiêu đề cột theo thứ tự dưới đây.
+                    Ô ngày tháng có thể để định dạng ngày của Excel (dd/MM/yyyy) hoặc text <code>yyyy-MM-dd</code>.
+                    Ô giờ có thể để định dạng giờ Excel hoặc text <code>HH:mm</code>.
+                </div>
             </div>
 
             <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">
-                File CSV phải có <strong>dòng tiêu đề</strong> ở đầu với các cột theo thứ tự sau:
+                Cả file Excel và CSV đều phải có <strong>hàng tiêu đề</strong> ở dòng đầu, các cột theo thứ tự:
             </p>
 
             <table class="guide-table">
@@ -210,6 +216,7 @@
                     <strong><i class="fas fa-exclamation-triangle"></i> Lưu ý:</strong>
                     Hệ thống sẽ bỏ qua các bản ghi bị trùng (cùng user_id + work_date + shift_id).
                     Tháng đã bị khóa sẽ không cho phép import.
+                    Với file Excel, chỉ đọc <strong>Sheet đầu tiên</strong>.
                 </p>
             </div>
         </div>
