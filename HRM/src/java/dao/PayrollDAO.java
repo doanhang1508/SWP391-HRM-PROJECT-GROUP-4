@@ -778,4 +778,32 @@ public class PayrollDAO {
         }
         return list;
     }
+
+    public List<Payroll> getPayrollsWithBankDetails(int month, int year) {
+        List<Payroll> list = new ArrayList<>();
+        String sql = "SELECT p.*, u.full_name, ep.bank_account, ep.bank_name " +
+                     "FROM payroll p " +
+                     "LEFT JOIN users u ON p.user_id = u.user_id " +
+                     "LEFT JOIN employee_profiles ep ON p.user_id = ep.user_id " +
+                     "WHERE p.month = ? AND p.year = ? " +
+                     "ORDER BY p.user_id";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Payroll p = mapRow(rs);
+                    p.setFullName(rs.getString("full_name"));
+                    p.setBankAccount(rs.getString("bank_account"));
+                    p.setBankName(rs.getString("bank_name"));
+                    list.add(p);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }

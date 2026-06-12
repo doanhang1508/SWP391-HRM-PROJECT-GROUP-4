@@ -6,6 +6,7 @@
 <jsp:include page="../header.jsp" />
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 <style>
     :root {
         --pri:  #0d9488;
@@ -23,14 +24,12 @@
         --txt:  #0f172a;
         --muted:#64748b;
     }
-    footer, #chatWidget { display: none !important; }
     body { background: var(--bg); font-family: 'Inter', sans-serif; }
-
     .dashboard-wrapper { display: flex; min-height: calc(100vh - 64px); }
     .main-content { flex: 1; padding: 30px 32px; min-width: 0; }
 
-    /* ── Page Header ── */
-    .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+    /* Page Header */
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
     .page-title   { font-size: 1.5rem; font-weight: 800; color: var(--txt); margin: 0; }
     .breadcrumb-c { font-size: .82rem; color: var(--muted); margin: 4px 0 0; }
     .breadcrumb-c a { color: var(--pri); text-decoration: none; }
@@ -41,7 +40,7 @@
         box-shadow: 0 2px 8px rgba(13,148,136,.3);
     }
 
-    /* ── Stat Cards ── */
+    /* Stat Cards */
     .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 18px; margin-bottom: 28px; }
     .stat-card {
         background: var(--card); border-radius: 16px; padding: 20px 22px;
@@ -60,7 +59,7 @@
     .stat-card.c-warn  { border-left: 4px solid var(--warn); } .stat-card.c-warn  .stat-icon { background: var(--warn-l); color: var(--warn); }
     .stat-card.c-blue  { border-left: 4px solid var(--blue); } .stat-card.c-blue  .stat-icon { background: var(--blue-l); color: var(--blue); }
 
-    /* ── Filter Panel ── */
+    /* Filter Panel */
     .filter-panel {
         background: var(--card); border-radius: 16px; padding: 20px 24px;
         border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,.04);
@@ -73,21 +72,14 @@
         transition: border-color .2s;
     }
     .filter-panel select:focus, .filter-panel input:focus { border-color: var(--pri); }
-    .btn-filter {
-        background: var(--pri); color: #fff; border: none; border-radius: 8px;
-        padding: 9px 20px; font-size: .88rem; font-weight: 600; cursor: pointer;
-        display: inline-flex; align-items: center; gap: 7px; transition: all .2s;
-    }
-    .btn-filter:hover { background: #0f766e; transform: translateY(-1px); }
     .btn-mark-all {
         background: var(--ok); color: #fff; border: none; border-radius: 8px;
-        padding: 9px 20px; font-size: .88rem; font-weight: 600; cursor: pointer;
-        display: inline-flex; align-items: center; gap: 7px; transition: all .2s; margin-left: auto;
+        padding: 10px 20px; font-size: .88rem; font-weight: 600; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 7px; transition: all .2s;
     }
-    .btn-mark-all:hover { background: #059669; transform: translateY(-1px); }
-    .btn-mark-all:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
+    .btn-mark-all:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16,185,129,.3); }
 
-    /* ── Table ── */
+    /* Table */
     .panel {
         background: var(--card); border-radius: 16px; padding: 24px;
         border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,.04);
@@ -108,34 +100,37 @@
     .tbl tr td:last-child  { border-right: 1px solid #f1f5f9; border-radius: 0 10px 10px 0; }
     .tbl tbody tr:hover td { background: #f8fafc; }
 
-    .badge { padding: 4px 11px; border-radius: 6px; font-weight: 600; font-size: .73rem; display: inline-flex; align-items: center; gap: 4px; }
+    .badge-s { padding: 5px 12px; border-radius: 6px; font-weight: 600; font-size: .74rem; display: inline-flex; align-items: center; gap: 5px; }
     .b-draft    { background: #f1f5f9; color: #64748b; }
     .b-approved { background: var(--warn-l); color: #b45309; }
     .b-paid     { background: var(--ok-l); color: #065f46; }
+    .b-pending  { background: var(--warn-l); color: #b45309; }
+    .b-rejected { background: var(--ng-l); color: #991b1b; }
 
     .emp-name { font-weight: 700; color: var(--txt); }
     .emp-id   { font-size: .75rem; color: var(--muted); }
-
     .currency { font-weight: 700; color: var(--txt); font-size: .9rem; }
 
-    .btn-pay {
-        height: 32px; padding: 0 14px; border: none; border-radius: 7px;
-        background: var(--ok); color: #fff; font-size: .81rem; font-weight: 600;
-        cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
-        transition: all .2s;
+    .btn-a {
+        height: 32px; display: inline-flex; align-items: center; justify-content: center;
+        border-radius: 8px; border: none; color: #fff; padding: 0 12px;
+        font-size: .82rem; font-weight: 500; text-decoration: none; gap: 5px;
+        cursor: pointer; transition: all .2s;
     }
-    .btn-pay:hover { background: #059669; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(16,185,129,.3); }
+    .btn-a:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,.12); color: #fff; }
+    .btn-pay { background: var(--ok); }
+    .btn-view { background: #0d9488; }
 
     /* Pagination */
     .pagination-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid #f1f5f9; }
     .pg-info { font-size: .83rem; color: var(--muted); }
     .pg-btns { display: flex; gap: 6px; }
     .pg-btn  { width: 32px; height: 32px; border: 1px solid #e2e8f0; background: #fff; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: .82rem; color: var(--muted); cursor: pointer; transition: all .15s; }
-    .pg-btn:hover { background: var(--pri); color: #fff; border-color: var(--pri); }
+    .pg-btn:hover:not(:disabled) { background: var(--pri); color: #fff; border-color: var(--pri); }
     .pg-btn:disabled { opacity: .4; cursor: not-allowed; }
 
     /* Alert */
-    .alert-c { border: none; border-radius: 10px; padding: 12px 18px; font-size: .88rem; margin-bottom: 16px; display: flex; align-items: center; gap: 9px; }
+    .alert-c { border: none; border-radius: 10px; padding: 12px 20px; font-size: .88rem; margin-bottom: 24px; display: flex; align-items: center; gap: 9px; }
     .a-ok  { background: #d1fae5; color: #065f46; }
     .a-err { background: #fee2e2; color: #991b1b; }
 
@@ -148,243 +143,646 @@
     </jsp:include>
 
     <div class="main-content">
-
-        <%-- ── Page Header ── --%>
-        <div class="page-header">
-            <div>
-                <h1 class="page-title"><i class="fas fa-file-invoice-dollar" style="color:var(--pri);margin-right:8px;"></i>Quản Lý Bảng Lương</h1>
-                <p class="breadcrumb-c"><a href="${pageContext.request.contextPath}/accountant/payroll">Bảng lương</a> &gt; Tháng ${month}/${year}</p>
-            </div>
-            <div class="role-badge"><i class="fas fa-calculator"></i> Kế Toán</div>
-        </div>
-
-        <%-- ── Thông báo ── --%>
-        <c:if test="${not empty sessionScope.successMessage}">
-            <div class="alert-c a-ok"><i class="fas fa-check-circle"></i>${sessionScope.successMessage}</div>
-            <c:remove var="successMessage" scope="session"/>
-        </c:if>
-        <c:if test="${not empty sessionScope.errorMessage}">
-            <div class="alert-c a-err"><i class="fas fa-exclamation-circle"></i>${sessionScope.errorMessage}</div>
-            <c:remove var="errorMessage" scope="session"/>
-        </c:if>
-
-        <%-- ── Stat Cards ── --%>
-        <div class="stat-grid">
-            <div class="stat-card c-teal">
-                <div class="stat-header">
-                    <span class="stat-label">Tổng Nhân Viên</span>
-                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+        <c:choose>
+            <c:when test="${viewMode == 'months'}">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-file-invoice-dollar" style="color:var(--pri);margin-right:8px;"></i>Quản Lý Bảng Lương theo Tháng</h1>
+                        <p class="breadcrumb-c"><a href="${pageContext.request.contextPath}/dashboard">Bảng điều khiển</a> &gt; Bảng lương</p>
+                    </div>
+                    <div class="role-badge"><i class="fas fa-calculator"></i> Kế Toán</div>
                 </div>
-                <div class="stat-val">${totalCount}</div>
-                <div class="stat-sub">Có bảng lương tháng này</div>
-            </div>
-            <div class="stat-card c-warn">
-                <div class="stat-header">
-                    <span class="stat-label">Chờ Chuyển Khoản</span>
-                    <div class="stat-icon"><i class="fas fa-clock"></i></div>
-                </div>
-                <div class="stat-val">${approvedCount}</div>
-                <div class="stat-sub">Đã duyệt, chưa thanh toán</div>
-            </div>
-            <div class="stat-card c-ok">
-                <div class="stat-header">
-                    <span class="stat-label">Đã Chuyển Khoản</span>
-                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-                </div>
-                <div class="stat-val">${paidCount}</div>
-                <div class="stat-sub">Hoàn thành</div>
-            </div>
-            <div class="stat-card c-blue">
-                <div class="stat-header">
-                    <span class="stat-label">Tiến Độ</span>
-                    <div class="stat-icon"><i class="fas fa-tasks"></i></div>
-                </div>
-                <div class="stat-val">
-                    <c:choose>
-                        <c:when test="${totalCount > 0}"><fmt:formatNumber value="${paidCount * 100 / totalCount}" maxFractionDigits="0"/>%</c:when>
-                        <c:otherwise>—</c:otherwise>
-                    </c:choose>
-                </div>
-                <div class="stat-sub">Tỉ lệ đã thanh toán</div>
-            </div>
-        </div>
 
-        <%-- ── Filter & Actions ── --%>
-        <form method="get" action="${pageContext.request.contextPath}/accountant/payroll" class="filter-panel">
-            <label>Tháng:</label>
-            <select name="month" id="filterMonth">
-                <c:forEach begin="1" end="12" var="m">
-                    <option value="${m}" ${m == month ? 'selected' : ''}>Tháng ${m}</option>
-                </c:forEach>
-            </select>
-            <label>Năm:</label>
-            <input type="number" name="year" value="${year}" min="2020" max="2099" style="width:90px;">
-            <button type="submit" class="btn-filter"><i class="fas fa-search"></i> Lọc</button>
+                <%-- Thông báo --%>
+                <c:if test="${not empty sessionScope.successMessage}">
+                    <div class="alert alert-c a-ok alert-dismissible fade show"><i class="fas fa-check-circle me-2"></i>${sessionScope.successMessage}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+                    <c:remove var="successMessage" scope="session"/>
+                </c:if>
+                <c:if test="${not empty sessionScope.errorMessage}">
+                    <div class="alert alert-c a-err alert-dismissible fade show"><i class="fas fa-exclamation-circle me-2"></i>${sessionScope.errorMessage}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+                    <c:remove var="errorMessage" scope="session"/>
+                </c:if>
 
-            <%-- Nút chuyển khoản tất cả --%>
-            <c:if test="${approvedCount > 0}">
-                <form method="post" action="${pageContext.request.contextPath}/accountant/payroll"
-                      style="margin-left:auto;"
-                      onsubmit="return confirm('Xác nhận đã chuyển khoản cho ${approvedCount} nhân viên tháng ${month}/${year}?')">
-                    <input type="hidden" name="action" value="markAllPaid">
-                    <input type="hidden" name="month" value="${month}">
-                    <input type="hidden" name="year"  value="${year}">
-                    <button type="submit" class="btn-mark-all">
-                        <i class="fas fa-check-double"></i> Xác nhận tất cả (${approvedCount})
-                    </button>
-                </form>
-            </c:if>
-        </form>
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3 class="panel-title"><div class="panel-icon"><i class="fas fa-list"></i></div> Danh sách kỳ lương</h3>
+                        <div class="d-flex gap-2 align-items-center">
+                            <select id="filterMonth" onchange="filterMonthlyTable()" style="padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:.88rem;outline:none;cursor:pointer;font-family:'Inter',sans-serif;">
+                                <option value="all">Tất cả tháng</option>
+                                <c:forEach var="m" begin="1" end="12">
+                                    <option value="${m}">Tháng ${m}</option>
+                                </c:forEach>
+                            </select>
+                            <select id="filterYear" onchange="filterMonthlyTable()" style="padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:.88rem;outline:none;cursor:pointer;font-family:'Inter',sans-serif;">
+                                <option value="all">Tất cả năm</option>
+                                <option value="2024">2024</option>
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                                <option value="2027">2027</option>
+                            </select>
+                        </div>
+                    </div>
 
-        <%-- ── Payroll Table ── --%>
-        <div class="panel">
-            <div class="panel-header">
-                <h3 class="panel-title">
-                    <div class="panel-icon"><i class="fas fa-list-alt"></i></div>
-                    Bảng Lương Tháng ${month}/${year}
-                </h3>
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="searchInput" placeholder="Tìm nhân viên..." oninput="filterTable()">
+                    <div class="table-responsive">
+                        <table id="monthlyTable" class="tbl">
+                            <thead>
+                                <tr>
+                                    <th>Kỳ lương (Tháng/Năm)</th>
+                                    <th>Số lượng nhân viên</th>
+                                    <th>Tổng tiền chi trả (Net)</th>
+                                    <th>Trạng thái</th>
+                                    <th class="text-end">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <c:choose>
+                                    <c:when test="${empty monthlySummaries}">
+                                        <tr>
+                                            <td colspan="5" class="text-center" style="color:var(--muted)">Chưa có dữ liệu kỳ lương nào.</td>
+                                        </tr>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <c:forEach var="s" items="${monthlySummaries}">
+                                            <tr>
+                                                <td><span class="fw-bold" style="color:var(--pri)">Tháng ${s.month} / ${s.year}</span></td>
+                                                <td>${s.totalEmployees} nhân viên</td>
+                                                <td><span class="fw-bold text-success"><fmt:formatNumber value="${s.totalNet}" type="currency" currencySymbol="₫" maxFractionDigits="0"/></span></td>
+                                                <td>
+                                                    <c:choose>
+                                                        <c:when test="${s.status == 'Draft'}"><span class="badge-s b-draft"><i class="fas fa-edit"></i> Draft</span></c:when>
+                                                        <c:when test="${s.status == 'Pending'}"><span class="badge-s b-pending"><i class="fas fa-clock"></i> Pending</span></c:when>
+                                                        <c:when test="${s.status == 'Approved'}"><span class="badge-s b-approved"><i class="fas fa-check"></i> Approved</span></c:when>
+                                                        <c:when test="${s.status == 'Rejected'}"><span class="badge-s b-rejected"><i class="fas fa-times"></i> Rejected</span></c:when>
+                                                        <c:when test="${s.status == 'Paid'}"><span class="badge-s b-paid"><i class="fas fa-check-double"></i> Paid</span></c:when>
+                                                        <c:otherwise><span class="badge-s b-draft">${s.status}</span></c:otherwise>
+                                                    </c:choose>
+                                                </td>
+                                                <td class="text-end">
+                                                    <a href="${pageContext.request.contextPath}/accountant/payroll?month=${s.month}&year=${s.year}" class="btn-a btn-view text-white" title="Xem danh sách nhân viên">
+                                                        <i class="fas fa-eye"></i> Xem danh sách nhân viên
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        </c:forEach>
+                                    </c:otherwise>
+                                </c:choose>
+                            </tbody>
+                        </table>
+                        <div class="pagination-bar">
+                            <span id="monthlyPageInfo" class="pg-info">Đang tải...</span>
+                            <div class="pg-btns">
+                                <button onclick="monthlyPrevPage()" id="btnMonthlyPrev" class="pg-btn"><i class="fas fa-chevron-left"></i></button>
+                                <button onclick="monthlyNextPage()" id="btnMonthlyNext" class="pg-btn"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </c:when>
+            <c:otherwise>
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-file-invoice-dollar" style="color:var(--pri);margin-right:8px;"></i>Kỳ Lương: Tháng ${selectedMonth}/${selectedYear}</h1>
+                        <p class="breadcrumb-c">
+                            <a href="${pageContext.request.contextPath}/dashboard">Bảng điều khiển</a> &gt; 
+                            <a href="${pageContext.request.contextPath}/accountant/payroll">Bảng lương</a> &gt; 
+                            Chi tiết
+                        </p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="${pageContext.request.contextPath}/accountant/payroll" class="btn btn-secondary d-inline-flex align-items-center gap-2" style="border-radius:10px;padding:10px 20px;font-weight:600;font-size:.88rem;color:#475569;background:#fff;border:1px solid #e2e8f0;text-decoration:none;">
+                            <i class="fas fa-arrow-left"></i> Quay lại danh sách tháng
+                        </a>
 
-            <div class="table-responsive">
-                <table class="tbl" id="payrollTable">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Nhân Viên</th>
-                            <th>Lương Cơ Bản</th>
-                            <th>Làm Việc</th>
-                            <th>Thưởng</th>
-                            <th>Khấu Trừ</th>
-                            <th>Bảo Hiểm</th>
-                            <th>Thuế</th>
-                            <th style="color:var(--pri);">Thực Nhận</th>
-                            <th>Trạng Thái</th>
-                            <th class="text-end">Thao Tác</th>
-                        </tr>
-                    </thead>
-                    <tbody id="payrollTbody">
-                        <c:forEach var="p" items="${payrollList}" varStatus="st">
-                            <tr>
-                                <td style="color:var(--muted);font-size:.8rem;">${st.index + 1}</td>
-                                <td>
-                                    <div class="emp-name">${not empty p.fullName ? p.fullName : '—'}</div>
-                                    <div class="emp-id">ID #${p.userId}</div>
-                                </td>
-                                <td><span class="currency"><fmt:formatNumber value="${p.baseSalary}" pattern="#,##0"/> đ</span></td>
-                                <td style="text-align:center;">${p.workingDays} ngày</td>
-                                <td style="color:#059669;font-weight:600;">
-                                    <c:if test="${p.bonusAmount != null && p.bonusAmount > 0}">+<fmt:formatNumber value="${p.bonusAmount}" pattern="#,##0"/> đ</c:if>
-                                    <c:if test="${p.bonusAmount == null || p.bonusAmount == 0}"><span style="color:var(--muted);">—</span></c:if>
-                                </td>
-                                <td style="color:var(--ng);font-weight:600;">
-                                    <c:if test="${p.deductionAmount != null && p.deductionAmount > 0}">-<fmt:formatNumber value="${p.deductionAmount}" pattern="#,##0"/> đ</c:if>
-                                    <c:if test="${p.deductionAmount == null || p.deductionAmount == 0}"><span style="color:var(--muted);">—</span></c:if>
-                                </td>
-                                <td style="color:var(--muted);">
-                                    <c:if test="${p.insuranceAmount != null}"><fmt:formatNumber value="${p.insuranceAmount}" pattern="#,##0"/> đ</c:if>
-                                </td>
-                                <td style="color:var(--muted);">
-                                    <c:if test="${p.taxAmount != null}"><fmt:formatNumber value="${p.taxAmount}" pattern="#,##0"/> đ</c:if>
-                                </td>
-                                <td>
-                                    <span style="font-size:1rem;font-weight:800;color:var(--pri);">
-                                        <fmt:formatNumber value="${p.netSalary}" pattern="#,##0"/> đ
-                                    </span>
-                                </td>
-                                <td>
-                                    <c:choose>
-                                        <c:when test="${p.status == 'Paid'}">
-                                            <span class="badge b-paid"><i class="fas fa-check"></i> Đã TK</span>
-                                        </c:when>
-                                        <c:when test="${p.status == 'Approved'}">
-                                            <span class="badge b-approved"><i class="fas fa-clock"></i> Chờ TK</span>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <span class="badge b-draft"><i class="fas fa-pencil-alt"></i> Nháp</span>
-                                        </c:otherwise>
-                                    </c:choose>
-                                </td>
-                                <td class="text-end">
-                                    <c:if test="${p.status == 'Approved'}">
-                                        <form method="post" action="${pageContext.request.contextPath}/accountant/payroll" style="display:inline;"
-                                              onsubmit="return confirm('Xác nhận đã chuyển khoản cho ${not empty p.fullName ? p.fullName : 'nhân viên này'}?')">
-                                            <input type="hidden" name="action"    value="markPaid">
-                                            <input type="hidden" name="payrollId" value="${p.payrollId}">
-                                            <input type="hidden" name="month"     value="${month}">
-                                            <input type="hidden" name="year"      value="${year}">
-                                            <button type="submit" class="btn-pay"><i class="fas fa-check"></i> Đã CK</button>
-                                        </form>
-                                    </c:if>
-                                    <c:if test="${p.status != 'Approved'}">
-                                        <span style="color:var(--muted);font-size:.8rem;">—</span>
-                                    </c:if>
-                                </td>
-                            </tr>
-                        </c:forEach>
-                        <c:if test="${empty payrollList}">
-                            <tr>
-                                <td colspan="11" style="text-align:center;padding:40px;color:var(--muted);">
-                                    <i class="fas fa-inbox" style="font-size:2rem;display:block;margin-bottom:10px;opacity:.4;"></i>
-                                    Không có bảng lương nào cho tháng ${month}/${year}
-                                </td>
-                            </tr>
+                        <c:if test="${not empty payrollList}">
+                            <a href="${pageContext.request.contextPath}/accountant/payroll?action=exportExcel&month=${selectedMonth}&year=${selectedYear}" 
+                               class="btn btn-info d-inline-flex align-items-center gap-2" 
+                               style="border-radius:10px;padding:10px 20px;font-weight:600;font-size:.88rem;color:#fff;background:#0d9488;border:none;text-decoration:none;">
+                                <i class="fas fa-file-excel"></i> Xuất Excel Ngân Hàng
+                            </a>
                         </c:if>
-                    </tbody>
-                </table>
-            </div>
 
-            <div class="pagination-bar">
-                <span class="pg-info" id="pgInfo">Đang tải...</span>
-                <div class="pg-btns">
-                    <button class="pg-btn" id="btnPrev" onclick="prevPage()"><i class="fas fa-chevron-left"></i></button>
-                    <button class="pg-btn" id="btnNext" onclick="nextPage()"><i class="fas fa-chevron-right"></i></button>
+                        <c:if test="${approvedCount > 0}">
+                            <form method="post" action="${pageContext.request.contextPath}/accountant/payroll"
+                                  style="display:inline;"
+                                  onsubmit="showConfirmModal(event, 'Xác nhận đã chuyển khoản thành công cho ${approvedCount} nhân viên?', 'Chuyển khoản tất cả', 'fa-check-double', 'var(--ok)', 'var(--ok-l)');">
+                                <input type="hidden" name="action" value="markAllPaid">
+                                <input type="hidden" name="month" value="${selectedMonth}">
+                                <input type="hidden" name="year"  value="${selectedYear}">
+                                <button type="submit" class="btn-mark-all text-white">
+                                    <i class="fas fa-check-double"></i> Xác nhận tất cả (${approvedCount})
+                                </button>
+                            </form>
+                        </c:if>
+                    </div>
+                </div>
+
+                <%-- Thông báo --%>
+                <c:if test="${not empty sessionScope.successMessage}">
+                    <div class="alert alert-c a-ok alert-dismissible fade show"><i class="fas fa-check-circle me-2"></i>${sessionScope.successMessage}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+                    <c:remove var="successMessage" scope="session"/>
+                </c:if>
+                <c:if test="${not empty sessionScope.errorMessage}">
+                    <div class="alert alert-c a-err alert-dismissible fade show"><i class="fas fa-exclamation-circle me-2"></i>${sessionScope.errorMessage}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+                    <c:remove var="errorMessage" scope="session"/>
+                </c:if>
+
+                <%-- Stat Cards --%>
+                <div class="stat-grid">
+                    <div class="stat-card c-teal">
+                        <div class="stat-header">
+                            <span class="stat-label">Tổng Nhân Viên</span>
+                            <div class="stat-icon"><i class="fas fa-users"></i></div>
+                        </div>
+                        <div class="stat-val">${totalCount}</div>
+                    </div>
+                    <div class="stat-card c-warn">
+                        <div class="stat-header">
+                            <span class="stat-label">Chờ Chuyển Khoản</span>
+                            <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                        </div>
+                        <div class="stat-val">${approvedCount}</div>
+                    </div>
+                    <div class="stat-card c-ok">
+                        <div class="stat-header">
+                            <span class="stat-label">Đã Chuyển Khoản</span>
+                            <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                        </div>
+                        <div class="stat-val">${paidCount}</div>
+                    </div>
+                    <div class="stat-card c-blue">
+                        <div class="stat-header">
+                            <span class="stat-label">Tiến Độ</span>
+                            <div class="stat-icon"><i class="fas fa-tasks"></i></div>
+                        </div>
+                        <div class="stat-val">
+                            <c:choose>
+                                <c:when test="${totalCount > 0}"><fmt:formatNumber value="${paidCount * 100 / totalCount}" maxFractionDigits="0"/>%</c:when>
+                                <c:otherwise>—</c:otherwise>
+                            </c:choose>
+                        </div>
+                    </div>
+                </div>
+
+                <%-- Payroll Table --%>
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3 class="panel-title">
+                            <div class="panel-icon"><i class="fas fa-users"></i></div>
+                            Danh sách chi tiết nhân viên trong kỳ lương
+                        </h3>
+                        <div class="d-flex gap-3 align-items-center">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="searchInput" placeholder="Tìm nhân viên..." oninput="filterEmployeeTable()">
+                            </div>
+                            <select id="filterEmpStatus" onchange="filterEmployeeTable()" style="padding:9px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:.88rem;outline:none;cursor:pointer;font-family:'Inter',sans-serif;">
+                                <option value="all">Tất cả trạng thái</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Paid">Paid</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table id="employeeTable" class="tbl">
+                            <thead>
+                                <tr>
+                                    <th>Mã NV</th>
+                                    <th>Họ và tên</th>
+                                    <th>Lương cơ bản</th>
+                                    <th>Ngày công</th>
+                                    <th style="color:var(--pri);">Thực Nhận</th>
+                                    <th>Trạng Thái</th>
+                                    <th class="text-end">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <c:choose>
+                                    <c:when test="${empty payrollList}">
+                                        <tr>
+                                            <td colspan="7" class="text-center" style="color:var(--muted)">Chưa có dữ liệu bảng lương cho tháng này.</td>
+                                        </tr>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <c:forEach var="p" items="${payrollList}">
+                                            <tr>
+                                                <td>#${p.userId}</td>
+                                                <td>
+                                                    <div class="emp-name">${not empty p.fullName ? p.fullName : '—'}</div>
+                                                </td>
+                                                <td><span class="currency"><fmt:formatNumber value="${p.baseSalary}" type="currency" currencySymbol="₫" maxFractionDigits="0"/></span></td>
+                                                <td>${p.workingDays}</td>
+                                                <td><span class="fw-bold text-success"><fmt:formatNumber value="${p.netSalary}" type="currency" currencySymbol="₫" maxFractionDigits="0"/></span></td>
+                                                <td>
+                                                    <c:choose>
+                                                        <c:when test="${p.status == 'Approved'}"><span class="badge-s b-approved"><i class="fas fa-clock"></i> Approved</span></c:when>
+                                                        <c:when test="${p.status == 'Paid'}"><span class="badge-s b-paid"><i class="fas fa-check-double"></i> Paid</span></c:when>
+                                                        <c:otherwise><span class="badge-s b-draft">${p.status}</span></c:otherwise>
+                                                    </c:choose>
+                                                </td>
+                                                <td class="text-end">
+                                                    <div class="d-flex justify-content-end gap-2">
+                                                        <button type="button" class="btn-a btn-view text-white" 
+                                                                title="Xem chi tiết"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#payrollDetailModal"
+                                                                data-userid="${p.userId}"
+                                                                data-fullname="${p.fullName}"
+                                                                data-monthyear="${p.month}/${p.year}"
+                                                                data-basesalary="<fmt:formatNumber value="${p.baseSalary}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>"
+                                                                data-workingdays="${p.workingDays}"
+                                                                data-overtime="<fmt:formatNumber value="${p.overtimeAmount}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>"
+                                                                data-allowance="<fmt:formatNumber value="${p.allowanceAmount}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>"
+                                                                data-bonus="<fmt:formatNumber value="${p.bonusAmount}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>"
+                                                                data-deduction="<fmt:formatNumber value="${p.deductionAmount}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>"
+                                                                data-insurance="<fmt:formatNumber value="${p.insuranceAmount}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>"
+                                                                data-tax="<fmt:formatNumber value="${p.taxAmount}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>"
+                                                                data-gross="<fmt:formatNumber value="${p.grossSalary}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>"
+                                                                data-net="<fmt:formatNumber value="${p.netSalary}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>"
+                                                                data-status="${p.status}">
+                                                            <i class="fas fa-eye"></i> Chi tiết
+                                                        </button>
+
+                                                        <c:if test="${p.status == 'Approved'}">
+                                                            <form method="post" action="${pageContext.request.contextPath}/accountant/payroll" style="display:inline;"
+                                                                  onsubmit="showConfirmModal(event, 'Xác nhận đã chuyển khoản thành công cho ${p.fullName}?', 'Xác nhận chuyển khoản', 'fa-check', 'var(--ok)', 'var(--ok-l)');">
+                                                                <input type="hidden" name="action"    value="markPaid">
+                                                                <input type="hidden" name="payrollId" value="${p.payrollId}">
+                                                                <input type="hidden" name="month"     value="${selectedMonth}">
+                                                                <input type="hidden" name="year"      value="${selectedYear}">
+                                                                <button type="submit" class="btn-a btn-pay text-white" title="Đã CK"><i class="fas fa-check"></i> Đã CK</button>
+                                                            </form>
+                                                        </c:if>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </c:forEach>
+                                    </c:otherwise>
+                                </c:choose>
+                            </tbody>
+                        </table>
+                        <div class="pagination-bar">
+                            <span id="empPageInfo" class="pg-info">Đang tải...</span>
+                            <div class="pg-btns">
+                                <button onclick="empPrevPage()" id="btnEmpPrev" class="pg-btn"><i class="fas fa-chevron-left"></i></button>
+                                <button onclick="empNextPage()" id="btnEmpNext" class="pg-btn"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </c:otherwise>
+        </c:choose>
+    </div>
+</div>
+
+<!-- Payroll Detail Modal -->
+<div class="modal fade" id="payrollDetailModal" tabindex="-1" aria-labelledby="payrollDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+            <div class="modal-header" style="background: linear-gradient(135deg, var(--pri), #0369a1); color: #fff; border-radius: 16px 16px 0 0; padding: 20px 24px;">
+                <h5 class="modal-title fw-bold" id="payrollDetailModalLabel"><i class="fas fa-file-invoice-dollar me-2"></i> Chi Tiết Phiếu Lương</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 30px;">
+                <!-- Employee Header Summary -->
+                <div class="d-flex align-items-center justify-content-between p-3 mb-4" style="background: var(--bg); border-radius: 12px; border: 1px dashed rgba(13,148,136,.25)">
+                    <div>
+                        <h6 class="text-muted mb-1 text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.5px;">Nhân viên</h6>
+                        <h5 class="fw-bold mb-0 text-primary" id="modalEmpName">Nguyễn Văn A</h5>
+                    </div>
+                    <div class="text-end">
+                        <h6 class="text-muted mb-1 text-uppercase fw-bold" style="font-size: 0.72rem; letter-spacing: 0.5px;">Mã NV / Kỳ Lương</h6>
+                        <p class="fw-bold mb-0 text-dark"><span id="modalEmpId">#0</span> | <span id="modalMonthYear">06/2026</span></p>
+                    </div>
+                </div>
+
+                <!-- Details Grid -->
+                <div class="row g-4">
+                    <!-- Income -->
+                    <div class="col-md-6">
+                        <div class="p-3" style="background: rgba(16,185,129,.04); border-radius: 12px; border: 1px solid rgba(16,185,129,.1); height: 100%;">
+                            <h6 class="fw-bold text-success mb-3 pb-2" style="border-bottom: 2px solid rgba(16,185,129,.2); display: flex; justify-content: space-between;">
+                                <span><i class="fas fa-plus-circle me-1"></i> Các Khoản Thu Nhập</span>
+                            </h6>
+                            <div class="d-flex flex-column gap-2" style="font-size: 0.88rem;">
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Lương cơ bản:</span>
+                                    <span class="fw-semibold text-dark" id="modalBaseSalary">0 ₫</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Ngày công thực tế:</span>
+                                    <span class="fw-semibold text-dark" id="modalWorkingDays">0</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Tiền tăng ca:</span>
+                                    <span class="fw-semibold text-dark text-success" id="modalOvertime">+ 0 ₫</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Phụ cấp:</span>
+                                    <span class="fw-semibold text-dark text-success" id="modalAllowance">+ 0 ₫</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Thưởng:</span>
+                                    <span class="fw-semibold text-dark text-success" id="modalBonus">+ 0 ₫</span>
+                                </div>
+                                <hr style="margin: 10px 0; border-color: rgba(16,185,129,.2);">
+                                <div class="d-flex justify-content-between fw-bold text-dark" style="font-size: 0.95rem;">
+                                    <span>Lương Gross:</span>
+                                    <span id="modalGross">0 ₫</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Deductions -->
+                    <div class="col-md-6">
+                        <div class="p-3" style="background: rgba(239,68,68,.04); border-radius: 12px; border: 1px solid rgba(239,68,68,.1); height: 100%;">
+                            <h6 class="fw-bold text-danger mb-3 pb-2" style="border-bottom: 2px solid rgba(239,68,68,.2); display: flex; justify-content: space-between;">
+                                <span><i class="fas fa-minus-circle me-1"></i> Các Khoản Khấu Trừ</span>
+                            </h6>
+                            <div class="d-flex flex-column gap-2" style="font-size: 0.88rem;">
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Bảo hiểm xã hội:</span>
+                                    <span class="fw-semibold text-dark text-danger" id="modalInsurance">- 0 ₫</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Thuế TNCN:</span>
+                                    <span class="fw-semibold text-dark text-danger" id="modalTax">- 0 ₫</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Khấu trừ khác / Phạt:</span>
+                                    <span class="fw-semibold text-dark text-danger" id="modalDeduction">- 0 ₫</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Net Salary -->
+                <div class="mt-4 p-4 text-center" style="background: linear-gradient(135deg, rgba(16,185,129,.1) 0%, rgba(13,148,136,.1) 100%); border-radius: 14px; border: 1px solid rgba(16,185,129,.2);">
+                    <h6 class="text-uppercase fw-bold text-muted mb-2" style="font-size: 0.8rem; letter-spacing: 0.5px;">Thực Nhận (Net Salary)</h6>
+                    <h2 class="fw-extrabold text-success mb-1" style="font-size: 2.2rem; font-weight: 800;" id="modalNet">0 ₫</h2>
+                    <p class="text-muted small mb-0">Trạng thái: <span class="badge-s ms-1" id="modalStatus">Approved</span></p>
+                </div>
+            </div>
+            <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid #e2e8f0; border-radius: 0 0 16px 16px; padding: 16px 24px;">
+                <button type="button" class="btn btn-secondary px-4 fw-semibold" data-bs-dismiss="modal" style="border-radius: 8px;">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+        <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 15px 35px rgba(0,0,0,0.15); overflow: hidden;">
+            <div class="modal-body text-center" style="padding: 35px 24px 28px;">
+                <div class="mb-3 d-inline-flex align-items-center justify-content-center" 
+                     id="confirmModalIconContainer"
+                     style="width: 70px; height: 70px; border-radius: 50%; background-color: var(--pri-l); color: var(--pri); font-size: 1.8rem; transition: all 0.3s ease;">
+                     <i class="fas fa-paper-plane" id="confirmModalIcon"></i>
+                </div>
+                <h5 class="fw-bold mb-2" id="confirmModalTitle" style="color: var(--txt); font-size: 1.2rem;">Xác nhận chuyển khoản</h5>
+                <p class="text-muted mb-4" id="confirmModalMessage" style="font-size: 0.9rem; line-height: 1.5; padding: 0 10px;"></p>
+                
+                <div class="d-flex gap-3 justify-content-center">
+                    <button type="button" 
+                            class="btn px-4 py-2 fw-semibold text-secondary" 
+                            data-bs-dismiss="modal" 
+                            style="border-radius: 10px; background-color: #f1f5f9; border: 1px solid #e2e8f0; font-size: 0.88rem; transition: all 0.2s; min-width: 110px;">
+                        Hủy
+                    </button>
+                    <button type="button" 
+                            id="btnConfirmSubmit" 
+                            class="btn px-4 py-2 fw-semibold text-white" 
+                            style="border-radius: 10px; background: linear-gradient(135deg, var(--pri), #0369a1); border: none; font-size: 0.88rem; transition: all 0.2s; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2); min-width: 110px;">
+                        Xác nhận
+                    </button>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-    </div><%-- end main-content --%>
-</div><%-- end dashboard-wrapper --%>
-
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script>
-// ── Pagination & Search ──
-let allRows = [], filteredRows = [], currentPage = 1;
-const perPage = 10;
+let pendingFormToSubmit = null;
 
-document.addEventListener('DOMContentLoaded', () => {
-    allRows = Array.from(document.querySelectorAll('#payrollTbody tr'));
-    filterTable();
+function showConfirmModal(event, message, title = 'Xác nhận chuyển khoản', iconClass = 'fa-paper-plane', themeColor = 'var(--pri)', themeBg = 'var(--pri-l)') {
+    event.preventDefault();
+    pendingFormToSubmit = event.currentTarget || event.target;
+    
+    document.getElementById('confirmModalTitle').textContent = title;
+    document.getElementById('confirmModalMessage').textContent = message;
+    
+    const iconEl = document.getElementById('confirmModalIcon');
+    iconEl.className = 'fas ' + iconClass;
+    
+    const iconContainer = document.getElementById('confirmModalIconContainer');
+    iconContainer.style.color = themeColor;
+    iconContainer.style.backgroundColor = themeBg;
+    
+    const submitBtn = document.getElementById('btnConfirmSubmit');
+    if (themeColor === 'var(--ok)') {
+        submitBtn.style.background = 'linear-gradient(135deg, var(--ok), #059669)';
+        submitBtn.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.2)';
+    } else {
+        submitBtn.style.background = 'linear-gradient(135deg, var(--pri), #0369a1)';
+        submitBtn.style.boxShadow = '0 4px 12px rgba(13, 148, 136, 0.2)';
+    }
+    
+    const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    confirmModal.show();
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    const btnConfirmSubmit = document.getElementById('btnConfirmSubmit');
+    if (btnConfirmSubmit) {
+        btnConfirmSubmit.addEventListener('click', function() {
+            if (pendingFormToSubmit) {
+                pendingFormToSubmit.submit();
+            }
+        });
+    }
+
+    const detailModal = document.getElementById('payrollDetailModal');
+    if (detailModal) {
+        detailModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            
+            // Extract values from data-* attributes
+            const userId = button.getAttribute('data-userid');
+            const fullName = button.getAttribute('data-fullname');
+            const monthYear = button.getAttribute('data-monthyear');
+            const baseSalary = button.getAttribute('data-basesalary');
+            const workingDays = button.getAttribute('data-workingdays');
+            const overtime = button.getAttribute('data-overtime');
+            const allowance = button.getAttribute('data-allowance');
+            const bonus = button.getAttribute('data-bonus');
+            const deduction = button.getAttribute('data-deduction');
+            const insurance = button.getAttribute('data-insurance');
+            const tax = button.getAttribute('data-tax');
+            const gross = button.getAttribute('data-gross');
+            const net = button.getAttribute('data-net');
+            const status = button.getAttribute('data-status');
+
+            // Populate Modal Fields
+            document.getElementById('modalEmpName').textContent = fullName;
+            document.getElementById('modalEmpId').textContent = '#' + userId;
+            document.getElementById('modalMonthYear').textContent = monthYear;
+            document.getElementById('modalBaseSalary').textContent = baseSalary;
+            document.getElementById('modalWorkingDays').textContent = workingDays;
+            document.getElementById('modalOvertime').textContent = '+ ' + overtime;
+            document.getElementById('modalAllowance').textContent = '+ ' + allowance;
+            document.getElementById('modalBonus').textContent = '+ ' + bonus;
+            document.getElementById('modalGross').textContent = gross;
+            document.getElementById('modalInsurance').textContent = '- ' + insurance;
+            document.getElementById('modalTax').textContent = '- ' + tax;
+            document.getElementById('modalDeduction').textContent = '- ' + deduction;
+            document.getElementById('modalNet').textContent = net;
+
+            // Status Badge Formatting
+            const statusEl = document.getElementById('modalStatus');
+            statusEl.textContent = status;
+            statusEl.className = 'badge-s'; // reset
+            if (status === 'Draft') statusEl.classList.add('b-draft');
+            else if (status === 'Pending') statusEl.classList.add('b-pending');
+            else if (status === 'Approved') statusEl.classList.add('b-approved');
+            else if (status === 'Rejected') statusEl.classList.add('b-rejected');
+            else if (status === 'Paid') statusEl.classList.add('b-paid');
+        });
+    }
+
+    // --- MONTHLY TABLE: FILTER + PAGINATION ---
+    window.monthlyAllRows = [];
+    window.monthlyFilteredRows = [];
+    window.monthlyCurrentPage = 1;
+    const monthlyPerPage = 10;
+
+    var monthlyTbody = document.querySelector('#monthlyTable tbody');
+    if (monthlyTbody) {
+        window.monthlyAllRows = Array.from(monthlyTbody.querySelectorAll('tr'));
+        filterMonthlyTable();
+    }
+
+    // --- EMPLOYEE TABLE: FILTER + PAGINATION ---
+    window.empAllRows = [];
+    window.empFilteredRows = [];
+    window.empCurrentPage = 1;
+    const empPerPage = 10;
+
+    var empTbody = document.querySelector('#employeeTable tbody');
+    if (empTbody) {
+        window.empAllRows = Array.from(empTbody.querySelectorAll('tr'));
+        filterEmployeeTable();
+    }
 });
 
-function filterTable() {
-    const q = document.getElementById('searchInput').value.toLowerCase();
-    filteredRows = allRows.filter(r => r.textContent.toLowerCase().includes(q));
-    currentPage = 1;
-    render();
+// Monthly table helpers
+function filterMonthlyTable() {
+    var selMonth = document.getElementById('filterMonth');
+    var selYear  = document.getElementById('filterYear');
+    var monthVal = selMonth ? selMonth.value : 'all';
+    var yearVal  = selYear  ? selYear.value  : 'all';
+
+    var monthlyTbody = document.querySelector('#monthlyTable tbody');
+    if (!monthlyTbody) return;
+    if (!window.monthlyAllRows || window.monthlyAllRows.length === 0) {
+        window.monthlyAllRows = Array.from(monthlyTbody.querySelectorAll('tr'));
+    }
+    window.monthlyFilteredRows = window.monthlyAllRows.filter(function(row) {
+        var text = row.cells[0] ? row.cells[0].textContent.trim() : '';
+        // text is like "Tháng 6 / 2026"
+        var mMatch = (monthVal === 'all') || (text.match(/Tháng\s*(\d+)/) && RegExp.$1 === monthVal);
+        var yMatch = (yearVal  === 'all') || text.includes(yearVal);
+        return mMatch && yMatch;
+    });
+    window.monthlyCurrentPage = 1;
+    updateMonthlyPagination();
 }
 
-function render() {
-    allRows.forEach(r => r.style.display = 'none');
-    const total = filteredRows.length;
-    const pages = Math.ceil(total / perPage) || 1;
-    if (currentPage > pages) currentPage = pages;
-    const start = (currentPage - 1) * perPage;
-    const end   = Math.min(start + perPage, total);
-    for (let i = start; i < end; i++) filteredRows[i].style.display = '';
-    document.getElementById('pgInfo').textContent = total === 0
-        ? 'Không có kết quả'
-        : `Hiển thị ${start + 1}–${end} / ${total} bản ghi`;
-    document.getElementById('btnPrev').disabled = currentPage === 1;
-    document.getElementById('btnNext').disabled = currentPage === pages;
+function updateMonthlyPagination() {
+    var allRows = window.monthlyAllRows || [];
+    var filtered = window.monthlyFilteredRows || allRows;
+    allRows.forEach(function(r){ r.style.display = 'none'; });
+    var total = filtered.length;
+    var totalPages = Math.ceil(total / 10) || 1;
+    var page = window.monthlyCurrentPage || 1;
+    if (page > totalPages) page = totalPages;
+    if (page < 1) page = 1;
+    window.monthlyCurrentPage = page;
+    var start = (page - 1) * 10;
+    var end   = Math.min(start + 10, total);
+    for (var i = start; i < end; i++) { filtered[i].style.display = ''; }
+    var info = document.getElementById('monthlyPageInfo');
+    if (info) info.textContent = total === 0 ? 'Không tìm thấy kết quả.' : 'Hiển thị ' + (start + 1) + ' - ' + end + ' trong số ' + total + ' kỳ lương.';
+    var btnPrev = document.getElementById('btnMonthlyPrev');
+    var btnNext = document.getElementById('btnMonthlyNext');
+    if (btnPrev) btnPrev.disabled = (page === 1);
+    if (btnNext) btnNext.disabled = (page === totalPages);
 }
 
-function prevPage() { if (currentPage > 1) { currentPage--; render(); } }
-function nextPage() {
-    const pages = Math.ceil(filteredRows.length / perPage) || 1;
-    if (currentPage < pages) { currentPage++; render(); }
+function monthlyPrevPage() {
+    if ((window.monthlyCurrentPage || 1) > 1) { window.monthlyCurrentPage--; updateMonthlyPagination(); }
+}
+function monthlyNextPage() {
+    var totalPages = Math.ceil(((window.monthlyFilteredRows || window.monthlyAllRows || []).length) / 10) || 1;
+    if ((window.monthlyCurrentPage || 1) < totalPages) { window.monthlyCurrentPage++; updateMonthlyPagination(); }
+}
+
+// Employee table helpers
+function filterEmployeeTable() {
+    var q = document.getElementById('searchInput') ? document.getElementById('searchInput').value.toLowerCase() : '';
+    var selStatus = document.getElementById('filterEmpStatus');
+    var statusVal = selStatus ? selStatus.value : 'all';
+
+    var empTbody = document.querySelector('#employeeTable tbody');
+    if (!empTbody) return;
+    if (!window.empAllRows || window.empAllRows.length === 0) {
+        window.empAllRows = Array.from(empTbody.querySelectorAll('tr'));
+    }
+    window.empFilteredRows = window.empAllRows.filter(function(row) {
+        var text = row.textContent.toLowerCase();
+        var qMatch = text.includes(q);
+        
+        var statusMatch = true;
+        if (statusVal !== 'all') {
+            var badge = row.querySelector('.badge-s');
+            statusMatch = badge && badge.textContent.trim().includes(statusVal);
+        }
+        return qMatch && statusMatch;
+    });
+    window.empCurrentPage = 1;
+    updateEmpPagination();
+}
+
+function updateEmpPagination() {
+    var allRows = window.empAllRows || [];
+    var filtered = window.empFilteredRows || allRows;
+    allRows.forEach(function(r){ r.style.display = 'none'; });
+    var total = filtered.length;
+    var totalPages = Math.ceil(total / 10) || 1;
+    var page = window.empCurrentPage || 1;
+    if (page > totalPages) page = totalPages;
+    if (page < 1) page = 1;
+    window.empCurrentPage = page;
+    var start = (page - 1) * 10;
+    var end   = Math.min(start + 10, total);
+    for (var i = start; i < end; i++) { filtered[i].style.display = ''; }
+    var info = document.getElementById('empPageInfo');
+    if (info) info.textContent = total === 0 ? 'Không tìm thấy kết quả.' : 'Hiển thị ' + (start + 1) + ' - ' + end + ' trong số ' + total + ' nhân viên.';
+    var btnPrev = document.getElementById('btnEmpPrev');
+    var btnNext = document.getElementById('btnEmpNext');
+    if (btnPrev) btnPrev.disabled = (page === 1);
+    if (btnNext) btnNext.disabled = (page === totalPages);
+}
+
+function empPrevPage() {
+    if ((window.empCurrentPage || 1) > 1) { window.empCurrentPage--; updateEmpPagination(); }
+}
+function empNextPage() {
+    var totalPages = Math.ceil(((window.empFilteredRows || window.empAllRows || []).length) / 10) || 1;
+    if ((window.empCurrentPage || 1) < totalPages) { window.empCurrentPage++; updateEmpPagination(); }
 }
 </script>
 

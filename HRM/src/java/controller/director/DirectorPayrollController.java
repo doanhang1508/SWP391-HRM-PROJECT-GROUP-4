@@ -44,34 +44,47 @@ public class DirectorPayrollController extends HttpServlet {
             return;
         }
 
-        // Lấy tháng/năm từ request, mặc định tháng hiện tại
-        int month = LocalDate.now().getMonthValue();
-        int year  = LocalDate.now().getYear();
+        String monthStr = request.getParameter("month");
+        String yearStr = request.getParameter("year");
+
+        if (monthStr == null || monthStr.isBlank() || yearStr == null || yearStr.isBlank()) {
+            List<dao.PayrollDAO.PayrollMonthSummary> summaries = payrollDAO.getMonthlySummaries();
+            request.setAttribute("monthlySummaries", summaries);
+            request.setAttribute("viewMode", "months");
+            request.getRequestDispatcher("/director/payroll-approval.jsp").forward(request, response);
+            return;
+        }
+
         try {
-            if (request.getParameter("month") != null) month = Integer.parseInt(request.getParameter("month"));
-            if (request.getParameter("year")  != null) year  = Integer.parseInt(request.getParameter("year"));
-        } catch (NumberFormatException ignored) {}
+            int month = Integer.parseInt(monthStr);
+            int year = Integer.parseInt(yearStr);
 
-        // Lấy danh sách payroll kèm tên nhân viên
-        List<Payroll> payrollList = payrollDAO.getPayrollsWithNames(month, year);
+            // Lấy danh sách payroll kèm tên nhân viên
+            List<Payroll> payrollList = payrollDAO.getPayrollsWithNames(month, year);
 
-        // Thống kê
-        long pendingCount  = payrollList.stream().filter(p -> "Pending".equals(p.getStatus())).count();
-        long approvedCount = payrollList.stream().filter(p -> "Approved".equals(p.getStatus())).count();
-        long rejectedCount = payrollList.stream().filter(p -> "Rejected".equals(p.getStatus())).count();
-        long paidCount     = payrollList.stream().filter(p -> "Paid".equals(p.getStatus())).count();
-        long totalCount    = payrollList.size();
+            // Thống kê
+            long pendingCount  = payrollList.stream().filter(p -> "Pending".equals(p.getStatus())).count();
+            long approvedCount = payrollList.stream().filter(p -> "Approved".equals(p.getStatus())).count();
+            long rejectedCount = payrollList.stream().filter(p -> "Rejected".equals(p.getStatus())).count();
+            long paidCount     = payrollList.stream().filter(p -> "Paid".equals(p.getStatus())).count();
+            long totalCount    = payrollList.size();
 
-        request.setAttribute("payrollList",    payrollList);
-        request.setAttribute("month",          month);
-        request.setAttribute("year",           year);
-        request.setAttribute("pendingCount",   pendingCount);
-        request.setAttribute("approvedCount",  approvedCount);
-        request.setAttribute("rejectedCount",  rejectedCount);
-        request.setAttribute("paidCount",      paidCount);
-        request.setAttribute("totalCount",     totalCount);
+            request.setAttribute("payrollList",    payrollList);
+            request.setAttribute("selectedMonth",  month);
+            request.setAttribute("selectedYear",   year);
+            request.setAttribute("month",          month);
+            request.setAttribute("year",           year);
+            request.setAttribute("pendingCount",   pendingCount);
+            request.setAttribute("approvedCount",  approvedCount);
+            request.setAttribute("rejectedCount",  rejectedCount);
+            request.setAttribute("paidCount",      paidCount);
+            request.setAttribute("totalCount",     totalCount);
+            request.setAttribute("viewMode",       "employees");
 
-        request.getRequestDispatcher("/director/payroll-approval.jsp").forward(request, response);
+            request.getRequestDispatcher("/director/payroll-approval.jsp").forward(request, response);
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/director/payroll");
+        }
     }
 
     @Override
