@@ -296,9 +296,16 @@ CREATE TABLE payroll (
     tax_amount       DECIMAL(15,2),
     gross_salary     DECIMAL(15,2),
     net_salary       DECIMAL(15,2),
-    status           ENUM('Draft','Approved','Paid') DEFAULT 'Draft',
+    status           ENUM('Draft','Pending','Approved','Rejected','Paid') DEFAULT 'Draft',
+    approved_by      INT NULL,
+    approved_at      TIMESTAMP NULL,
+    reject_reason    VARCHAR(500) NULL,
+    paid_by          INT NULL,
+    paid_at          TIMESTAMP NULL,
+    payment_note     VARCHAR(500) NULL,
     created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    UNIQUE KEY uk_user_month_year (user_id, month, year)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE notifications (
@@ -478,7 +485,7 @@ INSERT INTO reward_disciplines (id, name, type, description, apply_level, create
 (7, 'Vi phạm kỷ luật khác',  'Discipline','Các hình thức vi phạm nội quy khác',                           'Cá nhân',    1),
 (8, 'Dismissal',             'Discipline','Sa thải / Chấm dứt hợp đồng lao động do vi phạm nghiêm trọng','Cá nhân',    1);
 
--- ── 13. Roles (7 roles) ──
+-- ── 13. Roles (8 roles) ──
 INSERT INTO roles (role_id, role_name, description) VALUES
 (1, 'Admin',              'Quản trị hệ thống toàn quyền'),
 (2, 'HR Manager',         'Trưởng phòng Nhân sự - duyệt attendance, payroll'),
@@ -486,7 +493,8 @@ INSERT INTO roles (role_id, role_name, description) VALUES
 (4, 'Director',           'Giám đốc - xem tổng quan, duyệt lương cuối'),
 (5, 'HR Staff',           'Nhân viên Nhân sự - upload Excel, quản lý hồ sơ'),
 (6, 'Department Manager', 'Trưởng phòng / Tổ trưởng - duyệt nghỉ phép'),
-(7, 'Employee',           'Nhân viên / Công nhân');
+(7, 'Employee',           'Nhân viên / Công nhân'),
+(8, 'Accountant',         'Kế toán - xem bảng lương, xác nhận chuyển khoản');
 
 -- ── 14. Permissions (29 permissions) ──
 INSERT INTO permissions (permission_id, permission_name, description, module) VALUES
@@ -568,6 +576,10 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 INSERT INTO role_permissions (role_id, permission_id) VALUES
 (7,13),(7,15),(7,16),(7,18),(7,23),(7,25),(7,28);
 
+-- Accountant (8): Xem bảng lương, xem hồ sơ
+INSERT INTO role_permissions (role_id, permission_id) VALUES
+(8,18),(8,28);
+
 -- ── 16. Users & Profiles ──
 
 -- ── 16a. Users cốt lõi (user_id 1-5) ──
@@ -632,7 +644,8 @@ INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,depar
 (29,'to_truong_01','@123456','Lý Văn Dũng',   'tt1@hrm.com',  '0901000029',6,5,5),
 (30,'to_truong_02','@123456','Tống Văn Thắng','tt2@hrm.com',  '0901000030',6,5,5),
 (31,'to_truong_03','@123456','Hà Thị Giang',  'tt3@hrm.com',  '0901000031',6,5,5),
-(32,'to_pho_01',   '@123456','Đinh Văn Khoa', 'tp_x@hrm.com', '0901000032',7,5,5);
+(32,'to_pho_01',   '@123456','Đinh Văn Khoa', 'tp_x@hrm.com', '0901000032',7,5,5),
+(33, 'ke_toan_01', '@123456', 'Nguyễn Thị Kế Toán', 'ketoan01@hrm.com', '0901000033', 8, 3, 7);
 
 -- ── Profiles quản lý (user_id 6-32) ──
 -- Format: (uid, id_card, dob, gender, address, hire_date, tax_code, bank_account, ct, sg, es, el)
@@ -664,7 +677,8 @@ INSERT INTO employee_profiles (user_id,department_id,id_card,dob,gender,address,
 (29,5,'056800000029','1980-08-15',1,'Từ Sơn, Bắc Ninh',      '2015-06-01','8012345729','0200001029','0011234529','Vietcombank', 4,2,2,3),
 (30,5,'056820000030','1982-03-10',1,'Từ Sơn, Bắc Ninh',      '2017-01-01','8012345730','0200001030','0011234530','BIDV',        4,2,2,3),
 (31,5,'056850000031','1985-11-25',0,'Từ Sơn, Bắc Ninh',      '2018-04-01','8012345731','0200001031','0011234531','Agribank',    4,2,2,3),
-(32,5,'056880000032','1988-06-30',1,'Từ Sơn, Bắc Ninh',      '2020-09-01','8012345732','0200001032','0011234532','Techcombank', 4,2,2,3);
+(32,5,'056880000032','1988-06-30',1,'Từ Sơn, Bắc Ninh',      '2020-09-01','8012345732','0200001032','0011234532','Techcombank', 4,2,2,3),
+(33,3,'024910000033','1991-07-15',0,'Cầu Giấy, Hà Nội',       '2020-03-01','8012345733','0200001033','0011234533','Vietcombank', 4,2,2,2);
 
 -- ================================================================
 -- 18. CÔNG NHÂN (user_id 33-181, 149 người)

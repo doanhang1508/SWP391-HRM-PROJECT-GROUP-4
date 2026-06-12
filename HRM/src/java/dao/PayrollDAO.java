@@ -633,4 +633,149 @@ public class PayrollDAO {
         }
         return 0;
     }
+
+    // ═══════════════════════════════════════════════════
+    // TASK 24: Director Approve / Reject Payroll
+    // ═══════════════════════════════════════════════════
+
+    /**
+     * Director duyệt 1 bảng lương: Pending → Approved
+     */
+    public boolean approvePayroll(int payrollId, int approvedBy) {
+        String sql = "UPDATE payroll SET status = 'Approved', approved_by = ?, approved_at = NOW() " +
+                     "WHERE payroll_id = ? AND status = 'Pending'";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, approvedBy);
+            ps.setInt(2, payrollId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Director từ chối 1 bảng lương: Pending → Rejected
+     */
+    public boolean rejectPayroll(int payrollId, String reason) {
+        String sql = "UPDATE payroll SET status = 'Rejected', reject_reason = ? " +
+                     "WHERE payroll_id = ? AND status = 'Pending'";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, reason);
+            ps.setInt(2, payrollId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Director duyệt TẤT CẢ bảng lương Pending trong tháng
+     * @return số bản ghi được duyệt
+     */
+    public int approveAllPending(int month, int year, int approvedBy) {
+        String sql = "UPDATE payroll SET status = 'Approved', approved_by = ?, approved_at = NOW() " +
+                     "WHERE month = ? AND year = ? AND status = 'Pending'";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, approvedBy);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    /**
+     * Lấy danh sách payroll theo tháng/năm kèm tên nhân viên (JOIN users)
+     */
+    public List<Payroll> getPayrollsWithNames(int month, int year) {
+        List<Payroll> list = new ArrayList<>();
+        String sql = "SELECT p.*, u.full_name FROM payroll p " +
+                     "LEFT JOIN users u ON p.user_id = u.user_id " +
+                     "WHERE p.month = ? AND p.year = ? ORDER BY p.user_id";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Payroll p = mapRow(rs);
+                    p.setFullName(rs.getString("full_name"));
+                    list.add(p);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * Đếm số lượng payroll theo status trong 1 tháng
+     */
+    public int countByStatus(int month, int year, String status) {
+        String sql = "SELECT COUNT(*) FROM payroll WHERE month = ? AND year = ? AND status = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            ps.setString(3, status);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    /**
+     * Kế toán mark paid với tracking (paid_by, paid_at)
+     */
+    public boolean markAsPaidWithTracking(int payrollId, int paidBy) {
+        String sql = "UPDATE payroll SET status = 'Paid', paid_by = ?, paid_at = NOW() " +
+                     "WHERE payroll_id = ? AND status = 'Approved'";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, paidBy);
+            ps.setInt(2, payrollId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Lấy danh sách payroll của 1 nhân viên kèm filter status (cho employee xem payslip)
+     * Chỉ trả về Approved hoặc Paid
+     */
+    public List<Payroll> getVisiblePayslips(int userId) {
+        List<Payroll> list = new ArrayList<>();
+        String sql = "SELECT * FROM payroll WHERE user_id = ? AND status IN ('Approved', 'Paid') " +
+                     "ORDER BY year DESC, month DESC";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(mapRow(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }

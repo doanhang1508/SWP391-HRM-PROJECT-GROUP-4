@@ -537,12 +537,11 @@
                                                                 </a>
                                                             </li>
                                                             <li class="sidebar-menu-category">Lương & Phê duyệt</li>
-                                                            <%-- TODO Iteration 2: Duyệt chốt bảng lương --%>
-                                                            <li class="sidebar-item sidebar-item--disabled">
-                                                                <span class="sidebar-link" style="opacity:0.4;cursor:not-allowed;">
+                                                            <li class="sidebar-item">
+                                                                <a href="${pageContext.request.contextPath}/director/payroll"
+                                                                    class="sidebar-link ${param.activeMenu eq 'director-payroll' ? 'active' : ''}">
                                                                     <i class="fas fa-file-invoice-dollar"></i> Duyệt bảng lương
-                                                                    <span style="font-size:0.68rem;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;margin-left:6px;">Iter 2</span>
-                                                                </span>
+                                                                </a>
                                                             </li>
                                                             <li class="sidebar-menu-category">Báo cáo</li>
                                                             <%-- TODO Iteration 2: Báo cáo nhân sự tổng hợp --%>

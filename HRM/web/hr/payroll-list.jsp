@@ -405,6 +405,11 @@
                         </a>
                         
                         <c:if test="${not empty payrollList}">
+                            <a href="${pageContext.request.contextPath}/hr/payroll?action=exportExcel&month=${selectedMonth}&year=${selectedYear}" 
+                               class="btn btn-info d-inline-flex align-items-center gap-2" 
+                               style="border-radius:10px;padding:10px 20px;font-weight:600;font-size:.88rem;color:#fff;background:#0d9488;border:none;text-decoration:none;">
+                                <i class="fas fa-file-excel"></i> Xuất Excel
+                            </a>
                             <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" style="display:inline;" onsubmit="showConfirmModal(event, 'Bạn có chắc muốn gửi duyệt tất cả bảng lương của tháng này?');">
                                 <input type="hidden" name="action" value="submit">
                                 <input type="hidden" name="month" value="${selectedMonth}">
