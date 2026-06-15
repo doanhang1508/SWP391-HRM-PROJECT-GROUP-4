@@ -394,14 +394,12 @@ public class ShiftController extends HttpServlet {
     private void setEncoding(HttpServletRequest req) {
         try {
             req.setCharacterEncoding("UTF-8");
-        } catch (Exception e) {
-            Thread.currentThread().interrupt();
+        } catch (java.io.UnsupportedEncodingException e) {
+            System.err.println("Encoding error: " + e.getMessage());
         }
     }
 
-    private String encode(String s) {
-        return URLEncoder.encode(s, StandardCharsets.UTF_8);
-    }
+
 }
 
 

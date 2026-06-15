@@ -506,6 +506,9 @@ public class ShiftDAOImpl implements ShiftDAO {
 
     @Override
     public int findOrCreateCustomShift(LocalTime start, LocalTime end) {
+        if (start == null || end == null) {
+            return -1;
+        }
         String expectedName = "Ca Hành Chính";
         boolean expectedIsNight = false;
         if (start.getHour() >= 18 || start.getHour() < 6 || end.isBefore(start)) {
@@ -536,7 +539,7 @@ public class ShiftDAOImpl implements ShiftDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            Logger.getAnonymousLogger().severe("Lỗi SQL findOrCreateCustomShift: " + e.getMessage());
         }
 
         // 2. If not, insert new OT custom shift
@@ -558,7 +561,7 @@ public class ShiftDAOImpl implements ShiftDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            Logger.getAnonymousLogger().severe("Lỗi SQL insert custom shift: " + e.getMessage());
         }
 
         // Default fallback if insertion fails

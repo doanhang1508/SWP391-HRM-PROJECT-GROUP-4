@@ -29,10 +29,11 @@ import java.util.List;
  * Roles: HR Manager (2), Admin (1)
  *
  * Các cột (áp dụng cho cả Excel và CSV, theo thứ tự):
- *   user_id, shift_id, work_date (yyyy-MM-dd), check_in (HH:mm), check_out (HH:mm),
- *   status (PRESENT/LATE/ABSENT/HALFDAY), overtime_hrs, ot_reason
+ * user_id, shift_id, work_date (yyyy-MM-dd), check_in (HH:mm), check_out
+ * (HH:mm),
+ * status (PRESENT/LATE/ABSENT/HALFDAY), overtime_hrs, ot_reason
  */
-@WebServlet(name = "ImportAttendanceController", urlPatterns = {"/hr/import-attendance"})
+@WebServlet(name = "ImportAttendanceController", urlPatterns = { "/hr/import-attendance" })
 @MultipartConfig(maxFileSize = 10 * 1024 * 1024) // 10MB max
 public class ImportAttendanceController extends HttpServlet {
 
@@ -80,30 +81,30 @@ public class ImportAttendanceController extends HttpServlet {
 
             String fileName = filePart.getSubmittedFileName().toLowerCase();
             boolean isExcel = fileName.endsWith(".xlsx") || fileName.endsWith(".xls");
-            boolean isCsv   = fileName.endsWith(".csv");
+            boolean isCsv = fileName.endsWith(".csv");
 
             if (!isExcel && !isCsv) {
                 session.setAttribute("errorMessage",
-                    "Chỉ hỗ trợ file Excel (.xlsx, .xls) hoặc CSV (.csv).");
+                        "Chỉ hỗ trợ file Excel (.xlsx, .xls) hoặc CSV (.csv).");
                 response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
                 return;
             }
 
             // Parse month/year để kiểm tra khóa công
             String monthStr = request.getParameter("importMonth");
-            String yearStr  = request.getParameter("importYear");
+            String yearStr = request.getParameter("importYear");
             int month = monthStr != null ? Integer.parseInt(monthStr) : LocalDate.now().getMonthValue();
-            int year  = yearStr  != null ? Integer.parseInt(yearStr)  : LocalDate.now().getYear();
+            int year = yearStr != null ? Integer.parseInt(yearStr) : LocalDate.now().getYear();
 
             if (attendanceDAO.isMonthLocked(month, year)) {
                 session.setAttribute("errorMessage",
-                    "Tháng " + month + "/" + year + " đã bị khóa. Không thể import.");
+                        "Tháng " + month + "/" + year + " đã bị khóa. Không thể import.");
                 response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
                 return;
             }
 
-            List<Attendance> records    = new ArrayList<>();
-            List<String>     parseErrors = new ArrayList<>();
+            List<Attendance> records = new ArrayList<>();
+            List<String> parseErrors = new ArrayList<>();
 
             try {
                 if (isExcel) {
@@ -113,17 +114,19 @@ public class ImportAttendanceController extends HttpServlet {
                 }
             } catch (Exception ex) {
                 session.setAttribute("errorMessage",
-                    "Lỗi đọc file: " + ex.getMessage() +
-                    ". Hãy đảm bảo file đúng định dạng Excel hoặc CSV.");
+                        "Lỗi đọc file: " + ex.getMessage() +
+                                ". Hãy đảm bảo file đúng định dạng Excel hoặc CSV.");
                 response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
                 return;
             }
 
             if (records.isEmpty()) {
                 session.setAttribute("errorMessage",
-                    "Không có dữ liệu hợp lệ để import. " +
-                    (parseErrors.isEmpty() ? "" : "Lỗi: " +
-                    String.join("; ", parseErrors.subList(0, Math.min(3, parseErrors.size())))));
+                        "Không có dữ liệu hợp lệ để import. " +
+                                (parseErrors.isEmpty() ? ""
+                                        : "Lỗi: " +
+                                                String.join("; ",
+                                                        parseErrors.subList(0, Math.min(3, parseErrors.size())))));
                 response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
                 return;
             }
@@ -152,11 +155,16 @@ public class ImportAttendanceController extends HttpServlet {
             int rowNum = 0;
             for (Row row : sheet) {
                 rowNum++;
-                if (firstRow) { firstRow = false; continue; } // bỏ qua header
-                if (isRowEmpty(row)) continue;
+                if (firstRow) {
+                    firstRow = false;
+                    continue;
+                } // bỏ qua header
+                if (isRowEmpty(row))
+                    continue;
                 try {
                     Attendance a = rowToAttendance(row, rowNum);
-                    if (a != null) records.add(a);
+                    if (a != null)
+                        records.add(a);
                 } catch (Exception e) {
                     errors.add("Dòng " + rowNum + ": " + e.getMessage());
                 }
@@ -165,9 +173,11 @@ public class ImportAttendanceController extends HttpServlet {
     }
 
     private boolean isRowEmpty(Row row) {
-        if (row == null) return true;
+        if (row == null)
+            return true;
         for (Cell cell : row) {
-            if (cell != null && cell.getCellType() != CellType.BLANK) return false;
+            if (cell != null && cell.getCellType() != CellType.BLANK)
+                return false;
         }
         return true;
     }
@@ -204,7 +214,8 @@ public class ImportAttendanceController extends HttpServlet {
 
         // Col 5: status
         String status = getStringCell(row, 5);
-        if (status == null || status.isEmpty()) throw new Exception("Thiếu status");
+        if (status == null || status.isEmpty())
+            throw new Exception("Thiếu status");
         status = status.trim().toUpperCase();
         if (!status.matches("PRESENT|LATE|ABSENT|HALFDAY"))
             throw new Exception("Status '" + status + "' không hợp lệ");
@@ -228,31 +239,41 @@ public class ImportAttendanceController extends HttpServlet {
 
     private double getNumericCell(Row row, int col, int rowNum, String name) throws Exception {
         Cell cell = row.getCell(col);
-        if (cell == null) throw new Exception("Thiếu cột " + name);
-        if (cell.getCellType() == CellType.NUMERIC) return cell.getNumericCellValue();
+        if (cell == null)
+            throw new Exception("Thiếu cột " + name);
+        if (cell.getCellType() == CellType.NUMERIC)
+            return cell.getNumericCellValue();
         if (cell.getCellType() == CellType.STRING) {
-            try { return Double.parseDouble(cell.getStringCellValue().trim()); }
-            catch (NumberFormatException e) { throw new Exception("Cột " + name + " phải là số"); }
+            try {
+                return Double.parseDouble(cell.getStringCellValue().trim());
+            } catch (NumberFormatException e) {
+                throw new Exception("Cột " + name + " phải là số");
+            }
         }
         throw new Exception("Cột " + name + " không đọc được");
     }
 
     private String getStringCell(Row row, int col) {
         Cell cell = row.getCell(col);
-        if (cell == null) return null;
+        if (cell == null)
+            return null;
         switch (cell.getCellType()) {
-            case STRING:  return cell.getStringCellValue();
-            case NUMERIC: 
+            case STRING:
+                return cell.getStringCellValue();
+            case NUMERIC:
                 if (DateUtil.isCellDateFormatted(cell)) {
                     // Trả về dạng HH:mm nếu là time
                     java.util.Date d = cell.getDateCellValue();
                     java.util.Calendar cal = java.util.Calendar.getInstance();
                     cal.setTime(d);
-                    return String.format("%02d:%02d", cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE));
+                    return String.format("%02d:%02d", cal.get(java.util.Calendar.HOUR_OF_DAY),
+                            cal.get(java.util.Calendar.MINUTE));
                 }
                 return String.valueOf((long) cell.getNumericCellValue());
-            case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
-            default:      return null;
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            default:
+                return null;
         }
     }
 
@@ -267,8 +288,12 @@ public class ImportAttendanceController extends HttpServlet {
             boolean firstLine = true;
             while ((line = reader.readLine()) != null) {
                 rowNum++;
-                if (firstLine) { firstLine = false; continue; }
-                if (line.trim().isEmpty()) continue;
+                if (firstLine) {
+                    firstLine = false;
+                    continue;
+                }
+                if (line.trim().isEmpty())
+                    continue;
                 String[] cols = line.split(",");
                 try {
                     Attendance a = new Attendance();
@@ -284,7 +309,8 @@ public class ImportAttendanceController extends HttpServlet {
                     }
                     a.setStatus(status);
                     a.setOvertimeHrs(cols.length > 6 && !cols[6].trim().isEmpty()
-                            ? Double.parseDouble(cols[6].trim()) : 0.0);
+                            ? Double.parseDouble(cols[6].trim())
+                            : 0.0);
                     a.setOtReason(cols.length > 7 ? cols[7].trim() : "");
                     records.add(a);
                 } catch (Exception e) {

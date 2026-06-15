@@ -118,15 +118,27 @@ public class AdminOnboardingController extends HttpServlet {
 
         if (createdUsername != null) {
             // Gửi email chứa thông tin đăng nhập
+            boolean emailSent = false;
+            String emailError = "";
             try {
                 EmailUtil.sendWelcomeEmail(onbReq.getEmail(), onbReq.getFullName(),
                                            createdUsername, rawPassword);
+                emailSent = true;
             } catch (Exception e) {
                 // Log lỗi nhưng không rollback — tài khoản đã tạo rồi
                 System.err.println("[AdminOnboarding] Gửi welcome email thất bại: " + e.getMessage());
+                emailError = e.getMessage();
             }
-            resp.sendRedirect(req.getContextPath() + "/admin/onboarding/list?msg=approved&name="
-                              + java.net.URLEncoder.encode(onbReq.getFullName(), "UTF-8"));
+            
+            String redirectUrl = req.getContextPath() + "/admin/onboarding/list?msg=approved&name="
+                              + java.net.URLEncoder.encode(onbReq.getFullName(), "UTF-8");
+            
+            if (emailSent) {
+                redirectUrl += "&emailStatus=success";
+            } else {
+                redirectUrl += "&emailStatus=failed&emailError=" + java.net.URLEncoder.encode(emailError != null ? emailError : "Unknown error", "UTF-8");
+            }
+            resp.sendRedirect(redirectUrl);
         } else {
             resp.sendRedirect(req.getContextPath() + "/admin/onboarding/detail?id=" + requestId + "&error=approve_failed");
         }

@@ -100,7 +100,17 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);}
     <c:if test="${not empty param.msg}">
       <c:choose>
         <c:when test="${param.msg == 'approved'}">
-          <div class="alert alert-success"><i class="fas fa-check-circle"></i> Đã duyệt và tạo tài khoản thành công! Email đã được gửi đến ứng viên.</div>
+          <div class="alert alert-success" style="display:flex; flex-direction:column; align-items:flex-start; gap:4px;">
+            <div><i class="fas fa-check-circle"></i> Đã duyệt và tạo tài khoản thành công cho <strong>${param.name}</strong>!</div>
+            <c:choose>
+              <c:when test="${param.emailStatus == 'success'}">
+                <span style="font-size:0.8rem; color:#15803d; margin-top:4px;"><i class="fas fa-envelope-open-text"></i> Đã gửi email chứa mật khẩu thành công.</span>
+              </c:when>
+              <c:when test="${param.emailStatus == 'failed'}">
+                <span style="font-size:0.8rem; color:#b91c1c; margin-top:4px;"><i class="fas fa-exclamation-circle"></i> Gửi email thất bại. Lỗi: ${param.emailError}</span>
+              </c:when>
+            </c:choose>
+          </div>
         </c:when>
         <c:when test="${param.msg == 'rejected'}">
           <div class="alert alert-success" style="background:#fef3c7;border-color:#fde68a;color:#92400e;"><i class="fas fa-ban"></i> Đã từ chối yêu cầu.</div>
