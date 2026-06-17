@@ -237,8 +237,9 @@ public class PayrollDAO {
         List<PayrollMonthSummary> list = new ArrayList<>();
         String sql = "SELECT month, year, COUNT(user_id) as total_employees, SUM(net_salary) as total_net, " +
                      "       MAX(CASE " +
-                     "           WHEN status = 'Rejected' THEN 5 " +
-                     "           WHEN status = 'Pending' THEN 4 " +
+                     "           WHEN status = 'Rejected' THEN 6 " +
+                     "           WHEN status = 'Pending' THEN 5 " +
+                     "           WHEN status = 'Verified' THEN 4 " +
                      "           WHEN status = 'Draft' THEN 3 " +
                      "           WHEN status = 'Approved' THEN 2 " +
                      "           WHEN status = 'Paid' THEN 1 " +
@@ -260,8 +261,9 @@ public class PayrollDAO {
                 
                 int maxStatusVal = rs.getInt("max_status_val");
                 summary.status = switch (maxStatusVal) {
-                    case 5 -> "Rejected";
-                    case 4 -> "Pending";
+                    case 6 -> "Rejected";
+                    case 5 -> "Pending";
+                    case 4 -> "Verified";
                     case 3 -> "Draft";
                     case 2 -> "Approved";
                     case 1 -> "Paid";
@@ -617,16 +619,17 @@ public class PayrollDAO {
     }
 
     /**
-     * Kế toán xác nhận đã chuyển khoản cho TẤT CẢ nhân viên có status=Approved trong tháng
+     * Kế toán xác nhận đã chuyển khoản cho TẤT CẢ nhân viên có status=Approved trong tháng (có tracking)
      * @return số bản ghi được cập nhật
      */
-    public int markAllApprovedAsPaid(int month, int year) {
-        String sql = "UPDATE payroll SET status = 'Paid' WHERE month = ? AND year = ? AND status = 'Approved'";
+    public int markAllApprovedAsPaid(int month, int year, int paidBy) {
+        String sql = "UPDATE payroll SET status = 'Paid', paid_by = ?, paid_at = NOW() WHERE month = ? AND year = ? AND status = 'Approved'";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, month);
-            ps.setInt(2, year);
+            ps.setInt(1, paidBy);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
             return ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -635,15 +638,15 @@ public class PayrollDAO {
     }
 
     // ═══════════════════════════════════════════════════
-    // TASK 24: Director Approve / Reject Payroll
+    // TASK 24: Director Approve / Reject Payroll (Verified -> Approved/Rejected)
     // ═══════════════════════════════════════════════════
 
     /**
-     * Director duyệt 1 bảng lương: Pending → Approved
+     * Director duyệt 1 bảng lương: Verified → Approved
      */
     public boolean approvePayroll(int payrollId, int approvedBy) {
         String sql = "UPDATE payroll SET status = 'Approved', approved_by = ?, approved_at = NOW() " +
-                     "WHERE payroll_id = ? AND status = 'Pending'";
+                     "WHERE payroll_id = ? AND status = 'Verified'";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -657,11 +660,11 @@ public class PayrollDAO {
     }
 
     /**
-     * Director từ chối 1 bảng lương: Pending → Rejected
+     * Director từ chối 1 bảng lương: Verified → Rejected
      */
     public boolean rejectPayroll(int payrollId, String reason) {
         String sql = "UPDATE payroll SET status = 'Rejected', reject_reason = ? " +
-                     "WHERE payroll_id = ? AND status = 'Pending'";
+                     "WHERE payroll_id = ? AND status = 'Verified'";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -675,18 +678,72 @@ public class PayrollDAO {
     }
 
     /**
-     * Director duyệt TẤT CẢ bảng lương Pending trong tháng
+     * Director duyệt TẤT CẢ bảng lương Verified trong tháng
      * @return số bản ghi được duyệt
      */
     public int approveAllPending(int month, int year, int approvedBy) {
         String sql = "UPDATE payroll SET status = 'Approved', approved_by = ?, approved_at = NOW() " +
-                     "WHERE month = ? AND year = ? AND status = 'Pending'";
+                     "WHERE month = ? AND year = ? AND status = 'Verified'";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, approvedBy);
             ps.setInt(2, month);
             ps.setInt(3, year);
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // ═══════════════════════════════════════════════════
+    // HR Manager Approve / Reject Payroll (Pending -> Verified/Rejected)
+    // ═══════════════════════════════════════════════════
+
+    /**
+     * HR Manager duyệt 1 bảng lương: Pending → Verified
+     */
+    public boolean hrApprovePayroll(int payrollId) {
+        String sql = "UPDATE payroll SET status = 'Verified' WHERE payroll_id = ? AND status = 'Pending'";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, payrollId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * HR Manager từ chối 1 bảng lương: Pending → Rejected
+     */
+    public boolean hrRejectPayroll(int payrollId, String reason) {
+        String sql = "UPDATE payroll SET status = 'Rejected', reject_reason = ? WHERE payroll_id = ? AND status = 'Pending'";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, reason);
+            ps.setInt(2, payrollId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * HR Manager duyệt TẤT CẢ bảng lương Pending trong tháng
+     */
+    public int hrApproveAllPending(int month, int year) {
+        String sql = "UPDATE payroll SET status = 'Verified' WHERE month = ? AND year = ? AND status = 'Pending'";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, month);
+            ps.setInt(2, year);
             return ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();

@@ -363,6 +363,7 @@
                                                 <td>
                                                     <c:choose>
                                                         <c:when test="${p.status == 'Pending'}"><span class="badge-s b-pending"><i class="fas fa-clock"></i> Pending</span></c:when>
+                                                        <c:when test="${p.status == 'Verified'}"><span class="badge-s b-pending" style="background:rgba(59, 130, 246, 0.1);color:#2563eb;"><i class="fas fa-user-check"></i> Verified</span></c:when>
                                                         <c:when test="${p.status == 'Approved'}"><span class="badge-s b-approved"><i class="fas fa-check"></i> Approved</span></c:when>
                                                         <c:when test="${p.status == 'Rejected'}"><span class="badge-s b-rejected"><i class="fas fa-times"></i> Rejected</span></c:when>
                                                         <c:when test="${p.status == 'Paid'}"><span class="badge-s b-paid"><i class="fas fa-check-double"></i> Paid</span></c:when>
@@ -370,7 +371,7 @@
                                                     </c:choose>
                                                 </td>
                                                 <td class="text-end">
-                                                    <div class="d-flex justify-content-end gap-2">
+                                                    <div class="d-flex justify-content-end gap-2 align-items-center">
                                                         <button type="button" class="btn-a btn-view text-white" 
                                                                 title="Xem chi tiết"
                                                                 data-bs-toggle="modal"
@@ -392,7 +393,7 @@
                                                             <i class="fas fa-eye"></i> Chi tiết
                                                         </button>
 
-                                                        <c:if test="${p.status == 'Pending'}">
+                                                        <c:if test="${p.status == 'Verified'}">
                                                             <form method="post" action="${pageContext.request.contextPath}/director/payroll" style="display:inline;"
                                                                   onsubmit="showConfirmModal(event, 'Bạn có chắc chắn duyệt bảng lương cho ${p.fullName}?', 'Duyệt bảng lương', 'fa-check', 'var(--ok)', 'var(--ok-l)');">
                                                                 <input type="hidden" name="action"    value="approve">
@@ -681,8 +682,15 @@ document.addEventListener("DOMContentLoaded", function() {
             const statusEl = document.getElementById('modalStatus');
             statusEl.textContent = status;
             statusEl.className = 'badge-s'; // reset
+            statusEl.style.backgroundColor = ''; // reset custom style
+            statusEl.style.color = '';
             if (status === 'Draft') statusEl.classList.add('b-draft');
             else if (status === 'Pending') statusEl.classList.add('b-pending');
+            else if (status === 'Verified') {
+                statusEl.classList.add('b-pending');
+                statusEl.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                statusEl.style.color = '#2563eb';
+            }
             else if (status === 'Approved') statusEl.classList.add('b-approved');
             else if (status === 'Rejected') statusEl.classList.add('b-rejected');
             else if (status === 'Paid') statusEl.classList.add('b-paid');

@@ -272,14 +272,16 @@
                         <p class="breadcrumb-c"><a href="${pageContext.request.contextPath}/dashboard">Bảng điều khiển</a> &gt; Bảng lương</p>
                     </div>
                     
-                    <div class="d-flex gap-2">
-                        <button type="button"
-                                class="btn-add"
-                                data-bs-toggle="modal"
-                                data-bs-target="#generatePayrollModal">
-                            <i class="fas fa-magic"></i> Khởi tạo kỳ lương
-                        </button>
-                    </div>
+                    <c:if test="${sessionScope.currentUser.roleId == 5}">
+                        <div class="d-flex gap-2">
+                            <button type="button"
+                                    class="btn-add"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#generatePayrollModal">
+                                <i class="fas fa-magic"></i> Khởi tạo kỳ lương
+                            </button>
+                        </div>
+                    </c:if>
                 </div>
 
                 <c:if test="${not empty sessionScope.successMessage}">
@@ -351,6 +353,7 @@
                                                     <c:choose>
                                                         <c:when test="${s.status == 'Draft'}"><span class="badge-s b-draft"><i class="fas fa-edit"></i> Draft</span></c:when>
                                                         <c:when test="${s.status == 'Pending'}"><span class="badge-s b-pending"><i class="fas fa-clock"></i> Pending</span></c:when>
+                                                        <c:when test="${s.status == 'Verified'}"><span class="badge-s b-pending" style="background:rgba(59, 130, 246, 0.1);color:#2563eb;"><i class="fas fa-user-check"></i> Verified</span></c:when>
                                                         <c:when test="${s.status == 'Approved'}"><span class="badge-s b-approved"><i class="fas fa-check"></i> Approved</span></c:when>
                                                         <c:when test="${s.status == 'Rejected'}"><span class="badge-s b-rejected"><i class="fas fa-times"></i> Rejected</span></c:when>
                                                         <c:when test="${s.status == 'Paid'}"><span class="badge-s b-paid"><i class="fas fa-check-double"></i> Paid</span></c:when>
@@ -362,12 +365,20 @@
                                                         <a href="${pageContext.request.contextPath}/hr/payroll?month=${s.month}&year=${s.year}" class="btn-a btn-view text-white" title="Xem danh sách nhân viên">
                                                             <i class="fas fa-eye"></i> Xem danh sách nhân viên
                                                         </a>
-                                                        <c:if test="${s.status == 'Draft' || s.status == 'Rejected'}">
+                                                        <c:if test="${(s.status == 'Draft' || s.status == 'Rejected') && sessionScope.currentUser.roleId == 5}">
                                                             <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" style="display:inline;" onsubmit="showConfirmModal(event, 'Bạn có chắc muốn gửi duyệt tất cả bảng lương của tháng ${s.month}/${s.year}?');">
                                                                 <input type="hidden" name="action" value="submit">
                                                                 <input type="hidden" name="month" value="${s.month}">
                                                                 <input type="hidden" name="year" value="${s.year}">
                                                                 <button type="submit" class="btn-a btn-submit" title="Gửi duyệt toàn bộ"><i class="fas fa-paper-plane"></i> Gửi duyệt</button>
+                                                            </form>
+                                                        </c:if>
+                                                        <c:if test="${s.status == 'Pending' && sessionScope.currentUser.roleId == 2}">
+                                                            <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" style="display:inline;" onsubmit="showConfirmModal(event, 'Bạn có chắc muốn duyệt tất cả bảng lương của tháng ${s.month}/${s.year}?', 'Duyệt toàn bộ');">
+                                                                <input type="hidden" name="action" value="hrApproveAll">
+                                                                <input type="hidden" name="month" value="${s.month}">
+                                                                <input type="hidden" name="year" value="${s.year}">
+                                                                <button type="submit" class="btn-a btn-submit" style="background:var(--ok);" title="Duyệt toàn bộ"><i class="fas fa-check-double"></i> Duyệt toàn bộ</button>
                                                             </form>
                                                         </c:if>
                                                     </div>
@@ -410,14 +421,26 @@
                                style="border-radius:10px;padding:10px 20px;font-weight:600;font-size:.88rem;color:#fff;background:#0d9488;border:none;text-decoration:none;">
                                 <i class="fas fa-file-excel"></i> Xuất Excel
                             </a>
-                            <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" style="display:inline;" onsubmit="showConfirmModal(event, 'Bạn có chắc muốn gửi duyệt tất cả bảng lương của tháng này?');">
-                                <input type="hidden" name="action" value="submit">
-                                <input type="hidden" name="month" value="${selectedMonth}">
-                                <input type="hidden" name="year" value="${selectedYear}">
-                                <button type="submit" class="btn-submit-all">
-                                    <i class="fas fa-paper-plane"></i> Gửi duyệt toàn bộ
-                                </button>
-                            </form>
+                            <c:if test="${sessionScope.currentUser.roleId == 5 && (draftCount > 0 || rejectedCount > 0)}">
+                                <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" style="display:inline;" onsubmit="showConfirmModal(event, 'Bạn có chắc muốn gửi duyệt tất cả bảng lương của tháng này?');">
+                                    <input type="hidden" name="action" value="submit">
+                                    <input type="hidden" name="month" value="${selectedMonth}">
+                                    <input type="hidden" name="year" value="${selectedYear}">
+                                    <button type="submit" class="btn-submit-all">
+                                        <i class="fas fa-paper-plane"></i> Gửi duyệt toàn bộ (${draftCount + rejectedCount})
+                                    </button>
+                                </form>
+                            </c:if>
+                            <c:if test="${sessionScope.currentUser.roleId == 2 && pendingCount > 0}">
+                                <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" style="display:inline;" onsubmit="showConfirmModal(event, 'Bạn có chắc muốn duyệt tất cả bảng lương Pending của tháng này?', 'Duyệt toàn bộ');">
+                                    <input type="hidden" name="action" value="hrApproveAll">
+                                    <input type="hidden" name="month" value="${selectedMonth}">
+                                    <input type="hidden" name="year" value="${selectedYear}">
+                                    <button type="submit" class="btn-submit-all" style="background:var(--ok);">
+                                        <i class="fas fa-check-double"></i> Duyệt toàn bộ (${pendingCount})
+                                    </button>
+                                </form>
+                            </c:if>
                         </c:if>
                     </div>
                 </div>
@@ -439,6 +462,7 @@
                                 <option value="all">Tất cả trạng thái</option>
                                 <option value="Draft">Draft</option>
                                 <option value="Pending">Pending</option>
+                                <option value="Verified">Verified</option>
                                 <option value="Approved">Approved</option>
                                 <option value="Rejected">Rejected</option>
                                 <option value="Paid">Paid</option>
@@ -476,13 +500,14 @@
                                                     <c:choose>
                                                         <c:when test="${p.status == 'Draft'}"><span class="badge-s b-draft"><i class="fas fa-edit"></i> Draft</span></c:when>
                                                         <c:when test="${p.status == 'Pending'}"><span class="badge-s b-pending"><i class="fas fa-clock"></i> Pending</span></c:when>
+                                                        <c:when test="${p.status == 'Verified'}"><span class="badge-s b-pending" style="background:rgba(59, 130, 246, 0.1);color:#2563eb;"><i class="fas fa-user-check"></i> Verified</span></c:when>
                                                         <c:when test="${p.status == 'Approved'}"><span class="badge-s b-approved"><i class="fas fa-check"></i> Approved</span></c:when>
                                                         <c:when test="${p.status == 'Rejected'}"><span class="badge-s b-rejected"><i class="fas fa-times"></i> Rejected</span></c:when>
                                                         <c:when test="${p.status == 'Paid'}"><span class="badge-s b-paid"><i class="fas fa-check-double"></i> Paid</span></c:when>
                                                     </c:choose>
                                                 </td>
                                                 <td class="text-end">
-                                                    <div class="d-flex justify-content-end gap-2">
+                                                    <div class="d-flex justify-content-end gap-2 align-items-center">
                                                         <button type="button" class="btn-a btn-view text-white" 
                                                                 title="Xem chi tiết"
                                                                 data-bs-toggle="modal"
@@ -503,16 +528,39 @@
                                                                 data-status="${p.status}">
                                                             <i class="fas fa-eye"></i> Chi tiết
                                                         </button>
-                                                        <c:choose>
-                                                            <c:when test="${p.status == 'Draft' || p.status == 'Rejected'}">
-                                                                <a href="${pageContext.request.contextPath}/hr/payroll?action=edit&id=${p.payrollId}" class="btn-a btn-edit" title="Chỉnh sửa"><i class="fas fa-edit"></i> Sửa</a>
-                                                                <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" style="display:inline;" onsubmit="showConfirmModal(event, 'Bạn có chắc muốn gửi duyệt bảng lương của nhân viên này?');">
-                                                                    <input type="hidden" name="action" value="submit">
-                                                                    <input type="hidden" name="payrollId" value="${p.payrollId}">
-                                                                    <button type="submit" class="btn-a btn-submit" title="Gửi duyệt"><i class="fas fa-paper-plane"></i> Gửi duyệt</button>
-                                                                </form>
-                                                            </c:when>
-                                                        </c:choose>
+                                                        <c:if test="${sessionScope.currentUser.roleId == 5}">
+                                                            <c:choose>
+                                                                <c:when test="${p.status == 'Draft' || p.status == 'Rejected'}">
+                                                                    <a href="${pageContext.request.contextPath}/hr/payroll?action=edit&id=${p.payrollId}" class="btn-a btn-edit" title="Chỉnh sửa"><i class="fas fa-edit"></i> Sửa</a>
+                                                                    <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" style="display:inline;" onsubmit="showConfirmModal(event, 'Bạn có chắc muốn gửi duyệt bảng lương của nhân viên này?');">
+                                                                        <input type="hidden" name="action" value="submit">
+                                                                        <input type="hidden" name="payrollId" value="${p.payrollId}">
+                                                                        <button type="submit" class="btn-a btn-submit" title="Gửi duyệt"><i class="fas fa-paper-plane"></i> Gửi duyệt</button>
+                                                                    </form>
+                                                                </c:when>
+                                                            </c:choose>
+                                                        </c:if>
+                                                        <c:if test="${sessionScope.currentUser.roleId == 2}">
+                                                            <c:choose>
+                                                                <c:when test="${p.status == 'Pending'}">
+                                                                    <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" style="display:inline;" onsubmit="showConfirmModal(event, 'Bạn có chắc muốn duyệt bảng lương của nhân viên này?', 'Duyệt bảng lương', 'fa-check', 'var(--ok)', 'var(--ok-l)');">
+                                                                        <input type="hidden" name="action" value="hrApprove">
+                                                                        <input type="hidden" name="payrollId" value="${p.payrollId}">
+                                                                        <input type="hidden" name="month" value="${selectedMonth}">
+                                                                        <input type="hidden" name="year" value="${selectedYear}">
+                                                                        <button type="submit" class="btn-a btn-submit" style="background:var(--ok);" title="Duyệt"><i class="fas fa-check"></i> Duyệt</button>
+                                                                    </form>
+                                                                    <button type="button" class="btn-a btn-reject" style="background:var(--ng);" onclick="openRejectModal(${p.payrollId}, '${userNames[p.userId]}')">
+                                                                        <i class="fas fa-times"></i> Từ chối
+                                                                    </button>
+                                                                </c:when>
+                                                            </c:choose>
+                                                        </c:if>
+                                                        <c:if test="${p.status == 'Rejected' && not empty p.rejectReason}">
+                                                            <span style="font-size:.78rem;color:var(--ng);cursor:help;" title="${p.rejectReason}">
+                                                                <i class="fas fa-info-circle"></i> Xem lý do
+                                                            </span>
+                                                        </c:if>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -696,6 +744,38 @@
     </div>
 </div>
 
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:480px;">
+        <div class="modal-content" style="border-radius:16px;border:none;box-shadow:0 15px 35px rgba(0,0,0,.15);">
+            <div class="modal-header" style="background:linear-gradient(135deg,var(--ng),#dc2626);color:#fff;border-radius:16px 16px 0 0;padding:20px 24px;">
+                <h5 class="modal-title fw-bold"><i class="fas fa-times-circle me-2"></i>Từ Chối Bảng Lương</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="${pageContext.request.contextPath}/hr/payroll">
+                <input type="hidden" name="action" value="hrReject">
+                <input type="hidden" name="payrollId" id="rejectPayrollId">
+                <input type="hidden" name="month" value="${selectedMonth}">
+                <input type="hidden" name="year"  value="${selectedYear}">
+                <div class="modal-body" style="padding:28px;">
+                    <p class="text-muted mb-3" style="font-size:.9rem;">
+                        Từ chối bảng lương của <strong id="rejectEmpName"></strong>. Vui lòng nhập lý do:
+                    </p>
+                    <textarea name="rejectReason" class="form-control" rows="4" required
+                              placeholder="Nhập lý do từ chối..."
+                              style="border-radius:10px;border:1.5px solid #e2e8f0;font-family:'Inter',sans-serif;font-size:.9rem;"></textarea>
+                </div>
+                <div class="modal-footer" style="background:#f8fafc;border-top:1px solid #e2e8f0;border-radius:0 0 16px 16px;padding:16px 24px;">
+                    <button type="button" class="btn btn-secondary px-4 fw-semibold" data-bs-dismiss="modal" style="border-radius:8px;">Hủy</button>
+                    <button type="submit" class="btn-a btn-reject px-4" style="height:38px;font-size:.88rem;background:var(--ng);">
+                        <i class="fas fa-times"></i> Xác nhận Từ chối
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Custom Confirmation Modal -->
 <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
@@ -767,6 +847,12 @@ function confirmGeneratePayroll(event) {
     showConfirmModal(event, 'Bạn có chắc muốn khởi tạo bảng lương tháng ' + month + '/' + year + '?', 'Khởi tạo kỳ lương', 'fa-magic', 'var(--ok)', 'var(--ok-l)');
 }
 
+function openRejectModal(payrollId, empName) {
+    document.getElementById('rejectPayrollId').value = payrollId;
+    document.getElementById('rejectEmpName').textContent = empName || 'nhân viên này';
+    new bootstrap.Modal(document.getElementById('rejectModal')).show();
+}
+
 document.addEventListener("DOMContentLoaded", function() {
     const btnConfirmSubmit = document.getElementById('btnConfirmSubmit');
     if (btnConfirmSubmit) {
@@ -816,8 +902,15 @@ document.addEventListener("DOMContentLoaded", function() {
             const statusEl = document.getElementById('modalStatus');
             statusEl.textContent = status;
             statusEl.className = 'badge-s'; // reset
+            statusEl.style.backgroundColor = ''; // reset custom style
+            statusEl.style.color = '';
             if (status === 'Draft') statusEl.classList.add('b-draft');
             else if (status === 'Pending') statusEl.classList.add('b-pending');
+            else if (status === 'Verified') {
+                statusEl.classList.add('b-pending');
+                statusEl.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                statusEl.style.color = '#2563eb';
+            }
             else if (status === 'Approved') statusEl.classList.add('b-approved');
             else if (status === 'Rejected') statusEl.classList.add('b-rejected');
             else if (status === 'Paid') statusEl.classList.add('b-paid');

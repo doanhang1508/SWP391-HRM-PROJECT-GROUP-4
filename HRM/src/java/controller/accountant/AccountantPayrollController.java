@@ -68,6 +68,8 @@ public class AccountantPayrollController extends HttpServlet {
             int year = Integer.parseInt(yearStr);
 
             List<Payroll> payrollList = payrollDAO.getByMonthYear(month, year);
+            // Lọc chỉ hiển thị các bảng lương đã được Director phê duyệt (Approved) hoặc đã chi trả (Paid)
+            payrollList.removeIf(p -> !"Approved".equals(p.getStatus()) && !"Paid".equals(p.getStatus()));
 
             // Thống kê nhanh
             long totalCount    = payrollList.size();
@@ -126,7 +128,7 @@ public class AccountantPayrollController extends HttpServlet {
                 try {
                     int payrollId = Integer.parseInt(payrollIdStr);
                     PayrollDAO payrollDAO = new PayrollDAO();
-                    payrollDAO.markAsPaid(payrollId);
+                    payrollDAO.markAsPaidWithTracking(payrollId, currentUser.getUserId());
                     session.setAttribute("successMessage", "Đã xác nhận chuyển khoản thành công!");
                 } catch (NumberFormatException e) {
                     session.setAttribute("errorMessage", "Dữ liệu không hợp lệ.");
@@ -134,7 +136,7 @@ public class AccountantPayrollController extends HttpServlet {
             }
         } else if ("markAllPaid".equals(action)) {
             PayrollDAO payrollDAO = new PayrollDAO();
-            int updated = payrollDAO.markAllApprovedAsPaid(month, year);
+            int updated = payrollDAO.markAllApprovedAsPaid(month, year, currentUser.getUserId());
             session.setAttribute("successMessage", "Đã xác nhận chuyển khoản cho " + updated + " nhân viên!");
         }
 

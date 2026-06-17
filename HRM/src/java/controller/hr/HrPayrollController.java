@@ -7,6 +7,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
@@ -26,9 +27,27 @@ public class HrPayrollController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        HttpSession session = request.getSession(false);
+        User currentUser = (session != null) ? (User) session.getAttribute("currentUser") : null;
+        if (currentUser == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+        int roleId = currentUser.getRoleId();
+        if (roleId != 2 && roleId != 5) {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
+            return;
+        }
+
         String action = request.getParameter("action");
         if (action == null) {
             action = "list";
+        }
+
+        if ("edit".equals(action) && roleId != 5) {
+            session.setAttribute("errorMessage", "Bạn không có quyền thực hiện hành động này.");
+            response.sendRedirect(request.getContextPath() + "/hr/payroll");
+            return;
         }
 
         switch (action) {
@@ -43,13 +62,44 @@ public class HrPayrollController extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
-        String action = request.getParameter("action");
+        HttpSession session = request.getSession(false);
+        User currentUser = (session != null) ? (User) session.getAttribute("currentUser") : null;
+        if (currentUser == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+        int roleId = currentUser.getRoleId();
+        if (roleId != 2 && roleId != 5) {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
+            return;
+        }
 
-        switch (action) {
-            case "generateDraft" -> generateDraft(request, response);
-            case "updateDraft" -> updateDraft(request, response);
-            case "submit" -> submitForApproval(request, response);
-            default -> response.sendError(HttpServletResponse.SC_NOT_FOUND);
+        String action = request.getParameter("action");
+        if (action == null) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+
+        if (roleId == 5) { // HR Staff
+            switch (action) {
+                case "generateDraft" -> generateDraft(request, response);
+                case "updateDraft" -> updateDraft(request, response);
+                case "submit" -> submitForApproval(request, response);
+                default -> {
+                    session.setAttribute("errorMessage", "Hành động không được phép cho HR Staff.");
+                    response.sendRedirect(request.getContextPath() + "/hr/payroll");
+                }
+            }
+        } else if (roleId == 2) { // HR Manager
+            switch (action) {
+                case "hrApprove" -> hrApprove(request, response);
+                case "hrReject" -> hrReject(request, response);
+                case "hrApproveAll" -> hrApproveAll(request, response);
+                default -> {
+                    session.setAttribute("errorMessage", "Hành động không được phép cho HR Manager.");
+                    response.sendRedirect(request.getContextPath() + "/hr/payroll");
+                }
+            }
         }
     }
 
@@ -70,10 +120,26 @@ public class HrPayrollController extends HttpServlet {
         int year = Integer.parseInt(yearStr);
 
         List<Payroll> list = payrollDAO.getByMonthYear(month, year);
+        
+        long draftCount    = list.stream().filter(p -> "Draft".equals(p.getStatus())).count();
+        long pendingCount  = list.stream().filter(p -> "Pending".equals(p.getStatus())).count();
+        long verifiedCount = list.stream().filter(p -> "Verified".equals(p.getStatus())).count();
+        long approvedCount = list.stream().filter(p -> "Approved".equals(p.getStatus())).count();
+        long rejectedCount = list.stream().filter(p -> "Rejected".equals(p.getStatus())).count();
+        long paidCount     = list.stream().filter(p -> "Paid".equals(p.getStatus())).count();
+        long totalCount    = list.size();
+
         request.setAttribute("payrollList", list);
         request.setAttribute("selectedMonth", month);
         request.setAttribute("selectedYear", year);
         request.setAttribute("viewMode", "employees");
+        request.setAttribute("draftCount", draftCount);
+        request.setAttribute("pendingCount", pendingCount);
+        request.setAttribute("verifiedCount", verifiedCount);
+        request.setAttribute("approvedCount", approvedCount);
+        request.setAttribute("rejectedCount", rejectedCount);
+        request.setAttribute("paidCount", paidCount);
+        request.setAttribute("totalCount", totalCount);
 
         // Fetch employee names mapping
         List<User> users = userDAO.getAllUsers();
@@ -438,6 +504,85 @@ public class HrPayrollController extends HttpServlet {
 
     private String formatNum(BigDecimal val) {
         return val != null ? val.toPlainString() : "0";
+    }
+
+    private void hrApprove(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        String idStr = request.getParameter("payrollId");
+        String monthStr = request.getParameter("month");
+        String yearStr = request.getParameter("year");
+        
+        int month = getCurrentMonth();
+        int year = getCurrentYear();
+        try {
+            if (monthStr != null) month = Integer.parseInt(monthStr);
+            if (yearStr != null) year = Integer.parseInt(yearStr);
+        } catch (NumberFormatException ignored) {}
+
+        if (idStr != null) {
+            try {
+                int payrollId = Integer.parseInt(idStr);
+                boolean success = payrollDAO.hrApprovePayroll(payrollId);
+                if (success) {
+                    request.getSession().setAttribute("successMessage", "HR Manager đã duyệt bảng lương thành công!");
+                } else {
+                    request.getSession().setAttribute("errorMessage", "Duyệt thất bại. Trạng thái bảng lương không hợp lệ.");
+                }
+            } catch (NumberFormatException e) {
+                request.getSession().setAttribute("errorMessage", "ID không hợp lệ.");
+            }
+        }
+        response.sendRedirect(request.getContextPath() + "/hr/payroll?month=" + month + "&year=" + year);
+    }
+
+    private void hrReject(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        String idStr = request.getParameter("payrollId");
+        String reason = request.getParameter("rejectReason");
+        String monthStr = request.getParameter("month");
+        String yearStr = request.getParameter("year");
+
+        int month = getCurrentMonth();
+        int year = getCurrentYear();
+        try {
+            if (monthStr != null) month = Integer.parseInt(monthStr);
+            if (yearStr != null) year = Integer.parseInt(yearStr);
+        } catch (NumberFormatException ignored) {}
+
+        if (idStr != null) {
+            try {
+                int payrollId = Integer.parseInt(idStr);
+                if (reason == null || reason.isBlank()) {
+                    reason = "Từ chối bởi HR Manager";
+                }
+                boolean success = payrollDAO.hrRejectPayroll(payrollId, reason);
+                if (success) {
+                    request.getSession().setAttribute("successMessage", "Đã từ chối bảng lương thành công.");
+                } else {
+                    request.getSession().setAttribute("errorMessage", "Từ chối thất bại. Trạng thái bảng lương không hợp lệ.");
+                }
+            } catch (NumberFormatException e) {
+                request.getSession().setAttribute("errorMessage", "ID không hợp lệ.");
+            }
+        }
+        response.sendRedirect(request.getContextPath() + "/hr/payroll?month=" + month + "&year=" + year);
+    }
+
+    private void hrApproveAll(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        String monthStr = request.getParameter("month");
+        String yearStr = request.getParameter("year");
+
+        int month = getCurrentMonth();
+        int year = getCurrentYear();
+        try {
+            if (monthStr != null) month = Integer.parseInt(monthStr);
+            if (yearStr != null) year = Integer.parseInt(yearStr);
+        } catch (NumberFormatException ignored) {}
+
+        int count = payrollDAO.hrApproveAllPending(month, year);
+        request.getSession().setAttribute("successMessage", "HR Manager đã duyệt thành công " + count + " bảng lương!");
+        response.sendRedirect(request.getContextPath() + "/hr/payroll?month=" + month + "&year=" + year);
     }
 
     private int getCurrentMonth() {

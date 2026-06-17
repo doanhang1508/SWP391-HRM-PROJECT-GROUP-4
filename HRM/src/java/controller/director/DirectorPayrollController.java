@@ -63,7 +63,8 @@ public class DirectorPayrollController extends HttpServlet {
             List<Payroll> payrollList = payrollDAO.getPayrollsWithNames(month, year);
 
             // Thống kê
-            long pendingCount  = payrollList.stream().filter(p -> "Pending".equals(p.getStatus())).count();
+            // Thống kê (Chờ duyệt đối với Director là trạng thái Verified)
+            long pendingCount  = payrollList.stream().filter(p -> "Verified".equals(p.getStatus())).count();
             long approvedCount = payrollList.stream().filter(p -> "Approved".equals(p.getStatus())).count();
             long rejectedCount = payrollList.stream().filter(p -> "Rejected".equals(p.getStatus())).count();
             long paidCount     = payrollList.stream().filter(p -> "Paid".equals(p.getStatus())).count();
@@ -121,7 +122,7 @@ public class DirectorPayrollController extends HttpServlet {
                         if (success) {
                             session.setAttribute("successMessage", "Đã duyệt bảng lương thành công!");
                         } else {
-                            session.setAttribute("errorMessage", "Không thể duyệt. Bảng lương không ở trạng thái Pending.");
+                            session.setAttribute("errorMessage", "Không thể duyệt. Bảng lương không ở trạng thái Verified.");
                         }
                     } catch (NumberFormatException e) {
                         session.setAttribute("errorMessage", "Dữ liệu không hợp lệ.");
@@ -141,7 +142,7 @@ public class DirectorPayrollController extends HttpServlet {
                         if (success) {
                             session.setAttribute("successMessage", "Đã từ chối bảng lương.");
                         } else {
-                            session.setAttribute("errorMessage", "Không thể từ chối. Bảng lương không ở trạng thái Pending.");
+                            session.setAttribute("errorMessage", "Không thể từ chối. Bảng lương không ở trạng thái Verified.");
                         }
                     } catch (NumberFormatException e) {
                         session.setAttribute("errorMessage", "Dữ liệu không hợp lệ.");
