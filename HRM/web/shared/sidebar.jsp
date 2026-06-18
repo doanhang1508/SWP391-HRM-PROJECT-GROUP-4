@@ -417,13 +417,6 @@
                                                             <i class="fas fa-file-contract"></i> Loại hợp đồng
                                                         </a>
                                                     </li>
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/onboarding/list"
-                                                            class="sidebar-link ${param.activeMenu eq 'onboarding' ? 'active' : ''}">
-                                                            <i class="fas fa-user-clock"></i> Tiếp nhận nhân viên
-                                                        </a>
-                                                    </li>
-
                                                     <li class="sidebar-menu-category">Cấu hình Chính sách</li>
                                                     <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/hr/shifts"
@@ -460,12 +453,7 @@
                                                             <i class="fas fa-money-bill-wave"></i> Bậc lương
                                                         </a>
                                                     </li>
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/insurance-rate"
-                                                            class="sidebar-link ${param.activeMenu eq 'insurance-rate' ? 'active' : ''}">
-                                                            <i class="fas fa-shield-alt"></i> Bảo hiểm
-                                                        </a>
-                                                    </li>
+
                                                     <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/hr/payroll"
                                                             class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
@@ -480,18 +468,8 @@
                                                             <i class="fas fa-lock"></i> Khóa công
                                                         </a>
                                                     </li>
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/attendance-claims"
-                                                            class="sidebar-link ${param.activeMenu eq 'attendance-claims' ? 'active' : ''}">
-                                                            <i class="fas fa-clipboard-check"></i> Yêu cầu chấm lại công
-                                                        </a>
-                                                    </li>
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/import-attendance"
-                                                            class="sidebar-link ${param.activeMenu eq 'import-attendance' ? 'active' : ''}">
-                                                            <i class="fas fa-file-import"></i> Import chấm công
-                                                        </a>
-                                                    </li>
+
+
                                                 </c:if>
 
                                                 <%-- ══════ FACTORY MANAGER / SUPERVISOR (roleId=3) ══════
@@ -519,13 +497,13 @@
                                                             </a>
                                                         </li>
                                                         <li class="sidebar-menu-category">Chấm công</li>
-                                                        <%-- TODO Iteration 2: thêm Duyệt yêu cầu điều chỉnh chấm công --%>
+
                                                     </c:if>
 
                                                     <%-- ══════ DIRECTOR (roleId=4) ══════
                                                          Quyền: xem tổng quan nhân sự,
-                                                         duyệt chốt bảng lương (Iteration 2),
-                                                         xem báo cáo tổng hợp (Iteration 2).
+                                                         duyệt chốt bảng lương,
+                                                         xem báo cáo tổng hợp.
                                                          KHÔNG có quyền vận hành (phòng ban CRUD, etc.)
                                                     --%>
                                                         <c:if test="${sessionScope.currentUser.roleId == 4}">
@@ -544,12 +522,10 @@
                                                                 </a>
                                                             </li>
                                                             <li class="sidebar-menu-category">Báo cáo</li>
-                                                            <%-- TODO Iteration 2: Báo cáo nhân sự tổng hợp --%>
-                                                            <li class="sidebar-item sidebar-item--disabled">
-                                                                <span class="sidebar-link" style="opacity:0.4;cursor:not-allowed;">
+                                                            <li class="sidebar-item">
+                                                                <a href="${pageContext.request.contextPath}/director/reports" class="sidebar-link ${param.activeMenu eq 'director-reports' ? 'active' : ''}">
                                                                     <i class="fas fa-chart-line"></i> Báo cáo tổng hợp
-                                                                    <span style="font-size:0.68rem;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;margin-left:6px;">Iter 2</span>
-                                                                </span>
+                                                                </a>
                                                             </li>
                                                         </c:if>
 
@@ -566,16 +542,44 @@
                                                                         <i class="fas fa-users"></i> Danh sách nhân viên
                                                                     </a>
                                                                 </li>
-                                                                <%-- TODO Iteration 2: thêm Onboarding / CCCD OCR --%>
-                                                                <%-- TODO Iteration 2: thêm Quản lý hợp đồng --%>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/onboarding/list"
+                                                                        class="sidebar-link ${param.activeMenu eq 'onboarding' ? 'active' : ''}">
+                                                                        <i class="fas fa-user-clock"></i> Tiếp nhận nhân viên
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/terminate-employee"
+                                                                        class="sidebar-link ${param.activeMenu eq 'termination' ? 'active' : ''}">
+                                                                        <i class="fas fa-user-minus"></i> Quản lý nghỉ việc
+                                                                    </a>
+                                                                </li>
+
                                                                 <li class="sidebar-menu-category">Chấm công</li>
-                                                                <%-- TODO Iteration 2: thêm Upload chấm công --%>
-                                                                <%-- TODO Iteration 2: thêm Xem tổng hợp chấm công --%>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/import-attendance"
+                                                                        class="sidebar-link ${param.activeMenu eq 'import-attendance' ? 'active' : ''}">
+                                                                        <i class="fas fa-file-import"></i> Import chấm công
+                                                                    </a>
+                                                                </li>
+
                                                                 <li class="sidebar-menu-category">Lương &amp; Phúc lợi</li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/payroll"
                                                                         class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
                                                                         <i class="fas fa-file-invoice-dollar"></i> Bảng lương
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/insurance-rate"
+                                                                        class="sidebar-link ${param.activeMenu eq 'insurance-rate' ? 'active' : ''}">
+                                                                        <i class="fas fa-shield-alt"></i> Bảo hiểm
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/manual-reward-discipline"
+                                                                        class="sidebar-link ${param.activeMenu eq 'manual-reward' ? 'active' : ''}">
+                                                                        <i class="fas fa-award"></i> Khen thưởng/Kỷ luật
                                                                     </a>
                                                                 </li>
                                                             </c:if>
@@ -601,7 +605,7 @@
                                                                         </a>
                                                                     </li>
                                                                     <li class="sidebar-menu-category">Chấm công</li>
-                                                                    <%-- TODO Iteration 2: thêm Duyệt yêu cầu điều chỉnh chấm công --%>
+
                                                                 </c:if>
 
                                                                 <%-- ══════ EMPLOYEE (roleId=7) ══════ --%>

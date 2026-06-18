@@ -16,10 +16,11 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 
 /**
- * EmployeeDetailController — Xem hồ sơ nhân sự (dành cho HR Manager, HR Staff, Quản đốc, Trưởng phòng).
+ * HrEmployeeContractsController — Xem thông tin hợp đồng và lương của nhân viên (dành cho HR).
+ * URL: /hr/employee-contracts?userId=...  (GET)
  */
-@WebServlet(name = "EmployeeDetailController", urlPatterns = {"/hr/employee-detail"})
-public class EmployeeDetailController extends HttpServlet {
+@WebServlet(name = "HrEmployeeContractsController", urlPatterns = {"/hr/employee-contracts"})
+public class HrEmployeeContractsController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -42,20 +43,22 @@ public class EmployeeDetailController extends HttpServlet {
 
         String userIdParam = request.getParameter("userId");
         if (userIdParam == null || userIdParam.isEmpty()) {
-            response.sendRedirect(request.getContextPath() + "/dashboard");
+            response.sendRedirect(request.getContextPath() + "/hr/employees");
             return;
         }
 
         try {
             int userId = Integer.parseInt(userIdParam);
+
             UserDAO userDAO = new UserDAO();
             User employee = userDAO.getUserById(userId);
 
             if (employee == null) {
-                response.sendRedirect(request.getContextPath() + "/dashboard");
+                response.sendRedirect(request.getContextPath() + "/hr/employees");
                 return;
             }
 
+            // Load department & position for profile header
             DepartmentDAO deptDAO = new DepartmentDAO();
             PositionDAO posDAO = new PositionDAO();
 
@@ -80,16 +83,12 @@ public class EmployeeDetailController extends HttpServlet {
             request.setAttribute("empDept", dept);
             request.setAttribute("empPos", pos);
 
-            request.getRequestDispatcher("/hr/employee-profile.jsp").forward(request, response);
+            // Mở rộng sau: Load ContractType, SalaryGrade, Allowances, InsuranceRates tại đây
+
+            request.getRequestDispatcher("/hr/employee-contracts.jsp").forward(request, response);
 
         } catch (NumberFormatException e) {
-            response.sendRedirect(request.getContextPath() + "/dashboard");
+            response.sendRedirect(request.getContextPath() + "/hr/employees");
         }
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        doGet(request, response);
     }
 }

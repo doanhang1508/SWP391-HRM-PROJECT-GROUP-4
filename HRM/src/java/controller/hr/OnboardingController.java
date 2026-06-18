@@ -16,12 +16,12 @@ import java.io.IOException;
 import java.sql.Date;
 
 /**
- * Controller phía HR cho luồng Onboarding
+ * Controller phía HR Staff cho luồng Onboarding
  * URL pattern: /hr/onboarding/*
  *
- * GET /hr/onboarding/new → Form tạo mới (không có OCR)
+ * GET /hr/onboarding/new  → Form tạo mới
  * GET /hr/onboarding/edit?id=X → Form chỉnh sửa
- * GET /hr/onboarding/list → Danh sách yêu cầu của HR này
+ * GET /hr/onboarding/list → Danh sách yêu cầu
  * POST /hr/onboarding/save → Lưu (DRAFT hoặc PENDING)
  */
 @WebServlet("/hr/onboarding/*")
@@ -36,10 +36,9 @@ public class OnboardingController extends HttpServlet {
             throws ServletException, IOException {
 
         User currentUser = getCurrentUser(req, resp);
-        if (currentUser == null)
-            return;
+        if (currentUser == null) return;
 
-        String path = getPath(req); // /new, /edit, /list
+        String path = getPath(req);
 
         switch (path) {
             case "/new":
@@ -54,7 +53,6 @@ public class OnboardingController extends HttpServlet {
                     return;
                 }
                 OnboardingRequest existing = onbDAO.getById(editId);
-                // Chỉ cho phép sửa nếu là chủ sở hữu VÀ status DRAFT/REJECTED
                 if (existing == null || existing.getCreatedBy() != currentUser.getUserId()
                         || (!existing.getStatus().equals("DRAFT") && !existing.getStatus().equals("REJECTED"))) {
                     resp.sendRedirect(req.getContextPath() + "/hr/onboarding/list?error=forbidden");
@@ -78,16 +76,14 @@ public class OnboardingController extends HttpServlet {
             throws ServletException, IOException {
 
         User currentUser = getCurrentUser(req, resp);
-        if (currentUser == null)
-            return;
+        if (currentUser == null) return;
 
-        String path = getPath(req); // /save
+        String path = getPath(req);
 
         if ("/save".equals(path)) {
             boolean isDraft = "DRAFT".equals(req.getParameter("action"));
             OnboardingRequest r = buildFromRequest(req, currentUser.getUserId(), isDraft);
 
-            // Validate bắt buộc
             String validErr = validateForm(r);
             if (validErr != null) {
                 prepareForm(req, r);
@@ -96,7 +92,6 @@ public class OnboardingController extends HttpServlet {
                 return;
             }
 
-            // Kiểm tra trùng CCCD/Email
             String dupErr = onbDAO.checkDuplicate(r.getCccdNumber(), r.getEmail(), r.getId());
             if (dupErr != null) {
                 prepareForm(req, r);
@@ -137,10 +132,7 @@ public class OnboardingController extends HttpServlet {
 
         String idStr = req.getParameter("id");
         if (idStr != null && !idStr.trim().isEmpty()) {
-            try {
-                r.setId(Integer.parseInt(idStr.trim()));
-            } catch (NumberFormatException ignored) {
-            }
+            try { r.setId(Integer.parseInt(idStr.trim())); } catch (NumberFormatException ignored) {}
         }
 
         r.setFullName(trimOrNull(req.getParameter("fullName")));
@@ -153,46 +145,31 @@ public class OnboardingController extends HttpServlet {
 
         String dobStr = req.getParameter("dateOfBirth");
         if (dobStr != null && !dobStr.trim().isEmpty()) {
-            try {
-                r.setDateOfBirth(Date.valueOf(dobStr.trim()));
-            } catch (IllegalArgumentException ignored) {
-            }
+            try { r.setDateOfBirth(Date.valueOf(dobStr.trim())); } catch (IllegalArgumentException ignored) {}
         }
 
         String genderStr = req.getParameter("gender");
         if (genderStr != null && !genderStr.isEmpty()) {
-            try {
-                r.setGender(Integer.parseInt(genderStr));
-            } catch (NumberFormatException ignored) {
-            }
+            try { r.setGender(Integer.parseInt(genderStr)); } catch (NumberFormatException ignored) {}
         }
 
         String deptStr = req.getParameter("departmentId");
         if (deptStr != null && !deptStr.isEmpty()) {
-            try {
-                r.setDepartmentId(Integer.parseInt(deptStr));
-            } catch (NumberFormatException ignored) {
-            }
+            try { r.setDepartmentId(Integer.parseInt(deptStr)); } catch (NumberFormatException ignored) {}
         }
 
         String posStr = req.getParameter("positionId");
         if (posStr != null && !posStr.isEmpty()) {
-            try {
-                r.setPositionId(Integer.parseInt(posStr));
-            } catch (NumberFormatException ignored) {
-            }
+            try { r.setPositionId(Integer.parseInt(posStr)); } catch (NumberFormatException ignored) {}
         }
 
         return r;
     }
 
     private String validateForm(OnboardingRequest r) {
-        if (r.getFullName() == null || r.getFullName().isEmpty())
-            return "Họ và tên không được để trống";
-        if (r.getEmail() == null || r.getEmail().isEmpty())
-            return "Email không được để trống";
-        if (!r.getEmail().contains("@"))
-            return "Email không đúng định dạng";
+        if (r.getFullName() == null || r.getFullName().isEmpty()) return "Họ và tên không được để trống";
+        if (r.getEmail() == null || r.getEmail().isEmpty()) return "Email không được để trống";
+        if (!r.getEmail().contains("@")) return "Email không đúng định dạng";
         return null;
     }
 
@@ -203,7 +180,6 @@ public class OnboardingController extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/login");
             return null;
         }
-        // Cho phép HR (roleId 2 hoặc 5)
         if (user.getRoleId() != 2 && user.getRoleId() != 5) {
             resp.sendRedirect(req.getContextPath() + "/dashboard");
             return null;
@@ -217,18 +193,12 @@ public class OnboardingController extends HttpServlet {
     }
 
     private int parseId(String s, int def) {
-        if (s == null || s.trim().isEmpty())
-            return def;
-        try {
-            return Integer.parseInt(s.trim());
-        } catch (NumberFormatException e) {
-            return def;
-        }
+        if (s == null || s.trim().isEmpty()) return def;
+        try { return Integer.parseInt(s.trim()); } catch (NumberFormatException e) { return def; }
     }
 
     private String trimOrNull(String s) {
-        if (s == null)
-            return null;
+        if (s == null) return null;
         String t = s.trim();
         return t.isEmpty() ? null : t;
     }

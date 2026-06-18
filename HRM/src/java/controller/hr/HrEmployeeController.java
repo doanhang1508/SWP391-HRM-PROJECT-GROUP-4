@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * HrEmployeeController — Danh sách hồ sơ nhân viên dành cho bộ phận HR.
+ * HrEmployeeController — Danh sách hồ sơ nhân viên dành cho HR Staff và HR Manager.
  */
 @WebServlet(name = "HrEmployeeController", urlPatterns = {"/hr/employees"})
 public class HrEmployeeController extends HttpServlet {
@@ -25,7 +25,7 @@ public class HrEmployeeController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("currentUser") == null) {
             response.sendRedirect(request.getContextPath() + "/login");
@@ -35,7 +35,7 @@ public class HrEmployeeController extends HttpServlet {
         User currentUser = (User) session.getAttribute("currentUser");
         int roleId = currentUser.getRoleId();
 
-        // Chỉ HR Manager (2) và HR Staff (5) được phép truy cập
+        // HR Manager (2) và HR Staff (5)
         if (roleId != 2 && roleId != 5) {
             response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
@@ -86,7 +86,7 @@ public class HrEmployeeController extends HttpServlet {
         List<Department> departments = deptDAO.getAll();
         List<Position> positions = posDAO.getAll();
 
-        // Lọc bỏ tài khoản Admin (Role 1) và tài khoản của chính người đang đăng nhập
+        // Lọc bỏ tài khoản Admin và tài khoản của chính người đang đăng nhập
         List<User> filteredUsers = users.stream()
                 .filter(u -> u.getRoleId() != 1 && u.getUserId() != currentUser.getUserId())
                 .collect(java.util.stream.Collectors.toList());

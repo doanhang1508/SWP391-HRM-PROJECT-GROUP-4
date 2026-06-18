@@ -11,11 +11,11 @@ import java.io.IOException;
 /**
  * AuthFilter — Bộ lọc xác thực và phân quyền URL.
  * <p>
- * Mapping URL được đăng ký trong web.xml:
+ * Mapping URL đường dẫn:
  * /dashboard              → role 1-6 (management)
  * /admin/users            → role 1 (Admin only) — quản lý tài khoản
  * /admin/* (còn lại)      → role 1, 2 (Admin + HR Manager)
- * /hr/*                   → role 2, 5 (HR Manager, HR Staff)
+ * /hr/*                   → role 2, 5 (HR Manager + HR Staff)
  * /accountant/*           → role 8 (Accountant only)
  * /employee/*             → mọi role đã đăng nhập
  * /editRolePermission     → role 1 (Admin only)
@@ -105,7 +105,7 @@ public class AuthFilter implements Filter {
             }
         }
 
-        // ── 4. /hr/* → HR Manager (2) hoặc HR Staff (5) ───────────────────
+        // ── 4. /hr/* → HR Manager (2) hoặc HR Staff (5) ────────────────────
         if (path.startsWith("/hr/")) {
             if (roleId != ROLE_HR_MANAGER && roleId != ROLE_HR_STAFF) {
                 redirectToAppropriate(req, resp, roleId);

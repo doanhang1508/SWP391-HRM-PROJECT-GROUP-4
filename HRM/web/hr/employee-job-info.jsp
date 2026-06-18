@@ -3,14 +3,14 @@
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
-<c:set var="pageTitle" value="Chi tiết Hồ sơ Nhân sự" scope="request" />
+<c:set var="pageTitle" value="Thông tin công việc - Hồ sơ Nhân sự" scope="request" />
 <jsp:include page="../header.jsp" />
 
 <style>
     body { background-color: #f1f5f9; font-family: 'Inter', sans-serif; }
     .dashboard-wrapper { display: flex; min-height: calc(100vh - 64px); }
     .main-content { flex: 1; padding: 24px 32px; width: calc(100% - 260px); }
-    
+
     /* Breadcrumb & Header */
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
     .breadcrumb-title { font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0; }
@@ -27,7 +27,7 @@
     .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
     .status-active { background: #dcfce7; color: #166534; }
     .status-inactive { background: #fee2e2; color: #991b1b; }
-    
+
     .btn-edit { background: #fff; border: 1px solid #cbd5e1; color: #334155; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; text-decoration: none; }
     .btn-edit:hover { background: #f8fafc; border-color: #94a3b8; color: #0f172a; }
 
@@ -38,8 +38,9 @@
     .nav-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
 
     /* Content Card */
-    .content-card { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .section-title { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0 0 20px; }
+    .content-card { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px;}
+    .section-title { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0 0 20px; display: flex; align-items: center; gap: 10px; }
+    .section-title i { color: #2563eb; }
     
     /* Form Grid */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
@@ -47,6 +48,12 @@
     .form-group.full-width { grid-column: span 2; }
     .form-label { font-size: 0.85rem; font-weight: 700; color: #475569; }
     .form-control-view { background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 16px; border-radius: 8px; font-size: 0.95rem; color: #0f172a; font-weight: 500; width: 100%; min-height: 42px; display: flex; align-items: center; }
+
+    /* Badges in view */
+    .view-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; }
+    .badge-role { background: #e0e7ff; color: #3730a3; }
+    .badge-dept { background: #dbeafe; color: #1e40af; }
+    .badge-pos { background: #fef3c7; color: #b45309; }
 
 </style>
 
@@ -62,7 +69,7 @@
                 <a href="javascript:history.back()" class="btn-back" style="margin-bottom: 12px;">
                     <i class="fas fa-arrow-left"></i> Quay lại
                 </a>
-                <h1 class="breadcrumb-title">Quản lý Hồ sơ Nhân sự <span>/ Chi tiết</span></h1>
+                <h1 class="breadcrumb-title">Quản lý Hồ sơ Nhân sự <span>/ Thông tin công việc</span></h1>
             </div>
         </div>
 
@@ -93,66 +100,83 @@
 
         <!-- Tabs -->
         <div class="nav-tabs-custom">
-            <a href="${pageContext.request.contextPath}/hr/employee-detail?userId=${employee.userId}" class="nav-tab active">Thông tin cá nhân</a>
-            <a href="${pageContext.request.contextPath}/hr/employee-job-info?userId=${employee.userId}" class="nav-tab">Thông tin công việc</a>
+            <a href="${pageContext.request.contextPath}/hr/employee-detail?userId=${employee.userId}" class="nav-tab">Thông tin cá nhân</a>
+            <a href="${pageContext.request.contextPath}/hr/employee-job-info?userId=${employee.userId}" class="nav-tab active">Thông tin công việc</a>
             <a href="${pageContext.request.contextPath}/hr/employee-work-history?userId=${employee.userId}" class="nav-tab">Lịch sử công tác</a>
-            <a href="${pageContext.request.contextPath}/hr/employee-contracts?userId=${employee.userId}" class="nav-tab">Hợp đồng & Lương</a>
+            <a href="${pageContext.request.contextPath}/hr/employee-contracts?userId=${employee.userId}" class="nav-tab">Hợp đồng &amp; Lương</a>
         </div>
 
-        <!-- Tab Content: Thông tin cá nhân -->
+        <!-- Tab Content: Thông tin công việc -->
         <div class="content-card">
-            <h3 class="section-title">Thông tin cơ bản</h3>
+            <h3 class="section-title"><i class="fas fa-briefcase"></i> Vị trí &amp; Tổ chức</h3>
             
             <div class="form-grid">
                 <div class="form-group">
-                    <label class="form-label">Họ và tên</label>
-                    <div class="form-control-view">${employee.fullName}</div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Tên tài khoản (Username)</label>
-                    <div class="form-control-view">@${employee.username}</div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Mã nhân viên (EMP ID)</label>
-                    <div class="form-control-view">EMP-${employee.userId}</div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Ngày vào làm</label>
-                    <div class="form-control-view"><fmt:formatDate value="${employee.createdAt}" pattern="dd/MM/yyyy"/></div>
+                    <label class="form-label">Phòng ban (Department)</label>
+                    <div class="form-control-view">
+                        <c:choose>
+                            <c:when test="${not empty empDept}">
+                                <span class="view-badge badge-dept"><i class="fas fa-building me-1"></i> ${empDept.departmentName}</span>
+                            </c:when>
+                            <c:otherwise>
+                                <span style="color: #94a3b8; font-style: italic;">Chưa phân bổ</span>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Số điện thoại</label>
-                    <div class="form-control-view">${not empty employee.phone ? employee.phone : '— Chưa cập nhật —'}</div>
+                    <label class="form-label">Chức vụ chuyên môn (Position)</label>
+                    <div class="form-control-view">
+                        <c:choose>
+                            <c:when test="${not empty empPos}">
+                                <span class="view-badge badge-pos"><i class="fas fa-id-badge me-1"></i> ${empPos.positionName}</span>
+                            </c:when>
+                            <c:otherwise>
+                                <span style="color: #94a3b8; font-style: italic;">Chưa cập nhật</span>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
                 </div>
+                
                 <div class="form-group">
-                    <label class="form-label">Email</label>
-                    <div class="form-control-view">${employee.email}</div>
+                    <label class="form-label">Vai trò hệ thống (Role)</label>
+                    <div class="form-control-view">
+                        <c:choose>
+                            <c:when test="${not empty userRole}">
+                                <span class="view-badge badge-role"><i class="fas fa-user-shield me-1"></i> ${userRole.roleName}</span>
+                            </c:when>
+                            <c:otherwise>
+                                <span style="color: #94a3b8; font-style: italic;">Chưa phân quyền</span>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
                 </div>
 
-                <!-- Các trường tĩnh -->
                 <div class="form-group">
-                    <label class="form-label">Giới tính</label>
-                    <div class="form-control-view" style="color: #94a3b8; font-style: italic;">Chưa cập nhật</div>
+                    <label class="form-label">Trạng thái công việc</label>
+                    <div class="form-control-view">
+                        <c:choose>
+                            <c:when test="${employee.status == 1}">
+                                <span style="color: #16a34a; font-weight: 600;"><i class="fas fa-circle me-1" style="font-size: 8px; vertical-align: middle;"></i> Đang làm việc</span>
+                            </c:when>
+                            <c:otherwise>
+                                <span style="color: #dc2626; font-weight: 600;"><i class="fas fa-circle me-1" style="font-size: 8px; vertical-align: middle;"></i> Đã nghỉ việc / Khóa</span>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Ngày sinh</label>
-                    <div class="form-control-view" style="color: #94a3b8; font-style: italic;">Chưa cập nhật</div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">CMND/CCCD</label>
-                    <div class="form-control-view" style="color: #94a3b8; font-style: italic;">Chưa cập nhật</div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Tình trạng hôn nhân</label>
-                    <div class="form-control-view" style="color: #94a3b8; font-style: italic;">Chưa cập nhật</div>
-                </div>
-                
+            </div>
+        </div>
+        
+        <div class="content-card">
+            <h3 class="section-title"><i class="fas fa-clock"></i> Lịch &amp; Ca làm việc</h3>
+            <div class="form-grid">
                 <div class="form-group full-width">
-                    <label class="form-label">Địa chỉ hiện tại</label>
-                    <div class="form-control-view" style="color: #94a3b8; font-style: italic;">Chưa cập nhật</div>
+                    <label class="form-label">Phân ca mặc định (Default Shift)</label>
+                    <div class="form-control-view">
+                        <span style="color: #94a3b8; font-style: italic;">Chưa thiết lập ca cố định (Tính năng dự kiến)</span>
+                    </div>
                 </div>
             </div>
         </div>

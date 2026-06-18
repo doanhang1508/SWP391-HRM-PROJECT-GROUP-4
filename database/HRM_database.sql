@@ -504,10 +504,9 @@ INSERT INTO education_levels (education_level_id, level_name) VALUES
 
 -- ── 10. Shifts ──
 INSERT INTO shifts (shift_id, shift_name, start_time, end_time, break_start, break_end, is_night_shift, coefficient, working_days) VALUES
-(1, 'Ca Hành Chính','08:00:00','17:00:00','12:00:00','13:00:00', 0, 1.00,'2,3,4,5,6,7'),
-(2, 'Ca 1 (Sáng)',  '06:00:00','14:00:00','11:00:00','11:30:00', 0, 1.00,'2,3,4,5,6,7'),
-(3, 'Ca 2 (Chiều)', '14:00:00','22:00:00','17:30:00','18:00:00', 0, 1.00,'2,3,4,5,6,7'),
-(4, 'Ca 3 (Đêm)',   '22:00:00','06:00:00','02:00:00','02:30:00', 1, 1.30,'2,3,4,5,6,7');
+(1, 'Ca Hành Chính','07:30:00','17:30:00','11:00:00','13:00:00', 0, 1.00,'2,3,4,5,6,7'),
+(2, 'Ca Tăng ca 1', '18:00:00','20:00:00', NULL,       NULL,        0, 1.50,'2,3,4,5,6,7'),
+(3, 'Ca Tăng ca 2', '18:00:00','22:00:00', NULL,       NULL,        0, 1.50,'2,3,4,5,6,7');
 
 -- ── 11. Leave Types ──
 INSERT INTO leave_types (leave_type_id, type_name, description, paid_leave, max_days_per_year) VALUES
@@ -738,26 +737,26 @@ VALUES
 -- Lê Văn Quản Đốc - Ca hành chính, đi muộn
 (4, 1, '2026-06-03', '08:25:00', '17:00:00', 'Late',    0.00),
 
--- Phạm Công Nhân - Ca 1 (Sáng), đi đúng giờ
-(5, 2, '2026-06-03', '06:00:00', '14:00:00', 'Present', 0.00),
+-- Phạm Công Nhân - Ca Hành chính
+(5, 1, '2026-06-03', '07:30:00', '17:30:00', 'Present', 0.00),
 
 -- Đỗ Thị Hà (Trưởng phòng HC) - Ca hành chính, nghỉ không phép
 (6, 1, '2026-06-03', NULL,        NULL,        'Absent',  0.00),
 
 -- Ngô Văn Tài - Ca hành chính, đi muộn + làm thêm giờ
-(7, 1, '2026-06-03', '08:15:00', '18:30:00', 'Late',    1.50),
+(7, 1, '2026-06-03', '08:15:00', '18:30:00', 'Late',    1.00),
 
 -- Vũ Thị Nga - Ca hành chính, đi đúng giờ
-(8, 1, '2026-06-03', '07:58:00', '17:00:00', 'Present', 0.00),
+(8, 1, '2026-06-03', '07:25:00', '17:30:00', 'Present', 0.00),
 
--- Đinh Văn Phúc - Ca 2 (Chiều), làm thêm giờ
-(9, 3, '2026-06-03', '14:00:00', '23:00:00', 'Present', 1.00),
+-- Đinh Văn Phúc - Tăng ca 1
+(9, 2, '2026-06-03', '18:00:00', '20:00:00', 'Present', 0.00),
 
 -- Đặng Thị Hồng (HR Staff) - Ca hành chính, về sớm
-(10, 1, '2026-06-03', '08:00:00', '16:00:00', 'Early Leave', 0.00),
+(10, 1, '2026-06-03', '07:30:00', '16:00:00', 'Early Leave', 0.00),
 
--- Chu Văn Minh (HR Staff) - Ca 3 (Đêm), đi đúng giờ, hệ số OT cao
-(11, 4, '2026-06-03', '22:00:00', '06:00:00', 'Present', 0.00);
+-- Chu Văn Minh (HR Staff) - Ca Hành chính
+(11, 1, '2026-06-03', '07:30:00', '17:30:00', 'Present', 0.00);
 
 INSERT INTO employee_rewards_disciplines (user_id, reward_discipline_id, amount, note, applied_date) VALUES
 -- Thưởng KPI Tháng (reward_discipline_id = 1)
@@ -786,11 +785,11 @@ INSERT INTO employee_shifts (user_id, shift_id, work_date) VALUES
 (8,  1, '2026-06-03'),
 (9,  1, '2026-06-03'),
 (10, 1, '2026-06-03'),
-(29, 2, '2026-06-03'),
-(30, 2, '2026-06-03'),
-(31, 3, '2026-06-03'),
-(32, 3, '2026-06-03'),
-(4,  4, '2026-06-03');
+(29, 1, '2026-06-03'),
+(30, 1, '2026-06-03'),
+(31, 2, '2026-06-03'),
+(32, 2, '2026-06-03'),
+(4,  1, '2026-06-03');
 
 INSERT INTO leave_requests (user_id, leave_type_id, start_date, end_date, total_days, reason, status, approved_by) VALUES
 -- Nghỉ phép năm (leave_type_id = 1)
@@ -854,16 +853,14 @@ INSERT INTO shift_assignments (user_id, shift_id, assigned_date) VALUES
 (14, 1, '2026-06-04'),
 (19, 1, '2026-06-04'),
 
--- Ca 1 Sáng (shift_id = 2): Tổ trưởng xưởng ngày 04/06/2026
-(29, 2, '2026-06-04'),
-(30, 2, '2026-06-04'),
+-- Ca Hành Chính (shift_id = 1): Tổ trưởng xưởng ngày 04/06/2026
+(29, 1, '2026-06-04'),
+(30, 1, '2026-06-04'),
+(31, 1, '2026-06-04'),
+(32, 1, '2026-06-04'),
 
--- Ca 2 Chiều (shift_id = 3): Tổ trưởng xưởng ngày 04/06/2026
-(31, 3, '2026-06-04'),
-(32, 3, '2026-06-04'),
-
--- Ca 3 Đêm (shift_id = 4): Quản đốc ngày 04/06/2026
-(4,  4, '2026-06-04');
+-- Ca Hành Chính (shift_id = 1): Quản đốc ngày 04/06/2026
+(4,  1, '2026-06-04');
 
 INSERT INTO work_history (user_id, position_title, company_name, location, start_date, end_date, description, is_current) VALUES
 
@@ -1044,10 +1041,7 @@ INSERT INTO department_shifts (department_id, shift_id) VALUES
 (2, 1),  -- Nhân sự → Ca Hành Chính
 (3, 1),  -- Kế toán → Ca Hành Chính
 (4, 1),  -- Kinh doanh → Ca Hành Chính
-(5, 1),  -- Xưởng sản xuất → Ca Hành Chính (default)
-(5, 2),  -- Xưởng sản xuất → Ca 1 (Sáng)
-(5, 3),  -- Xưởng sản xuất → Ca 2 (Chiều)
-(5, 4);  -- Xưởng sản xuất → Ca 3 (Đêm)
+(5, 1);  -- Xưởng sản xuất → Ca Hành Chính (default)
 
 -- Sample overtime plan (created by Quản đốc - user 4)
 INSERT INTO overtime_plans (plan_id, dept_id, supervisor_id, target_date, description, status) VALUES

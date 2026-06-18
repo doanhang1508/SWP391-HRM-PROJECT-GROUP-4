@@ -24,21 +24,29 @@ public class HrPayrollController extends HttpServlet {
     private final PayrollDAO payrollDAO = new PayrollDAO();
     private final UserDAO userDAO = new UserDAO();
 
+    private boolean checkAccess(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        HttpSession session = request.getSession(false);
+        User user = (session != null) ? (User) session.getAttribute("currentUser") : null;
+        if (user == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return false;
+        }
+        // HR Manager (2) và HR Staff (5)
+        if (user.getRoleId() != 2 && user.getRoleId() != 5) {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
+            return false;
+        }
+        return true;
+    }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        if (!checkAccess(request, response)) return;
         HttpSession session = request.getSession(false);
-        User currentUser = (session != null) ? (User) session.getAttribute("currentUser") : null;
-        if (currentUser == null) {
-            response.sendRedirect(request.getContextPath() + "/login");
-            return;
-        }
+        User currentUser = (User) session.getAttribute("currentUser");
         int roleId = currentUser.getRoleId();
-        if (roleId != 2 && roleId != 5) {
-            response.sendRedirect(request.getContextPath() + "/dashboard");
-            return;
-        }
-
         String action = request.getParameter("action");
         if (action == null) {
             action = "list";
@@ -61,22 +69,15 @@ public class HrPayrollController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        if (!checkAccess(request, response)) return;
         request.setCharacterEncoding("UTF-8");
         HttpSession session = request.getSession(false);
-        User currentUser = (session != null) ? (User) session.getAttribute("currentUser") : null;
-        if (currentUser == null) {
-            response.sendRedirect(request.getContextPath() + "/login");
-            return;
-        }
+        User currentUser = (User) session.getAttribute("currentUser");
         int roleId = currentUser.getRoleId();
-        if (roleId != 2 && roleId != 5) {
-            response.sendRedirect(request.getContextPath() + "/dashboard");
-            return;
-        }
 
         String action = request.getParameter("action");
         if (action == null) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            response.sendRedirect(request.getContextPath() + "/hr/payroll");
             return;
         }
 
@@ -141,7 +142,6 @@ public class HrPayrollController extends HttpServlet {
         request.setAttribute("paidCount", paidCount);
         request.setAttribute("totalCount", totalCount);
 
-        // Fetch employee names mapping
         List<User> users = userDAO.getAllUsers();
         Map<Integer, String> userNames = new HashMap<>();
         for (User u : users) {
@@ -170,7 +170,6 @@ public class HrPayrollController extends HttpServlet {
                 return;
             }
 
-            // Only allow editing if status is Draft or Rejected
             String status = payroll.getStatus();
             if (!"Draft".equals(status) && !"Rejected".equals(status)) {
                 request.getSession().setAttribute("errorMessage", "Chỉ có thế chỉnh sửa bảng lương trạng thái Draft hoặc Rejected.");
@@ -242,8 +241,8 @@ public class HrPayrollController extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/hr/payroll?action=edit&id=" + payrollId);
                 return;
             }
-            if (overtimeAmount.compareTo(BigDecimal.ZERO) < 0 || allowanceAmount.compareTo(BigDecimal.ZERO) < 0 
-                || bonusAmount.compareTo(BigDecimal.ZERO) < 0 || deductionAmount.compareTo(BigDecimal.ZERO) < 0 
+            if (overtimeAmount.compareTo(BigDecimal.ZERO) < 0 || allowanceAmount.compareTo(BigDecimal.ZERO) < 0
+                || bonusAmount.compareTo(BigDecimal.ZERO) < 0 || deductionAmount.compareTo(BigDecimal.ZERO) < 0
                 || insuranceAmount.compareTo(BigDecimal.ZERO) < 0 || taxAmount.compareTo(BigDecimal.ZERO) < 0) {
                 request.getSession().setAttribute("errorMessage", "Các số tiền không được là số âm.");
                 response.sendRedirect(request.getContextPath() + "/hr/payroll?action=edit&id=" + payrollId);
@@ -280,7 +279,6 @@ public class HrPayrollController extends HttpServlet {
         String yearStr = request.getParameter("year");
 
         if (idStr != null && !idStr.isBlank()) {
-            // Submit single
             try {
                 int payrollId = Integer.parseInt(idStr);
                 Payroll p = payrollDAO.getById(payrollId);
@@ -301,7 +299,6 @@ public class HrPayrollController extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/hr/payroll");
             }
         } else if (monthStr != null && yearStr != null) {
-            // Submit monthly
             try {
                 int month = Integer.parseInt(monthStr);
                 int year = Integer.parseInt(yearStr);
@@ -319,9 +316,7 @@ public class HrPayrollController extends HttpServlet {
 
     private int getParamOrDefault(HttpServletRequest request, String name, int def) {
         String val = request.getParameter(name);
-        if (val == null || val.isBlank()) {
-            return def;
-        }
+        if (val == null || val.isBlank()) return def;
         try {
             return Integer.parseInt(val);
         } catch (NumberFormatException e) {
@@ -336,7 +331,6 @@ public class HrPayrollController extends HttpServlet {
 
         List<Payroll> list = payrollDAO.getPayrollsWithNames(month, year);
 
-        // Set response headers for XLS download (HTML-based Excel)
         String fileName = "BangLuong_Thang" + month + "_" + year + ".xls";
         response.setContentType("application/vnd.ms-excel; charset=UTF-8");
         response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
@@ -363,71 +357,35 @@ public class HrPayrollController extends HttpServlet {
             writer.println("<style>");
             writer.println("  body { font-family: 'Segoe UI', Arial, sans-serif; }");
             writer.println("  .title-row { font-size: 16pt; font-weight: bold; color: #1e293b; text-align: center; height: 40px; }");
-            writer.println("  .subtitle-row { font-size: 11pt; color: #64748b; text-align: center; height: 25px; }");
             writer.println("  th { background-color: #6366f1; color: #ffffff; font-weight: bold; border: 0.5pt solid #cbd5e1; text-align: center; vertical-align: middle; height: 30px; font-size: 10pt; }");
             writer.println("  td { border: 0.5pt solid #e2e8f0; vertical-align: middle; height: 25px; font-size: 10pt; }");
-            writer.println("  .text-center { text-align: center; }");
-            writer.println("  .text-left { text-align: left; }");
-            writer.println("  .text-right { text-align: right; }");
             writer.println("  .number-format { mso-number-format: \"\\#\\,\\#\\#0\"; text-align: right; }");
-            writer.println("  .decimal-format { mso-number-format: \"0\\.0\"; text-align: center; }");
             writer.println("  .status-draft { background-color: #f1f5f9; color: #475569; text-align: center; font-weight: bold; }");
             writer.println("  .status-pending { background-color: #fef3c7; color: #d97706; text-align: center; font-weight: bold; }");
             writer.println("  .status-approved { background-color: #d1fae5; color: #059669; text-align: center; font-weight: bold; }");
             writer.println("  .status-rejected { background-color: #fee2e2; color: #b91c1c; text-align: center; font-weight: bold; }");
             writer.println("  .status-paid { background-color: #dbeafe; color: #2563eb; text-align: center; font-weight: bold; }");
-            writer.println("  .total-label { font-weight: bold; background-color: #f8fafc; border-top: 1pt double #6366f1; border-bottom: 1pt double #6366f1; }");
-            writer.println("  .total-val { font-weight: bold; background-color: #f8fafc; mso-number-format: \"\\#\\,\\#\\#0\"; text-align: right; border-top: 1pt double #6366f1; border-bottom: 1pt double #6366f1; }");
+            writer.println("  .total-val { font-weight: bold; background-color: #f8fafc; mso-number-format: \"\\#\\,\\#\\#0\"; text-align: right; }");
             writer.println("</style>");
-            writer.println("</head>");
-            writer.println("<body>");
-
-            // Title block
+            writer.println("</head><body>");
             writer.println("<table>");
             writer.println("  <tr><td colspan=\"16\" class=\"title-row\">BẢNG LƯƠNG CHI TIẾT NHÂN VIÊN</td></tr>");
-            writer.println("  <tr><td colspan=\"16\" class=\"subtitle-row\">Kỳ lương: Tháng " + month + " năm " + year + "</td></tr>");
-            writer.println("  <tr><td colspan=\"16\" style=\"height: 15px;\"></td></tr>");
+            writer.println("  <tr><td colspan=\"16\" style=\"text-align:center;color:#64748b\">Kỳ lương: Tháng " + month + " năm " + year + "</td></tr>");
             writer.println("</table>");
+            writer.println("<table><thead><tr>");
+            writer.println("  <th>STT</th><th>Mã NV</th><th>Họ và tên</th><th>Tháng</th><th>Năm</th>");
+            writer.println("  <th>Lương cơ bản</th><th>Ngày công</th><th>Tiền tăng ca</th><th>Phụ cấp</th>");
+            writer.println("  <th>Thưởng</th><th>Khấu trừ</th><th>Bảo hiểm</th><th>Thuế TNCN</th>");
+            writer.println("  <th>Lương Gross</th><th>Lương Net</th><th>Trạng thái</th>");
+            writer.println("</tr></thead><tbody>");
 
-            // Table headers
-            writer.println("<table>");
-            writer.println("  <thead>");
-            writer.println("    <tr>");
-            writer.println("      <th style=\"width: 50px;\">STT</th>");
-            writer.println("      <th style=\"width: 80px;\">Mã NV</th>");
-            writer.println("      <th style=\"width: 200px;\">Họ và tên</th>");
-            writer.println("      <th style=\"width: 60px;\">Tháng</th>");
-            writer.println("      <th style=\"width: 60px;\">Năm</th>");
-            writer.println("      <th style=\"width: 120px;\">Lương cơ bản</th>");
-            writer.println("      <th style=\"width: 80px;\">Ngày công</th>");
-            writer.println("      <th style=\"width: 120px;\">Tiền tăng ca</th>");
-            writer.println("      <th style=\"width: 120px;\">Phụ cấp</th>");
-            writer.println("      <th style=\"width: 120px;\">Thưởng</th>");
-            writer.println("      <th style=\"width: 120px;\">Khấu trừ</th>");
-            writer.println("      <th style=\"width: 120px;\">Bảo hiểm</th>");
-            writer.println("      <th style=\"width: 120px;\">Thuế TNCN</th>");
-            writer.println("      <th style=\"width: 120px;\">Lương Gross</th>");
-            writer.println("      <th style=\"width: 120px;\">Lương Net</th>");
-            writer.println("      <th style=\"width: 100px;\">Trạng thái</th>");
-            writer.println("    </tr>");
-            writer.println("  </thead>");
-            writer.println("  <tbody>");
-
-            // Totals trackers
-            BigDecimal totalBase = BigDecimal.ZERO;
-            double totalWorkDays = 0.0;
-            BigDecimal totalOT = BigDecimal.ZERO;
-            BigDecimal totalAllowance = BigDecimal.ZERO;
-            BigDecimal totalBonus = BigDecimal.ZERO;
-            BigDecimal totalDeduction = BigDecimal.ZERO;
-            BigDecimal totalInsurance = BigDecimal.ZERO;
-            BigDecimal totalTax = BigDecimal.ZERO;
-            BigDecimal totalGross = BigDecimal.ZERO;
-            BigDecimal totalNet = BigDecimal.ZERO;
-
+            BigDecimal totalBase = BigDecimal.ZERO, totalOT = BigDecimal.ZERO, totalAllowance = BigDecimal.ZERO;
+            BigDecimal totalBonus = BigDecimal.ZERO, totalDeduction = BigDecimal.ZERO, totalInsurance = BigDecimal.ZERO;
+            BigDecimal totalTax = BigDecimal.ZERO, totalGross = BigDecimal.ZERO, totalNet = BigDecimal.ZERO;
+            double totalWorkDays = 0;
             int stt = 1;
+
             for (Payroll p : list) {
-                // Accumulate totals
                 if (p.getBaseSalary() != null) totalBase = totalBase.add(p.getBaseSalary());
                 totalWorkDays += p.getWorkingDays();
                 if (p.getOvertimeAmount() != null) totalOT = totalOT.add(p.getOvertimeAmount());
@@ -439,67 +397,55 @@ public class HrPayrollController extends HttpServlet {
                 if (p.getGrossSalary() != null) totalGross = totalGross.add(p.getGrossSalary());
                 if (p.getNetSalary() != null) totalNet = totalNet.add(p.getNetSalary());
 
-                // Status style class
-                String statusClass = "";
                 String statusText = p.getStatus() != null ? p.getStatus() : "";
+                String statusClass = "";
                 if ("Draft".equalsIgnoreCase(statusText)) statusClass = "status-draft";
                 else if ("Pending".equalsIgnoreCase(statusText)) statusClass = "status-pending";
                 else if ("Approved".equalsIgnoreCase(statusText)) statusClass = "status-approved";
                 else if ("Rejected".equalsIgnoreCase(statusText)) statusClass = "status-rejected";
                 else if ("Paid".equalsIgnoreCase(statusText)) statusClass = "status-paid";
 
-                writer.println("    <tr>");
-                writer.println("      <td class=\"text-center\">" + stt++ + "</td>");
-                writer.println("      <td class=\"text-center\">" + p.getUserId() + "</td>");
-                writer.println("      <td class=\"text-left\">" + escapeHtml(p.getFullName()) + "</td>");
-                writer.println("      <td class=\"text-center\">" + p.getMonth() + "</td>");
-                writer.println("      <td class=\"text-center\">" + p.getYear() + "</td>");
-                writer.println("      <td class=\"number-format\">" + formatNum(p.getBaseSalary()) + "</td>");
-                writer.println("      <td class=\"decimal-format\">" + p.getWorkingDays() + "</td>");
-                writer.println("      <td class=\"number-format\">" + formatNum(p.getOvertimeAmount()) + "</td>");
-                writer.println("      <td class=\"number-format\">" + formatNum(p.getAllowanceAmount()) + "</td>");
-                writer.println("      <td class=\"number-format\">" + formatNum(p.getBonusAmount()) + "</td>");
-                writer.println("      <td class=\"number-format\">" + formatNum(p.getDeductionAmount()) + "</td>");
-                writer.println("      <td class=\"number-format\">" + formatNum(p.getInsuranceAmount()) + "</td>");
-                writer.println("      <td class=\"number-format\">" + formatNum(p.getTaxAmount()) + "</td>");
-                writer.println("      <td class=\"number-format\">" + formatNum(p.getGrossSalary()) + "</td>");
-                writer.println("      <td class=\"number-format\">" + formatNum(p.getNetSalary()) + "</td>");
-                writer.println("      <td class=\"" + statusClass + "\">" + statusText + "</td>");
-                writer.println("    </tr>");
+                writer.println("<tr>");
+                writer.println("  <td style=\"text-align:center\">" + stt++ + "</td>");
+                writer.println("  <td style=\"text-align:center\">" + p.getUserId() + "</td>");
+                writer.println("  <td>" + escapeHtml(p.getFullName()) + "</td>");
+                writer.println("  <td style=\"text-align:center\">" + p.getMonth() + "</td>");
+                writer.println("  <td style=\"text-align:center\">" + p.getYear() + "</td>");
+                writer.println("  <td class=\"number-format\">" + formatNum(p.getBaseSalary()) + "</td>");
+                writer.println("  <td style=\"text-align:center\">" + p.getWorkingDays() + "</td>");
+                writer.println("  <td class=\"number-format\">" + formatNum(p.getOvertimeAmount()) + "</td>");
+                writer.println("  <td class=\"number-format\">" + formatNum(p.getAllowanceAmount()) + "</td>");
+                writer.println("  <td class=\"number-format\">" + formatNum(p.getBonusAmount()) + "</td>");
+                writer.println("  <td class=\"number-format\">" + formatNum(p.getDeductionAmount()) + "</td>");
+                writer.println("  <td class=\"number-format\">" + formatNum(p.getInsuranceAmount()) + "</td>");
+                writer.println("  <td class=\"number-format\">" + formatNum(p.getTaxAmount()) + "</td>");
+                writer.println("  <td class=\"number-format\">" + formatNum(p.getGrossSalary()) + "</td>");
+                writer.println("  <td class=\"number-format\">" + formatNum(p.getNetSalary()) + "</td>");
+                writer.println("  <td class=\"" + statusClass + "\">" + statusText + "</td>");
+                writer.println("</tr>");
             }
 
-            // Totals Row
-            writer.println("    <tr>");
-            writer.println("      <td colspan=\"3\" class=\"total-label text-center\">TỔNG CỘNG</td>");
-            writer.println("      <td class=\"total-label\"></td>");
-            writer.println("      <td class=\"total-label\"></td>");
-            writer.println("      <td class=\"total-val\">" + totalBase.toPlainString() + "</td>");
-            writer.println("      <td class=\"total-label text-center\" style=\"mso-number-format: '0\\.0';\">" + totalWorkDays + "</td>");
-            writer.println("      <td class=\"total-val\">" + totalOT.toPlainString() + "</td>");
-            writer.println("      <td class=\"total-val\">" + totalAllowance.toPlainString() + "</td>");
-            writer.println("      <td class=\"total-val\">" + totalBonus.toPlainString() + "</td>");
-            writer.println("      <td class=\"total-val\">" + totalDeduction.toPlainString() + "</td>");
-            writer.println("      <td class=\"total-val\">" + totalInsurance.toPlainString() + "</td>");
-            writer.println("      <td class=\"total-val\">" + totalTax.toPlainString() + "</td>");
-            writer.println("      <td class=\"total-val\">" + totalGross.toPlainString() + "</td>");
-            writer.println("      <td class=\"total-val\">" + totalNet.toPlainString() + "</td>");
-            writer.println("      <td class=\"total-label\"></td>");
-            writer.println("    </tr>");
-
-            writer.println("  </tbody>");
-            writer.println("</table>");
-            writer.println("</body>");
-            writer.println("</html>");
+            writer.println("<tr><td colspan=\"3\" style=\"font-weight:bold;text-align:center\">TỔNG CỘNG</td>");
+            writer.println("  <td></td><td></td>");
+            writer.println("  <td class=\"total-val\">" + totalBase.toPlainString() + "</td>");
+            writer.println("  <td style=\"text-align:center;font-weight:bold\">" + totalWorkDays + "</td>");
+            writer.println("  <td class=\"total-val\">" + totalOT.toPlainString() + "</td>");
+            writer.println("  <td class=\"total-val\">" + totalAllowance.toPlainString() + "</td>");
+            writer.println("  <td class=\"total-val\">" + totalBonus.toPlainString() + "</td>");
+            writer.println("  <td class=\"total-val\">" + totalDeduction.toPlainString() + "</td>");
+            writer.println("  <td class=\"total-val\">" + totalInsurance.toPlainString() + "</td>");
+            writer.println("  <td class=\"total-val\">" + totalTax.toPlainString() + "</td>");
+            writer.println("  <td class=\"total-val\">" + totalGross.toPlainString() + "</td>");
+            writer.println("  <td class=\"total-val\">" + totalNet.toPlainString() + "</td>");
+            writer.println("  <td></td></tr>");
+            writer.println("</tbody></table></body></html>");
         }
     }
 
     private String escapeHtml(String val) {
         if (val == null) return "";
-        return val.replace("&", "&amp;")
-                  .replace("<", "&lt;")
-                  .replace(">", "&gt;")
-                  .replace("\"", "&quot;")
-                  .replace("'", "&#39;");
+        return val.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                  .replace("\"", "&quot;").replace("'", "&#39;");
     }
 
     private String formatNum(BigDecimal val) {

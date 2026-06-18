@@ -110,15 +110,15 @@
                                         </td>
                                         <td>
                                             <div class="d-flex gap-2 justify-content-end">
-                                                <a href="${pageContext.request.contextPath}/employee-detail?userId=${u.userId}" class="btn-action-outline">
+                                                <a href="${pageContext.request.contextPath}/hr/employee-detail?userId=${u.userId}" class="btn-action-outline">
                                                     <i class="fas fa-id-badge"></i> Hồ sơ NS
                                                 </a>
-                                                <button type="button" class="btn-primary-soft" onclick="alert('Tính năng đánh giá KPI sẽ được cập nhật trong Iteration 2.')">
+                                                <a href="${pageContext.request.contextPath}/manager/employee-kpi?userId=${u.userId}" class="btn-primary-soft">
                                                     <i class="fas fa-star-half-alt"></i> Đánh giá
-                                                </button>
-                                                <button type="button" class="btn-primary-soft" style="background:#fef2f2; color:#dc2626;" onclick="alert('Tính năng đề xuất khen thưởng/kỷ luật sẽ được cập nhật trong Iteration 2.')">
+                                                </a>
+                                                <a href="${pageContext.request.contextPath}/manager/employee-discipline-request?userId=${u.userId}" class="btn-primary-soft" style="background:#fef2f2; color:#dc2626;">
                                                     <i class="fas fa-comment-dots"></i> Đề xuất
-                                                </button>
+                                                </a>
                                             </div>
                                         </td>
                                     </tr>

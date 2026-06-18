@@ -166,12 +166,12 @@
                                         </td>
                                         <td>
                                             <div class="d-flex gap-2 justify-content-end">
-                                                <a href="${pageContext.request.contextPath}/employee-detail?userId=${u.userId}" class="btn-action-outline" title="Xem hồ sơ">
+                                                <a href="${pageContext.request.contextPath}/hr/employee-detail?userId=${u.userId}" class="btn-action-outline" title="Xem hồ sơ">
                                                     <i class="fas fa-id-card"></i> Hồ sơ NS
                                                 </a>
-                                                <button type="button" class="btn-primary-soft" style="background:#fef3c7; color:#d97706;" onclick="alert('Quản lý hợp đồng sẽ có trong Iteration 2.')" title="Quản lý hợp đồng">
+                                                <a href="${pageContext.request.contextPath}/hr/employee-contracts?userId=${u.userId}" class="btn-primary-soft" style="background:#fef3c7; color:#d97706;" title="Quản lý hợp đồng">
                                                     <i class="fas fa-file-signature"></i> Hợp đồng
-                                                </button>
+                                                </a>
                                             </div>
                                         </td>
                                     </tr>

@@ -16,9 +16,9 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 
 /**
- * EmployeeDetailController — Xem hồ sơ nhân sự (dành cho HR Manager, HR Staff, Quản đốc, Trưởng phòng).
+ * EmployeeDetailController — Xem Hồ sơ nhân sự (Dành cho HR, Quản đốc, Trưởng phòng).
  */
-@WebServlet(name = "EmployeeDetailController", urlPatterns = {"/hr/employee-detail"})
+@WebServlet(name = "EmployeeDetailController", urlPatterns = {"/employee-detail"})
 public class EmployeeDetailController extends HttpServlet {
 
     @Override
@@ -34,7 +34,7 @@ public class EmployeeDetailController extends HttpServlet {
         User currentUser = (User) session.getAttribute("currentUser");
         int roleId = currentUser.getRoleId();
 
-        // HR Manager(2), HR Staff(5), Quản đốc(3), Trưởng phòng(6)
+        // Cấp quyền: HR Manager(2), HR Staff(5), Quản đốc(3), Trưởng phòng(6)
         if (roleId != 2 && roleId != 3 && roleId != 5 && roleId != 6) {
             response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
@@ -56,6 +56,7 @@ public class EmployeeDetailController extends HttpServlet {
                 return;
             }
 
+            // Lấy thêm thông tin phòng ban, chức vụ
             DepartmentDAO deptDAO = new DepartmentDAO();
             PositionDAO posDAO = new PositionDAO();
 

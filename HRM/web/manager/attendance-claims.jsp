@@ -1,4 +1,4 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+﻿<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="jakarta.tags.core" %>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
@@ -258,7 +258,7 @@
 
         <div class="modal-info" id="modalInfo">—</div>
 
-        <form method="post" action="${pageContext.request.contextPath}/hr/attendance-claims" id="resolveForm"
+        <form method="post" action="${pageContext.request.contextPath}/manager/attendance-claims" id="resolveForm"
               accept-charset="UTF-8">
             <input type="hidden" name="action"  value="resolve">
             <input type="hidden" name="claimId" id="modalClaimId">

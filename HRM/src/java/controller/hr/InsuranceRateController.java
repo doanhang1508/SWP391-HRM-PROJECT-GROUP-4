@@ -15,9 +15,9 @@ import model.InsuranceRate;
 import model.User;
 
 /**
- * HR Controller – Quản lý Mức đóng Bảo hiểm (Insurance Rate)
+ * InsuranceRateController — HR Staff quản lý mức đóng bảo hiểm.
  * URL: /hr/insurance-rate
- * Quyền: HR Manager (roleId=2) hoặc HR Staff (roleId=5)
+ * Roles: HR Manager (2), HR Staff (5)
  */
 @WebServlet(name = "InsuranceRateController", urlPatterns = {"/hr/insurance-rate"})
 public class InsuranceRateController extends HttpServlet {
@@ -36,13 +36,12 @@ public class InsuranceRateController extends HttpServlet {
         }
         User user = (User) session.getAttribute("currentUser");
         if (user.getRoleId() != 2 && user.getRoleId() != 5) {
-            resp.sendRedirect(req.getContextPath() + "/home");
+            resp.sendRedirect(req.getContextPath() + "/dashboard");
             return false;
         }
         return true;
     }
 
-    /** Load all data — client-side does filtering + pagination */
     private void loadList(HttpServletRequest request) {
         List<InsuranceRate> list = dao.getAll();
 
@@ -82,10 +81,9 @@ public class InsuranceRateController extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         if (!checkAccess(request, response)) return;
 
-        String action        = request.getParameter("action");
-        String idStr         = request.getParameter("id");
+        String action = request.getParameter("action");
+        String idStr  = request.getParameter("id");
 
-        // Status toggle actions
         if ("deactivate".equals(action) && idStr != null) {
             dao.changeStatus(Integer.parseInt(idStr), false);
             request.getSession().setAttribute("successMsg", "Đã vô hiệu hóa mức bảo hiểm.");
@@ -99,7 +97,6 @@ public class InsuranceRateController extends HttpServlet {
             return;
         }
 
-        // Add / Edit
         String insuranceCode = request.getParameter("insuranceCode");
         String insuranceName = request.getParameter("insuranceName");
         String companyRateS  = request.getParameter("companyRate");
