@@ -363,7 +363,7 @@
                                                 <td class="text-end">
                                                     <div class="d-flex justify-content-end gap-2">
                                                         <a href="${pageContext.request.contextPath}/hr/payroll?month=${s.month}&year=${s.year}" class="btn-a btn-view text-white" title="Xem danh sách nhân viên">
-                                                            <i class="fas fa-eye"></i> Xem danh sách nhân viên
+                                                            <i class="fas fa-eye"></i> Xem
                                                         </a>
                                                         <c:if test="${(s.status == 'Draft' || s.status == 'Rejected') && sessionScope.currentUser.roleId == 5}">
                                                             <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" style="display:inline;" onsubmit="showConfirmModal(event, 'Bạn có chắc muốn gửi duyệt tất cả bảng lương của tháng ${s.month}/${s.year}?');">
@@ -416,6 +416,12 @@
                         </a>
                         
                         <c:if test="${not empty payrollList}">
+                            <c:set var="unsentApprovedCount" value="0" />
+                            <c:forEach var="item" items="${payrollList}">
+                                <c:if test="${(item.status == 'Approved' || item.status == 'Paid') && !item.isSent()}">
+                                    <c:set var="unsentApprovedCount" value="${unsentApprovedCount + 1}" />
+                                </c:if>
+                            </c:forEach>
                             <a href="${pageContext.request.contextPath}/hr/payroll?action=exportExcel&month=${selectedMonth}&year=${selectedYear}" 
                                class="btn btn-info d-inline-flex align-items-center gap-2" 
                                style="border-radius:10px;padding:10px 20px;font-weight:600;font-size:.88rem;color:#fff;background:#0d9488;border:none;text-decoration:none;">
@@ -428,6 +434,16 @@
                                     <input type="hidden" name="year" value="${selectedYear}">
                                     <button type="submit" class="btn-submit-all">
                                         <i class="fas fa-paper-plane"></i> Gửi duyệt toàn bộ (${draftCount + rejectedCount})
+                                    </button>
+                                </form>
+                            </c:if>
+                            <c:if test="${sessionScope.currentUser.roleId == 5 && unsentApprovedCount > 0}">
+                                <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" style="display:inline;" onsubmit="showConfirmModal(event, 'Bạn có chắc muốn gửi tất cả bảng lương đã duyệt cho nhân viên của tháng này?', 'Gửi hàng loạt', 'fa-paper-plane', 'var(--pri)', 'var(--pri-l)');">
+                                    <input type="hidden" name="action" value="sendAllPayroll">
+                                    <input type="hidden" name="month" value="${selectedMonth}">
+                                    <input type="hidden" name="year" value="${selectedYear}">
+                                    <button type="submit" class="btn-submit-all" style="background:#8b5cf6;">
+                                        <i class="fas fa-paper-plane"></i> Gửi NV toàn bộ (${unsentApprovedCount})
                                     </button>
                                 </form>
                             </c:if>
@@ -537,6 +553,20 @@
                                                                         <input type="hidden" name="payrollId" value="${p.payrollId}">
                                                                         <button type="submit" class="btn-a btn-submit" title="Gửi duyệt"><i class="fas fa-paper-plane"></i> Gửi duyệt</button>
                                                                     </form>
+                                                                </c:when>
+                                                                <c:when test="${p.status == 'Approved' || p.status == 'Paid'}">
+                                                                    <c:choose>
+                                                                        <c:when test="${!p.isSent()}">
+                                                                            <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" style="display:inline;" onsubmit="showConfirmModal(event, 'Bạn có chắc muốn gửi bảng lương của nhân viên này?', 'Gửi bảng lương', 'fa-paper-plane', 'var(--pri)', 'var(--pri-l)');">
+                                                                                <input type="hidden" name="action" value="sendPayroll">
+                                                                                <input type="hidden" name="payrollId" value="${p.payrollId}">
+                                                                                <button type="submit" class="btn-a btn-submit" style="background:#8b5cf6;" title="Gửi cho Employee"><i class="fas fa-share-square"></i> Gửi lương</button>
+                                                                            </form>
+                                                                        </c:when>
+                                                                        <c:otherwise>
+                                                                            <span class="badge-s b-approved" style="background:rgba(139, 92, 246, 0.1);color:#8b5cf6;"><i class="fas fa-check-circle"></i> Đã gửi NV</span>
+                                                                        </c:otherwise>
+                                                                    </c:choose>
                                                                 </c:when>
                                                             </c:choose>
                                                         </c:if>

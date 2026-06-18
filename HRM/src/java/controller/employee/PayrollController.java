@@ -53,10 +53,12 @@ public class PayrollController extends HttpServlet {
 
                     Payroll payroll = payrollDAO.getPayroll(userId, month, year);
 
-                    // Chỉ cho xem nếu đã Approved hoặc Paid
-                    if (payroll != null && ("Approved".equals(payroll.getStatus()) || "Paid".equals(payroll.getStatus()))) {
+                    // Chỉ cho xem nếu đã Approved hoặc Paid và đã được gửi
+                    if (payroll != null && payroll.isSent() && ("Approved".equals(payroll.getStatus()) || "Paid".equals(payroll.getStatus()))) {
                         request.setAttribute("payroll", payroll);
                         request.setAttribute("viewMode", "detail");
+                        List<Payroll> payslips = payrollDAO.getVisiblePayslips(userId);
+                        request.setAttribute("payslipList", payslips);
                     } else {
                         request.getSession().setAttribute("errorMessage", "Phiếu lương không tồn tại hoặc chưa được duyệt.");
                         response.sendRedirect(request.getContextPath() + "/employee/payroll");
@@ -80,7 +82,7 @@ public class PayrollController extends HttpServlet {
 
                     Payroll payroll = payrollDAO.getPayroll(userId, month, year);
 
-                    if (payroll != null && ("Approved".equals(payroll.getStatus()) || "Paid".equals(payroll.getStatus()))) {
+                    if (payroll != null && payroll.isSent() && ("Approved".equals(payroll.getStatus()) || "Paid".equals(payroll.getStatus()))) {
                         request.setAttribute("payroll", payroll);
                         request.setAttribute("employeeName", currentUser.getFullName());
                         request.getRequestDispatcher("/employee/payslip-print.jsp").forward(request, response);

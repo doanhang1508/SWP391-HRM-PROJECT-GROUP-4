@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 import model.Payroll;
 import model.User;
+import dao.notificationDAO;
+import model.notification;
 
 @WebServlet(name = "HrPayrollController", urlPatterns = {"/hr/payroll"})
 public class HrPayrollController extends HttpServlet {
@@ -86,6 +88,8 @@ public class HrPayrollController extends HttpServlet {
                 case "generateDraft" -> generateDraft(request, response);
                 case "updateDraft" -> updateDraft(request, response);
                 case "submit" -> submitForApproval(request, response);
+                case "sendPayroll" -> sendPayroll(request, response);
+                case "sendAllPayroll" -> sendAllPayroll(request, response);
                 default -> {
                     session.setAttribute("errorMessage", "Hành động không được phép cho HR Staff.");
                     response.sendRedirect(request.getContextPath() + "/hr/payroll");
@@ -529,6 +533,85 @@ public class HrPayrollController extends HttpServlet {
         int count = payrollDAO.hrApproveAllPending(month, year);
         request.getSession().setAttribute("successMessage", "HR Manager đã duyệt thành công " + count + " bảng lương!");
         response.sendRedirect(request.getContextPath() + "/hr/payroll?month=" + month + "&year=" + year);
+    }
+
+    private void sendPayroll(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        String idStr = request.getParameter("payrollId");
+        if (idStr == null || idStr.isBlank()) {
+            request.getSession().setAttribute("errorMessage", "Không tìm thấy ID bảng lương.");
+            response.sendRedirect(request.getContextPath() + "/hr/payroll");
+            return;
+        }
+
+        try {
+            int payrollId = Integer.parseInt(idStr);
+            Payroll p = payrollDAO.getById(payrollId);
+            if (p == null) {
+                request.getSession().setAttribute("errorMessage", "Bảng lương không tồn tại.");
+                response.sendRedirect(request.getContextPath() + "/hr/payroll");
+                return;
+            }
+
+            boolean success = payrollDAO.sendPayrollToEmployee(payrollId);
+            if (success) {
+                // Tạo thông báo cho nhân viên nhận được bảng lương
+                notificationDAO notiDAO = new notificationDAO();
+                String title = "Bảng lương Tháng " + p.getMonth() + "/" + p.getYear() + " đã được gửi";
+                String body = "Bảng lương của bạn đã được duyệt bởi Giám đốc và có thể xem chi tiết ngay bây giờ.";
+                String link = "/employee/payroll?action=view&month=" + p.getMonth() + "&year=" + p.getYear();
+                notiDAO.create(p.getUserId(), "payroll", title, body, link);
+
+                request.getSession().setAttribute("successMessage", "Đã gửi bảng lương đến nhân viên thành công.");
+            } else {
+                request.getSession().setAttribute("errorMessage", "Gửi bảng lương thất bại. Bảng lương phải được duyệt bởi Giám đốc trước.");
+            }
+            response.sendRedirect(request.getContextPath() + "/hr/payroll?month=" + p.getMonth() + "&year=" + p.getYear());
+        } catch (NumberFormatException e) {
+            request.getSession().setAttribute("errorMessage", "ID không hợp lệ.");
+            response.sendRedirect(request.getContextPath() + "/hr/payroll");
+        }
+    }
+
+    private void sendAllPayroll(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        String monthStr = request.getParameter("month");
+        String yearStr = request.getParameter("year");
+
+        if (monthStr == null || yearStr == null) {
+            request.getSession().setAttribute("errorMessage", "Tháng hoặc năm không hợp lệ.");
+            response.sendRedirect(request.getContextPath() + "/hr/payroll");
+            return;
+        }
+
+        try {
+            int month = Integer.parseInt(monthStr);
+            int year = Integer.parseInt(yearStr);
+
+            // Tìm những records Approved/Paid chưa gửi trước để tạo thông báo
+            List<Payroll> list = payrollDAO.getByMonthYear(month, year);
+            notificationDAO notiDAO = new notificationDAO();
+            int count = 0;
+
+            for (Payroll p : list) {
+                if (("Approved".equals(p.getStatus()) || "Paid".equals(p.getStatus())) && !p.isSent()) {
+                    boolean success = payrollDAO.sendPayrollToEmployee(p.getPayrollId());
+                    if (success) {
+                        String title = "Bảng lương Tháng " + month + "/" + year + " đã được gửi";
+                        String body = "Bảng lương của bạn đã được duyệt bởi Giám đốc và có thể xem chi tiết ngay bây giờ.";
+                        String link = "/employee/payroll?action=view&month=" + month + "&year=" + year;
+                        notiDAO.create(p.getUserId(), "payroll", title, body, link);
+                        count++;
+                    }
+                }
+            }
+
+            request.getSession().setAttribute("successMessage", "Đã gửi thành công " + count + " bảng lương đến nhân viên.");
+            response.sendRedirect(request.getContextPath() + "/hr/payroll?month=" + month + "&year=" + year);
+        } catch (NumberFormatException e) {
+            request.getSession().setAttribute("errorMessage", "Tháng hoặc năm không hợp lệ.");
+            response.sendRedirect(request.getContextPath() + "/hr/payroll");
+        }
     }
 
     private int getCurrentMonth() {

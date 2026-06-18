@@ -97,6 +97,7 @@ public class PayrollDAO {
         p.setPaidBy(rs.wasNull() ? null : paidByVal);
         p.setPaidAt(rs.getTimestamp("paid_at"));
         p.setPaymentNote(rs.getString("payment_note"));
+        p.setSent(rs.getBoolean("is_sent"));
         
         return p;
     }
@@ -821,7 +822,7 @@ public class PayrollDAO {
      */
     public List<Payroll> getVisiblePayslips(int userId) {
         List<Payroll> list = new ArrayList<>();
-        String sql = "SELECT * FROM payroll WHERE user_id = ? AND status IN ('Approved', 'Paid') " +
+        String sql = "SELECT * FROM payroll WHERE user_id = ? AND status IN ('Approved', 'Paid') AND is_sent = 1 " +
                      "ORDER BY year DESC, month DESC";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
@@ -862,5 +863,39 @@ public class PayrollDAO {
             e.printStackTrace();
         }
         return list;
+    }
+
+    /**
+     * Gửi bảng lương cho 1 nhân viên (is_sent = 1)
+     */
+    public boolean sendPayrollToEmployee(int payrollId) {
+        String sql = "UPDATE payroll SET is_sent = 1 WHERE payroll_id = ? AND status IN ('Approved', 'Paid')";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, payrollId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Gửi tất cả bảng lương đã duyệt/thanh toán trong tháng cho nhân viên (is_sent = 1)
+     * @return số lượng bảng lương được gửi
+     */
+    public int sendAllApprovedPayrolls(int month, int year) {
+        String sql = "UPDATE payroll SET is_sent = 1 WHERE month = ? AND year = ? AND status IN ('Approved', 'Paid') AND is_sent = 0";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            return ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 }

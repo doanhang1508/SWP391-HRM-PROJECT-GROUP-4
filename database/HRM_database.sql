@@ -344,6 +344,7 @@ CREATE TABLE payroll (
     paid_by          INT NULL,
     paid_at          TIMESTAMP NULL,
     payment_note     VARCHAR(500) NULL,
+    is_sent          TINYINT(1) DEFAULT 0,
     created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id),
     FOREIGN KEY (approved_by) REFERENCES users(user_id) ON DELETE SET NULL,

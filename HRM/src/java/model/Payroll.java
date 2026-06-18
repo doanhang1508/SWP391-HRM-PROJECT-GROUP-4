@@ -27,6 +27,7 @@ public class Payroll {
     private Integer paidBy;
     private Timestamp paidAt;
     private String paymentNote;
+    private boolean isSent;
 
     // Transient: dùng để hiển thị, không lưu DB
     private String fullName;
@@ -156,4 +157,7 @@ public class Payroll {
 
     public String getBankName() { return bankName; }
     public void setBankName(String bankName) { this.bankName = bankName; }
+
+    public boolean isSent() { return isSent; }
+    public void setSent(boolean isSent) { this.isSent = isSent; }
 }
