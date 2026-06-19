@@ -163,19 +163,34 @@ public class ShiftScheduleController extends HttpServlet {
         Integer  userId  = parseIntParam(req, "userId");
         LocalDate from   = parseDate(req.getParameter("fromDate"));
         LocalDate to     = parseDate(req.getParameter("toDate"));
-        String startTimeStr = req.getParameter("startTime");
-        String endTimeStr   = req.getParameter("endTime");
+        String otType = req.getParameter("otType");
 
-        if (userId == null || from == null || to == null || startTimeStr == null || endTimeStr == null || startTimeStr.isEmpty() || endTimeStr.isEmpty()) {
+        if (userId == null || from == null || to == null || otType == null || otType.isEmpty()) {
             redirectSchedule(req, resp, "error", "Vui lòng điền đầy đủ thông tin");
             return;
         }
         
-        java.time.LocalTime startTime = java.time.LocalTime.parse(startTimeStr);
-        java.time.LocalTime endTime   = java.time.LocalTime.parse(endTimeStr);
+        java.time.LocalTime startTime = java.time.LocalTime.of(18, 0);
+        java.time.LocalTime endTime;
+        java.time.LocalTime breakStart = null;
+        java.time.LocalTime breakEnd = null;
+        String shiftName;
+
+        if ("2".equals(otType)) {
+            endTime = java.time.LocalTime.of(20, 0);
+            shiftName = "Ca Đêm 1";
+        } else if ("4".equals(otType)) {
+            endTime = java.time.LocalTime.of(22, 0);
+            breakStart = java.time.LocalTime.of(20, 0);
+            breakEnd = java.time.LocalTime.of(20, 30);
+            shiftName = "Ca Đêm 2";
+        } else {
+            redirectSchedule(req, resp, "error", "Loại ca OT không hợp lệ");
+            return;
+        }
         
         // Create a custom shift for OT so it saves the actual times, but hides from HR Manager
-        int shiftId = shiftService.findOrCreateCustomShift(startTime, endTime);
+        int shiftId = shiftService.findOrCreateCustomShift(startTime, endTime, breakStart, breakEnd, shiftName);
         
         if (to.isBefore(from)) {
             redirectSchedule(req, resp, "error", "Ngày kết thúc phải sau ngày bắt đầu");

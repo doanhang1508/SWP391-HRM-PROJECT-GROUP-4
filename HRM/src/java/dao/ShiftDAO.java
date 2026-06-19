@@ -40,6 +40,5 @@ public interface ShiftDAO {
     boolean isWithinGracePeriod(LocalTime shiftStart, LocalTime clockIn);
     long calculateLatenessMinutes(LocalTime shiftStart, LocalTime clockIn);
     long calculateEarlyCheckInOvertimeMinutes(LocalTime shiftStart, LocalTime clockIn, boolean hasOvertimeRequest);
-    int findOrCreateCustomShift(LocalTime start, LocalTime end);
+    int findOrCreateCustomShift(LocalTime start, LocalTime end, LocalTime breakStart, LocalTime breakEnd, String shiftName);
 }
-

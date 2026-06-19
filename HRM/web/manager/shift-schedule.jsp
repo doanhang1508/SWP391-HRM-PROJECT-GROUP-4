@@ -189,13 +189,13 @@ body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-top: 0 !im
                         </select>
                     </div>
                     <!-- Time selection for custom OT -->
-                    <div class="col-md-2">
-                        <label class="form-label">Giờ bắt đầu (OT)</label>
-                        <input type="time" name="startTime" class="form-control" required>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Giờ kết thúc (OT)</label>
-                        <input type="time" name="endTime" class="form-control" required>
+                    <div class="col-md-4">
+                        <label class="form-label">Loại Tăng Ca (OT)</label>
+                        <select name="otType" class="form-select" required>
+                            <option value="">-- Chọn Loại OT --</option>
+                            <option value="2">Ca Đêm 1 (18:00 - 20:00) - Không nghỉ</option>
+                            <option value="4">Ca Đêm 2 (18:00 - 22:00) - Nghỉ 20h-20h30</option>
+                        </select>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">Từ ngày</label>

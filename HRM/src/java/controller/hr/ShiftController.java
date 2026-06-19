@@ -133,6 +133,7 @@ public class ShiftController extends HttpServlet {
 
     private void listShifts(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
+        
         List<Shift> shifts = shiftService.getAllShifts();
         double[]    hours      = new double[shifts.size()];
         boolean[]   nightFlags = new boolean[shifts.size()];

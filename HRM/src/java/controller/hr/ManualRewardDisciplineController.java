@@ -45,7 +45,10 @@ public class ManualRewardDisciplineController extends HttpServlet {
             throws ServletException, IOException {
         if (!checkAccess(req, resp)) return;
         List<RewardDiscipline> types = rdDAO.getAllRewardDisciplines();
+        dao.UserDAO userDAO = new dao.UserDAO();
+        List<User> users = userDAO.getAllUsers();
         req.setAttribute("types", types);
+        req.setAttribute("users", users);
         req.getRequestDispatcher("/hr/manual_reward_discipline.jsp").forward(req, resp);
     }
 

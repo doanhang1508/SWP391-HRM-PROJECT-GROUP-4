@@ -558,33 +558,4 @@
     }
 </script>
 
-<c:if test="${viewMode == 'detail' && not empty payroll}">
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        document.getElementById('modalEmpName').textContent = "${employeeName}";
-        document.getElementById('modalEmpId').textContent = "#${payroll.userId}";
-        document.getElementById('modalMonthYear').textContent = "${payroll.month}/${payroll.year}";
-        document.getElementById('modalBaseSalary').textContent = "<fmt:formatNumber value='${payroll.baseSalary}' type='number' groupingUsed='true'/> ₫";
-        document.getElementById('modalWorkingDays').textContent = "${payroll.workingDays}";
-        document.getElementById('modalOvertime').textContent = "+ <fmt:formatNumber value='${payroll.overtimeAmount != null ? payroll.overtimeAmount : 0}' type='number' groupingUsed='true'/> ₫";
-        document.getElementById('modalAllowance').textContent = "+ <fmt:formatNumber value='${payroll.allowanceAmount != null ? payroll.allowanceAmount : 0}' type='number' groupingUsed='true'/> ₫";
-        document.getElementById('modalBonus').textContent = "+ <fmt:formatNumber value='${payroll.bonusAmount != null ? payroll.bonusAmount : 0}' type='number' groupingUsed='true'/> ₫";
-        document.getElementById('modalGross').textContent = "<fmt:formatNumber value='${payroll.grossSalary != null ? payroll.grossSalary : 0}' type='number' groupingUsed='true'/> ₫";
-        document.getElementById('modalInsurance').textContent = "- <fmt:formatNumber value='${payroll.insuranceAmount != null ? payroll.insuranceAmount : 0}' type='number' groupingUsed='true'/> ₫";
-        document.getElementById('modalTax').textContent = "- <fmt:formatNumber value='${payroll.taxAmount != null ? payroll.taxAmount : 0}' type='number' groupingUsed='true'/> ₫";
-        document.getElementById('modalDeduction').textContent = "- <fmt:formatNumber value='${payroll.deductionAmount != null ? payroll.deductionAmount : 0}' type='number' groupingUsed='true'/> ₫";
-        document.getElementById('modalNet').textContent = "<fmt:formatNumber value='${payroll.netSalary != null ? payroll.netSalary : 0}' type='number' groupingUsed='true'/> ₫";
-        
-        const statusEl = document.getElementById('modalStatus');
-        statusEl.textContent = "${payroll.status}";
-        statusEl.className = 'badge-s';
-        if ("${payroll.status}" === 'Approved') statusEl.classList.add('b-approved');
-        else if ("${payroll.status}" === 'Paid') statusEl.classList.add('b-paid');
-
-        var myModal = new bootstrap.Modal(document.getElementById('payrollDetailModal'));
-        myModal.show();
-    });
-</script>
-</c:if>
-
 <jsp:include page="../footer.jsp" />

@@ -107,9 +107,16 @@ public class AuthFilter implements Filter {
 
         // ── 4. /hr/* → HR Manager (2) hoặc HR Staff (5) ────────────────────
         if (path.startsWith("/hr/")) {
-            if (roleId != ROLE_HR_MANAGER && roleId != ROLE_HR_STAFF) {
-                redirectToAppropriate(req, resp, roleId);
-                return;
+            if (path.equals("/hr/employee-detail")) {
+                if (roleId != ROLE_HR_MANAGER && roleId != ROLE_HR_STAFF && roleId != ROLE_FACTORY_MGR && roleId != ROLE_DEPT_MGR) {
+                    redirectToAppropriate(req, resp, roleId);
+                    return;
+                }
+            } else {
+                if (roleId != ROLE_HR_MANAGER && roleId != ROLE_HR_STAFF) {
+                    redirectToAppropriate(req, resp, roleId);
+                    return;
+                }
             }
         }
 

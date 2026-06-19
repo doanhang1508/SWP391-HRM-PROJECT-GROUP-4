@@ -344,7 +344,6 @@ CREATE TABLE payroll (
     paid_by          INT NULL,
     paid_at          TIMESTAMP NULL,
     payment_note     VARCHAR(500) NULL,
-    is_sent          TINYINT(1) DEFAULT 0,
     created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id),
     FOREIGN KEY (approved_by) REFERENCES users(user_id) ON DELETE SET NULL,
@@ -506,8 +505,8 @@ INSERT INTO education_levels (education_level_id, level_name) VALUES
 -- ── 10. Shifts ──
 INSERT INTO shifts (shift_id, shift_name, start_time, end_time, break_start, break_end, is_night_shift, coefficient, working_days) VALUES
 (1, 'Ca Hành Chính','07:30:00','17:30:00','11:00:00','13:00:00', 0, 1.00,'2,3,4,5,6,7'),
-(2, 'Ca Tăng ca 1', '18:00:00','20:00:00', NULL,       NULL,        0, 1.50,'2,3,4,5,6,7'),
-(3, 'Ca Tăng ca 2', '18:00:00','22:00:00', NULL,       NULL,        0, 1.50,'2,3,4,5,6,7');
+(2, 'Ca Đêm 1', '18:00:00','20:00:00', NULL,       NULL,        0, 1.50,'2,3,4,5,6,7'),
+(3, 'Ca Đêm 2', '18:00:00','22:00:00', '20:00:00', '20:30:00', 0, 1.50,'2,3,4,5,6,7');
 
 -- ── 11. Leave Types ──
 INSERT INTO leave_types (leave_type_id, type_name, description, paid_leave, max_days_per_year) VALUES
@@ -813,7 +812,37 @@ INSERT INTO leave_requests (user_id, leave_type_id, start_date, end_date, total_
 -- Nghỉ thai sản (leave_type_id = 3)
 (31, 3, '2026-06-01', '2026-11-30', 130.0,'Nghỉ thai sản theo chế độ BHXH 6 tháng', 'Approved', 4);
 
+INSERT INTO payroll (user_id, month, year, base_salary, working_days, overtime_amount, allowance_amount, bonus_amount, deduction_amount, insurance_amount, tax_amount, gross_salary, net_salary, status) VALUES
 
+-- Giám đốc (user 2) - Ngạch Quản lý: base 30,000,000
+(2,  5, 2026, 30000000, 22.0, 0,       1800000, 5000000, 0,      3225000, 2500000, 36800000, 31075000, 'Paid'),
+
+-- Trưởng phòng Nhân sự (user 3) - Ngạch Chuyên viên: base 12,000,000
+(3,  5, 2026, 12000000, 22.0, 0,       1300000, 1500000, 0,      1290000,  750000, 14800000, 12760000, 'Paid'),
+
+-- Quản đốc (user 4) - Ngạch Chuyên viên: base 12,000,000
+(4,  5, 2026, 12000000, 21.0, 780000,  1300000, 0,       150000, 1290000,  720000, 14080000, 11920000, 'Paid'),
+
+-- Trưởng phòng Hành chính (user 6) - Ngạch Quản lý: base 30,000,000
+(6,  5, 2026, 30000000, 22.0, 500000,  1800000, 2000000, 0,      3225000, 2300000, 34300000, 28775000, 'Approved'),
+
+-- HR Staff (user 10) - Ngạch Chuyên viên: base 12,000,000
+(10, 5, 2026, 12000000, 22.0, 0,       1300000, 1500000, 0,      1290000,  680000, 14800000, 12830000, 'Approved'),
+
+-- Kế toán trưởng (user 14) - Ngạch Quản lý: base 30,000,000
+(14, 5, 2026, 30000000, 22.0, 0,       1800000, 5000000, 0,      3225000, 2500000, 36800000, 31075000, 'Approved'),
+
+-- Nhân viên kế toán (user 16) - Ngạch Chuyên viên: base 12,000,000
+(16, 5, 2026, 12000000, 20.0, 0,       1300000, 0,       150000, 1290000,  580000, 13300000, 11280000, 'Draft'),
+
+-- Trưởng phòng Kinh doanh (user 19) - Ngạch Quản lý: base 30,000,000
+(19, 5, 2026, 30000000, 22.0, 1500000, 1800000, 3000000, 0,      3225000, 2800000, 36300000, 30275000, 'Approved'),
+
+-- Nhân viên Kinh doanh (user 21) - Ngạch Kinh doanh: base 10,000,000
+(21, 5, 2026, 10000000, 22.0, 0,       1300000, 2500000, 0,      1075000,  850000, 13800000, 11875000, 'Draft'),
+
+-- Tổ trưởng xưởng (user 29) - Ngạch Chuyên viên: base 12,000,000
+(29, 5, 2026, 12000000, 22.0, 1560000, 2300000, 0,       0,      1290000,  780000, 15860000, 13790000, 'Draft');
 
 INSERT INTO shift_assignments (user_id, shift_id, assigned_date) VALUES
 

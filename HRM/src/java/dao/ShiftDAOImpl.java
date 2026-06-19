@@ -54,8 +54,8 @@ public class ShiftDAOImpl implements ShiftDAO {
     @Override
     public List<Shift> getAllShifts() {
         List<Shift> list = new ArrayList<>();
-        // Exclude OT custom shifts (coefficient >= 1.5) from HR manager view
-        String sql = "SELECT * FROM shifts WHERE coefficient < 1.5 ORDER BY shift_id";
+        // Hiển thị tất cả các ca (bao gồm cả Ca Đêm 1, Ca Đêm 2)
+        String sql = "SELECT * FROM shifts ORDER BY shift_id";
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -69,8 +69,8 @@ public class ShiftDAOImpl implements ShiftDAO {
     @Override
     public List<Shift> getActiveShifts() {
         List<Shift> list = new ArrayList<>();
-        // Exclude OT custom shifts (coefficient >= 1.5) from HR manager view
-        String sql = "SELECT * FROM shifts WHERE status = 1 AND coefficient < 1.5 ORDER BY start_time";
+        // Hiển thị tất cả các ca (bao gồm cả Ca Đêm 1, Ca Đêm 2)
+        String sql = "SELECT * FROM shifts WHERE status = 1 ORDER BY start_time";
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -505,34 +505,31 @@ public class ShiftDAOImpl implements ShiftDAO {
     }
 
     @Override
-    public int findOrCreateCustomShift(LocalTime start, LocalTime end) {
+    public int findOrCreateCustomShift(LocalTime start, LocalTime end, LocalTime breakStart, LocalTime breakEnd, String shiftName) {
         if (start == null || end == null) {
             return -1;
         }
-        String expectedName = "Ca Hành Chính";
-        boolean expectedIsNight = false;
-        if (start.getHour() >= 18 || start.getHour() < 6 || end.isBefore(start)) {
-            expectedName = "Ca 3 (Đêm)";
-            expectedIsNight = true;
-        }
+        String expectedName = shiftName;
+        boolean expectedIsNight = !shiftName.equals("Ca Hành Chính"); 
+        float expectedCoefficient = expectedIsNight ? 1.5f : 1.0f;
 
         // 1. Find if an OT shift with these exact times already exists
-        String sqlFind = "SELECT shift_id, shift_name FROM shifts WHERE start_time = ? AND end_time = ? AND coefficient > 1.0";
+        String sqlFind = "SELECT shift_id, shift_name FROM shifts WHERE start_time = ? AND end_time = ? AND coefficient = ?";
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sqlFind)) {
             ps.setTime(1, java.sql.Time.valueOf(start));
             ps.setTime(2, java.sql.Time.valueOf(end));
+            ps.setFloat(3, expectedCoefficient);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     int id = rs.getInt("shift_id");
                     String currentName = rs.getString("shift_name");
-                    if (!currentName.equals(expectedName)) {
-                        String sqlUpdate = "UPDATE shifts SET shift_name = ?, is_night_shift = ? WHERE shift_id = ?";
-                        try (PreparedStatement updatePs = c.prepareStatement(sqlUpdate)) {
-                            updatePs.setString(1, expectedName);
-                            updatePs.setBoolean(2, expectedIsNight);
-                            updatePs.setInt(3, id);
-                            updatePs.executeUpdate();
+                    // Update name if needed
+                    if (!expectedName.equals(currentName)) {
+                        try (PreparedStatement psUpd = c.prepareStatement("UPDATE shifts SET shift_name = ? WHERE shift_id = ?")) {
+                            psUpd.setString(1, expectedName);
+                            psUpd.setInt(2, id);
+                            psUpd.executeUpdate();
                         }
                     }
                     return id;
@@ -545,13 +542,26 @@ public class ShiftDAOImpl implements ShiftDAO {
         // 2. If not, insert new OT custom shift
         String sqlInsert = "INSERT INTO shifts (shift_name, start_time, end_time, "
                          + "break_start, break_end, is_night_shift, coefficient, status) "
-                         + "VALUES (?, ?, ?, null, null, ?, 1.5, 1)";
+                         + "VALUES (?, ?, ?, ?, ?, ?, ?, 1)";
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sqlInsert, PreparedStatement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, expectedName);
             ps.setTime(2, java.sql.Time.valueOf(start));
             ps.setTime(3, java.sql.Time.valueOf(end));
-            ps.setBoolean(4, expectedIsNight);
+            
+            if (breakStart != null) {
+                ps.setTime(4, java.sql.Time.valueOf(breakStart));
+            } else {
+                ps.setNull(4, java.sql.Types.TIME);
+            }
+            if (breakEnd != null) {
+                ps.setTime(5, java.sql.Time.valueOf(breakEnd));
+            } else {
+                ps.setNull(5, java.sql.Types.TIME);
+            }
+            
+            ps.setBoolean(6, expectedIsNight);
+            ps.setFloat(7, expectedCoefficient);
 
             if (ps.executeUpdate() > 0) {
                 try (ResultSet rs = ps.getGeneratedKeys()) {

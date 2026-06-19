@@ -113,10 +113,7 @@
     .form-control:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(43,108,176,.12); }
     .form-control[readonly] { background: #f8fafc; cursor: default; }
     textarea.form-control { resize: vertical; min-height: 75px; }
-    .form-control.is-invalid { border-color: #e11d48 !important; }
-    .form-control.is-invalid:focus { box-shadow: 0 0 0 3px rgba(225,29,72,.12) !important; }
-    .error-feedback { color: #e11d48; font-size: .75rem; margin-top: 4px; font-weight: 500; display: none; }
-    .form-row, .form-row-3 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
     .input-group { position: relative; }
     .input-suffix { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: .82rem; font-weight: 600; pointer-events: none; }
@@ -415,66 +412,58 @@
             <h3 class="modal-title"><i class="fas fa-plus-circle" style="color:var(--blue);"></i> Thêm Mức Bảo Hiểm Mới</h3>
             <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
         </div>
-        <form method="post" action="${pageContext.request.contextPath}/hr/insurance-rate" onsubmit="return validateInsuranceForm(this, 'add')">
+        <form method="post" action="${pageContext.request.contextPath}/hr/insurance-rate" onsubmit="return validateDateRange(this)">
             <input type="hidden" name="action" value="add">
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Mã Bảo Hiểm <span style="color:#e11d48;">*</span></label>
-                    <input type="text" name="insuranceCode" id="addCode" class="form-control" placeholder="VD: BHXH" style="text-transform:uppercase;">
-                    <div class="error-feedback" id="addCodeErr"></div>
+                    <input type="text" name="insuranceCode" class="form-control" placeholder="VD: BHXH" required maxlength="20" style="text-transform:uppercase;">
                     <div class="hint-text">Mã viết tắt, không trùng</div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Tên Loại Bảo Hiểm <span style="color:#e11d48;">*</span></label>
-                    <input type="text" name="insuranceName" id="addName" class="form-control" placeholder="VD: Bảo hiểm xã hội">
-                    <div class="error-feedback" id="addNameErr"></div>
+                    <input type="text" name="insuranceName" class="form-control" placeholder="VD: Bảo hiểm xã hội" required maxlength="100">
                 </div>
             </div>
             <div class="form-row-3">
                 <div class="form-group">
                     <label class="form-label">Tỷ Lệ DN (%) <span style="color:#e11d48;">*</span></label>
                     <div class="input-group">
-                        <input type="text" name="companyRate" id="addCompany" class="form-control" placeholder="0.00" style="padding-right:34px;" oninput="calcAddTotal()">
+                        <input type="number" name="companyRate" id="addCompany" class="form-control" placeholder="0.00" step="0.01" min="0" max="100" required style="padding-right:34px;" oninput="calcAddTotal()">
                         <span class="input-suffix">%</span>
                     </div>
-                    <div class="error-feedback" id="addCompanyErr"></div>
                     <div class="hint-text">Phần DN đóng góp</div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Tỷ Lệ NV (%) <span style="color:#e11d48;">*</span></label>
                     <div class="input-group">
-                        <input type="text" name="employeeRate" id="addEmployee" class="form-control" placeholder="0.00" style="padding-right:34px;" oninput="calcAddTotal()">
+                        <input type="number" name="employeeRate" id="addEmployee" class="form-control" placeholder="0.00" step="0.01" min="0" max="100" required style="padding-right:34px;" oninput="calcAddTotal()">
                         <span class="input-suffix">%</span>
                     </div>
-                    <div class="error-feedback" id="addEmployeeErr"></div>
                     <div class="hint-text">Phần NV phải đóng</div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Tổng Tỷ Lệ (%)</label>
                     <div class="input-group">
-                        <input type="text" id="addTotal" class="form-control" readonly placeholder="0.00" style="padding-right:34px;background:#f8fafc;">
+                        <input type="number" id="addTotal" class="form-control" readonly placeholder="0.00" style="padding-right:34px;background:#f8fafc;">
                         <span class="input-suffix">%</span>
                     </div>
-                    <div class="error-feedback" id="addTotalErr"></div>
                     <div class="hint-text">Tự động tính</div>
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">Ngày Bắt Đầu Áp Dụng (YYYY-MM-DD)</label>
-                    <input type="text" name="effectiveFrom" id="addFrom" class="form-control" placeholder="YYYY-MM-DD">
-                    <div class="error-feedback" id="addFromErr"></div>
+                    <label class="form-label">Ngày Bắt Đầu Áp Dụng</label>
+                    <input type="date" name="effectiveFrom" class="form-control">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Ngày Kết Thúc Áp Dụng (YYYY-MM-DD)</label>
-                    <input type="text" name="effectiveTo" id="addTo" class="form-control" placeholder="YYYY-MM-DD">
-                    <div class="error-feedback" id="addToErr"></div>
+                    <label class="form-label">Ngày Kết Thúc Áp Dụng</label>
+                    <input type="date" name="effectiveTo" class="form-control">
                 </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Mô Tả</label>
-                <textarea name="description" id="addDesc" class="form-control" placeholder="Mô tả chi tiết về loại bảo hiểm..."></textarea>
-                <div class="error-feedback" id="addDescErr"></div>
+                <textarea name="description" class="form-control" maxlength="255" placeholder="Mô tả chi tiết về loại bảo hiểm..."></textarea>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-cancel" onclick="closeModal('addModal')">Hủy</button>
@@ -491,63 +480,55 @@
             <h3 class="modal-title"><i class="fas fa-pen" style="color:var(--blue);"></i> Cập Nhật Mức Bảo Hiểm</h3>
             <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
         </div>
-        <form method="post" action="${pageContext.request.contextPath}/hr/insurance-rate" onsubmit="return validateInsuranceForm(this, 'edit')">
+        <form method="post" action="${pageContext.request.contextPath}/hr/insurance-rate" onsubmit="return validateDateRange(this)">
             <input type="hidden" name="action" value="edit">
             <input type="hidden" name="id" id="editId">
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Mã Bảo Hiểm <span style="color:#e11d48;">*</span></label>
-                    <input type="text" name="insuranceCode" id="editCode" class="form-control" style="text-transform:uppercase;">
-                    <div class="error-feedback" id="editCodeErr"></div>
+                    <input type="text" name="insuranceCode" id="editCode" class="form-control" required maxlength="20" style="text-transform:uppercase;">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Tên Loại Bảo Hiểm <span style="color:#e11d48;">*</span></label>
-                    <input type="text" name="insuranceName" id="editName" class="form-control">
-                    <div class="error-feedback" id="editNameErr"></div>
+                    <input type="text" name="insuranceName" id="editName" class="form-control" required maxlength="100">
                 </div>
             </div>
             <div class="form-row-3">
                 <div class="form-group">
                     <label class="form-label">Tỷ Lệ DN (%) <span style="color:#e11d48;">*</span></label>
                     <div class="input-group">
-                        <input type="text" name="companyRate" id="editCompany" class="form-control" style="padding-right:34px;" oninput="calcEditTotal()">
+                        <input type="number" name="companyRate" id="editCompany" class="form-control" step="0.01" min="0" max="100" required style="padding-right:34px;" oninput="calcEditTotal()">
                         <span class="input-suffix">%</span>
                     </div>
-                    <div class="error-feedback" id="editCompanyErr"></div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Tỷ Lệ NV (%) <span style="color:#e11d48;">*</span></label>
                     <div class="input-group">
-                        <input type="text" name="employeeRate" id="editEmployee" class="form-control" style="padding-right:34px;" oninput="calcEditTotal()">
+                        <input type="number" name="employeeRate" id="editEmployee" class="form-control" step="0.01" min="0" max="100" required style="padding-right:34px;" oninput="calcEditTotal()">
                         <span class="input-suffix">%</span>
                     </div>
-                    <div class="error-feedback" id="editEmployeeErr"></div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Tổng Tỷ Lệ (%)</label>
                     <div class="input-group">
-                        <input type="text" id="editTotal" class="form-control" readonly style="padding-right:34px;background:#f8fafc;">
+                        <input type="number" id="editTotal" class="form-control" readonly style="padding-right:34px;background:#f8fafc;">
                         <span class="input-suffix">%</span>
                     </div>
-                    <div class="error-feedback" id="editTotalErr"></div>
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">Ngày Bắt Đầu Áp Dụng (YYYY-MM-DD)</label>
-                    <input type="text" name="effectiveFrom" id="editFrom" class="form-control" placeholder="YYYY-MM-DD">
-                    <div class="error-feedback" id="editFromErr"></div>
+                    <label class="form-label">Ngày Bắt Đầu Áp Dụng</label>
+                    <input type="date" name="effectiveFrom" id="editFrom" class="form-control">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Ngày Kết Thúc Áp Dụng (YYYY-MM-DD)</label>
-                    <input type="text" name="effectiveTo" id="editTo" class="form-control" placeholder="YYYY-MM-DD">
-                    <div class="error-feedback" id="editToErr"></div>
+                    <label class="form-label">Ngày Kết Thúc Áp Dụng</label>
+                    <input type="date" name="effectiveTo" id="editTo" class="form-control">
                 </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Mô Tả</label>
-                <textarea name="description" id="editDesc" class="form-control"></textarea>
-                <div class="error-feedback" id="editDescErr"></div>
+                <textarea name="description" id="editDesc" class="form-control"  maxlength="255" ></textarea>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-cancel" onclick="closeModal('editModal')">Hủy</button>
@@ -558,118 +539,19 @@
 </div>
 
 <script>
-/* ─── Form validation matching test rules ─── */
-function isValidDate(dateStr) {
-    if (!dateStr || dateStr.trim() === '') return true;
-    var reg = /^\d{4}-\d{2}-\d{2}$/;
-    if (!reg.test(dateStr)) return false;
-    var parts = dateStr.split('-');
-    var year = parseInt(parts[0], 10);
-    var month = parseInt(parts[1], 10);
-    var day = parseInt(parts[2], 10);
-    if (month < 1 || month > 12) return false;
-    var d = new Date(year, month - 1, day);
-    return d.getFullYear() === year && d.getMonth() === month - 1 && d.getDate() === day;
-}
-
-function validateInsuranceForm(form, prefix) {
-    var isValid = true;
-
-    // Reset styles and messages
-    form.querySelectorAll('.form-control').forEach(function(input) {
-        input.classList.remove('is-invalid');
-    });
-    form.querySelectorAll('.error-feedback').forEach(function(feedback) {
-        feedback.textContent = '';
-        feedback.style.display = 'none';
-    });
-
-    function showError(fieldId, errorMsg) {
-        var input = document.getElementById(fieldId);
-        var feedback = document.getElementById(fieldId + 'Err');
-        if (input && feedback) {
-            input.classList.add('is-invalid');
-            feedback.textContent = errorMsg;
-            feedback.style.display = 'block';
-        }
-        isValid = false;
-    }
-
-    // 1. Insurance Code
-    var codeVal = document.getElementById(prefix + 'Code').value.trim();
-    if (codeVal === '') {
-        showError(prefix + 'Code', 'Mã bảo hiểm không được để trống.');
-    } else if (codeVal.length > 20) {
-        showError(prefix + 'Code', 'Mã bảo hiểm không được vượt quá 20 ký tự.');
-    } else if (!/^[a-zA-Z0-9_\-\s]+$/.test(codeVal)) {
-        showError(prefix + 'Code', 'Mã bảo hiểm chỉ được chứa chữ cái, số, khoảng trắng, gạch ngang và gạch dưới.');
-    }
-
-    // 2. Insurance Name
-    var nameVal = document.getElementById(prefix + 'Name').value.trim();
-    if (nameVal === '') {
-        showError(prefix + 'Name', 'Tên loại bảo hiểm không được để trống.');
-    } else if (nameVal.length > 100) {
-        showError(prefix + 'Name', 'Tên loại bảo hiểm không được vượt quá 100 ký tự.');
-    }
-
-    // 3. Employer Rate (%)
-    var companyValStr = document.getElementById(prefix + 'Company').value.trim();
-    if (companyValStr === '') {
-        showError(prefix + 'Company', 'Tỷ lệ đóng của doanh nghiệp không được để trống.');
-    } else {
-        var companyVal = Number(companyValStr);
-        if (isNaN(companyVal) || isNaN(parseFloat(companyValStr))) {
-            showError(prefix + 'Company', 'Tỷ lệ đóng của doanh nghiệp phải là số.');
-        } else if (companyVal < 0) {
-            showError(prefix + 'Company', 'Tỷ lệ đóng của doanh nghiệp không được nhỏ hơn 0.');
-        } else if (companyVal > 100) {
-            showError(prefix + 'Company', 'Tỷ lệ đóng của doanh nghiệp không được vượt quá 100.');
-        }
-    }
-
-    // 4. Employee Rate (%)
-    var employeeValStr = document.getElementById(prefix + 'Employee').value.trim();
-    if (employeeValStr === '') {
-        showError(prefix + 'Employee', 'Tỷ lệ đóng của nhân viên không được để trống.');
-    } else {
-        var employeeVal = Number(employeeValStr);
-        if (isNaN(employeeVal) || isNaN(parseFloat(employeeValStr))) {
-            showError(prefix + 'Employee', 'Tỷ lệ đóng của nhân viên phải là số.');
-        } else if (employeeVal < 0) {
-            showError(prefix + 'Employee', 'Tỷ lệ đóng của nhân viên không được nhỏ hơn 0.');
-        } else if (employeeVal > 100) {
-            showError(prefix + 'Employee', 'Tỷ lệ đóng của nhân viên không được vượt quá 100.');
-        }
-    }
-
-    // 5. Dates
-    var fromVal = document.getElementById(prefix + 'From').value.trim();
-    var toVal = document.getElementById(prefix + 'To').value.trim();
-
-    if (fromVal !== '' && !isValidDate(fromVal)) {
-        showError(prefix + 'From', 'Ngày bắt đầu không tồn tại hoặc không đúng định dạng YYYY-MM-DD.');
-    }
-    if (toVal !== '' && !isValidDate(toVal)) {
-        showError(prefix + 'To', 'Ngày kết thúc không tồn tại hoặc không đúng định dạng YYYY-MM-DD.');
-    }
-
-    if (isValid && fromVal !== '' && toVal !== '') {
+/* ─── Date validation helper ─── */
+function validateDateRange(form) {
+    var fromVal = form.querySelector('[name="effectiveFrom"]').value;
+    var toVal = form.querySelector('[name="effectiveTo"]').value;
+    if (fromVal && toVal) {
         var fromDate = new Date(fromVal);
         var toDate = new Date(toVal);
         if (fromDate > toDate) {
-            showError(prefix + 'From', 'Ngày bắt đầu không được lớn hơn ngày kết thúc.');
-            showError(prefix + 'To', 'Ngày kết thúc không được nhỏ hơn ngày bắt đầu.');
+            alert('Ngày bắt đầu áp dụng không được lớn hơn ngày kết thúc áp dụng!');
+            return false;
         }
     }
-
-    // 6. Description
-    var descVal = document.getElementById(prefix + 'Desc').value;
-    if (descVal && descVal.length > 255) {
-        showError(prefix + 'Desc', 'Mô tả không được vượt quá 255 ký tự.');
-    }
-
-    return isValid;
+    return true;
 }
 
 /* ─── Modal helpers ─── */
