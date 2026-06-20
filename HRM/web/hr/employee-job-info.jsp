@@ -162,6 +162,20 @@
                 </div>
 
                 <div class="form-group">
+                    <label class="form-label">Ngày vào làm</label>
+                    <div class="form-control-view">
+                        <c:choose>
+                            <c:when test="${not empty empProfile and not empty empProfile.hireDate}">
+                                <span style="font-weight: 500; color: #334155;"><i class="fas fa-calendar-check me-1" style="color: #0d9488;"></i> <fmt:formatDate value="${empProfile.hireDate}" pattern="dd/MM/yyyy"/></span>
+                            </c:when>
+                            <c:otherwise>
+                                <span style="color: #94a3b8; font-style: italic;">Chưa cập nhật</span>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
+                </div>
+
+                <div class="form-group">
                     <label class="form-label">Trạng thái công việc</label>
                     <div class="form-control-view">
                         <c:choose>

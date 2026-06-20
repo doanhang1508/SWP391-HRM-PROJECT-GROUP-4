@@ -4,10 +4,12 @@ import dao.DepartmentDAO;
 import dao.PositionDAO;
 import dao.RoleDAO;
 import dao.UserDAO;
+import dao.EmployeeProfileDAO;
 import model.Department;
 import model.Position;
 import model.Role;
 import model.User;
+import model.EmployeeProfile;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -83,10 +85,14 @@ public class HrEmployeeJobInfoController extends HttpServlet {
                 }
             }
 
+            EmployeeProfileDAO profileDAO = new EmployeeProfileDAO();
+            EmployeeProfile empProfile = profileDAO.getByUserId(userId);
+
             request.setAttribute("employee", employee);
             request.setAttribute("empDept", dept);
             request.setAttribute("empPos", pos);
             request.setAttribute("userRole", userRole);
+            request.setAttribute("empProfile", empProfile);
 
             request.getRequestDispatcher("/hr/employee-job-info.jsp").forward(request, response);
 
