@@ -863,4 +863,93 @@ public class PayrollDAO {
         }
         return list;
     }
+
+    // ═══════════════════════════════════════════════════
+    // TAX & INSURANCE ENGINE (TASK 35 & 36)
+    // ═══════════════════════════════════════════════════
+
+    /**
+     * Task 35: Tính bảo hiểm (BHXH, BHYT, BHTN)
+     * Công thức: insuranceAmount = grossSalary * tổng % (mặc định 10.5% hoặc lấy từ DB)
+     */
+    public static BigDecimal calculateInsurance(BigDecimal grossSalary) {
+        if (grossSalary == null || grossSalary.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+        
+        BigDecimal totalEmployeeRate = BigDecimal.ZERO;
+        String sql = "SELECT SUM(employee_rate) as total_rate FROM insurance_rates WHERE status = 1";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                BigDecimal rate = rs.getBigDecimal("total_rate");
+                if (rate != null) {
+                    totalEmployeeRate = rate;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        
+        // Fallback to 10.5% if DB returns 0 or error
+        if (totalEmployeeRate.compareTo(BigDecimal.ZERO) == 0) {
+            totalEmployeeRate = new BigDecimal("10.5");
+        }
+        
+        return grossSalary.multiply(totalEmployeeRate).divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Task 36: Đếm số người phụ thuộc
+     */
+    public static int countActiveDependents(int userId) {
+        int count = 0;
+        String sql = "SELECT COUNT(*) FROM dependents WHERE user_id = ? AND status = 1";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    count = rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return count;
+    }
+
+    /**
+     * Task 36: Tính thuế Thu nhập cá nhân (PIT) Lũy tiến
+     * Taxable_Income = Gross - Insurance - 11_000_000 - (CountDependents * 4_400_000)
+     */
+    public static BigDecimal calculatePIT(BigDecimal taxableIncome) {
+        if (taxableIncome == null || taxableIncome.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        double income = taxableIncome.doubleValue();
+        double pit = 0;
+
+        if (income <= 5_000_000) {
+            pit = income * 0.05;
+        } else if (income <= 10_000_000) {
+            pit = (5_000_000 * 0.05) + ((income - 5_000_000) * 0.10);
+        } else if (income <= 18_000_000) {
+            pit = (5_000_000 * 0.05) + (5_000_000 * 0.10) + ((income - 10_000_000) * 0.15);
+        } else if (income <= 32_000_000) {
+            pit = (5_000_000 * 0.05) + (5_000_000 * 0.10) + (8_000_000 * 0.15) + ((income - 18_000_000) * 0.20);
+        } else if (income <= 52_000_000) {
+            pit = (5_000_000 * 0.05) + (5_000_000 * 0.10) + (8_000_000 * 0.15) + (14_000_000 * 0.20) + ((income - 32_000_000) * 0.25);
+        } else if (income <= 80_000_000) {
+            pit = (5_000_000 * 0.05) + (5_000_000 * 0.10) + (8_000_000 * 0.15) + (14_000_000 * 0.20) + (20_000_000 * 0.25) + ((income - 52_000_000) * 0.30);
+        } else {
+            pit = (5_000_000 * 0.05) + (5_000_000 * 0.10) + (8_000_000 * 0.15) + (14_000_000 * 0.20) + (20_000_000 * 0.25) + (28_000_000 * 0.30) + ((income - 80_000_000) * 0.35);
+        }
+
+        return BigDecimal.valueOf(pit).setScale(2, java.math.RoundingMode.HALF_UP);
+    }
 }
