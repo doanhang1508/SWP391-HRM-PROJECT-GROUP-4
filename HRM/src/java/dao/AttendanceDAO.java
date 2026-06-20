@@ -486,4 +486,21 @@ public class AttendanceDAO {
         try { c.setResolverName(rs.getString("resolver_name")); } catch (SQLException ignored) {}
         return c;
     }
+
+    public int getPresentDays(int employeeId, int month, int year) {
+        String sql = "SELECT COUNT(*) FROM attendance WHERE user_id=? AND MONTH(work_date)=? AND YEAR(work_date)=? AND status IN ('Present', 'Late')";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
 }

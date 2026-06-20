@@ -1,5 +1,5 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%@taglib prefix="c" uri="jakarta.tags.core" %>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
 <c:set var="pageTitle" value="Quản lý bảng lương (HR) - Enterprise HRM" scope="request" />
@@ -477,6 +477,7 @@
                                     <th>NV ID</th>
                                     <th>Họ và tên</th>
                                     <th>Tháng/Năm</th>
+                                    <th>Ngày công</th>
                                     <th>Thực nhận (Net)</th>
                                     <th>Trạng thái</th>
                                     <th class="text-end">Hành động</th>
@@ -486,7 +487,7 @@
                                 <c:choose>
                                     <c:when test="${empty payrollList}">
                                         <tr>
-                                            <td colspan="6" class="text-center" style="color:var(--muted)">Chưa có dữ liệu bảng lương cho tháng này.</td>
+                                            <td colspan="7" class="text-center" style="color:var(--muted)">Chưa có dữ liệu bảng lương cho tháng này.</td>
                                         </tr>
                                     </c:when>
                                     <c:otherwise>
@@ -495,6 +496,7 @@
                                                 <td>#${p.userId}</td>
                                                 <td><span class="fw-bold" style="color:var(--pri)">${userNames[p.userId]}</span></td>
                                                 <td>${p.month}/${p.year}</td>
+                                                <td><span class="fw-semibold text-primary"><i class="fas fa-calendar-check me-1"></i>${p.workingDays}</span></td>
                                                 <td><span class="fw-bold text-success"><fmt:formatNumber value="${p.netSalary}" type="currency" currencySymbol="₫" maxFractionDigits="0"/></span></td>
                                                 <td>
                                                     <c:choose>
@@ -626,7 +628,8 @@
                             <i class="fas fa-circle-info me-1 text-primary"></i> Lưu ý
                         </div>
                         <div class="text-muted" style="font-size:.86rem;">
-                            Sau khi khởi tạo, bảng lương sẽ ở trạng thái <b>Draft</b> và có thể kiểm tra trước khi gửi duyệt.
+                            Sau khi khởi tạo, bảng lương sẽ ở trạng thái <b>Draft</b> và có thể kiểm tra trước khi gửi duyệt. 
+                            <br/><i class="fas fa-check-circle text-success mt-1"></i> Hệ thống sẽ tự động tổng hợp <b>ngày công</b> và <b>nghỉ phép có lương</b> để tính lương thực tế.
                         </div>
                     </div>
                 </div>
