@@ -84,6 +84,7 @@ public class HrResolveClaimController extends HttpServlet {
             if (roleId == 5) {
                 String note = request.getParameter("hrStaffNote");
                 claim.setHrStaffNote(note != null ? note.trim() : "");
+                claim.setHrStaffId(currentUser.getUserId());
                 if ("hrStaffForwardManager".equals(action)) {
                     claim.setStatus("HR Manager Reviewing");
                     success = claimDAO.updateClaimWorkflow(claim);
@@ -103,6 +104,7 @@ public class HrResolveClaimController extends HttpServlet {
                 String note = request.getParameter("accountantNote");
                 String adjustmentStr = request.getParameter("proposedAdjustment");
                 claim.setAccountantNote(note != null ? note.trim() : "");
+                claim.setAccountantId(currentUser.getUserId());
                 
                 BigDecimal proposedAdjustment = BigDecimal.ZERO;
                 if (adjustmentStr != null && !adjustmentStr.trim().isEmpty()) {
@@ -132,6 +134,7 @@ public class HrResolveClaimController extends HttpServlet {
             else if (roleId == 2) {
                 String note = request.getParameter("hrManagerNote");
                 claim.setHrManagerNote(note != null ? note.trim() : "");
+                claim.setHrManagerId(currentUser.getUserId());
 
                 if ("hrManagerResolve".equals(action) || "hrManagerClose".equals(action)) {
                     claim.setStatus("Resolved");
@@ -154,6 +157,7 @@ public class HrResolveClaimController extends HttpServlet {
             else if (roleId == 4) {
                 String note = request.getParameter("directorNote");
                 claim.setDirectorNote(note != null ? note.trim() : "");
+                claim.setDirectorId(currentUser.getUserId());
 
                 if ("directorApprove".equals(action)) {
                     claim.setStatus("Accountant Adjusting");

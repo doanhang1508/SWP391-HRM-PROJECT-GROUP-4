@@ -389,30 +389,25 @@
                                                     <div class="d-flex flex-column gap-2 mt-2">
                                                         <c:if test="${not empty matchedClaim.hrStaffNote}">
                                                             <div class="p-2 rounded bg-light border-start border-primary border-3">
-                                                                <span class="fw-bold text-dark small d-block">HR Staff Note:</span>
+                                                                <span class="fw-bold text-dark small d-block">${not empty matchedClaim.hrStaffName ? matchedClaim.hrStaffName : 'HR Staff'} Note:</span>
                                                                 <span class="text-muted small">${matchedClaim.hrStaffNote}</span>
                                                             </div>
                                                         </c:if>
                                                         <c:if test="${not empty matchedClaim.accountantNote}">
                                                             <div class="p-2 rounded bg-light border-start border-info border-3">
-                                                                <span class="fw-bold text-dark small d-block">Kế toán Note:</span>
+                                                                <span class="fw-bold text-dark small d-block">${not empty matchedClaim.accountantName ? matchedClaim.accountantName : 'Kế toán'} Note:</span>
                                                                 <span class="text-muted small">${matchedClaim.accountantNote}</span>
-                                                                <c:if test="${not empty matchedClaim.proposedAdjustment && matchedClaim.proposedAdjustment != 0}">
-                                                                    <div class="mt-1 font-monospace fw-bold text-success small">
-                                                                        Đề xuất điều chỉnh: <fmt:formatNumber value="${matchedClaim.proposedAdjustment}" type="number" groupingUsed="true"/> ₫
-                                                                    </div>
-                                                                </c:if>
                                                             </div>
                                                         </c:if>
                                                         <c:if test="${not empty matchedClaim.hrManagerNote}">
                                                             <div class="p-2 rounded bg-light border-start border-warning border-3">
-                                                                <span class="fw-bold text-dark small d-block">HR Manager Note:</span>
+                                                                <span class="fw-bold text-dark small d-block">${not empty matchedClaim.hrManagerName ? matchedClaim.hrManagerName : 'HR Manager'} Note:</span>
                                                                 <span class="text-muted small">${matchedClaim.hrManagerNote}</span>
                                                             </div>
                                                         </c:if>
                                                         <c:if test="${not empty matchedClaim.directorNote}">
                                                             <div class="p-2 rounded bg-light border-start border-danger border-3">
-                                                                <span class="fw-bold text-dark small d-block">Giám đốc Note:</span>
+                                                                <span class="fw-bold text-dark small d-block">${not empty matchedClaim.directorName ? matchedClaim.directorName : 'Giám đốc'} Note:</span>
                                                                 <span class="text-muted small">${matchedClaim.directorNote}</span>
                                                             </div>
                                                         </c:if>

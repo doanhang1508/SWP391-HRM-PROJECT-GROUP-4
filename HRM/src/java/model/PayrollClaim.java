@@ -24,6 +24,16 @@ public class PayrollClaim {
     private int year;
     private String email;
 
+    private Integer hrStaffId;
+    private Integer accountantId;
+    private Integer hrManagerId;
+    private Integer directorId;
+
+    private String hrStaffName;
+    private String accountantName;
+    private String hrManagerName;
+    private String directorName;
+
     public PayrollClaim() {}
 
     public int getClaimId() { return claimId; }
@@ -76,4 +86,28 @@ public class PayrollClaim {
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+
+    public Integer getHrStaffId() { return hrStaffId; }
+    public void setHrStaffId(Integer hrStaffId) { this.hrStaffId = hrStaffId; }
+
+    public Integer getAccountantId() { return accountantId; }
+    public void setAccountantId(Integer accountantId) { this.accountantId = accountantId; }
+
+    public Integer getHrManagerId() { return hrManagerId; }
+    public void setHrManagerId(Integer hrManagerId) { this.hrManagerId = hrManagerId; }
+
+    public Integer getDirectorId() { return directorId; }
+    public void setDirectorId(Integer directorId) { this.directorId = directorId; }
+
+    public String getHrStaffName() { return hrStaffName; }
+    public void setHrStaffName(String hrStaffName) { this.hrStaffName = hrStaffName; }
+
+    public String getAccountantName() { return accountantName; }
+    public void setAccountantName(String accountantName) { this.accountantName = accountantName; }
+
+    public String getHrManagerName() { return hrManagerName; }
+    public void setHrManagerName(String hrManagerName) { this.hrManagerName = hrManagerName; }
+
+    public String getDirectorName() { return directorName; }
+    public void setDirectorName(String directorName) { this.directorName = directorName; }
 }

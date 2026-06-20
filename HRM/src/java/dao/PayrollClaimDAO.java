@@ -18,10 +18,10 @@ public class PayrollClaimDAO {
         try (Connection conn = DBContext.getConnection();
              Statement stmt = conn.createStatement()) {
             
-            // Check if column complaint_type exists, if not drop table and recreate
+            // Check if column hr_staff_id exists, if not drop table and recreate
             boolean recreate = false;
             try {
-                stmt.executeQuery("SELECT complaint_type FROM payroll_claims LIMIT 1");
+                stmt.executeQuery("SELECT hr_staff_id FROM payroll_claims LIMIT 1");
             } catch (SQLException e) {
                 recreate = true;
             }
@@ -38,13 +38,21 @@ public class PayrollClaimDAO {
                          "expected_amount DECIMAL(15,2) DEFAULT 0, " +
                          "evidence VARCHAR(255) DEFAULT NULL, " +
                          "status VARCHAR(50) DEFAULT 'Pending', " +
+                         "hr_staff_id INT DEFAULT NULL, " +
                          "hr_staff_note TEXT DEFAULT NULL, " +
+                         "accountant_id INT DEFAULT NULL, " +
                          "accountant_note TEXT DEFAULT NULL, " +
                          "proposed_adjustment DECIMAL(15,2) DEFAULT 0, " +
+                         "hr_manager_id INT DEFAULT NULL, " +
                          "hr_manager_note TEXT DEFAULT NULL, " +
+                         "director_id INT DEFAULT NULL, " +
                          "director_note TEXT DEFAULT NULL, " +
                          "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                         "FOREIGN KEY (payroll_id) REFERENCES payroll(payroll_id) ON DELETE CASCADE" +
+                         "FOREIGN KEY (payroll_id) REFERENCES payroll(payroll_id) ON DELETE CASCADE, " +
+                         "FOREIGN KEY (hr_staff_id) REFERENCES users(user_id) ON DELETE SET NULL, " +
+                         "FOREIGN KEY (accountant_id) REFERENCES users(user_id) ON DELETE SET NULL, " +
+                         "FOREIGN KEY (hr_manager_id) REFERENCES users(user_id) ON DELETE SET NULL, " +
+                         "FOREIGN KEY (director_id) REFERENCES users(user_id) ON DELETE SET NULL" +
                          ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
         } catch (SQLException e) {
             e.printStackTrace();
@@ -79,10 +87,15 @@ public class PayrollClaimDAO {
         pc.setExpectedAmount(rs.getBigDecimal("expected_amount"));
         pc.setEvidence(rs.getString("evidence"));
         pc.setStatus(rs.getString("status"));
+        
+        pc.setHrStaffId(rs.getObject("hr_staff_id") != null ? rs.getInt("hr_staff_id") : null);
         pc.setHrStaffNote(rs.getString("hr_staff_note"));
+        pc.setAccountantId(rs.getObject("accountant_id") != null ? rs.getInt("accountant_id") : null);
         pc.setAccountantNote(rs.getString("accountant_note"));
         pc.setProposedAdjustment(rs.getBigDecimal("proposed_adjustment"));
+        pc.setHrManagerId(rs.getObject("hr_manager_id") != null ? rs.getInt("hr_manager_id") : null);
         pc.setHrManagerNote(rs.getString("hr_manager_note"));
+        pc.setDirectorId(rs.getObject("director_id") != null ? rs.getInt("director_id") : null);
         pc.setDirectorNote(rs.getString("director_note"));
         pc.setCreatedAt(rs.getTimestamp("created_at"));
         
@@ -91,15 +104,34 @@ public class PayrollClaimDAO {
         pc.setYear(rs.getInt("year"));
         pc.setFullName(rs.getString("full_name"));
         pc.setEmail(rs.getString("email"));
+        
+        // Optional processor names from left joins
+        try {
+            pc.setHrStaffName(rs.getString("hr_staff_name"));
+            pc.setAccountantName(rs.getString("accountant_name"));
+            pc.setHrManagerName(rs.getString("hr_manager_name"));
+            pc.setDirectorName(rs.getString("director_name"));
+        } catch (SQLException e) {
+            // Ignore if columns not queried
+        }
+        
         return pc;
     }
 
     public List<PayrollClaim> getClaimsByUserId(int userId) {
         List<PayrollClaim> list = new ArrayList<>();
-        String sql = "SELECT pc.*, p.month, p.year, u.full_name, u.email " +
+        String sql = "SELECT pc.*, p.month, p.year, u.full_name, u.email, " +
+                     "u_staff.full_name AS hr_staff_name, " +
+                     "u_acc.full_name AS accountant_name, " +
+                     "u_mgr.full_name AS hr_manager_name, " +
+                     "u_dir.full_name AS director_name " +
                      "FROM payroll_claims pc " +
                      "JOIN payroll p ON pc.payroll_id = p.payroll_id " +
                      "JOIN users u ON p.user_id = u.user_id " +
+                     "LEFT JOIN users u_staff ON pc.hr_staff_id = u_staff.user_id " +
+                     "LEFT JOIN users u_acc ON pc.accountant_id = u_acc.user_id " +
+                     "LEFT JOIN users u_mgr ON pc.hr_manager_id = u_mgr.user_id " +
+                     "LEFT JOIN users u_dir ON pc.director_id = u_dir.user_id " +
                      "WHERE p.user_id = ? " +
                      "ORDER BY pc.created_at DESC";
         DBContext dbContext = new DBContext();
@@ -119,10 +151,18 @@ public class PayrollClaimDAO {
 
     public List<PayrollClaim> getAllClaims() {
         List<PayrollClaim> list = new ArrayList<>();
-        String sql = "SELECT pc.*, p.month, p.year, u.full_name, u.email " +
+        String sql = "SELECT pc.*, p.month, p.year, u.full_name, u.email, " +
+                     "u_staff.full_name AS hr_staff_name, " +
+                     "u_acc.full_name AS accountant_name, " +
+                     "u_mgr.full_name AS hr_manager_name, " +
+                     "u_dir.full_name AS director_name " +
                      "FROM payroll_claims pc " +
                      "JOIN payroll p ON pc.payroll_id = p.payroll_id " +
                      "JOIN users u ON p.user_id = u.user_id " +
+                     "LEFT JOIN users u_staff ON pc.hr_staff_id = u_staff.user_id " +
+                     "LEFT JOIN users u_acc ON pc.accountant_id = u_acc.user_id " +
+                     "LEFT JOIN users u_mgr ON pc.hr_manager_id = u_mgr.user_id " +
+                     "LEFT JOIN users u_dir ON pc.director_id = u_dir.user_id " +
                      "ORDER BY pc.created_at DESC";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
@@ -138,10 +178,18 @@ public class PayrollClaimDAO {
     }
 
     public PayrollClaim getClaimById(int claimId) {
-        String sql = "SELECT pc.*, p.month, p.year, u.full_name, u.email " +
+        String sql = "SELECT pc.*, p.month, p.year, u.full_name, u.email, " +
+                     "u_staff.full_name AS hr_staff_name, " +
+                     "u_acc.full_name AS accountant_name, " +
+                     "u_mgr.full_name AS hr_manager_name, " +
+                     "u_dir.full_name AS director_name " +
                      "FROM payroll_claims pc " +
                      "JOIN payroll p ON pc.payroll_id = p.payroll_id " +
                      "JOIN users u ON p.user_id = u.user_id " +
+                     "LEFT JOIN users u_staff ON pc.hr_staff_id = u_staff.user_id " +
+                     "LEFT JOIN users u_acc ON pc.accountant_id = u_acc.user_id " +
+                     "LEFT JOIN users u_mgr ON pc.hr_manager_id = u_mgr.user_id " +
+                     "LEFT JOIN users u_dir ON pc.director_id = u_dir.user_id " +
                      "WHERE pc.claim_id = ?";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
@@ -159,18 +207,27 @@ public class PayrollClaimDAO {
     }
 
     public boolean updateClaimWorkflow(PayrollClaim claim) {
-        String sql = "UPDATE payroll_claims SET status = ?, hr_staff_note = ?, accountant_note = ?, " +
-                     "proposed_adjustment = ?, hr_manager_note = ?, director_note = ? WHERE claim_id = ?";
+        String sql = "UPDATE payroll_claims SET status = ?, " +
+                     "hr_staff_id = ?, hr_staff_note = ?, " +
+                     "accountant_id = ?, accountant_note = ?, " +
+                     "proposed_adjustment = ?, " +
+                     "hr_manager_id = ?, hr_manager_note = ?, " +
+                     "director_id = ?, director_note = ? " +
+                     "WHERE claim_id = ?";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, claim.getStatus());
-            ps.setString(2, claim.getHrStaffNote());
-            ps.setString(3, claim.getAccountantNote());
-            ps.setBigDecimal(4, claim.getProposedAdjustment() != null ? claim.getProposedAdjustment() : BigDecimal.ZERO);
-            ps.setString(5, claim.getHrManagerNote());
-            ps.setString(6, claim.getDirectorNote());
-            ps.setInt(7, claim.getClaimId());
+            ps.setObject(2, claim.getHrStaffId(), java.sql.Types.INTEGER);
+            ps.setString(3, claim.getHrStaffNote());
+            ps.setObject(4, claim.getAccountantId(), java.sql.Types.INTEGER);
+            ps.setString(5, claim.getAccountantNote());
+            ps.setBigDecimal(6, claim.getProposedAdjustment() != null ? claim.getProposedAdjustment() : BigDecimal.ZERO);
+            ps.setObject(7, claim.getHrManagerId(), java.sql.Types.INTEGER);
+            ps.setString(8, claim.getHrManagerNote());
+            ps.setObject(9, claim.getDirectorId(), java.sql.Types.INTEGER);
+            ps.setString(10, claim.getDirectorNote());
+            ps.setInt(11, claim.getClaimId());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();

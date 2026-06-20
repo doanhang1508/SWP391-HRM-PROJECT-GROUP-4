@@ -219,7 +219,6 @@
                             <th>Nhân viên</th>
                             <th>Kỳ lương khiếu nại</th>
                             <th>Loại khiếu nại</th>
-                            <th>Số tiền mong muốn</th>
                             <th>Ngày gửi</th>
                             <th>Trạng thái</th>
                             <th class="text-end">Hành động</th>
@@ -229,7 +228,7 @@
                         <c:choose>
                             <c:when test="${empty claims}">
                                 <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">Chưa có yêu cầu khiếu nại lương nào.</td>
+                                    <td colspan="6" class="text-center text-muted py-4">Chưa có yêu cầu khiếu nại lương nào.</td>
                                 </tr>
                             </c:when>
                             <c:otherwise>
@@ -242,16 +241,6 @@
                                         <td><span class="fw-semibold">Tháng ${c.month} / ${c.year}</span></td>
                                         <td>
                                             <span class="badge bg-light text-dark border">${c.complaintType}</span>
-                                        </td>
-                                        <td>
-                                            <c:choose>
-                                                <c:when test="${not empty c.expectedAmount && c.expectedAmount > 0}">
-                                                    <span class="text-primary fw-semibold"><fmt:formatNumber value="${c.expectedAmount}" type="number" groupingUsed="true"/> ₫</span>
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <span class="text-muted">--</span>
-                                                </c:otherwise>
-                                            </c:choose>
                                         </td>
                                         <td><fmt:formatDate value="${c.createdAt}" pattern="dd/MM/yyyy HH:mm"/></td>
                                         <td>
@@ -317,17 +306,6 @@
                                                             <strong>Loại khiếu nại:</strong>
                                                             <div><span class="badge bg-secondary">${c.complaintType}</span></div>
                                                         </div>
-                                                        <div class="col-md-6 mb-2">
-                                                            <strong>Số tiền đề xuất từ Employee:</strong>
-                                                            <div>
-                                                                <c:choose>
-                                                                    <c:when test="${not empty c.expectedAmount && c.expectedAmount > 0}">
-                                                                        <span class="text-primary fw-bold"><fmt:formatNumber value="${c.expectedAmount}" type="number" groupingUsed="true"/> ₫</span>
-                                                                    </c:when>
-                                                                    <c:otherwise>Không đề xuất số tiền cụ thể</c:otherwise>
-                                                                </c:choose>
-                                                            </div>
-                                                        </div>
                                                     </div>
 
                                                     <div class="mb-3">
@@ -335,50 +313,38 @@
                                                         <div class="p-3 bg-light rounded border mt-1" style="white-space: pre-wrap;">${c.description}</div>
                                                     </div>
 
-                                                    <c:if test="${not empty c.evidence}">
-                                                        <div class="mb-3">
-                                                            <strong>Minh chứng đính kèm:</strong>
-                                                            <div class="mt-1">
-                                                                <c:choose>
-                                                                    <c:when test="${c.evidence.startsWith('http')}">
-                                                                        <a href="${c.evidence}" target="_blank" class="btn btn-sm btn-link p-0"><i class="fas fa-external-link-alt me-1"></i> Xem link minh chứng</a>
-                                                                    </c:when>
-                                                                    <c:otherwise>
-                                                                        <span class="text-muted"><i class="fas fa-file-alt me-1"></i> ${c.evidence}</span>
-                                                                    </c:otherwise>
-                                                                </c:choose>
-                                                            </div>
-                                                        </div>
-                                                    </c:if>
-
                                                     <hr />
 
                                                     <!-- Workflow Notes History -->
-                                                    <h6 class="fw-bold mb-3"><i class="fas fa-history me-1 text-primary"></i>Lịch sử xử lý & Ghi chú</h6>
-                                                    <div class="row">
-                                                        <div class="col-md-6 mb-2">
-                                                            <strong>HR Staff Note:</strong>
-                                                            <div class="small text-muted">${not empty c.hrStaffNote ? c.hrStaffNote : '(Không có ghi chú)'}</div>
+                                                    <c:if test="${not empty c.hrStaffNote || not empty c.accountantNote || not empty c.hrManagerNote || not empty c.directorNote}">
+                                                        <h6 class="fw-bold mb-3"><i class="fas fa-history me-1 text-primary"></i>Lịch sử xử lý & Ghi chú</h6>
+                                                        <div class="row">
+                                                            <c:if test="${not empty c.hrStaffNote}">
+                                                                <div class="col-md-6 mb-2">
+                                                                    <strong>${not empty c.hrStaffName ? c.hrStaffName : 'HR Staff'} Note:</strong>
+                                                                    <div class="small text-muted">${c.hrStaffNote}</div>
+                                                                </div>
+                                                            </c:if>
+                                                            <c:if test="${not empty c.accountantNote}">
+                                                                <div class="col-md-6 mb-2">
+                                                                    <strong>${not empty c.accountantName ? c.accountantName : 'Kế toán'} Note:</strong>
+                                                                    <div class="small text-muted">${c.accountantNote}</div>
+                                                                </div>
+                                                            </c:if>
+                                                            <c:if test="${not empty c.hrManagerNote}">
+                                                                <div class="col-md-6 mb-2">
+                                                                    <strong>${not empty c.hrManagerName ? c.hrManagerName : 'HR Manager'} Note:</strong>
+                                                                    <div class="small text-muted">${c.hrManagerNote}</div>
+                                                                </div>
+                                                            </c:if>
+                                                            <c:if test="${not empty c.directorNote}">
+                                                                <div class="col-md-6 mb-2">
+                                                                    <strong>${not empty c.directorName ? c.directorName : 'Giám đốc'} Note:</strong>
+                                                                    <div class="small text-muted">${c.directorNote}</div>
+                                                                </div>
+                                                            </c:if>
                                                         </div>
-                                                        <div class="col-md-6 mb-2">
-                                                            <strong>Kế toán Note & Đề xuất điều chỉnh:</strong>
-                                                            <div class="small text-muted">
-                                                                Ghi chú: ${not empty c.accountantNote ? c.accountantNote : '(Không có ghi chú)'}<br/>
-                                                                Đề xuất điều chỉnh lương: 
-                                                                <span class="text-success fw-bold">
-                                                                    <fmt:formatNumber value="${not empty c.proposedAdjustment ? c.proposedAdjustment : 0}" type="number" groupingUsed="true"/> ₫
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-md-6 mb-2">
-                                                            <strong>HR Manager Note:</strong>
-                                                            <div class="small text-muted">${not empty c.hrManagerNote ? c.hrManagerNote : '(Không có ghi chú)'}</div>
-                                                        </div>
-                                                        <div class="col-md-6 mb-2">
-                                                            <strong>Giám đốc Note:</strong>
-                                                            <div class="small text-muted">${not empty c.directorNote ? c.directorNote : '(Không có ghi chú)'}</div>
-                                                        </div>
-                                                    </div>
+                                                    </c:if>
 
                                                     <!-- Action Form (Conditional based on Role and Status) -->
                                                     <c:set var="canProcess" value="false" />
@@ -414,23 +380,23 @@
                                                                         <c:when test="${c.status eq 'Pending'}">
                                                                             <c:choose>
                                                                                 <c:when test="${c.complaintType eq 'Chưa nhận được tiền'}">
-                                                                                    <button type="submit" name="action" value="hrStaffForwardAccountant" class="btn btn-primary">
-                                                                                        <i class="fas fa-share me-1"></i> Chuyển Kế toán kiểm tra chuyển khoản
+                                                                                    <button type="submit" name="action" value="hrStaffForwardAccountant" class="btn btn-primary" onclick="return confirmPayrollClaimAction('approve', this)">
+                                                                                        <i class="fas fa-check me-1"></i> Gửi duyệt
                                                                                     </button>
                                                                                 </c:when>
                                                                                 <c:otherwise>
-                                                                                    <button type="submit" name="action" value="hrStaffForwardManager" class="btn btn-primary">
-                                                                                        <i class="fas fa-share me-1"></i> Trình HR Manager duyệt
+                                                                                    <button type="submit" name="action" value="hrStaffForwardManager" class="btn btn-primary" onclick="return confirmPayrollClaimAction('approve', this)">
+                                                                                        <i class="fas fa-check me-1"></i> Gửi duyệt
                                                                                     </button>
                                                                                 </c:otherwise>
                                                                             </c:choose>
-                                                                            <button type="submit" name="action" value="hrStaffReject" class="btn btn-danger" onclick="return confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')">
+                                                                            <button type="submit" name="action" value="hrStaffReject" class="btn btn-danger" onclick="return confirmPayrollClaimAction('reject', this)">
                                                                                 <i class="fas fa-times me-1"></i> Từ chối
                                                                             </button>
                                                                         </c:when>
                                                                         <c:when test="${c.status eq 'Pending Close'}">
-                                                                            <button type="submit" name="action" value="hrStaffClose" class="btn btn-success">
-                                                                                <i class="fas fa-check-double me-1"></i> Đóng khiếu nại (Đã xử lý xong)
+                                                                            <button type="submit" name="action" value="hrStaffClose" class="btn btn-success" onclick="return confirmPayrollClaimAction('approve', this)">
+                                                                                <i class="fas fa-check me-1"></i> Gửi duyệt
                                                                             </button>
                                                                         </c:when>
                                                                     </c:choose>
@@ -446,10 +412,10 @@
                                                                             <textarea name="accountantNote" class="form-control" rows="3" placeholder="Ghi chú về trạng thái giao dịch ngân hàng..." required>${c.accountantNote}</textarea>
                                                                         </div>
                                                                         <div class="d-flex gap-2">
-                                                                            <button type="submit" name="action" value="accountantCheckDone" class="btn btn-primary">
-                                                                                <i class="fas fa-check me-1"></i> Xác nhận & chuyển lại đóng khiếu nại
+                                                                            <button type="submit" name="action" value="accountantCheckDone" class="btn btn-primary" onclick="return confirmPayrollClaimAction('approve', this)">
+                                                                                <i class="fas fa-check me-1"></i> Gửi duyệt
                                                                             </button>
-                                                                            <button type="submit" name="action" value="accountantReject" class="btn btn-danger" onclick="return confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')">
+                                                                            <button type="submit" name="action" value="accountantReject" class="btn btn-danger" onclick="return confirmPayrollClaimAction('reject', this)">
                                                                                 <i class="fas fa-times me-1"></i> Từ chối
                                                                             </button>
                                                                         </div>
@@ -460,8 +426,8 @@
                                                                             <textarea name="accountantNote" class="form-control" rows="3" placeholder="Xác nhận đã chi trả hoặc khấu trừ thêm..." required>${c.accountantNote}</textarea>
                                                                         </div>
                                                                         <div class="d-flex gap-2">
-                                                                            <button type="submit" name="action" value="accountantResolvePayment" class="btn btn-success">
-                                                                                <i class="fas fa-check-double me-1"></i> Hoàn tất thanh toán & Đóng khiếu nại
+                                                                            <button type="submit" name="action" value="accountantResolvePayment" class="btn btn-success" onclick="return confirmPayrollClaimAction('approve', this)">
+                                                                                <i class="fas fa-check me-1"></i> Gửi duyệt
                                                                             </button>
                                                                         </div>
                                                                     </c:when>
@@ -474,32 +440,37 @@
                                                                     <label class="form-label fw-semibold">Ghi chú của HR Manager <span class="text-danger">*</span></label>
                                                                     <textarea name="hrManagerNote" class="form-control" rows="3" placeholder="Nhập ý kiến của HR Manager..." required>${c.hrManagerNote}</textarea>
                                                                 </div>
-                                                                <div class="d-flex flex-wrap gap-2">
-                                                                    <c:choose>
-                                                                        <c:when test="${c.status eq 'HR Manager Reviewing'}">
-                                                                            <button type="submit" name="action" value="hrManagerResolve" class="btn btn-success">
-                                                                                <i class="fas fa-check me-1"></i> Duyệt & Đóng khiếu nại (Không cần điều chỉnh)
+                                                                <c:choose>
+                                                                    <c:when test="${c.status eq 'HR Manager Reviewing'}">
+                                                                        <div class="mb-3">
+                                                                            <label class="form-label fw-semibold">Hướng xử lý khiếu nại</label>
+                                                                            <select name="action" class="form-select" style="max-width: 400px;">
+                                                                                <option value="hrManagerResolve">Duyệt & Đóng khiếu nại (Không cần điều chỉnh)</option>
+                                                                                <option value="hrManagerForwardDirector">Trình Giám đốc phê duyệt điều chỉnh lương</option>
+                                                                                <option value="hrManagerRequestRecheck">Yêu cầu Kế toán kiểm tra lại</option>
+                                                                            </select>
+                                                                        </div>
+                                                                        <div class="d-flex gap-2">
+                                                                            <button type="submit" class="btn btn-success" onclick="return confirmPayrollClaimAction('approve', this)">
+                                                                                <i class="fas fa-check me-1"></i> Gửi duyệt
                                                                             </button>
-                                                                            <button type="submit" name="action" value="hrManagerForwardDirector" class="btn btn-primary">
-                                                                                <i class="fas fa-share me-1"></i> Trình Giám đốc phê duyệt điều chỉnh lương
-                                                                            </button>
-                                                                            <button type="submit" name="action" value="hrManagerRequestRecheck" class="btn btn-warning">
-                                                                                <i class="fas fa-undo me-1"></i> Yêu cầu Kế toán kiểm tra lại
-                                                                            </button>
-                                                                            <button type="submit" name="action" value="hrManagerReject" class="btn btn-danger" onclick="return confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')">
+                                                                            <button type="submit" onclick="event.preventDefault(); var form = this.closest('form'); var noteField = form.querySelector('textarea'); if (!noteField.value.trim()) { alert('Vui lòng nhập ghi chú trước khi từ chối.'); noteField.focus(); return false; } if (confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')) { form.querySelector('select[name=action]').insertAdjacentHTML('beforeend', '<option value=hrManagerReject selected>Reject</option>'); form.submit(); }" class="btn btn-danger">
                                                                                 <i class="fas fa-times me-1"></i> Từ chối
                                                                             </button>
-                                                                        </c:when>
-                                                                        <c:when test="${c.status eq 'Pending Close'}">
-                                                                            <button type="submit" name="action" value="hrManagerClose" class="btn btn-success">
-                                                                                <i class="fas fa-check-double me-1"></i> Đóng khiếu nại (Đã xử lý xong)
+                                                                        </div>
+                                                                    </c:when>
+                                                                    <c:when test="${c.status eq 'Pending Close'}">
+                                                                        <input type="hidden" name="action" value="hrManagerClose" />
+                                                                        <div class="d-flex gap-2">
+                                                                            <button type="submit" class="btn btn-success" onclick="return confirmPayrollClaimAction('approve', this)">
+                                                                                <i class="fas fa-check me-1"></i> Gửi duyệt
                                                                             </button>
-                                                                            <button type="submit" name="action" value="hrManagerReject" class="btn btn-danger" onclick="return confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')">
+                                                                            <button type="submit" onclick="event.preventDefault(); var form = this.closest('form'); var noteField = form.querySelector('textarea'); if (!noteField.value.trim()) { alert('Vui lòng nhập ghi chú trước khi từ chối.'); noteField.focus(); return false; } if (confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')) { form.querySelector('input[name=action]').value = 'hrManagerReject'; form.submit(); }" class="btn btn-danger">
                                                                                 <i class="fas fa-times me-1"></i> Từ chối
                                                                             </button>
-                                                                        </c:when>
-                                                                    </c:choose>
-                                                                </div>
+                                                                        </div>
+                                                                    </c:when>
+                                                                </c:choose>
                                                             </c:if>
 
                                                             <!-- Director processing -->
@@ -509,10 +480,10 @@
                                                                     <textarea name="directorNote" class="form-control" rows="3" placeholder="Ý kiến phê duyệt..." required>${c.directorNote}</textarea>
                                                                 </div>
                                                                 <div class="d-flex gap-2">
-                                                                    <button type="submit" name="action" value="directorApprove" class="btn btn-success">
-                                                                        <i class="fas fa-check-double me-1"></i> Phê duyệt điều chỉnh (Chuyển Kế toán thanh toán)
+                                                                    <button type="submit" name="action" value="directorApprove" class="btn btn-success" onclick="return confirmPayrollClaimAction('approve', this)">
+                                                                        <i class="fas fa-check me-1"></i> Gửi duyệt
                                                                     </button>
-                                                                    <button type="submit" name="action" value="directorReject" class="btn btn-danger" onclick="return confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')">
+                                                                    <button type="submit" name="action" value="directorReject" class="btn btn-danger" onclick="return confirmPayrollClaimAction('reject', this)">
                                                                         <i class="fas fa-times me-1"></i> Từ chối
                                                                     </button>
                                                                 </div>
@@ -535,5 +506,19 @@
         </div>
     </div>
 </div>
+
+<script>
+    function confirmPayrollClaimAction(actionType, btn) {
+        var form = btn.closest('form');
+        var noteField = form.querySelector('textarea');
+        if (noteField && !noteField.value.trim()) {
+            alert('Vui lòng nhập ghi chú / ý kiến xử lý trước khi thực hiện.');
+            noteField.focus();
+            return false;
+        }
+        var msg = actionType === 'approve' ? 'Bạn chắc chắn muốn gửi duyệt khiếu nại này?' : 'Bạn chắc chắn muốn từ chối khiếu nại này?';
+        return confirm(msg);
+    }
+</script>
 
 <jsp:include page="../footer.jsp" />
