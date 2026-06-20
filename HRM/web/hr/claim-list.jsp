@@ -260,13 +260,19 @@
                                                     <span class="badge-s b-pending"><i class="fas fa-clock me-1"></i>Chờ tiếp nhận</span>
                                                 </c:when>
                                                 <c:when test="${c.status eq 'Accountant Checking'}">
-                                                    <span class="badge-s bg-info text-dark"><i class="fas fa-calculator me-1"></i>Kế toán kiểm tra</span>
+                                                    <span class="badge-s bg-info text-dark"><i class="fas fa-university me-1"></i>Kế toán kiểm tra CK</span>
                                                 </c:when>
                                                 <c:when test="${c.status eq 'HR Manager Reviewing'}">
                                                     <span class="badge-s bg-primary text-white"><i class="fas fa-user-tie me-1"></i>HR Manager duyệt</span>
                                                 </c:when>
                                                 <c:when test="${c.status eq 'Director Reviewing'}">
                                                     <span class="badge-s bg-warning text-dark"><i class="fas fa-user-shield me-1"></i>Giám đốc duyệt</span>
+                                                </c:when>
+                                                <c:when test="${c.status eq 'Accountant Adjusting'}">
+                                                    <span class="badge-s bg-info text-dark"><i class="fas fa-coins me-1"></i>Kế toán điều chỉnh</span>
+                                                </c:when>
+                                                <c:when test="${c.status eq 'Pending Close'}">
+                                                    <span class="badge-s bg-dark text-white"><i class="fas fa-flag-checkered me-1"></i>Chờ đóng KN</span>
                                                 </c:when>
                                                 <c:when test="${c.status eq 'Resolved'}">
                                                     <span class="badge-s b-resolved"><i class="fas fa-check-circle me-1"></i>Đã giải quyết</span>
@@ -377,13 +383,13 @@
                                                     <!-- Action Form (Conditional based on Role and Status) -->
                                                     <c:set var="canProcess" value="false" />
                                                     <c:choose>
-                                                        <c:when test="${sessionScope.currentUser.roleId == 5 && c.status eq 'Pending'}">
+                                                        <c:when test="${sessionScope.currentUser.roleId == 5 && (c.status eq 'Pending' || c.status eq 'Pending Close')}">
                                                             <c:set var="canProcess" value="true" />
                                                         </c:when>
-                                                        <c:when test="${sessionScope.currentUser.roleId == 8 && c.status eq 'Accountant Checking'}">
+                                                        <c:when test="${sessionScope.currentUser.roleId == 8 && (c.status eq 'Accountant Checking' || c.status eq 'Accountant Adjusting')}">
                                                             <c:set var="canProcess" value="true" />
                                                         </c:when>
-                                                        <c:when test="${sessionScope.currentUser.roleId == 2 && c.status eq 'HR Manager Reviewing'}">
+                                                        <c:when test="${sessionScope.currentUser.roleId == 2 && (c.status eq 'HR Manager Reviewing' || c.status eq 'Pending Close')}">
                                                             <c:set var="canProcess" value="true" />
                                                         </c:when>
                                                         <c:when test="${sessionScope.currentUser.roleId == 4 && c.status eq 'Director Reviewing'}">
@@ -404,33 +410,62 @@
                                                                     <textarea name="hrStaffNote" class="form-control" rows="3" placeholder="Nhập nhận xét hoặc lý do xử lý..." required>${c.hrStaffNote}</textarea>
                                                                 </div>
                                                                 <div class="d-flex gap-2">
-                                                                    <button type="submit" name="action" value="hrStaffForward" class="btn btn-primary">
-                                                                        <i class="fas fa-share me-1"></i> Chuyển cho Kế toán kiểm tra số liệu
-                                                                    </button>
-                                                                    <button type="submit" name="action" value="hrStaffReject" class="btn btn-danger" onclick="return confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')">
-                                                                        <i class="fas fa-times me-1"></i> Từ chối
-                                                                    </button>
+                                                                    <c:choose>
+                                                                        <c:when test="${c.status eq 'Pending'}">
+                                                                            <c:choose>
+                                                                                <c:when test="${c.complaintType eq 'Chưa nhận được tiền'}">
+                                                                                    <button type="submit" name="action" value="hrStaffForwardAccountant" class="btn btn-primary">
+                                                                                        <i class="fas fa-share me-1"></i> Chuyển Kế toán kiểm tra chuyển khoản
+                                                                                    </button>
+                                                                                </c:when>
+                                                                                <c:otherwise>
+                                                                                    <button type="submit" name="action" value="hrStaffForwardManager" class="btn btn-primary">
+                                                                                        <i class="fas fa-share me-1"></i> Trình HR Manager duyệt
+                                                                                    </button>
+                                                                                </c:otherwise>
+                                                                            </c:choose>
+                                                                            <button type="submit" name="action" value="hrStaffReject" class="btn btn-danger" onclick="return confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')">
+                                                                                <i class="fas fa-times me-1"></i> Từ chối
+                                                                            </button>
+                                                                        </c:when>
+                                                                        <c:when test="${c.status eq 'Pending Close'}">
+                                                                            <button type="submit" name="action" value="hrStaffClose" class="btn btn-success">
+                                                                                <i class="fas fa-check-double me-1"></i> Đóng khiếu nại (Đã xử lý xong)
+                                                                            </button>
+                                                                        </c:when>
+                                                                    </c:choose>
                                                                 </div>
                                                             </c:if>
 
                                                             <!-- Accountant processing -->
                                                             <c:if test="${sessionScope.currentUser.roleId == 8}">
-                                                                <div class="mb-3">
-                                                                    <label class="form-label fw-semibold">Số tiền đề xuất điều chỉnh lương (+/- VND) <span class="text-danger">*</span></label>
-                                                                    <input type="number" name="proposedAdjustment" class="form-control" placeholder="Ví dụ: 250000 hoặc -100000" value="${c.expectedAmount > 0 ? c.expectedAmount : 0}" required />
-                                                                </div>
-                                                                <div class="mb-3">
-                                                                    <label class="form-label fw-semibold">Ghi chú của Kế toán <span class="text-danger">*</span></label>
-                                                                    <textarea name="accountantNote" class="form-control" rows="3" placeholder="Ghi chú về tính toán ngày công/OT/phụ cấp..." required>${c.accountantNote}</textarea>
-                                                                </div>
-                                                                <div class="d-flex gap-2">
-                                                                    <button type="submit" name="action" value="accountantForward" class="btn btn-primary">
-                                                                        <i class="fas fa-share me-1"></i> Trình HR Manager duyệt điều chỉnh
-                                                                    </button>
-                                                                    <button type="submit" name="action" value="accountantReject" class="btn btn-danger" onclick="return confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')">
-                                                                        <i class="fas fa-times me-1"></i> Từ chối
-                                                                    </button>
-                                                                </div>
+                                                                <c:choose>
+                                                                    <c:when test="${c.status eq 'Accountant Checking'}">
+                                                                        <div class="mb-3">
+                                                                            <label class="form-label fw-semibold">Ghi chú kiểm tra chuyển khoản <span class="text-danger">*</span></label>
+                                                                            <textarea name="accountantNote" class="form-control" rows="3" placeholder="Ghi chú về trạng thái giao dịch ngân hàng..." required>${c.accountantNote}</textarea>
+                                                                        </div>
+                                                                        <div class="d-flex gap-2">
+                                                                            <button type="submit" name="action" value="accountantCheckDone" class="btn btn-primary">
+                                                                                <i class="fas fa-check me-1"></i> Xác nhận & chuyển lại đóng khiếu nại
+                                                                            </button>
+                                                                            <button type="submit" name="action" value="accountantReject" class="btn btn-danger" onclick="return confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')">
+                                                                                <i class="fas fa-times me-1"></i> Từ chối
+                                                                            </button>
+                                                                        </div>
+                                                                    </c:when>
+                                                                    <c:when test="${c.status eq 'Accountant Adjusting'}">
+                                                                        <div class="mb-3">
+                                                                            <label class="form-label fw-semibold">Ghi chú hoàn tất điều chỉnh thanh toán <span class="text-danger">*</span></label>
+                                                                            <textarea name="accountantNote" class="form-control" rows="3" placeholder="Xác nhận đã chi trả hoặc khấu trừ thêm..." required>${c.accountantNote}</textarea>
+                                                                        </div>
+                                                                        <div class="d-flex gap-2">
+                                                                            <button type="submit" name="action" value="accountantResolvePayment" class="btn btn-success">
+                                                                                <i class="fas fa-check-double me-1"></i> Hoàn tất thanh toán & Đóng khiếu nại
+                                                                            </button>
+                                                                        </div>
+                                                                    </c:when>
+                                                                </c:choose>
                                                             </c:if>
 
                                                             <!-- HR Manager processing -->
@@ -440,18 +475,30 @@
                                                                     <textarea name="hrManagerNote" class="form-control" rows="3" placeholder="Nhập ý kiến của HR Manager..." required>${c.hrManagerNote}</textarea>
                                                                 </div>
                                                                 <div class="d-flex flex-wrap gap-2">
-                                                                    <button type="submit" name="action" value="hrManagerApprove" class="btn btn-success">
-                                                                        <i class="fas fa-check-double me-1"></i> Duyệt & Tính lại lương
-                                                                    </button>
-                                                                    <button type="submit" name="action" value="hrManagerForwardDirector" class="btn btn-primary">
-                                                                        <i class="fas fa-share me-1"></i> Trình Giám đốc quyết định
-                                                                    </button>
-                                                                    <button type="submit" name="action" value="hrManagerRequestRecheck" class="btn btn-warning">
-                                                                        <i class="fas fa-undo me-1"></i> Yêu cầu Kế toán kiểm tra lại
-                                                                    </button>
-                                                                    <button type="submit" name="action" value="hrManagerReject" class="btn btn-danger" onclick="return confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')">
-                                                                        <i class="fas fa-times me-1"></i> Từ chối
-                                                                    </button>
+                                                                    <c:choose>
+                                                                        <c:when test="${c.status eq 'HR Manager Reviewing'}">
+                                                                            <button type="submit" name="action" value="hrManagerResolve" class="btn btn-success">
+                                                                                <i class="fas fa-check me-1"></i> Duyệt & Đóng khiếu nại (Không cần điều chỉnh)
+                                                                            </button>
+                                                                            <button type="submit" name="action" value="hrManagerForwardDirector" class="btn btn-primary">
+                                                                                <i class="fas fa-share me-1"></i> Trình Giám đốc phê duyệt điều chỉnh lương
+                                                                            </button>
+                                                                            <button type="submit" name="action" value="hrManagerRequestRecheck" class="btn btn-warning">
+                                                                                <i class="fas fa-undo me-1"></i> Yêu cầu Kế toán kiểm tra lại
+                                                                            </button>
+                                                                            <button type="submit" name="action" value="hrManagerReject" class="btn btn-danger" onclick="return confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')">
+                                                                                <i class="fas fa-times me-1"></i> Từ chối
+                                                                            </button>
+                                                                        </c:when>
+                                                                        <c:when test="${c.status eq 'Pending Close'}">
+                                                                            <button type="submit" name="action" value="hrManagerClose" class="btn btn-success">
+                                                                                <i class="fas fa-check-double me-1"></i> Đóng khiếu nại (Đã xử lý xong)
+                                                                            </button>
+                                                                            <button type="submit" name="action" value="hrManagerReject" class="btn btn-danger" onclick="return confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')">
+                                                                                <i class="fas fa-times me-1"></i> Từ chối
+                                                                            </button>
+                                                                        </c:when>
+                                                                    </c:choose>
                                                                 </div>
                                                             </c:if>
 
@@ -463,7 +510,7 @@
                                                                 </div>
                                                                 <div class="d-flex gap-2">
                                                                     <button type="submit" name="action" value="directorApprove" class="btn btn-success">
-                                                                        <i class="fas fa-check-double me-1"></i> Phê duyệt điều chỉnh & Tính lại lương
+                                                                        <i class="fas fa-check-double me-1"></i> Phê duyệt điều chỉnh (Chuyển Kế toán thanh toán)
                                                                     </button>
                                                                     <button type="submit" name="action" value="directorReject" class="btn btn-danger" onclick="return confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')">
                                                                         <i class="fas fa-times me-1"></i> Từ chối
