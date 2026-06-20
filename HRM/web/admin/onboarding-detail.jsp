@@ -256,7 +256,7 @@ body { background: var(--bg); font-family: 'Inter', Arial, sans-serif; color: va
             <strong>Ghi chú hệ thống:</strong> Hồ sơ yêu cầu được lập bởi chuyên viên Nhân sự 
             <strong><c:out value="${not empty request.createdByName ? request.createdByName : 'N/A'}"/></strong> 
             vào ngày <strong><fmt:formatDate value="${request.createdAt}" pattern="dd/MM/yyyy 'lúc' HH:mm"/></strong>. 
-            Vui lòng rà soát kỹ thông tin (đặc biệt là Email) trước khi Phê duyệt để hệ thống tự động sinh tài khoản và gửi mật khẩu cấp quyền đăng nhập cho ứng viên.
+      
           </div>
         </div>
         
