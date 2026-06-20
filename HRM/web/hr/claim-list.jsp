@@ -307,57 +307,139 @@
 
                                     <!-- Details Modal -->
                                     <div class="modal fade" id="claimModal-${c.claimId}" tabindex="-1" aria-labelledby="claimModalLabel-${c.claimId}" aria-hidden="true">
-                                        <div class="modal-dialog modal-lg">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title fw-bold" id="claimModalLabel-${c.claimId}">
-                                                        Chi tiết Khiếu nại Lương #${c.claimId}
-                                                    </h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body text-start">
-                                                    <div class="detail-grid">
-                                                        <div class="detail-label">Nhân viên khiếu nại</div>
-                                                        <div class="detail-value">${c.fullName} (${c.email})</div>
-
-                                                        <div class="detail-label">Kỳ lương & Ngày gửi</div>
-                                                        <div class="detail-value">Tháng ${c.month}/${c.year} - <fmt:formatDate value="${c.createdAt}" pattern="dd/MM/yyyy HH:mm"/></div>
-
-                                                        <div class="detail-label">Loại khiếu nại</div>
-                                                        <div class="detail-value"><span class="badge bg-secondary">${c.complaintType}</span></div>
-
-                                                        <hr class="detail-separator">
-
-                                                        <div class="detail-label">Mô tả chi tiết</div>
-                                                        <div class="detail-value" style="background:#f8fafc;padding:10px 12px;border-radius:8px;border:1px solid #e2e8f0;white-space:pre-wrap;">${c.description}</div>
-
-                                                        <c:if test="${not empty c.hrStaffNote || not empty c.accountantNote || not empty c.hrManagerNote || not empty c.directorNote}">
-                                                            <hr class="detail-separator">
-                                                            
-                                                            <div class="detail-label" style="grid-column: 1/-1; font-weight:700; color:var(--navy); font-size:0.95rem; margin-top:8px;">
-                                                                <i class="fas fa-history me-1 text-primary"></i> Lịch sử xử lý & Ghi chú
+                                        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                                            <div class="modal-content" style="border:none;border-radius:18px;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.18);">
+                                                <!-- Gradient Header -->
+                                                <div class="modal-header" style="background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#a78bfa 100%);padding:18px 24px;position:relative;border:none;">
+                                                    <div style="position:absolute;top:0;right:0;width:120px;height:120px;background:rgba(255,255,255,.08);border-radius:0 0 0 100%;"></div>
+                                                    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                                                        <div>
+                                                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                                                                <div style="width:38px;height:38px;background:rgba(255,255,255,.2);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                                                                    <i class="fas fa-file-invoice-dollar" style="color:#fff;font-size:1rem;"></i>
+                                                                </div>
+                                                                <h5 style="margin:0;color:#fff;font-weight:700;font-size:1.1rem;">Khiếu Nại #${c.claimId}</h5>
                                                             </div>
-                                                            
-                                                            <c:if test="${not empty c.hrStaffNote}">
-                                                                <div class="detail-label">${not empty c.hrStaffName ? c.hrStaffName : 'HR Staff'} Note</div>
-                                                                <div class="detail-value" style="background:#f8fafc;padding:8px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:0.875rem;">${c.hrStaffNote}</div>
-                                                            </c:if>
-                                                            <c:if test="${not empty c.accountantNote}">
-                                                                <div class="detail-label">${not empty c.accountantName ? c.accountantName : 'Kế toán'} Note</div>
-                                                                <div class="detail-value" style="background:#f8fafc;padding:8px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:0.875rem;">${c.accountantNote}</div>
-                                                            </c:if>
-                                                            <c:if test="${not empty c.hrManagerNote}">
-                                                                <div class="detail-label">${not empty c.hrManagerName ? c.hrManagerName : 'HR Manager'} Note</div>
-                                                                <div class="detail-value" style="background:#f8fafc;padding:8px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:0.875rem;">${c.hrManagerNote}</div>
-                                                            </c:if>
-                                                            <c:if test="${not empty c.directorNote}">
-                                                                <div class="detail-label">${not empty c.directorName ? c.directorName : 'Giám đốc'} Note</div>
-                                                                <div class="detail-value" style="background:#f8fafc;padding:8px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:0.875rem;">${c.directorNote}</div>
-                                                            </c:if>
-                                                        </c:if>
+                                                            <p style="margin:0;color:rgba(255,255,255,.8);font-size:.8rem;">Gửi lúc <fmt:formatDate value="${c.createdAt}" pattern="HH:mm - dd/MM/yyyy"/></p>
+                                                        </div>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="margin:0;"></button>
+                                                    </div>
+                                                </div>
+
+                                                <div class="modal-body" style="padding:18px 22px;background:#fafbff;">
+                                                    <!-- Info Cards Row -->
+                                                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+                                                        <div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:12px;">
+                                                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                                                                <div style="width:32px;height:32px;background:#eff6ff;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                                                                    <i class="fas fa-user" style="color:#3b82f6;font-size:.8rem;"></i>
+                                                                </div>
+                                                                <span style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94a3b8;">Nhân viên</span>
+                                                            </div>
+                                                            <div style="font-weight:700;color:#1e293b;font-size:.9rem;">${c.fullName}</div>
+                                                            <div style="font-size:.78rem;color:#64748b;margin-top:2px;">${c.email}</div>
+                                                        </div>
+                                                        <div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:12px;">
+                                                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                                                                <div style="width:32px;height:32px;background:#faf5ff;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                                                                    <i class="fas fa-calendar-alt" style="color:#8b5cf6;font-size:.8rem;"></i>
+                                                                </div>
+                                                                <span style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94a3b8;">Kỳ lương</span>
+                                                            </div>
+                                                            <div style="font-weight:700;color:#1e293b;font-size:.9rem;">Tháng ${c.month} / ${c.year}</div>
+                                                            <div style="font-size:.78rem;color:#64748b;margin-top:2px;"><fmt:formatDate value="${c.createdAt}" pattern="dd/MM/yyyy HH:mm"/></div>
+                                                        </div>
                                                     </div>
 
-                                                    <!-- Action Form (Conditional based on Role and Status) -->
+                                                    <!-- Complaint Type & Status -->
+                                                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+                                                        <div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:12px;">
+                                                            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94a3b8;margin-bottom:8px;">
+                                                                <i class="fas fa-tag me-1"></i>Loại khiếu nại
+                                                            </div>
+                                                            <span style="display:inline-block;background:#fef3c7;color:#92400e;padding:5px 14px;border-radius:8px;font-weight:600;font-size:.82rem;">${c.complaintType}</span>
+                                                        </div>
+                                                        <div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:12px;">
+                                                            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94a3b8;margin-bottom:8px;">
+                                                                <i class="fas fa-info-circle me-1"></i>Trạng thái
+                                                            </div>
+                                                            <c:choose>
+                                                                <c:when test="${c.status eq 'Pending'}"><span style="display:inline-flex;align-items:center;gap:5px;background:rgba(245,158,11,.1);color:#d97706;padding:5px 14px;border-radius:8px;font-weight:600;font-size:.82rem;"><i class="fas fa-clock"></i>Chờ tiếp nhận</span></c:when>
+                                                                <c:when test="${c.status eq 'Accountant Checking'}"><span style="display:inline-flex;align-items:center;gap:5px;background:rgba(59,130,246,.1);color:#2563eb;padding:5px 14px;border-radius:8px;font-weight:600;font-size:.82rem;"><i class="fas fa-university"></i>KT kiểm tra CK</span></c:when>
+                                                                <c:when test="${c.status eq 'HR Manager Reviewing'}"><span style="display:inline-flex;align-items:center;gap:5px;background:rgba(99,102,241,.1);color:#6366f1;padding:5px 14px;border-radius:8px;font-weight:600;font-size:.82rem;"><i class="fas fa-user-tie"></i>HR Manager duyệt</span></c:when>
+                                                                <c:when test="${c.status eq 'Director Reviewing'}"><span style="display:inline-flex;align-items:center;gap:5px;background:rgba(245,158,11,.1);color:#d97706;padding:5px 14px;border-radius:8px;font-weight:600;font-size:.82rem;"><i class="fas fa-user-shield"></i>Giám đốc duyệt</span></c:when>
+                                                                <c:when test="${c.status eq 'Accountant Adjusting'}"><span style="display:inline-flex;align-items:center;gap:5px;background:rgba(59,130,246,.1);color:#2563eb;padding:5px 14px;border-radius:8px;font-weight:600;font-size:.82rem;"><i class="fas fa-coins"></i>KT điều chỉnh</span></c:when>
+                                                                <c:when test="${c.status eq 'Pending Close'}"><span style="display:inline-flex;align-items:center;gap:5px;background:rgba(30,41,59,.1);color:#1e293b;padding:5px 14px;border-radius:8px;font-weight:600;font-size:.82rem;"><i class="fas fa-flag-checkered"></i>Chờ đóng</span></c:when>
+                                                                <c:when test="${c.status eq 'Resolved'}"><span style="display:inline-flex;align-items:center;gap:5px;background:rgba(16,185,129,.1);color:#059669;padding:5px 14px;border-radius:8px;font-weight:600;font-size:.82rem;"><i class="fas fa-check-circle"></i>Đã giải quyết</span></c:when>
+                                                                <c:when test="${c.status eq 'Rejected'}"><span style="display:inline-flex;align-items:center;gap:5px;background:rgba(239,68,68,.1);color:#dc2626;padding:5px 14px;border-radius:8px;font-weight:600;font-size:.82rem;"><i class="fas fa-times-circle"></i>Đã từ chối</span></c:when>
+                                                                <c:otherwise><span style="display:inline-block;background:#f1f5f9;color:#475569;padding:5px 14px;border-radius:8px;font-weight:600;font-size:.82rem;">${c.status}</span></c:otherwise>
+                                                            </c:choose>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Description Card -->
+                                                    <div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:14px;margin-bottom:12px;">
+                                                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                                                            <div style="width:28px;height:28px;background:#fef3c7;border-radius:7px;display:flex;align-items:center;justify-content:center;">
+                                                                <i class="fas fa-align-left" style="color:#d97706;font-size:.75rem;"></i>
+                                                            </div>
+                                                            <span style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94a3b8;">Mô tả chi tiết</span>
+                                                        </div>
+                                                        <div style="background:#f8fafc;padding:10px 12px;border-radius:8px;border:1px solid #e2e8f0;white-space:pre-wrap;font-size:.85rem;color:#334155;line-height:1.5;">${c.description}</div>
+                                                    </div>
+
+                                                    <!-- Processing Timeline (Notes History) -->
+                                                    <c:if test="${not empty c.hrStaffNote || not empty c.accountantNote || not empty c.hrManagerNote || not empty c.directorNote}">
+                                                        <div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:14px;margin-bottom:12px;">
+                                                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+                                                                <div style="width:28px;height:28px;background:#eff6ff;border-radius:7px;display:flex;align-items:center;justify-content:center;">
+                                                                    <i class="fas fa-history" style="color:#3b82f6;font-size:.75rem;"></i>
+                                                                </div>
+                                                                <span style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94a3b8;">Lịch sử xử lý</span>
+                                                            </div>
+                                                            <div style="display:flex;flex-direction:column;gap:0;position:relative;padding-left:20px;">
+                                                                <c:if test="${not empty c.hrStaffNote}">
+                                                                    <div style="position:relative;padding-bottom:16px;">
+                                                                        <div style="position:absolute;left:-20px;top:4px;width:12px;height:12px;background:#6366f1;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px #6366f1;z-index:1;"></div>
+                                                                        <c:if test="${not empty c.accountantNote || not empty c.hrManagerNote || not empty c.directorNote}">
+                                                                            <div style="position:absolute;left:-15px;top:16px;bottom:0;width:2px;background:#e2e8f0;"></div>
+                                                                        </c:if>
+                                                                        <div style="font-weight:700;color:#1e293b;font-size:.84rem;margin-bottom:4px;">${not empty c.hrStaffName ? c.hrStaffName : 'HR Staff'}</div>
+                                                                        <div style="background:#f8fafc;padding:10px 14px;border-radius:8px;border-left:3px solid #6366f1;font-size:.83rem;color:#475569;line-height:1.5;">${c.hrStaffNote}</div>
+                                                                    </div>
+                                                                </c:if>
+                                                                <c:if test="${not empty c.accountantNote}">
+                                                                    <div style="position:relative;padding-bottom:16px;">
+                                                                        <div style="position:absolute;left:-20px;top:4px;width:12px;height:12px;background:#0ea5e9;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px #0ea5e9;z-index:1;"></div>
+                                                                        <c:if test="${not empty c.hrManagerNote || not empty c.directorNote}">
+                                                                            <div style="position:absolute;left:-15px;top:16px;bottom:0;width:2px;background:#e2e8f0;"></div>
+                                                                        </c:if>
+                                                                        <div style="font-weight:700;color:#1e293b;font-size:.84rem;margin-bottom:4px;">${not empty c.accountantName ? c.accountantName : 'Kế toán'}</div>
+                                                                        <div style="background:#f8fafc;padding:10px 14px;border-radius:8px;border-left:3px solid #0ea5e9;font-size:.83rem;color:#475569;line-height:1.5;">${c.accountantNote}</div>
+                                                                    </div>
+                                                                </c:if>
+                                                                <c:if test="${not empty c.hrManagerNote}">
+                                                                    <div style="position:relative;padding-bottom:16px;">
+                                                                        <div style="position:absolute;left:-20px;top:4px;width:12px;height:12px;background:#f59e0b;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px #f59e0b;z-index:1;"></div>
+                                                                        <c:if test="${not empty c.directorNote}">
+                                                                            <div style="position:absolute;left:-15px;top:16px;bottom:0;width:2px;background:#e2e8f0;"></div>
+                                                                        </c:if>
+                                                                        <div style="font-weight:700;color:#1e293b;font-size:.84rem;margin-bottom:4px;">${not empty c.hrManagerName ? c.hrManagerName : 'HR Manager'}</div>
+                                                                        <div style="background:#f8fafc;padding:10px 14px;border-radius:8px;border-left:3px solid #f59e0b;font-size:.83rem;color:#475569;line-height:1.5;">${c.hrManagerNote}</div>
+                                                                    </div>
+                                                                </c:if>
+                                                                <c:if test="${not empty c.directorNote}">
+                                                                    <div style="position:relative;padding-bottom:0;">
+                                                                        <div style="position:absolute;left:-20px;top:4px;width:12px;height:12px;background:#ef4444;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px #ef4444;z-index:1;"></div>
+                                                                        <div style="font-weight:700;color:#1e293b;font-size:.84rem;margin-bottom:4px;">${not empty c.directorName ? c.directorName : 'Giám đốc'}</div>
+                                                                        <div style="background:#f8fafc;padding:10px 14px;border-radius:8px;border-left:3px solid #ef4444;font-size:.83rem;color:#475569;line-height:1.5;">${c.directorNote}</div>
+                                                                    </div>
+                                                                </c:if>
+                                                            </div>
+                                                        </div>
+                                                    </c:if>
+
+                                                    <!-- Action Form -->
                                                     <c:set var="canProcess" value="false" />
                                                     <c:choose>
                                                         <c:when test="${sessionScope.currentUser.roleId == 5 && (c.status eq 'Pending' || c.status eq 'Pending Close')}">
@@ -375,135 +457,143 @@
                                                     </c:choose>
 
                                                     <c:if test="${canProcess}">
-                                                        <hr />
-                                                        <h6 class="fw-bold text-warning mb-3"><i class="fas fa-edit me-1"></i>Form xử lý dành cho bạn</h6>
-                                                        <form action="${pageContext.request.contextPath}/hr/resolve-claim" method="POST">
-                                                            <input type="hidden" name="claimId" value="${c.claimId}" />
-
-                                                            <!-- HR Staff processing -->
-                                                            <c:if test="${sessionScope.currentUser.roleId == 5}">
-                                                                <div class="mb-3">
-                                                                    <label class="form-label fw-semibold">Ghi chú của HR Staff <span class="text-danger">*</span></label>
-                                                                    <textarea name="hrStaffNote" class="form-control" rows="3" placeholder="Nhập nhận xét hoặc lý do xử lý..." required>${c.hrStaffNote}</textarea>
+                                                        <div style="background:#fff;border:1px solid #e8eaf0;border-radius:10px;padding:16px;border-top:3px solid #f59e0b;">
+                                                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+                                                                <div style="width:28px;height:28px;background:#fef3c7;border-radius:7px;display:flex;align-items:center;justify-content:center;">
+                                                                    <i class="fas fa-edit" style="color:#d97706;font-size:.75rem;"></i>
                                                                 </div>
-                                                                <div class="d-flex gap-2">
+                                                                <span style="font-weight:700;color:#1e293b;font-size:.88rem;">Xử lý khiếu nại</span>
+                                                            </div>
+                                                            <form action="${pageContext.request.contextPath}/hr/resolve-claim" method="POST">
+                                                                <input type="hidden" name="claimId" value="${c.claimId}" />
+
+                                                                <!-- HR Staff -->
+                                                                <c:if test="${sessionScope.currentUser.roleId == 5}">
+                                                                    <div style="margin-bottom:14px;">
+                                                                        <label style="display:block;font-size:.78rem;font-weight:600;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Ghi chú xử lý <span style="color:#ef4444;">*</span></label>
+                                                                        <textarea name="hrStaffNote" rows="3" required style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:.87rem;font-family:'Inter',sans-serif;outline:none;resize:vertical;transition:border .2s;" onfocus="this.style.borderColor='#6366f1';this.style.boxShadow='0 0 0 3px rgba(99,102,241,.1)'" onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'" placeholder="Nhập nhận xét hoặc lý do xử lý...">${c.hrStaffNote}</textarea>
+                                                                    </div>
+                                                                    <div style="display:flex;gap:10px;">
+                                                                        <c:choose>
+                                                                            <c:when test="${c.status eq 'Pending'}">
+                                                                                <c:choose>
+                                                                                    <c:when test="${c.complaintType eq 'Chưa nhận được tiền'}">
+                                                                                        <button type="submit" name="action" value="hrStaffForwardAccountant" onclick="return confirmPayrollClaimAction('approve', this)" style="flex:1;padding:10px 20px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(99,102,241,.35)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+                                                                                            <i class="fas fa-check"></i> Gửi duyệt
+                                                                                        </button>
+                                                                                    </c:when>
+                                                                                    <c:otherwise>
+                                                                                        <button type="submit" name="action" value="hrStaffForwardManager" onclick="return confirmPayrollClaimAction('approve', this)" style="flex:1;padding:10px 20px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(99,102,241,.35)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+                                                                                            <i class="fas fa-check"></i> Gửi duyệt
+                                                                                        </button>
+                                                                                    </c:otherwise>
+                                                                                </c:choose>
+                                                                                <button type="submit" name="action" value="hrStaffReject" onclick="return confirmPayrollClaimAction('reject', this)" style="padding:10px 20px;background:#fff;color:#ef4444;border:1.5px solid #fca5a5;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;" onmouseover="this.style.background='#fef2f2';this.style.borderColor='#ef4444'" onmouseout="this.style.background='#fff';this.style.borderColor='#fca5a5'">
+                                                                                    <i class="fas fa-times"></i> Từ chối
+                                                                                </button>
+                                                                            </c:when>
+                                                                            <c:when test="${c.status eq 'Pending Close'}">
+                                                                                <button type="submit" name="action" value="hrStaffClose" onclick="return confirmPayrollClaimAction('approve', this)" style="flex:1;padding:10px 20px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(16,185,129,.35)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+                                                                                    <i class="fas fa-check"></i> Gửi duyệt
+                                                                                </button>
+                                                                            </c:when>
+                                                                        </c:choose>
+                                                                    </div>
+                                                                </c:if>
+
+                                                                <!-- Accountant -->
+                                                                <c:if test="${sessionScope.currentUser.roleId == 8}">
                                                                     <c:choose>
-                                                                        <c:when test="${c.status eq 'Pending'}">
-                                                                            <c:choose>
-                                                                                <c:when test="${c.complaintType eq 'Chưa nhận được tiền'}">
-                                                                                    <button type="submit" name="action" value="hrStaffForwardAccountant" class="btn btn-primary" onclick="return confirmPayrollClaimAction('approve', this)">
-                                                                                        <i class="fas fa-check me-1"></i> Gửi duyệt
-                                                                                    </button>
-                                                                                </c:when>
-                                                                                <c:otherwise>
-                                                                                    <button type="submit" name="action" value="hrStaffForwardManager" class="btn btn-primary" onclick="return confirmPayrollClaimAction('approve', this)">
-                                                                                        <i class="fas fa-check me-1"></i> Gửi duyệt
-                                                                                    </button>
-                                                                                </c:otherwise>
-                                                                            </c:choose>
-                                                                            <button type="submit" name="action" value="hrStaffReject" class="btn btn-danger" onclick="return confirmPayrollClaimAction('reject', this)">
-                                                                                <i class="fas fa-times me-1"></i> Từ chối
-                                                                            </button>
+                                                                        <c:when test="${c.status eq 'Accountant Checking'}">
+                                                                            <div style="margin-bottom:14px;">
+                                                                                <label style="display:block;font-size:.78rem;font-weight:600;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Ghi chú kiểm tra chuyển khoản <span style="color:#ef4444;">*</span></label>
+                                                                                <textarea name="accountantNote" rows="3" required style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:.87rem;font-family:'Inter',sans-serif;outline:none;resize:vertical;transition:border .2s;" onfocus="this.style.borderColor='#6366f1';this.style.boxShadow='0 0 0 3px rgba(99,102,241,.1)'" onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'" placeholder="Ghi chú về trạng thái giao dịch ngân hàng...">${c.accountantNote}</textarea>
+                                                                            </div>
+                                                                            <div style="display:flex;gap:10px;">
+                                                                                <button type="submit" name="action" value="accountantCheckDone" onclick="return confirmPayrollClaimAction('approve', this)" style="flex:1;padding:10px 20px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(99,102,241,.35)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+                                                                                    <i class="fas fa-check"></i> Gửi duyệt
+                                                                                </button>
+                                                                                <button type="submit" name="action" value="accountantReject" onclick="return confirmPayrollClaimAction('reject', this)" style="padding:10px 20px;background:#fff;color:#ef4444;border:1.5px solid #fca5a5;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;" onmouseover="this.style.background='#fef2f2';this.style.borderColor='#ef4444'" onmouseout="this.style.background='#fff';this.style.borderColor='#fca5a5'">
+                                                                                    <i class="fas fa-times"></i> Từ chối
+                                                                                </button>
+                                                                            </div>
                                                                         </c:when>
-                                                                        <c:when test="${c.status eq 'Pending Close'}">
-                                                                            <button type="submit" name="action" value="hrStaffClose" class="btn btn-success" onclick="return confirmPayrollClaimAction('approve', this)">
-                                                                                <i class="fas fa-check me-1"></i> Gửi duyệt
-                                                                            </button>
+                                                                        <c:when test="${c.status eq 'Accountant Adjusting'}">
+                                                                            <div style="margin-bottom:14px;">
+                                                                                <label style="display:block;font-size:.78rem;font-weight:600;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Ghi chú hoàn tất điều chỉnh <span style="color:#ef4444;">*</span></label>
+                                                                                <textarea name="accountantNote" rows="3" required style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:.87rem;font-family:'Inter',sans-serif;outline:none;resize:vertical;transition:border .2s;" onfocus="this.style.borderColor='#6366f1';this.style.boxShadow='0 0 0 3px rgba(99,102,241,.1)'" onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'" placeholder="Xác nhận đã chi trả hoặc khấu trừ thêm...">${c.accountantNote}</textarea>
+                                                                            </div>
+                                                                            <div style="display:flex;gap:10px;">
+                                                                                <button type="submit" name="action" value="accountantResolvePayment" onclick="return confirmPayrollClaimAction('approve', this)" style="flex:1;padding:10px 20px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(16,185,129,.35)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+                                                                                    <i class="fas fa-check"></i> Gửi duyệt
+                                                                                </button>
+                                                                            </div>
                                                                         </c:when>
                                                                     </c:choose>
-                                                                </div>
-                                                            </c:if>
+                                                                </c:if>
 
-                                                            <!-- Accountant processing -->
-                                                            <c:if test="${sessionScope.currentUser.roleId == 8}">
-                                                                <c:choose>
-                                                                    <c:when test="${c.status eq 'Accountant Checking'}">
-                                                                        <div class="mb-3">
-                                                                            <label class="form-label fw-semibold">Ghi chú kiểm tra chuyển khoản <span class="text-danger">*</span></label>
-                                                                            <textarea name="accountantNote" class="form-control" rows="3" placeholder="Ghi chú về trạng thái giao dịch ngân hàng..." required>${c.accountantNote}</textarea>
-                                                                        </div>
-                                                                        <div class="d-flex gap-2">
-                                                                            <button type="submit" name="action" value="accountantCheckDone" class="btn btn-primary" onclick="return confirmPayrollClaimAction('approve', this)">
-                                                                                <i class="fas fa-check me-1"></i> Gửi duyệt
-                                                                            </button>
-                                                                            <button type="submit" name="action" value="accountantReject" class="btn btn-danger" onclick="return confirmPayrollClaimAction('reject', this)">
-                                                                                <i class="fas fa-times me-1"></i> Từ chối
-                                                                            </button>
-                                                                        </div>
-                                                                    </c:when>
-                                                                    <c:when test="${c.status eq 'Accountant Adjusting'}">
-                                                                        <div class="mb-3">
-                                                                            <label class="form-label fw-semibold">Ghi chú hoàn tất điều chỉnh thanh toán <span class="text-danger">*</span></label>
-                                                                            <textarea name="accountantNote" class="form-control" rows="3" placeholder="Xác nhận đã chi trả hoặc khấu trừ thêm..." required>${c.accountantNote}</textarea>
-                                                                        </div>
-                                                                        <div class="d-flex gap-2">
-                                                                            <button type="submit" name="action" value="accountantResolvePayment" class="btn btn-success" onclick="return confirmPayrollClaimAction('approve', this)">
-                                                                                <i class="fas fa-check me-1"></i> Gửi duyệt
-                                                                            </button>
-                                                                        </div>
-                                                                    </c:when>
-                                                                </c:choose>
-                                                            </c:if>
+                                                                <!-- HR Manager -->
+                                                                <c:if test="${sessionScope.currentUser.roleId == 2}">
+                                                                    <div style="margin-bottom:14px;">
+                                                                        <label style="display:block;font-size:.78rem;font-weight:600;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Ghi chú HR Manager <span style="color:#ef4444;">*</span></label>
+                                                                        <textarea name="hrManagerNote" rows="3" required style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:.87rem;font-family:'Inter',sans-serif;outline:none;resize:vertical;transition:border .2s;" onfocus="this.style.borderColor='#6366f1';this.style.boxShadow='0 0 0 3px rgba(99,102,241,.1)'" onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'" placeholder="Nhập ý kiến của HR Manager...">${c.hrManagerNote}</textarea>
+                                                                    </div>
+                                                                    <c:choose>
+                                                                        <c:when test="${c.status eq 'HR Manager Reviewing'}">
+                                                                            <div style="margin-bottom:14px;">
+                                                                                <label style="display:block;font-size:.78rem;font-weight:600;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Hướng xử lý</label>
+                                                                                <select name="action" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:.87rem;font-family:'Inter',sans-serif;outline:none;background:#fff;cursor:pointer;transition:border .2s;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e2e8f0'">
+                                                                                    <option value="hrManagerResolve">Duyệt & Đóng khiếu nại (Không cần điều chỉnh)</option>
+                                                                                    <option value="hrManagerForwardDirector">Trình Giám đốc phê duyệt điều chỉnh lương</option>
+                                                                                    <option value="hrManagerRequestRecheck">Yêu cầu Kế toán kiểm tra lại</option>
+                                                                                </select>
+                                                                            </div>
+                                                                            <div style="display:flex;gap:10px;">
+                                                                                <button type="submit" onclick="return confirmPayrollClaimAction('approve', this)" style="flex:1;padding:10px 20px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(16,185,129,.35)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+                                                                                    <i class="fas fa-check"></i> Gửi duyệt
+                                                                                </button>
+                                                                                <button type="submit" onclick="event.preventDefault(); var form = this.closest('form'); var noteField = form.querySelector('textarea'); if (!noteField.value.trim()) { alert('Vui lòng nhập ghi chú trước khi từ chối.'); noteField.focus(); return false; } if (confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')) { form.querySelector('select[name=action]').insertAdjacentHTML('beforeend', '<option value=hrManagerReject selected>Reject</option>'); form.submit(); }" style="padding:10px 20px;background:#fff;color:#ef4444;border:1.5px solid #fca5a5;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;" onmouseover="this.style.background='#fef2f2';this.style.borderColor='#ef4444'" onmouseout="this.style.background='#fff';this.style.borderColor='#fca5a5'">
+                                                                                    <i class="fas fa-times"></i> Từ chối
+                                                                                </button>
+                                                                            </div>
+                                                                        </c:when>
+                                                                        <c:when test="${c.status eq 'Pending Close'}">
+                                                                            <input type="hidden" name="action" value="hrManagerClose" />
+                                                                            <div style="display:flex;gap:10px;">
+                                                                                <button type="submit" onclick="return confirmPayrollClaimAction('approve', this)" style="flex:1;padding:10px 20px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(16,185,129,.35)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+                                                                                    <i class="fas fa-check"></i> Gửi duyệt
+                                                                                </button>
+                                                                                <button type="submit" onclick="event.preventDefault(); var form = this.closest('form'); var noteField = form.querySelector('textarea'); if (!noteField.value.trim()) { alert('Vui lòng nhập ghi chú trước khi từ chối.'); noteField.focus(); return false; } if (confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')) { form.querySelector('input[name=action]').value = 'hrManagerReject'; form.submit(); }" style="padding:10px 20px;background:#fff;color:#ef4444;border:1.5px solid #fca5a5;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;" onmouseover="this.style.background='#fef2f2';this.style.borderColor='#ef4444'" onmouseout="this.style.background='#fff';this.style.borderColor='#fca5a5'">
+                                                                                    <i class="fas fa-times"></i> Từ chối
+                                                                                </button>
+                                                                            </div>
+                                                                        </c:when>
+                                                                    </c:choose>
+                                                                </c:if>
 
-                                                            <!-- HR Manager processing -->
-                                                            <c:if test="${sessionScope.currentUser.roleId == 2}">
-                                                                <div class="mb-3">
-                                                                    <label class="form-label fw-semibold">Ghi chú của HR Manager <span class="text-danger">*</span></label>
-                                                                    <textarea name="hrManagerNote" class="form-control" rows="3" placeholder="Nhập ý kiến của HR Manager..." required>${c.hrManagerNote}</textarea>
-                                                                </div>
-                                                                <c:choose>
-                                                                    <c:when test="${c.status eq 'HR Manager Reviewing'}">
-                                                                        <div class="mb-3">
-                                                                            <label class="form-label fw-semibold">Hướng xử lý khiếu nại</label>
-                                                                            <select name="action" class="form-select" style="max-width: 400px;">
-                                                                                <option value="hrManagerResolve">Duyệt & Đóng khiếu nại (Không cần điều chỉnh)</option>
-                                                                                <option value="hrManagerForwardDirector">Trình Giám đốc phê duyệt điều chỉnh lương</option>
-                                                                                <option value="hrManagerRequestRecheck">Yêu cầu Kế toán kiểm tra lại</option>
-                                                                            </select>
-                                                                        </div>
-                                                                        <div class="d-flex gap-2">
-                                                                            <button type="submit" class="btn btn-success" onclick="return confirmPayrollClaimAction('approve', this)">
-                                                                                <i class="fas fa-check me-1"></i> Gửi duyệt
-                                                                            </button>
-                                                                            <button type="submit" onclick="event.preventDefault(); var form = this.closest('form'); var noteField = form.querySelector('textarea'); if (!noteField.value.trim()) { alert('Vui lòng nhập ghi chú trước khi từ chối.'); noteField.focus(); return false; } if (confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')) { form.querySelector('select[name=action]').insertAdjacentHTML('beforeend', '<option value=hrManagerReject selected>Reject</option>'); form.submit(); }" class="btn btn-danger">
-                                                                                <i class="fas fa-times me-1"></i> Từ chối
-                                                                            </button>
-                                                                        </div>
-                                                                    </c:when>
-                                                                    <c:when test="${c.status eq 'Pending Close'}">
-                                                                        <input type="hidden" name="action" value="hrManagerClose" />
-                                                                        <div class="d-flex gap-2">
-                                                                            <button type="submit" class="btn btn-success" onclick="return confirmPayrollClaimAction('approve', this)">
-                                                                                <i class="fas fa-check me-1"></i> Gửi duyệt
-                                                                            </button>
-                                                                            <button type="submit" onclick="event.preventDefault(); var form = this.closest('form'); var noteField = form.querySelector('textarea'); if (!noteField.value.trim()) { alert('Vui lòng nhập ghi chú trước khi từ chối.'); noteField.focus(); return false; } if (confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')) { form.querySelector('input[name=action]').value = 'hrManagerReject'; form.submit(); }" class="btn btn-danger">
-                                                                                <i class="fas fa-times me-1"></i> Từ chối
-                                                                            </button>
-                                                                        </div>
-                                                                    </c:when>
-                                                                </c:choose>
-                                                            </c:if>
-
-                                                            <!-- Director processing -->
-                                                            <c:if test="${sessionScope.currentUser.roleId == 4}">
-                                                                <div class="mb-3">
-                                                                    <label class="form-label fw-semibold">Ý kiến phê duyệt của Giám đốc <span class="text-danger">*</span></label>
-                                                                    <textarea name="directorNote" class="form-control" rows="3" placeholder="Ý kiến phê duyệt..." required>${c.directorNote}</textarea>
-                                                                </div>
-                                                                <div class="d-flex gap-2">
-                                                                    <button type="submit" name="action" value="directorApprove" class="btn btn-success" onclick="return confirmPayrollClaimAction('approve', this)">
-                                                                        <i class="fas fa-check me-1"></i> Gửi duyệt
-                                                                    </button>
-                                                                    <button type="submit" name="action" value="directorReject" class="btn btn-danger" onclick="return confirmPayrollClaimAction('reject', this)">
-                                                                        <i class="fas fa-times me-1"></i> Từ chối
-                                                                    </button>
-                                                                </div>
-                                                            </c:if>
-                                                        </form>
+                                                                <!-- Director -->
+                                                                <c:if test="${sessionScope.currentUser.roleId == 4}">
+                                                                    <div style="margin-bottom:14px;">
+                                                                        <label style="display:block;font-size:.78rem;font-weight:600;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Ý kiến phê duyệt <span style="color:#ef4444;">*</span></label>
+                                                                        <textarea name="directorNote" rows="3" required style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:.87rem;font-family:'Inter',sans-serif;outline:none;resize:vertical;transition:border .2s;" onfocus="this.style.borderColor='#6366f1';this.style.boxShadow='0 0 0 3px rgba(99,102,241,.1)'" onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'" placeholder="Ý kiến phê duyệt...">${c.directorNote}</textarea>
+                                                                    </div>
+                                                                    <div style="display:flex;gap:10px;">
+                                                                        <button type="submit" name="action" value="directorApprove" onclick="return confirmPayrollClaimAction('approve', this)" style="flex:1;padding:10px 20px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(16,185,129,.35)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+                                                                            <i class="fas fa-check"></i> Gửi duyệt
+                                                                        </button>
+                                                                        <button type="submit" name="action" value="directorReject" onclick="return confirmPayrollClaimAction('reject', this)" style="padding:10px 20px;background:#fff;color:#ef4444;border:1.5px solid #fca5a5;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;" onmouseover="this.style.background='#fef2f2';this.style.borderColor='#ef4444'" onmouseout="this.style.background='#fff';this.style.borderColor='#fca5a5'">
+                                                                            <i class="fas fa-times"></i> Từ chối
+                                                                        </button>
+                                                                    </div>
+                                                                </c:if>
+                                                            </form>
+                                                        </div>
                                                     </c:if>
                                                 </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+
+                                                <!-- Footer -->
+                                                <div class="modal-footer" style="padding:12px 22px;background:#fff;border-top:1px solid #f1f5f9;display:flex;justify-content:flex-end;">
+                                                    <button type="button" data-bs-dismiss="modal" style="padding:8px 20px;background:#f1f5f9;color:#64748b;border:none;border-radius:8px;font-weight:600;font-size:.85rem;cursor:pointer;transition:background .2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">Đóng</button>
                                                 </div>
                                             </div>
                                         </div>
