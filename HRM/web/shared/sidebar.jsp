@@ -497,6 +497,18 @@
                                                             </a>
                                                         </li>
                                                         <li class="sidebar-menu-category">Chấm công</li>
+                                                        <li class="sidebar-item">
+                                                            <a href="${pageContext.request.contextPath}/manager/attendance-claims"
+                                                                class="sidebar-link ${param.activeMenu eq 'attendance-claims' ? 'active' : ''}">
+                                                                <i class="fas fa-clipboard-check"></i> Duyệt khiếu nại CC
+                                                            </a>
+                                                        </li>
+                                                        <li class="sidebar-item">
+                                                            <a href="${pageContext.request.contextPath}/manager/overtime"
+                                                                class="sidebar-link ${param.activeMenu eq 'overtime' ? 'active' : ''}">
+                                                                <i class="fas fa-clock"></i> Quản lý Tăng ca
+                                                            </a>
+                                                        </li>
 
                                                     </c:if>
 
@@ -605,6 +617,12 @@
                                                                         </a>
                                                                     </li>
                                                                     <li class="sidebar-menu-category">Chấm công</li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/manager/attendance-claims"
+                                                                            class="sidebar-link ${param.activeMenu eq 'attendance-claims' ? 'active' : ''}">
+                                                                            <i class="fas fa-clipboard-check"></i> Duyệt khiếu nại CC
+                                                                        </a>
+                                                                    </li>
 
                                                                 </c:if>
 

@@ -25,6 +25,28 @@ public class profileController extends HttpServlet {
             return;
         }
 
+        String targetUserIdParam = request.getParameter("userId");
+        User targetUser = currentUser;
+        boolean isOwnProfile = true;
+
+        if (targetUserIdParam != null && !targetUserIdParam.isEmpty()) {
+            try {
+                int targetUserId = Integer.parseInt(targetUserIdParam);
+                if (targetUserId != currentUser.getUserId()) {
+                    UserDAO userDAO = new UserDAO();
+                    User u = userDAO.getUserById(targetUserId);
+                    if (u != null) {
+                        targetUser = u;
+                        isOwnProfile = false;
+                    }
+                }
+            } catch (NumberFormatException e) {
+                // Ignore
+            }
+        }
+
+        request.setAttribute("profileUser", targetUser);
+        request.setAttribute("isOwnProfile", isOwnProfile);
 
         request.getRequestDispatcher("profile.jsp").forward(request, response);
     }
@@ -59,6 +81,10 @@ public class profileController extends HttpServlet {
             }
         }
 
+        // Cập nhật xong lấy lại thông tin user để hiển thị
+        request.setAttribute("profileUser", currentUser);
+        request.setAttribute("isOwnProfile", true);
+        
         // Chuyển hướng lại trang profile cùng với thông báo
         request.getRequestDispatcher("profile.jsp").forward(request, response);
     }

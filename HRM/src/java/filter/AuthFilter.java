@@ -107,8 +107,14 @@ public class AuthFilter implements Filter {
 
         // ── 4. /hr/* → HR Manager (2) hoặc HR Staff (5) ────────────────────
         if (path.startsWith("/hr/")) {
-            if (path.equals("/hr/employee-detail")) {
-                if (roleId != ROLE_HR_MANAGER && roleId != ROLE_HR_STAFF && roleId != ROLE_FACTORY_MGR && roleId != ROLE_DEPT_MGR) {
+            // Ngoại lệ: Cho phép Quản đốc (3) và Trưởng phòng (6) xem chi tiết hồ sơ
+            if (path.equals("/hr/employee-detail") || 
+                path.equals("/hr/employee-job-info") || 
+                path.equals("/hr/employee-work-history") || 
+                path.equals("/hr/employee-contracts")) {
+                
+                if (roleId != ROLE_HR_MANAGER && roleId != ROLE_HR_STAFF 
+                        && roleId != ROLE_FACTORY_MGR && roleId != ROLE_DEPT_MGR) {
                     redirectToAppropriate(req, resp, roleId);
                     return;
                 }

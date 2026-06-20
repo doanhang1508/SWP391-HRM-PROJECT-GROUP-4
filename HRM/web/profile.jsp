@@ -2,7 +2,8 @@
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
-<c:set var="displayUser" value="${sessionScope.currentUser}" />
+<c:set var="displayUser" value="${not empty requestScope.profileUser ? requestScope.profileUser : sessionScope.currentUser}" />
+<c:set var="isOwn" value="${requestScope.isOwnProfile != false}" />
 
 <c:set var="pageTitle" value="Thông tin cá nhân - HRM" scope="request" />
 <jsp:include page="header.jsp" />
@@ -374,9 +375,11 @@
                     </span>
                     Thông tin cá nhân
                 </h3>
+                <c:if test="${isOwn}">
                 <button class="btn-edit-profile" onclick="toggleEdit()" id="editBtn">
                     <i class="fas fa-edit"></i> Chỉnh sửa
                 </button>
+                </c:if>
             </div>
 
             <form action="${pageContext.request.contextPath}/profile" method="POST">
@@ -386,7 +389,7 @@
                     <div class="col-md-6">
                         <div class="info-field">
                             <label for="fullName">Họ và tên</label>
-                            <div class="field-value can-edit">
+                            <div class="field-value ${isOwn ? 'can-edit' : ''}">
                                 <i class="fas fa-user"></i>
                                 <input type="text" id="fullName" class="edit-input" name="fullName" value="${displayUser.fullName}" readonly>
                             </div>
@@ -404,7 +407,7 @@
                     <div class="col-md-6">
                         <div class="info-field">
                             <label>Số điện thoại</label>
-                            <div class="field-value can-edit">
+                            <div class="field-value ${isOwn ? 'can-edit' : ''}">
                                 <i class="fas fa-phone"></i>
                                 <input type="tel" class="edit-input" name="phone" value="${displayUser.phone}" readonly>
                             </div>
@@ -457,6 +460,7 @@
         </div>
 
         <!-- Quick Navigation Links -->
+        <c:if test="${isOwn}">
         <div class="quick-links">
             <a href="${pageContext.request.contextPath}/employee/work-history" class="quick-link-card">
                 <div class="ql-icon" style="background: #ebf8ff; color: #3182ce;">
@@ -486,6 +490,7 @@
                 </div>
             </a>
         </div>
+        </c:if>
 
     </div><!-- end .profile-content -->
 </div><!-- end .profile-layout -->
