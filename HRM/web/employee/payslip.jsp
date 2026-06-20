@@ -302,14 +302,130 @@
                                        title="Xuất file PDF">
                                         <i class="fas fa-file-pdf"></i>
                                     </a>
-                                    <a href="${pageContext.request.contextPath}/employee/payroll-claim?payrollId=${p.payrollId}" 
-                                       class="btn-action btn-view ms-1" 
-                                       style="background-color: #fef3c7; color: #d97706;"
-                                       title="Khiếu nại lương">
-                                        <i class="fas fa-exclamation-triangle"></i>
-                                    </a>
+                                    <c:set var="matchedClaim" value="${null}" />
+                                    <c:forEach var="cl" items="${claims}">
+                                        <c:if test="${cl.payrollId == p.payrollId}">
+                                            <c:set var="matchedClaim" value="${cl}" />
+                                        </c:if>
+                                    </c:forEach>
+                                    <c:choose>
+                                        <c:when test="${not empty matchedClaim}">
+                                            <button class="btn-action ms-1" 
+                                                    style="background-color: #dbeafe; color: #1e40af; border: none;"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#claimDetailModal-${matchedClaim.claimId}"
+                                                    title="Xem chi tiết khiếu nại (Trạng thái: ${matchedClaim.status})">
+                                                <i class="fas fa-info-circle"></i>
+                                            </button>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <a href="${pageContext.request.contextPath}/employee/payroll-claim?payrollId=${p.payrollId}" 
+                                               class="btn-action btn-view ms-1" 
+                                               style="background-color: #fef3c7; color: #d97706;"
+                                               title="Khiếu nại lương">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                            </a>
+                                        </c:otherwise>
+                                    </c:choose>
                                 </td>
                             </tr>
+
+                            <c:if test="${not empty matchedClaim}">
+                                <!-- Modal Chi tiết Khiếu nại cho Employee -->
+                                <div class="modal fade" id="claimDetailModal-${matchedClaim.claimId}" tabindex="-1" aria-labelledby="claimDetailModalLabel-${matchedClaim.claimId}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+                                            <div class="modal-header bg-light border-bottom" style="border-radius: 16px 16px 0 0; padding: 20px 24px;">
+                                                <h5 class="modal-title fw-bold text-dark" id="claimDetailModalLabel-${matchedClaim.claimId}">
+                                                    <i class="fas fa-exclamation-circle me-2 text-primary"></i>Chi Tiết Khiếu Nại Lương
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body text-start" style="padding: 24px;">
+                                                <div class="mb-3">
+                                                    <strong class="text-muted small d-block">Kỳ lương khiếu nại:</strong>
+                                                    <span class="fw-semibold text-dark">Tháng ${matchedClaim.month} / ${matchedClaim.year}</span>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <strong class="text-muted small d-block">Loại khiếu nại:</strong>
+                                                    <span class="badge bg-secondary mt-1">${matchedClaim.complaintType}</span>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <strong class="text-muted small d-block">Mô tả khiếu nại:</strong>
+                                                    <div class="p-3 bg-light rounded border mt-1" style="white-space: pre-wrap; font-size: 0.9rem; color: #334155;">${matchedClaim.description}</div>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <strong class="text-muted small d-block mb-1">Trạng thái:</strong>
+                                                    <div>
+                                                        <c:choose>
+                                                            <c:when test="${matchedClaim.status eq 'Pending'}">
+                                                                <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i>Chờ HR tiếp nhận</span>
+                                                            </c:when>
+                                                            <c:when test="${matchedClaim.status eq 'Accountant Checking'}">
+                                                                <span class="badge bg-info text-dark"><i class="fas fa-calculator me-1"></i>Kế toán kiểm tra số liệu</span>
+                                                            </c:when>
+                                                            <c:when test="${matchedClaim.status eq 'HR Manager Reviewing'}">
+                                                                <span class="badge bg-primary text-white"><i class="fas fa-user-tie me-1"></i>HR Manager đang xem xét</span>
+                                                            </c:when>
+                                                            <c:when test="${matchedClaim.status eq 'Director Reviewing'}">
+                                                                <span class="badge bg-warning text-dark"><i class="fas fa-user-shield me-1"></i>Giám đốc đang xem xét</span>
+                                                            </c:when>
+                                                            <c:when test="${matchedClaim.status eq 'Resolved'}">
+                                                                <span class="badge bg-success text-white"><i class="fas fa-check-circle me-1"></i>Đã giải quyết & tính lại lương</span>
+                                                            </c:when>
+                                                            <c:when test="${matchedClaim.status eq 'Rejected'}">
+                                                                <span class="badge bg-danger text-white"><i class="fas fa-times-circle me-1"></i>Đã từ chối</span>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <span class="badge bg-secondary">${matchedClaim.status}</span>
+                                                            </c:otherwise>
+                                                        </c:choose>
+                                                    </div>
+                                                </div>
+                                                
+                                                <c:if test="${not empty matchedClaim.hrStaffNote || not empty matchedClaim.accountantNote || not empty matchedClaim.hrManagerNote || not empty matchedClaim.directorNote}">
+                                                    <hr/>
+                                                    <h6 class="fw-bold text-dark mb-2"><i class="fas fa-reply me-1 text-primary"></i>Phản hồi từ ban quản lý:</h6>
+                                                    <div class="d-flex flex-column gap-2 mt-2">
+                                                        <c:if test="${not empty matchedClaim.hrStaffNote}">
+                                                            <div class="p-2 rounded bg-light border-start border-primary border-3">
+                                                                <span class="fw-bold text-dark small d-block">HR Staff Note:</span>
+                                                                <span class="text-muted small">${matchedClaim.hrStaffNote}</span>
+                                                            </div>
+                                                        </c:if>
+                                                        <c:if test="${not empty matchedClaim.accountantNote}">
+                                                            <div class="p-2 rounded bg-light border-start border-info border-3">
+                                                                <span class="fw-bold text-dark small d-block">Kế toán Note:</span>
+                                                                <span class="text-muted small">${matchedClaim.accountantNote}</span>
+                                                                <c:if test="${not empty matchedClaim.proposedAdjustment && matchedClaim.proposedAdjustment != 0}">
+                                                                    <div class="mt-1 font-monospace fw-bold text-success small">
+                                                                        Đề xuất điều chỉnh: <fmt:formatNumber value="${matchedClaim.proposedAdjustment}" type="number" groupingUsed="true"/> ₫
+                                                                    </div>
+                                                                </c:if>
+                                                            </div>
+                                                        </c:if>
+                                                        <c:if test="${not empty matchedClaim.hrManagerNote}">
+                                                            <div class="p-2 rounded bg-light border-start border-warning border-3">
+                                                                <span class="fw-bold text-dark small d-block">HR Manager Note:</span>
+                                                                <span class="text-muted small">${matchedClaim.hrManagerNote}</span>
+                                                            </div>
+                                                        </c:if>
+                                                        <c:if test="${not empty matchedClaim.directorNote}">
+                                                            <div class="p-2 rounded bg-light border-start border-danger border-3">
+                                                                <span class="fw-bold text-dark small d-block">Giám đốc Note:</span>
+                                                                <span class="text-muted small">${matchedClaim.directorNote}</span>
+                                                            </div>
+                                                        </c:if>
+                                                    </div>
+                                                </c:if>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 8px;">Đóng</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </c:if>
                         </c:forEach>
                     </tbody>
                 </table>

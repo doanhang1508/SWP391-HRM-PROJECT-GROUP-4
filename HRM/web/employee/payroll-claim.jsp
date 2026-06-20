@@ -144,9 +144,22 @@
                 <input type="hidden" name="payrollId" value="${payroll.payrollId}" />
                 
                 <div class="form-group">
-                    <label class="form-label" for="reasonInput">Lý do khiếu nại</label>
-                    <textarea id="reasonInput" name="reason" rows="6" class="form-control-c" 
-                              placeholder="Vui lòng mô tả chi tiết lý do bạn khiếu nại (ví dụ: tính sai ngày công, thiếu tiền OT ca ngày 10/06, chưa cộng phụ cấp chuyên cần...)" required></textarea>
+                    <label class="form-label" for="complaintType">Loại khiếu nại <span class="text-danger">*</span></label>
+                    <select id="complaintType" name="complaintType" class="form-control-c" required>
+                        <option value="">-- Chọn loại khiếu nại --</option>
+                        <option value="Sai ngày công">Sai ngày công</option>
+                        <option value="Sai OT">Sai OT</option>
+                        <option value="Thiếu phụ cấp">Thiếu phụ cấp</option>
+                        <option value="Sai khấu trừ">Sai khấu trừ</option>
+                        <option value="Sai thưởng/phạt">Sai thưởng/phạt</option>
+                        <option value="Chưa nhận được tiền">Chưa nhận được tiền (Khiếu nại chuyển khoản)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="descriptionInput">Mô tả chi tiết <span class="text-danger">*</span></label>
+                    <textarea id="descriptionInput" name="description" rows="5" class="form-control-c" 
+                              placeholder="Vui lòng mô tả chi tiết lỗi (ví dụ: ngày 10/06 làm OT 4h nhưng chỉ tính 2h...)" required></textarea>
                 </div>
 
                 <button type="submit" class="btn-submit">

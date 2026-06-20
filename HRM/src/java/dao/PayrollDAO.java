@@ -525,6 +525,7 @@ public class PayrollDAO {
         }
         List<Integer> eligibleIds = getAllEligibleEmployeeIds(month, year);
         int createdCount = 0;
+        PayrollClaimDAO claimDAO = new PayrollClaimDAO();
         for (int userId : eligibleIds) {
             Payroll existing = getPayroll(userId, month, year);
             if (existing == null) {
@@ -538,7 +539,12 @@ public class PayrollDAO {
                 
                 BigDecimal overtimeAmount = getTotalOTPay(userId, month, year, hourlyRate);
                 BigDecimal allowanceAmount = getFixedAllowances(userId);
-                BigDecimal grossSalary = baseSalary.add(overtimeAmount).add(allowanceAmount);
+                
+                // Get resolved adjustments
+                BigDecimal adjustment = claimDAO.getResolvedAdjustment(userId, month, year);
+                
+                // Add adjustment to allowance or bonus (e.g. as bonus/allowance or directly to gross)
+                BigDecimal grossSalary = baseSalary.add(overtimeAmount).add(allowanceAmount).add(adjustment);
                 
                 Payroll p = new Payroll();
                 p.setUserId(userId);
@@ -548,7 +554,7 @@ public class PayrollDAO {
                 p.setWorkingDays(22); // Default to 22
                 p.setOvertimeAmount(overtimeAmount);
                 p.setAllowanceAmount(allowanceAmount);
-                p.setBonusAmount(BigDecimal.ZERO);
+                p.setBonusAmount(adjustment); // Save adjustment in bonus_amount or let it modify gross directly
                 p.setDeductionAmount(BigDecimal.ZERO);
                 p.setInsuranceAmount(BigDecimal.ZERO);
                 p.setTaxAmount(BigDecimal.ZERO);

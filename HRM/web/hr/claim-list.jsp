@@ -218,7 +218,8 @@
                         <tr>
                             <th>Nhân viên</th>
                             <th>Kỳ lương khiếu nại</th>
-                            <th>Lý do khiếu nại</th>
+                            <th>Loại khiếu nại</th>
+                            <th>Số tiền mong muốn</th>
                             <th>Ngày gửi</th>
                             <th>Trạng thái</th>
                             <th class="text-end">Hành động</th>
@@ -228,7 +229,7 @@
                         <c:choose>
                             <c:when test="${empty claims}">
                                 <tr>
-                                    <td colspan="6" class="text-center text-muted py-4">Chưa có yêu cầu khiếu nại lương nào.</td>
+                                    <td colspan="7" class="text-center text-muted py-4">Chưa có yêu cầu khiếu nại lương nào.</td>
                                 </tr>
                             </c:when>
                             <c:otherwise>
@@ -239,25 +240,245 @@
                                             <div class="small text-muted">${c.email}</div>
                                         </td>
                                         <td><span class="fw-semibold">Tháng ${c.month} / ${c.year}</span></td>
-                                        <td><div style="max-width: 300px; white-space: normal; word-break: break-all;">${c.reason}</div></td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border">${c.complaintType}</span>
+                                        </td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${not empty c.expectedAmount && c.expectedAmount > 0}">
+                                                    <span class="text-primary fw-semibold"><fmt:formatNumber value="${c.expectedAmount}" type="number" groupingUsed="true"/> ₫</span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="text-muted">--</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
                                         <td><fmt:formatDate value="${c.createdAt}" pattern="dd/MM/yyyy HH:mm"/></td>
                                         <td>
-                                            <span class="badge-s ${c.status eq 'Resolved' ? 'b-resolved' : 'b-pending'}">
-                                                <i class="fas ${c.status eq 'Resolved' ? 'fa-check-circle' : 'fa-clock'}"></i>
-                                                ${c.status}
-                                            </span>
+                                            <c:choose>
+                                                <c:when test="${c.status eq 'Pending'}">
+                                                    <span class="badge-s b-pending"><i class="fas fa-clock me-1"></i>Chờ tiếp nhận</span>
+                                                </c:when>
+                                                <c:when test="${c.status eq 'Accountant Checking'}">
+                                                    <span class="badge-s bg-info text-dark"><i class="fas fa-calculator me-1"></i>Kế toán kiểm tra</span>
+                                                </c:when>
+                                                <c:when test="${c.status eq 'HR Manager Reviewing'}">
+                                                    <span class="badge-s bg-primary text-white"><i class="fas fa-user-tie me-1"></i>HR Manager duyệt</span>
+                                                </c:when>
+                                                <c:when test="${c.status eq 'Director Reviewing'}">
+                                                    <span class="badge-s bg-warning text-dark"><i class="fas fa-user-shield me-1"></i>Giám đốc duyệt</span>
+                                                </c:when>
+                                                <c:when test="${c.status eq 'Resolved'}">
+                                                    <span class="badge-s b-resolved"><i class="fas fa-check-circle me-1"></i>Đã giải quyết</span>
+                                                </c:when>
+                                                <c:when test="${c.status eq 'Rejected'}">
+                                                    <span class="badge-s bg-danger text-white"><i class="fas fa-times-circle me-1"></i>Đã từ chối</span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="badge bg-secondary">${c.status}</span>
+                                                </c:otherwise>
+                                            </c:choose>
                                         </td>
                                         <td class="text-end">
-                                            <c:if test="${c.status eq 'Pending'}">
-                                                <form action="${pageContext.request.contextPath}/hr/resolve-claim" method="POST" style="display: inline-block;">
-                                                    <input type="hidden" name="claimId" value="${c.claimId}" />
-                                                    <button type="submit" class="btn-resolve">
-                                                        <i class="fas fa-check"></i> Duyệt & Tính lại Lương
-                                                    </button>
-                                                </form>
-                                            </c:if>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#claimModal-${c.claimId}">
+                                                <i class="fas fa-eye me-1"></i> Xem chi tiết
+                                            </button>
                                         </td>
                                     </tr>
+
+                                    <!-- Details Modal -->
+                                    <div class="modal fade" id="claimModal-${c.claimId}" tabindex="-1" aria-labelledby="claimModalLabel-${c.claimId}" aria-hidden="true">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title fw-bold" id="claimModalLabel-${c.claimId}">
+                                                        Chi tiết Khiếu nại Lương #${c.claimId}
+                                                    </h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body text-start">
+                                                    <!-- Info Section -->
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-6 mb-2">
+                                                            <strong>Nhân viên khiếu nại:</strong>
+                                                            <div>${c.fullName} (${c.email})</div>
+                                                        </div>
+                                                        <div class="col-md-6 mb-2">
+                                                            <strong>Kỳ lương & Ngày gửi:</strong>
+                                                            <div>Tháng ${c.month}/${c.year} - <fmt:formatDate value="${c.createdAt}" pattern="dd/MM/yyyy HH:mm"/></div>
+                                                        </div>
+                                                        <div class="col-md-6 mb-2">
+                                                            <strong>Loại khiếu nại:</strong>
+                                                            <div><span class="badge bg-secondary">${c.complaintType}</span></div>
+                                                        </div>
+                                                        <div class="col-md-6 mb-2">
+                                                            <strong>Số tiền đề xuất từ Employee:</strong>
+                                                            <div>
+                                                                <c:choose>
+                                                                    <c:when test="${not empty c.expectedAmount && c.expectedAmount > 0}">
+                                                                        <span class="text-primary fw-bold"><fmt:formatNumber value="${c.expectedAmount}" type="number" groupingUsed="true"/> ₫</span>
+                                                                    </c:when>
+                                                                    <c:otherwise>Không đề xuất số tiền cụ thể</c:otherwise>
+                                                                </c:choose>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <strong>Mô tả chi tiết từ nhân viên:</strong>
+                                                        <div class="p-3 bg-light rounded border mt-1" style="white-space: pre-wrap;">${c.description}</div>
+                                                    </div>
+
+                                                    <c:if test="${not empty c.evidence}">
+                                                        <div class="mb-3">
+                                                            <strong>Minh chứng đính kèm:</strong>
+                                                            <div class="mt-1">
+                                                                <c:choose>
+                                                                    <c:when test="${c.evidence.startsWith('http')}">
+                                                                        <a href="${c.evidence}" target="_blank" class="btn btn-sm btn-link p-0"><i class="fas fa-external-link-alt me-1"></i> Xem link minh chứng</a>
+                                                                    </c:when>
+                                                                    <c:otherwise>
+                                                                        <span class="text-muted"><i class="fas fa-file-alt me-1"></i> ${c.evidence}</span>
+                                                                    </c:otherwise>
+                                                                </c:choose>
+                                                            </div>
+                                                        </div>
+                                                    </c:if>
+
+                                                    <hr />
+
+                                                    <!-- Workflow Notes History -->
+                                                    <h6 class="fw-bold mb-3"><i class="fas fa-history me-1 text-primary"></i>Lịch sử xử lý & Ghi chú</h6>
+                                                    <div class="row">
+                                                        <div class="col-md-6 mb-2">
+                                                            <strong>HR Staff Note:</strong>
+                                                            <div class="small text-muted">${not empty c.hrStaffNote ? c.hrStaffNote : '(Không có ghi chú)'}</div>
+                                                        </div>
+                                                        <div class="col-md-6 mb-2">
+                                                            <strong>Kế toán Note & Đề xuất điều chỉnh:</strong>
+                                                            <div class="small text-muted">
+                                                                Ghi chú: ${not empty c.accountantNote ? c.accountantNote : '(Không có ghi chú)'}<br/>
+                                                                Đề xuất điều chỉnh lương: 
+                                                                <span class="text-success fw-bold">
+                                                                    <fmt:formatNumber value="${not empty c.proposedAdjustment ? c.proposedAdjustment : 0}" type="number" groupingUsed="true"/> ₫
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6 mb-2">
+                                                            <strong>HR Manager Note:</strong>
+                                                            <div class="small text-muted">${not empty c.hrManagerNote ? c.hrManagerNote : '(Không có ghi chú)'}</div>
+                                                        </div>
+                                                        <div class="col-md-6 mb-2">
+                                                            <strong>Giám đốc Note:</strong>
+                                                            <div class="small text-muted">${not empty c.directorNote ? c.directorNote : '(Không có ghi chú)'}</div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Action Form (Conditional based on Role and Status) -->
+                                                    <c:set var="canProcess" value="false" />
+                                                    <c:choose>
+                                                        <c:when test="${sessionScope.currentUser.roleId == 5 && c.status eq 'Pending'}">
+                                                            <c:set var="canProcess" value="true" />
+                                                        </c:when>
+                                                        <c:when test="${sessionScope.currentUser.roleId == 8 && c.status eq 'Accountant Checking'}">
+                                                            <c:set var="canProcess" value="true" />
+                                                        </c:when>
+                                                        <c:when test="${sessionScope.currentUser.roleId == 2 && c.status eq 'HR Manager Reviewing'}">
+                                                            <c:set var="canProcess" value="true" />
+                                                        </c:when>
+                                                        <c:when test="${sessionScope.currentUser.roleId == 4 && c.status eq 'Director Reviewing'}">
+                                                            <c:set var="canProcess" value="true" />
+                                                        </c:when>
+                                                    </c:choose>
+
+                                                    <c:if test="${canProcess}">
+                                                        <hr />
+                                                        <h6 class="fw-bold text-warning mb-3"><i class="fas fa-edit me-1"></i>Form xử lý dành cho bạn</h6>
+                                                        <form action="${pageContext.request.contextPath}/hr/resolve-claim" method="POST">
+                                                            <input type="hidden" name="claimId" value="${c.claimId}" />
+
+                                                            <!-- HR Staff processing -->
+                                                            <c:if test="${sessionScope.currentUser.roleId == 5}">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label fw-semibold">Ghi chú của HR Staff <span class="text-danger">*</span></label>
+                                                                    <textarea name="hrStaffNote" class="form-control" rows="3" placeholder="Nhập nhận xét hoặc lý do xử lý..." required>${c.hrStaffNote}</textarea>
+                                                                </div>
+                                                                <div class="d-flex gap-2">
+                                                                    <button type="submit" name="action" value="hrStaffForward" class="btn btn-primary">
+                                                                        <i class="fas fa-share me-1"></i> Chuyển cho Kế toán kiểm tra số liệu
+                                                                    </button>
+                                                                    <button type="submit" name="action" value="hrStaffReject" class="btn btn-danger" onclick="return confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')">
+                                                                        <i class="fas fa-times me-1"></i> Từ chối
+                                                                    </button>
+                                                                </div>
+                                                            </c:if>
+
+                                                            <!-- Accountant processing -->
+                                                            <c:if test="${sessionScope.currentUser.roleId == 8}">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label fw-semibold">Số tiền đề xuất điều chỉnh lương (+/- VND) <span class="text-danger">*</span></label>
+                                                                    <input type="number" name="proposedAdjustment" class="form-control" placeholder="Ví dụ: 250000 hoặc -100000" value="${c.expectedAmount > 0 ? c.expectedAmount : 0}" required />
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label fw-semibold">Ghi chú của Kế toán <span class="text-danger">*</span></label>
+                                                                    <textarea name="accountantNote" class="form-control" rows="3" placeholder="Ghi chú về tính toán ngày công/OT/phụ cấp..." required>${c.accountantNote}</textarea>
+                                                                </div>
+                                                                <div class="d-flex gap-2">
+                                                                    <button type="submit" name="action" value="accountantForward" class="btn btn-primary">
+                                                                        <i class="fas fa-share me-1"></i> Trình HR Manager duyệt điều chỉnh
+                                                                    </button>
+                                                                    <button type="submit" name="action" value="accountantReject" class="btn btn-danger" onclick="return confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')">
+                                                                        <i class="fas fa-times me-1"></i> Từ chối
+                                                                    </button>
+                                                                </div>
+                                                            </c:if>
+
+                                                            <!-- HR Manager processing -->
+                                                            <c:if test="${sessionScope.currentUser.roleId == 2}">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label fw-semibold">Ghi chú của HR Manager <span class="text-danger">*</span></label>
+                                                                    <textarea name="hrManagerNote" class="form-control" rows="3" placeholder="Nhập ý kiến của HR Manager..." required>${c.hrManagerNote}</textarea>
+                                                                </div>
+                                                                <div class="d-flex flex-wrap gap-2">
+                                                                    <button type="submit" name="action" value="hrManagerApprove" class="btn btn-success">
+                                                                        <i class="fas fa-check-double me-1"></i> Duyệt & Tính lại lương
+                                                                    </button>
+                                                                    <button type="submit" name="action" value="hrManagerForwardDirector" class="btn btn-primary">
+                                                                        <i class="fas fa-share me-1"></i> Trình Giám đốc quyết định
+                                                                    </button>
+                                                                    <button type="submit" name="action" value="hrManagerRequestRecheck" class="btn btn-warning">
+                                                                        <i class="fas fa-undo me-1"></i> Yêu cầu Kế toán kiểm tra lại
+                                                                    </button>
+                                                                    <button type="submit" name="action" value="hrManagerReject" class="btn btn-danger" onclick="return confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')">
+                                                                        <i class="fas fa-times me-1"></i> Từ chối
+                                                                    </button>
+                                                                </div>
+                                                            </c:if>
+
+                                                            <!-- Director processing -->
+                                                            <c:if test="${sessionScope.currentUser.roleId == 4}">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label fw-semibold">Ý kiến phê duyệt của Giám đốc <span class="text-danger">*</span></label>
+                                                                    <textarea name="directorNote" class="form-control" rows="3" placeholder="Ý kiến phê duyệt..." required>${c.directorNote}</textarea>
+                                                                </div>
+                                                                <div class="d-flex gap-2">
+                                                                    <button type="submit" name="action" value="directorApprove" class="btn btn-success">
+                                                                        <i class="fas fa-check-double me-1"></i> Phê duyệt điều chỉnh & Tính lại lương
+                                                                    </button>
+                                                                    <button type="submit" name="action" value="directorReject" class="btn btn-danger" onclick="return confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')">
+                                                                        <i class="fas fa-times me-1"></i> Từ chối
+                                                                    </button>
+                                                                </div>
+                                                            </c:if>
+                                                        </form>
+                                                    </c:if>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </c:forEach>
                             </c:otherwise>
                         </c:choose>

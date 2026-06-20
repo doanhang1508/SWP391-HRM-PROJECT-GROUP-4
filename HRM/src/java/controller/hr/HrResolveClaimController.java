@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 import model.PayrollClaim;
 import model.User;
@@ -30,8 +31,9 @@ public class HrResolveClaimController extends HttpServlet {
             return;
         }
 
-        // Only Role 2 (HR Manager) or Role 4 (Director) can view claims list
-        if (currentUser.getRoleId() != 2 && currentUser.getRoleId() != 4) {
+        // Allow HR Manager (2), Director (4), HR Staff (5), Accountant (8)
+        int roleId = currentUser.getRoleId();
+        if (roleId != 2 && roleId != 4 && roleId != 5 && roleId != 8) {
             response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }
@@ -52,13 +54,16 @@ public class HrResolveClaimController extends HttpServlet {
             return;
         }
 
-        if (currentUser.getRoleId() != 2 && currentUser.getRoleId() != 4) {
+        int roleId = currentUser.getRoleId();
+        if (roleId != 2 && roleId != 4 && roleId != 5 && roleId != 8) {
             response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }
 
         String claimIdStr = request.getParameter("claimId");
-        if (claimIdStr == null || claimIdStr.isEmpty()) {
+        String action = request.getParameter("action");
+
+        if (claimIdStr == null || action == null) {
             response.sendRedirect(request.getContextPath() + "/hr/resolve-claim");
             return;
         }
@@ -67,32 +72,116 @@ public class HrResolveClaimController extends HttpServlet {
             int claimId = Integer.parseInt(claimIdStr);
             PayrollClaim claim = claimDAO.getClaimById(claimId);
 
-            if (claim != null) {
-                // Update claim status to Resolved
-                if (claimDAO.resolveClaim(claimId)) {
-                    // Get user id and period details to regenerate
-                    int userId = claim.getPayrollId(); // Wait, in getClaimById query: u.user_id is fetched!
-                    // Let's get user_id from database query. Wait, in our getClaimById: u.user_id as user_id.
-                    // But in model/PayrollClaim.java, we didn't add userId property!
-                    // Let's see: we can query the user_id by joining payroll inside the controller or let's get it.
-                    // Oh, in model/PayrollClaim.java, we have getPayrollId(). Since Payroll has user_id, we can get Payroll.
-                    model.Payroll payroll = payrollDAO.getById(claim.getPayrollId());
-                    if (payroll != null) {
-                        // Delete draft payroll and regenerate it
-                        payrollDAO.deletePayrollDraft(payroll.getUserId(), payroll.getMonth(), payroll.getYear());
-                        payrollDAO.generatePayrollDraft(payroll.getMonth(), payroll.getYear());
-                        session.setAttribute("toastSuccess", "Đã duyệt khiếu nại và tự động tính toán lại bảng lương nháp!");
-                    } else {
-                        session.setAttribute("toastSuccess", "Đã duyệt khiếu nại!");
-                    }
-                } else {
-                    session.setAttribute("errorMessage", "Không thể cập nhật trạng thái khiếu nại.");
+            if (claim == null) {
+                session.setAttribute("errorMessage", "Không tìm thấy yêu cầu khiếu nại.");
+                response.sendRedirect(request.getContextPath() + "/hr/resolve-claim");
+                return;
+            }
+
+            boolean success = false;
+
+            // HR Staff (Role 5)
+            if (roleId == 5) {
+                String note = request.getParameter("hrStaffNote");
+                claim.setHrStaffNote(note != null ? note.trim() : "");
+                if ("hrStaffForwardManager".equals(action)) {
+                    claim.setStatus("HR Manager Reviewing");
+                    success = claimDAO.updateClaimWorkflow(claim);
+                } else if ("hrStaffForwardAccountant".equals(action)) {
+                    claim.setStatus("Accountant Checking");
+                    success = claimDAO.updateClaimWorkflow(claim);
+                } else if ("hrStaffClose".equals(action)) {
+                    claim.setStatus("Resolved");
+                    success = claimDAO.updateClaimWorkflow(claim);
+                } else if ("hrStaffReject".equals(action)) {
+                    claim.setStatus("Rejected");
+                    success = claimDAO.updateClaimWorkflow(claim);
                 }
             }
+            // Accountant (Role 8)
+            else if (roleId == 8) {
+                String note = request.getParameter("accountantNote");
+                String adjustmentStr = request.getParameter("proposedAdjustment");
+                claim.setAccountantNote(note != null ? note.trim() : "");
+                
+                BigDecimal proposedAdjustment = BigDecimal.ZERO;
+                if (adjustmentStr != null && !adjustmentStr.trim().isEmpty()) {
+                    try {
+                        proposedAdjustment = new BigDecimal(adjustmentStr.trim());
+                    } catch (NumberFormatException e) {
+                        // ignore
+                    }
+                }
+                claim.setProposedAdjustment(proposedAdjustment);
+
+                if ("accountantForward".equals(action) || "accountantCheckDone".equals(action)) {
+                    claim.setStatus("Pending Close");
+                    success = claimDAO.updateClaimWorkflow(claim);
+                } else if ("accountantResolvePayment".equals(action)) {
+                    claim.setStatus("Resolved");
+                    success = claimDAO.updateClaimWorkflow(claim);
+                    if (success) {
+                        triggerRecalculation(claim.getPayrollId());
+                    }
+                } else if ("accountantReject".equals(action)) {
+                    claim.setStatus("Rejected");
+                    success = claimDAO.updateClaimWorkflow(claim);
+                }
+            }
+            // HR Manager (Role 2)
+            else if (roleId == 2) {
+                String note = request.getParameter("hrManagerNote");
+                claim.setHrManagerNote(note != null ? note.trim() : "");
+
+                if ("hrManagerResolve".equals(action) || "hrManagerClose".equals(action)) {
+                    claim.setStatus("Resolved");
+                    success = claimDAO.updateClaimWorkflow(claim);
+                    if (success) {
+                        triggerRecalculation(claim.getPayrollId());
+                    }
+                } else if ("hrManagerReject".equals(action)) {
+                    claim.setStatus("Rejected");
+                    success = claimDAO.updateClaimWorkflow(claim);
+                } else if ("hrManagerForwardDirector".equals(action)) {
+                    claim.setStatus("Director Reviewing");
+                    success = claimDAO.updateClaimWorkflow(claim);
+                } else if ("hrManagerRequestRecheck".equals(action)) {
+                    claim.setStatus("Accountant Checking");
+                    success = claimDAO.updateClaimWorkflow(claim);
+                }
+            }
+            // Director (Role 4)
+            else if (roleId == 4) {
+                String note = request.getParameter("directorNote");
+                claim.setDirectorNote(note != null ? note.trim() : "");
+
+                if ("directorApprove".equals(action)) {
+                    claim.setStatus("Accountant Adjusting");
+                    success = claimDAO.updateClaimWorkflow(claim);
+                } else if ("directorReject".equals(action)) {
+                    claim.setStatus("Rejected");
+                    success = claimDAO.updateClaimWorkflow(claim);
+                }
+            }
+
+            if (success) {
+                session.setAttribute("toastSuccess", "Cập nhật tiến trình xử lý khiếu nại thành công!");
+            } else {
+                session.setAttribute("errorMessage", "Cập nhật tiến trình xử lý thất bại.");
+            }
+
         } catch (NumberFormatException e) {
-            session.setAttribute("errorMessage", "Mã khiếu nại không hợp lệ.");
+            session.setAttribute("errorMessage", "Dữ liệu không hợp lệ.");
         }
 
         response.sendRedirect(request.getContextPath() + "/hr/resolve-claim");
+    }
+
+    private void triggerRecalculation(int payrollId) {
+        model.Payroll payroll = payrollDAO.getById(payrollId);
+        if (payroll != null) {
+            payrollDAO.deletePayrollDraft(payroll.getUserId(), payroll.getMonth(), payroll.getYear());
+            payrollDAO.generatePayrollDraft(payroll.getMonth(), payroll.getYear());
+        }
     }
 }

@@ -1,12 +1,21 @@
 package model;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 public class PayrollClaim {
     private int claimId;
     private int payrollId;
-    private String reason;
-    private String status; // "Pending", "Resolved"
+    private String complaintType;
+    private String description;
+    private BigDecimal expectedAmount;
+    private String evidence;
+    private String status;
+    private String hrStaffNote;
+    private String accountantNote;
+    private BigDecimal proposedAdjustment;
+    private String hrManagerNote;
+    private String directorNote;
     private Timestamp createdAt;
 
     // Display fields (join)
@@ -23,11 +32,35 @@ public class PayrollClaim {
     public int getPayrollId() { return payrollId; }
     public void setPayrollId(int payrollId) { this.payrollId = payrollId; }
 
-    public String getReason() { return reason; }
-    public void setReason(String reason) { this.reason = reason; }
+    public String getComplaintType() { return complaintType; }
+    public void setComplaintType(String complaintType) { this.complaintType = complaintType; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public BigDecimal getExpectedAmount() { return expectedAmount; }
+    public void setExpectedAmount(BigDecimal expectedAmount) { this.expectedAmount = expectedAmount; }
+
+    public String getEvidence() { return evidence; }
+    public void setEvidence(String evidence) { this.evidence = evidence; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getHrStaffNote() { return hrStaffNote; }
+    public void setHrStaffNote(String hrStaffNote) { this.hrStaffNote = hrStaffNote; }
+
+    public String getAccountantNote() { return accountantNote; }
+    public void setAccountantNote(String accountantNote) { this.accountantNote = accountantNote; }
+
+    public BigDecimal getProposedAdjustment() { return proposedAdjustment; }
+    public void setProposedAdjustment(BigDecimal proposedAdjustment) { this.proposedAdjustment = proposedAdjustment; }
+
+    public String getHrManagerNote() { return hrManagerNote; }
+    public void setHrManagerNote(String hrManagerNote) { this.hrManagerNote = hrManagerNote; }
+
+    public String getDirectorNote() { return directorNote; }
+    public void setDirectorNote(String directorNote) { this.directorNote = directorNote; }
 
     public Timestamp getCreatedAt() { return createdAt; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }

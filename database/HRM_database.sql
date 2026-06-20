@@ -1057,11 +1057,20 @@ INSERT INTO overtime_assignments (assignment_id, plan_id, user_id, assigned_hour
 (5, 2, 32, 3.0, 'Pending');   -- Tổ phó: 3h OT
 
 -- TABLE 4: payroll_claims
+DROP TABLE IF EXISTS payroll_claims;
 CREATE TABLE IF NOT EXISTS payroll_claims (
     claim_id INT PRIMARY KEY AUTO_INCREMENT,
     payroll_id INT NOT NULL,
-    reason TEXT NOT NULL,
-    status VARCHAR(20) DEFAULT 'Pending',
+    complaint_type VARCHAR(100) NOT NULL,
+    description TEXT NOT NULL,
+    expected_amount DECIMAL(15,2) DEFAULT 0,
+    evidence VARCHAR(255) DEFAULT NULL,
+    status VARCHAR(50) DEFAULT 'Pending',
+    hr_staff_note TEXT DEFAULT NULL,
+    accountant_note TEXT DEFAULT NULL,
+    proposed_adjustment DECIMAL(15,2) DEFAULT 0,
+    hr_manager_note TEXT DEFAULT NULL,
+    director_note TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (payroll_id) REFERENCES payroll(payroll_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

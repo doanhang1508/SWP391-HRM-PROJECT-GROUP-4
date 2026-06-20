@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.math.BigDecimal;
 import model.Payroll;
 import model.PayrollClaim;
 import model.User;
@@ -65,10 +66,13 @@ public class EmployeePayrollClaimController extends HttpServlet {
         }
 
         String payrollIdStr = request.getParameter("payrollId");
-        String reason = request.getParameter("reason");
+        String complaintType = request.getParameter("complaintType");
+        String description = request.getParameter("description");
+        String expectedAmountStr = request.getParameter("expectedAmount");
+        String evidence = request.getParameter("evidence");
 
-        if (payrollIdStr == null || reason == null || reason.trim().isEmpty()) {
-            request.setAttribute("errorMsg", "Vui lòng nhập đầy đủ thông tin khiếu nại.");
+        if (payrollIdStr == null || complaintType == null || description == null || description.trim().isEmpty()) {
+            request.setAttribute("errorMsg", "Vui lòng điền đầy đủ các thông tin bắt buộc.");
             doGet(request, response);
             return;
         }
@@ -83,13 +87,25 @@ public class EmployeePayrollClaimController extends HttpServlet {
                 return;
             }
 
+            BigDecimal expectedAmount = BigDecimal.ZERO;
+            if (expectedAmountStr != null && !expectedAmountStr.trim().isEmpty()) {
+                try {
+                    expectedAmount = new BigDecimal(expectedAmountStr.trim());
+                } catch (NumberFormatException e) {
+                    // Fallback to zero
+                }
+            }
+
             PayrollClaim claim = new PayrollClaim();
             claim.setPayrollId(payrollId);
-            claim.setReason(reason.trim());
+            claim.setComplaintType(complaintType.trim());
+            claim.setDescription(description.trim());
+            claim.setExpectedAmount(expectedAmount);
+            claim.setEvidence(evidence != null ? evidence.trim() : null);
             claim.setStatus("Pending");
 
             if (claimDAO.insertClaim(claim)) {
-                session.setAttribute("toastSuccess", "Gửi khiếu nại thành công! Vui lòng chờ bộ phận HCNS xử lý.");
+                session.setAttribute("toastSuccess", "Gửi khiếu nại thành công! Vui lòng chờ bộ phận nhân sự xử lý.");
             } else {
                 session.setAttribute("errorMessage", "Gửi khiếu nại thất bại. Vui lòng thử lại sau.");
             }

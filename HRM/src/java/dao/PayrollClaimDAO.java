@@ -1,5 +1,6 @@
 package dao;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,14 +14,35 @@ import util.DBContext;
 public class PayrollClaimDAO {
 
     static {
-        // Auto-create table if not exists
+        // Auto-migrate schema: Drop old simple table if exists and create new one
         try (Connection conn = DBContext.getConnection();
              Statement stmt = conn.createStatement()) {
+            
+            // Check if column complaint_type exists, if not drop table and recreate
+            boolean recreate = false;
+            try {
+                stmt.executeQuery("SELECT complaint_type FROM payroll_claims LIMIT 1");
+            } catch (SQLException e) {
+                recreate = true;
+            }
+
+            if (recreate) {
+                stmt.execute("DROP TABLE IF EXISTS payroll_claims;");
+            }
+
             stmt.execute("CREATE TABLE IF NOT EXISTS payroll_claims (" +
                          "claim_id INT PRIMARY KEY AUTO_INCREMENT, " +
                          "payroll_id INT NOT NULL, " +
-                         "reason TEXT NOT NULL, " +
-                         "status VARCHAR(20) DEFAULT 'Pending', " +
+                         "complaint_type VARCHAR(100) NOT NULL, " +
+                         "description TEXT NOT NULL, " +
+                         "expected_amount DECIMAL(15,2) DEFAULT 0, " +
+                         "evidence VARCHAR(255) DEFAULT NULL, " +
+                         "status VARCHAR(50) DEFAULT 'Pending', " +
+                         "hr_staff_note TEXT DEFAULT NULL, " +
+                         "accountant_note TEXT DEFAULT NULL, " +
+                         "proposed_adjustment DECIMAL(15,2) DEFAULT 0, " +
+                         "hr_manager_note TEXT DEFAULT NULL, " +
+                         "director_note TEXT DEFAULT NULL, " +
                          "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                          "FOREIGN KEY (payroll_id) REFERENCES payroll(payroll_id) ON DELETE CASCADE" +
                          ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
@@ -30,18 +52,46 @@ public class PayrollClaimDAO {
     }
 
     public boolean insertClaim(PayrollClaim claim) {
-        String sql = "INSERT INTO payroll_claims (payroll_id, reason, status) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO payroll_claims (payroll_id, complaint_type, description, expected_amount, evidence, status) " +
+                     "VALUES (?, ?, ?, ?, ?, ?)";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, claim.getPayrollId());
-            ps.setString(2, claim.getReason());
-            ps.setString(3, claim.getStatus() != null ? claim.getStatus() : "Pending");
+            ps.setString(2, claim.getComplaintType());
+            ps.setString(3, claim.getDescription());
+            ps.setBigDecimal(4, claim.getExpectedAmount() != null ? claim.getExpectedAmount() : BigDecimal.ZERO);
+            ps.setString(5, claim.getEvidence());
+            ps.setString(6, claim.getStatus() != null ? claim.getStatus() : "Pending");
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return false;
+    }
+
+    private PayrollClaim mapRow(ResultSet rs) throws SQLException {
+        PayrollClaim pc = new PayrollClaim();
+        pc.setClaimId(rs.getInt("claim_id"));
+        pc.setPayrollId(rs.getInt("payroll_id"));
+        pc.setComplaintType(rs.getString("complaint_type"));
+        pc.setDescription(rs.getString("description"));
+        pc.setExpectedAmount(rs.getBigDecimal("expected_amount"));
+        pc.setEvidence(rs.getString("evidence"));
+        pc.setStatus(rs.getString("status"));
+        pc.setHrStaffNote(rs.getString("hr_staff_note"));
+        pc.setAccountantNote(rs.getString("accountant_note"));
+        pc.setProposedAdjustment(rs.getBigDecimal("proposed_adjustment"));
+        pc.setHrManagerNote(rs.getString("hr_manager_note"));
+        pc.setDirectorNote(rs.getString("director_note"));
+        pc.setCreatedAt(rs.getTimestamp("created_at"));
+        
+        // Joined fields
+        pc.setMonth(rs.getInt("month"));
+        pc.setYear(rs.getInt("year"));
+        pc.setFullName(rs.getString("full_name"));
+        pc.setEmail(rs.getString("email"));
+        return pc;
     }
 
     public List<PayrollClaim> getClaimsByUserId(int userId) {
@@ -58,17 +108,7 @@ public class PayrollClaimDAO {
             ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    PayrollClaim pc = new PayrollClaim();
-                    pc.setClaimId(rs.getInt("claim_id"));
-                    pc.setPayrollId(rs.getInt("payroll_id"));
-                    pc.setReason(rs.getString("reason"));
-                    pc.setStatus(rs.getString("status"));
-                    pc.setCreatedAt(rs.getTimestamp("created_at"));
-                    pc.setMonth(rs.getInt("month"));
-                    pc.setYear(rs.getInt("year"));
-                    pc.setFullName(rs.getString("full_name"));
-                    pc.setEmail(rs.getString("email"));
-                    list.add(pc);
+                    list.add(mapRow(rs));
                 }
             }
         } catch (SQLException e) {
@@ -89,17 +129,7 @@ public class PayrollClaimDAO {
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                PayrollClaim pc = new PayrollClaim();
-                pc.setClaimId(rs.getInt("claim_id"));
-                pc.setPayrollId(rs.getInt("payroll_id"));
-                pc.setReason(rs.getString("reason"));
-                pc.setStatus(rs.getString("status"));
-                pc.setCreatedAt(rs.getTimestamp("created_at"));
-                pc.setMonth(rs.getInt("month"));
-                pc.setYear(rs.getInt("year"));
-                pc.setFullName(rs.getString("full_name"));
-                pc.setEmail(rs.getString("email"));
-                list.add(pc);
+                list.add(mapRow(rs));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -107,21 +137,8 @@ public class PayrollClaimDAO {
         return list;
     }
 
-    public boolean resolveClaim(int claimId) {
-        String sql = "UPDATE payroll_claims SET status = 'Resolved' WHERE claim_id = ?";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, claimId);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
     public PayrollClaim getClaimById(int claimId) {
-        String sql = "SELECT pc.*, p.month, p.year, u.user_id, u.full_name, u.email " +
+        String sql = "SELECT pc.*, p.month, p.year, u.full_name, u.email " +
                      "FROM payroll_claims pc " +
                      "JOIN payroll p ON pc.payroll_id = p.payroll_id " +
                      "JOIN users u ON p.user_id = u.user_id " +
@@ -132,22 +149,54 @@ public class PayrollClaimDAO {
             ps.setInt(1, claimId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    PayrollClaim pc = new PayrollClaim();
-                    pc.setClaimId(rs.getInt("claim_id"));
-                    pc.setPayrollId(rs.getInt("payroll_id"));
-                    pc.setReason(rs.getString("reason"));
-                    pc.setStatus(rs.getString("status"));
-                    pc.setCreatedAt(rs.getTimestamp("created_at"));
-                    pc.setMonth(rs.getInt("month"));
-                    pc.setYear(rs.getInt("year"));
-                    pc.setFullName(rs.getString("full_name"));
-                    pc.setEmail(rs.getString("email"));
-                    return pc;
+                    return mapRow(rs);
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public boolean updateClaimWorkflow(PayrollClaim claim) {
+        String sql = "UPDATE payroll_claims SET status = ?, hr_staff_note = ?, accountant_note = ?, " +
+                     "proposed_adjustment = ?, hr_manager_note = ?, director_note = ? WHERE claim_id = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, claim.getStatus());
+            ps.setString(2, claim.getHrStaffNote());
+            ps.setString(3, claim.getAccountantNote());
+            ps.setBigDecimal(4, claim.getProposedAdjustment() != null ? claim.getProposedAdjustment() : BigDecimal.ZERO);
+            ps.setString(5, claim.getHrManagerNote());
+            ps.setString(6, claim.getDirectorNote());
+            ps.setInt(7, claim.getClaimId());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public BigDecimal getResolvedAdjustment(int userId, int month, int year) {
+        String sql = "SELECT SUM(pc.proposed_adjustment) FROM payroll_claims pc " +
+                     "JOIN payroll p ON pc.payroll_id = p.payroll_id " +
+                     "WHERE p.user_id = ? AND p.month = ? AND p.year = ? AND pc.status = 'Resolved'";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    BigDecimal sum = rs.getBigDecimal(1);
+                    if (sum != null) return sum;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return BigDecimal.ZERO;
     }
 }
