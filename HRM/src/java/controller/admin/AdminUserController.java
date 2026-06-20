@@ -80,6 +80,8 @@ public class AdminUserController extends HttpServlet {
             handleUpdateRole(request, response);
         } else if ("addUser".equals(action)) {
             handleAddUser(request, response);
+        } else if ("resetPassword".equals(action)) {
+            handleResetPassword(request, response);
         } else {
             doGet(request, response);
         }
@@ -150,6 +152,41 @@ public class AdminUserController extends HttpServlet {
     }
 
     // ── Helpers ───────────────────────────────────────────
+    
+    private void handleResetPassword(HttpServletRequest request, HttpServletResponse response) {
+        String base = request.getContextPath() + USERS_URL;
+        try {
+            int userId = Integer.parseInt(request.getParameter(PARAM_USER_ID));
+            User target = userDAO.getUserById(userId);
+            if (target != null) {
+                // Sinh mật khẩu ngẫu nhiên 8 ký tự
+                String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#";
+                StringBuilder sb = new StringBuilder();
+                java.util.Random rnd = new java.util.Random();
+                for (int i = 0; i < 8; i++) {
+                    sb.append(chars.charAt(rnd.nextInt(chars.length())));
+                }
+                String newRawPassword = sb.toString();
+                String hashed = PasswordUtil.hashPassword(newRawPassword);
+
+                if (userDAO.updatePassword(userId, hashed)) {
+                    try {
+                        service.EmailService emailService = new service.EmailService();
+                        emailService.sendResetPasswordEmail(target.getEmail(), target.getFullName(), newRawPassword);
+                        redirect(response, base + "?" + ATTR_MESSAGE + "=Da+cap+lai+mat+khau+va+gui+email+thanh+cong");
+                        return;
+                    } catch (Exception e) {
+                        System.err.println("Lỗi gửi email reset password: " + e.getMessage());
+                        redirect(response, base + "?" + ATTR_ERROR + "=Da+cap+nhat+MK+nhung+Loi+gui+Email");
+                        return;
+                    }
+                }
+            }
+        } catch (NumberFormatException e) {
+            // fall through
+        }
+        redirect(response, base + "?" + ATTR_ERROR + "=Loi+dat+lai+mat+khau");
+    }
 
     private List<User> resolveUserList(String keyword, String roleFilter,
                                        String deptFilter, String posFilter) {

@@ -87,7 +87,8 @@ public class ForgotPasswordController extends HttpServlet {
  
         // Gửi email
         try {
-            EmailUtil.sendOtpEmail(email, otp);
+            service.EmailService emailService = new service.EmailService();
+            emailService.sendOtpEmail(email, otp);
  
             // Thành công → chuyển sang bước 2 (xác minh OTP)
             request.setAttribute("step",     "verify_otp");
