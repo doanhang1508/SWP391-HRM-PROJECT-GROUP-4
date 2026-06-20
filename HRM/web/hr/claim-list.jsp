@@ -479,12 +479,12 @@
                                                                                 <c:choose>
                                                                                     <c:when test="${c.complaintType eq 'Chưa nhận được tiền'}">
                                                                                         <button type="submit" name="action" value="hrStaffForwardAccountant" onclick="return confirmPayrollClaimAction('approve', this)" style="flex:1;padding:10px 20px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(99,102,241,.35)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
-                                                                                            <i class="fas fa-check"></i> Gửi duyệt
+                                                                                            <i class="fas fa-share"></i> Chuyển Kế toán kiểm tra
                                                                                         </button>
                                                                                     </c:when>
                                                                                     <c:otherwise>
                                                                                         <button type="submit" name="action" value="hrStaffForwardManager" onclick="return confirmPayrollClaimAction('approve', this)" style="flex:1;padding:10px 20px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(99,102,241,.35)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
-                                                                                            <i class="fas fa-check"></i> Gửi duyệt
+                                                                                            <i class="fas fa-share"></i> Chuyển HR Manager duyệt
                                                                                         </button>
                                                                                     </c:otherwise>
                                                                                 </c:choose>
@@ -494,7 +494,7 @@
                                                                             </c:when>
                                                                             <c:when test="${c.status eq 'Pending Close'}">
                                                                                 <button type="submit" name="action" value="hrStaffClose" onclick="return confirmPayrollClaimAction('approve', this)" style="flex:1;padding:10px 20px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(16,185,129,.35)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
-                                                                                    <i class="fas fa-check"></i> Gửi duyệt
+                                                                                    <i class="fas fa-check-double"></i> Đóng khiếu nại
                                                                                 </button>
                                                                             </c:when>
                                                                         </c:choose>
@@ -506,12 +506,12 @@
                                                                     <c:choose>
                                                                         <c:when test="${c.status eq 'Accountant Checking'}">
                                                                             <div style="margin-bottom:14px;">
-                                                                                <label style="display:block;font-size:.78rem;font-weight:600;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Ghi chú kiểm tra chuyển khoản <span style="color:#ef4444;">*</span></label>
+                                                                                <label style="display:block;font-size:.78rem;font-weight:600;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Ghi chú kiểm tra <span style="color:#ef4444;">*</span></label>
                                                                                 <textarea name="accountantNote" rows="3" required style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:.87rem;font-family:'Inter',sans-serif;outline:none;resize:vertical;transition:border .2s;" onfocus="this.style.borderColor='#6366f1';this.style.boxShadow='0 0 0 3px rgba(99,102,241,.1)'" onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none'" placeholder="Ghi chú về trạng thái giao dịch ngân hàng...">${c.accountantNote}</textarea>
                                                                             </div>
                                                                             <div style="display:flex;gap:10px;">
                                                                                 <button type="submit" name="action" value="accountantCheckDone" onclick="return confirmPayrollClaimAction('approve', this)" style="flex:1;padding:10px 20px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(99,102,241,.35)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
-                                                                                    <i class="fas fa-check"></i> Gửi duyệt
+                                                                                    <i class="fas fa-check"></i> Xác nhận & Chuyển đóng KN
                                                                                 </button>
                                                                                 <button type="submit" name="action" value="accountantReject" onclick="return confirmPayrollClaimAction('reject', this)" style="padding:10px 20px;background:#fff;color:#ef4444;border:1.5px solid #fca5a5;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;" onmouseover="this.style.background='#fef2f2';this.style.borderColor='#ef4444'" onmouseout="this.style.background='#fff';this.style.borderColor='#fca5a5'">
                                                                                     <i class="fas fa-times"></i> Từ chối
@@ -525,7 +525,7 @@
                                                                             </div>
                                                                             <div style="display:flex;gap:10px;">
                                                                                 <button type="submit" name="action" value="accountantResolvePayment" onclick="return confirmPayrollClaimAction('approve', this)" style="flex:1;padding:10px 20px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(16,185,129,.35)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
-                                                                                    <i class="fas fa-check"></i> Gửi duyệt
+                                                                                    <i class="fas fa-money-check-alt"></i> Hoàn tất điều chỉnh thanh toán
                                                                                 </button>
                                                                             </div>
                                                                         </c:when>
@@ -550,21 +550,18 @@
                                                                             </div>
                                                                             <div style="display:flex;gap:10px;">
                                                                                 <button type="submit" onclick="return confirmPayrollClaimAction('approve', this)" style="flex:1;padding:10px 20px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(16,185,129,.35)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
-                                                                                    <i class="fas fa-check"></i> Gửi duyệt
+                                                                                    <i class="fas fa-check"></i> Xác nhận xử lý
                                                                                 </button>
                                                                                 <button type="submit" onclick="event.preventDefault(); var form = this.closest('form'); var noteField = form.querySelector('textarea'); if (!noteField.value.trim()) { alert('Vui lòng nhập ghi chú trước khi từ chối.'); noteField.focus(); return false; } if (confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')) { form.querySelector('select[name=action]').insertAdjacentHTML('beforeend', '<option value=hrManagerReject selected>Reject</option>'); form.submit(); }" style="padding:10px 20px;background:#fff;color:#ef4444;border:1.5px solid #fca5a5;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;" onmouseover="this.style.background='#fef2f2';this.style.borderColor='#ef4444'" onmouseout="this.style.background='#fff';this.style.borderColor='#fca5a5'">
                                                                                     <i class="fas fa-times"></i> Từ chối
                                                                                 </button>
                                                                             </div>
                                                                         </c:when>
-                                                                        <c:when test="${c.status eq 'Pending Close'}">
+                                                                        <c:when test="${c.status eq 'Chờ đóng khiếu nại'}">
                                                                             <input type="hidden" name="action" value="hrManagerClose" />
                                                                             <div style="display:flex;gap:10px;">
                                                                                 <button type="submit" onclick="return confirmPayrollClaimAction('approve', this)" style="flex:1;padding:10px 20px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(16,185,129,.35)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
-                                                                                    <i class="fas fa-check"></i> Gửi duyệt
-                                                                                </button>
-                                                                                <button type="submit" onclick="event.preventDefault(); var form = this.closest('form'); var noteField = form.querySelector('textarea'); if (!noteField.value.trim()) { alert('Vui lòng nhập ghi chú trước khi từ chối.'); noteField.focus(); return false; } if (confirm('Bạn chắc chắn muốn từ chối khiếu nại này?')) { form.querySelector('input[name=action]').value = 'hrManagerReject'; form.submit(); }" style="padding:10px 20px;background:#fff;color:#ef4444;border:1.5px solid #fca5a5;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;" onmouseover="this.style.background='#fef2f2';this.style.borderColor='#ef4444'" onmouseout="this.style.background='#fff';this.style.borderColor='#fca5a5'">
-                                                                                    <i class="fas fa-times"></i> Từ chối
+                                                                                    <i class="fas fa-check-double"></i> Đóng khiếu nại
                                                                                 </button>
                                                                             </div>
                                                                         </c:when>
@@ -579,7 +576,7 @@
                                                                     </div>
                                                                     <div style="display:flex;gap:10px;">
                                                                         <button type="submit" name="action" value="directorApprove" onclick="return confirmPayrollClaimAction('approve', this)" style="flex:1;padding:10px 20px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(16,185,129,.35)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
-                                                                            <i class="fas fa-check"></i> Gửi duyệt
+                                                                            <i class="fas fa-stamp"></i> Phê duyệt điều chỉnh lương
                                                                         </button>
                                                                         <button type="submit" name="action" value="directorReject" onclick="return confirmPayrollClaimAction('reject', this)" style="padding:10px 20px;background:#fff;color:#ef4444;border:1.5px solid #fca5a5;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;" onmouseover="this.style.background='#fef2f2';this.style.borderColor='#ef4444'" onmouseout="this.style.background='#fff';this.style.borderColor='#fca5a5'">
                                                                             <i class="fas fa-times"></i> Từ chối

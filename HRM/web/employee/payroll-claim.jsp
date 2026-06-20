@@ -159,7 +159,7 @@
                 </div>
             </c:if>
 
-            <form action="${pageContext.request.contextPath}/employee/payroll-claim" method="post" onsubmit="return confirm('Bạn chắc chắn muốn gửi yêu cầu khiếu nại lương này?')">
+            <form id="claimForm" action="${pageContext.request.contextPath}/employee/payroll-claim" method="post">
                 <input type="hidden" name="payrollId" value="${payroll.payrollId}" />
                 
                 <div class="form-group">
@@ -181,7 +181,7 @@
                               placeholder="Vui lòng mô tả chi tiết lỗi (ví dụ: ngày 10/06 làm OT 4h nhưng chỉ tính 2h...)" required></textarea>
                 </div>
 
-                <button type="submit" class="btn-submit">
+                <button type="button" class="btn-submit" onclick="showConfirmPopup()">
                     <i class="fas fa-paper-plane"></i> Gửi Yêu Cầu Khiếu Nại
                 </button>
             </form>
@@ -189,4 +189,52 @@
     </div>
 </div>
 
+<!-- Confirm Popup Overlay -->
+<div id="confirmOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:16px;padding:32px 28px;width:420px;max-width:90vw;box-shadow:0 20px 50px rgba(0,0,0,.2);text-align:center;animation:popIn .25s ease-out;">
+        <div style="width:56px;height:56px;background:linear-gradient(135deg,#0d9488,#14b8a6);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">
+            <i class="fas fa-paper-plane" style="color:#fff;font-size:1.3rem;"></i>
+        </div>
+        <h5 style="margin:0 0 8px;font-weight:700;color:#1e293b;font-size:1.05rem;">Xác nhận gửi khiếu nại?</h5>
+        <p style="margin:0 0 24px;color:#64748b;font-size:.88rem;line-height:1.5;">Bạn chắc chắn muốn gửi yêu cầu khiếu nại lương này? Sau khi gửi, khiếu nại sẽ được chuyển đến HR để xử lý.</p>
+        <div style="display:flex;gap:12px;justify-content:center;">
+            <button type="button" onclick="hideConfirmPopup()" style="flex:1;padding:10px 20px;background:#f1f5f9;color:#64748b;border:none;border-radius:10px;font-weight:600;font-size:.88rem;cursor:pointer;transition:background .2s;font-family:'Inter',sans-serif;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                <i class="fas fa-times me-1"></i>Hủy
+            </button>
+            <button type="button" onclick="submitClaim()" style="flex:1;padding:10px 20px;background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:.88rem;cursor:pointer;transition:transform .2s,box-shadow .2s;font-family:'Inter',sans-serif;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 14px rgba(13,148,136,.4)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+                <i class="fas fa-check me-1"></i>Gửi khiếu nại
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes popIn {
+        from { opacity:0; transform:scale(.9) translateY(10px); }
+        to { opacity:1; transform:scale(1) translateY(0); }
+    }
+</style>
+
+<script>
+    function showConfirmPopup() {
+        var form = document.getElementById('claimForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        var overlay = document.getElementById('confirmOverlay');
+        overlay.style.display = 'flex';
+    }
+    function hideConfirmPopup() {
+        document.getElementById('confirmOverlay').style.display = 'none';
+    }
+    function submitClaim() {
+        document.getElementById('claimForm').submit();
+    }
+    document.getElementById('confirmOverlay').addEventListener('click', function(e) {
+        if (e.target === this) hideConfirmPopup();
+    });
+</script>
+
 <jsp:include page="../footer.jsp" />
+
