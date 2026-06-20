@@ -159,6 +159,30 @@
         background: #059669;
         transform: translateY(-1px);
     }
+    
+    /* DETAIL GRID (Insurance Style) */
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 12px 16px;
+        font-size: .9rem;
+    }
+    .detail-label {
+        font-weight: 600;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+    }
+    .detail-value {
+        font-weight: 500;
+        color: var(--txt);
+    }
+    .detail-separator {
+        grid-column: 1/-1;
+        border: none;
+        border-top: 1px solid rgba(0, 0, 0, 0.08);
+        margin: 4px 0;
+    }
 </style>
 
 <div class="dashboard-wrapper">
@@ -292,59 +316,46 @@
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                 </div>
                                                 <div class="modal-body text-start">
-                                                    <!-- Info Section -->
-                                                    <div class="row mb-3">
-                                                        <div class="col-md-6 mb-2">
-                                                            <strong>Nhân viên khiếu nại:</strong>
-                                                            <div>${c.fullName} (${c.email})</div>
-                                                        </div>
-                                                        <div class="col-md-6 mb-2">
-                                                            <strong>Kỳ lương & Ngày gửi:</strong>
-                                                            <div>Tháng ${c.month}/${c.year} - <fmt:formatDate value="${c.createdAt}" pattern="dd/MM/yyyy HH:mm"/></div>
-                                                        </div>
-                                                        <div class="col-md-6 mb-2">
-                                                            <strong>Loại khiếu nại:</strong>
-                                                            <div><span class="badge bg-secondary">${c.complaintType}</span></div>
-                                                        </div>
-                                                    </div>
+                                                    <div class="detail-grid">
+                                                        <div class="detail-label">Nhân viên khiếu nại</div>
+                                                        <div class="detail-value">${c.fullName} (${c.email})</div>
 
-                                                    <div class="mb-3">
-                                                        <strong>Mô tả chi tiết từ nhân viên:</strong>
-                                                        <div class="p-3 bg-light rounded border mt-1" style="white-space: pre-wrap;">${c.description}</div>
-                                                    </div>
+                                                        <div class="detail-label">Kỳ lương & Ngày gửi</div>
+                                                        <div class="detail-value">Tháng ${c.month}/${c.year} - <fmt:formatDate value="${c.createdAt}" pattern="dd/MM/yyyy HH:mm"/></div>
 
-                                                    <hr />
+                                                        <div class="detail-label">Loại khiếu nại</div>
+                                                        <div class="detail-value"><span class="badge bg-secondary">${c.complaintType}</span></div>
 
-                                                    <!-- Workflow Notes History -->
-                                                    <c:if test="${not empty c.hrStaffNote || not empty c.accountantNote || not empty c.hrManagerNote || not empty c.directorNote}">
-                                                        <h6 class="fw-bold mb-3"><i class="fas fa-history me-1 text-primary"></i>Lịch sử xử lý & Ghi chú</h6>
-                                                        <div class="row">
+                                                        <hr class="detail-separator">
+
+                                                        <div class="detail-label">Mô tả chi tiết</div>
+                                                        <div class="detail-value" style="background:#f8fafc;padding:10px 12px;border-radius:8px;border:1px solid #e2e8f0;white-space:pre-wrap;">${c.description}</div>
+
+                                                        <c:if test="${not empty c.hrStaffNote || not empty c.accountantNote || not empty c.hrManagerNote || not empty c.directorNote}">
+                                                            <hr class="detail-separator">
+                                                            
+                                                            <div class="detail-label" style="grid-column: 1/-1; font-weight:700; color:var(--navy); font-size:0.95rem; margin-top:8px;">
+                                                                <i class="fas fa-history me-1 text-primary"></i> Lịch sử xử lý & Ghi chú
+                                                            </div>
+                                                            
                                                             <c:if test="${not empty c.hrStaffNote}">
-                                                                <div class="col-md-6 mb-2">
-                                                                    <strong>${not empty c.hrStaffName ? c.hrStaffName : 'HR Staff'} Note:</strong>
-                                                                    <div class="small text-muted">${c.hrStaffNote}</div>
-                                                                </div>
+                                                                <div class="detail-label">${not empty c.hrStaffName ? c.hrStaffName : 'HR Staff'} Note</div>
+                                                                <div class="detail-value" style="background:#f8fafc;padding:8px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:0.875rem;">${c.hrStaffNote}</div>
                                                             </c:if>
                                                             <c:if test="${not empty c.accountantNote}">
-                                                                <div class="col-md-6 mb-2">
-                                                                    <strong>${not empty c.accountantName ? c.accountantName : 'Kế toán'} Note:</strong>
-                                                                    <div class="small text-muted">${c.accountantNote}</div>
-                                                                </div>
+                                                                <div class="detail-label">${not empty c.accountantName ? c.accountantName : 'Kế toán'} Note</div>
+                                                                <div class="detail-value" style="background:#f8fafc;padding:8px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:0.875rem;">${c.accountantNote}</div>
                                                             </c:if>
                                                             <c:if test="${not empty c.hrManagerNote}">
-                                                                <div class="col-md-6 mb-2">
-                                                                    <strong>${not empty c.hrManagerName ? c.hrManagerName : 'HR Manager'} Note:</strong>
-                                                                    <div class="small text-muted">${c.hrManagerNote}</div>
-                                                                </div>
+                                                                <div class="detail-label">${not empty c.hrManagerName ? c.hrManagerName : 'HR Manager'} Note</div>
+                                                                <div class="detail-value" style="background:#f8fafc;padding:8px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:0.875rem;">${c.hrManagerNote}</div>
                                                             </c:if>
                                                             <c:if test="${not empty c.directorNote}">
-                                                                <div class="col-md-6 mb-2">
-                                                                    <strong>${not empty c.directorName ? c.directorName : 'Giám đốc'} Note:</strong>
-                                                                    <div class="small text-muted">${c.directorNote}</div>
-                                                                </div>
+                                                                <div class="detail-label">${not empty c.directorName ? c.directorName : 'Giám đốc'} Note</div>
+                                                                <div class="detail-value" style="background:#f8fafc;padding:8px 10px;border-radius:8px;border:1px solid #e2e8f0;font-size:0.875rem;">${c.directorNote}</div>
                                                             </c:if>
-                                                        </div>
-                                                    </c:if>
+                                                        </c:if>
+                                                    </div>
 
                                                     <!-- Action Form (Conditional based on Role and Status) -->
                                                     <c:set var="canProcess" value="false" />
