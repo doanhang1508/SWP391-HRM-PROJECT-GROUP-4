@@ -1055,3 +1055,13 @@ INSERT INTO overtime_assignments (assignment_id, plan_id, user_id, assigned_hour
 (3, 1, 30, 2.5, 'Pending'),   -- Tổ trưởng 2: 2.5h OT
 (4, 2, 31, 2.0, 'Cancelled'), -- Tổ trưởng 3: cancelled
 (5, 2, 32, 3.0, 'Pending');   -- Tổ phó: 3h OT
+
+-- TABLE 4: payroll_claims
+CREATE TABLE IF NOT EXISTS payroll_claims (
+    claim_id INT PRIMARY KEY AUTO_INCREMENT,
+    payroll_id INT NOT NULL,
+    reason TEXT NOT NULL,
+    status VARCHAR(20) DEFAULT 'Pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (payroll_id) REFERENCES payroll(payroll_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

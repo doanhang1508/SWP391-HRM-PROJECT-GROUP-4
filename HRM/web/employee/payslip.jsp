@@ -302,6 +302,12 @@
                                        title="Xuất file PDF">
                                         <i class="fas fa-file-pdf"></i>
                                     </a>
+                                    <a href="${pageContext.request.contextPath}/employee/payroll-claim?payrollId=${p.payrollId}" 
+                                       class="btn-action btn-view ms-1" 
+                                       style="background-color: #fef3c7; color: #d97706;"
+                                       title="Khiếu nại lương">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </a>
                                 </td>
                             </tr>
                         </c:forEach>
