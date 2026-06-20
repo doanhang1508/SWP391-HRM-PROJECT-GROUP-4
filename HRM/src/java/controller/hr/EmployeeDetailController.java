@@ -1,9 +1,11 @@
 package controller.hr;
 
 import dao.DepartmentDAO;
+import dao.EmployeeProfileDAO;
 import dao.PositionDAO;
 import dao.UserDAO;
 import model.Department;
+import model.EmployeeProfile;
 import model.Position;
 import model.User;
 import jakarta.servlet.ServletException;
@@ -18,7 +20,7 @@ import java.io.IOException;
 /**
  * EmployeeDetailController — Xem hồ sơ nhân sự (dành cho HR Manager, HR Staff, Quản đốc, Trưởng phòng).
  */
-@WebServlet(name = "EmployeeDetailController", urlPatterns = {"/hr/employee-detail"})
+@WebServlet(name = "EmployeeDetailController", urlPatterns = {"/hr/employee-detail", "/manager/employee-detail"})
 public class EmployeeDetailController extends HttpServlet {
 
     @Override
@@ -76,9 +78,14 @@ public class EmployeeDetailController extends HttpServlet {
                 }
             }
 
+            // Load employee profile (gender, dob, address, CCCD, ...)
+            EmployeeProfileDAO profileDAO = new EmployeeProfileDAO();
+            EmployeeProfile empProfile = profileDAO.getByUserId(userId);
+
             request.setAttribute("employee", employee);
             request.setAttribute("empDept", dept);
             request.setAttribute("empPos", pos);
+            request.setAttribute("empProfile", empProfile);
 
             request.getRequestDispatcher("/hr/employee-profile.jsp").forward(request, response);
 

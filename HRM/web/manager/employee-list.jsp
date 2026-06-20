@@ -110,7 +110,7 @@
                                         </td>
                                         <td>
                                             <div class="d-flex gap-2 justify-content-end">
-                                                <a href="${pageContext.request.contextPath}/hr/employee-detail?userId=${u.userId}" class="btn-action-outline">
+                                                <a href="${pageContext.request.contextPath}/manager/employee-detail?userId=${u.userId}" class="btn-action-outline">
                                                     <i class="fas fa-id-badge"></i> Hồ sơ NS
                                                 </a>
                                                 <a href="${pageContext.request.contextPath}/manager/employee-kpi?userId=${u.userId}" class="btn-primary-soft">

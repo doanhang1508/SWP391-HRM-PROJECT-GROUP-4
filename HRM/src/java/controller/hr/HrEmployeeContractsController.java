@@ -1,9 +1,11 @@
 package controller.hr;
 
 import dao.DepartmentDAO;
+import dao.EmployeeProfileDAO;
 import dao.PositionDAO;
 import dao.UserDAO;
 import model.Department;
+import model.EmployeeProfile;
 import model.Position;
 import model.User;
 import jakarta.servlet.ServletException;
@@ -19,7 +21,7 @@ import java.io.IOException;
  * HrEmployeeContractsController — Xem thông tin hợp đồng và lương của nhân viên (dành cho HR).
  * URL: /hr/employee-contracts?userId=...  (GET)
  */
-@WebServlet(name = "HrEmployeeContractsController", urlPatterns = {"/hr/employee-contracts"})
+@WebServlet(name = "HrEmployeeContractsController", urlPatterns = {"/hr/employee-contracts", "/manager/employee-contracts"})
 public class HrEmployeeContractsController extends HttpServlet {
 
     @Override
@@ -79,11 +81,14 @@ public class HrEmployeeContractsController extends HttpServlet {
                 }
             }
 
+            // Load employee profile đầy đủ (hợp đồng, lương, bảo hiểm, ngân hàng)
+            EmployeeProfileDAO profileDAO = new EmployeeProfileDAO();
+            EmployeeProfile empProfile = profileDAO.getByUserId(userId);
+
             request.setAttribute("employee", employee);
             request.setAttribute("empDept", dept);
             request.setAttribute("empPos", pos);
-
-            // Mở rộng sau: Load ContractType, SalaryGrade, Allowances, InsuranceRates tại đây
+            request.setAttribute("empProfile", empProfile);
 
             request.getRequestDispatcher("/hr/employee-contracts.jsp").forward(request, response);
 

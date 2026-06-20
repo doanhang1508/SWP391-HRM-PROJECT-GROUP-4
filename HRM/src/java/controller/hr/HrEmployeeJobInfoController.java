@@ -21,7 +21,7 @@ import java.io.IOException;
  * HrEmployeeJobInfoController — Xem thông tin công việc của nhân viên (dành cho HR).
  * URL: /hr/employee-job-info?userId=...  (GET)
  */
-@WebServlet(name = "HrEmployeeJobInfoController", urlPatterns = {"/hr/employee-job-info"})
+@WebServlet(name = "HrEmployeeJobInfoController", urlPatterns = {"/hr/employee-job-info", "/manager/employee-job-info"})
 public class HrEmployeeJobInfoController extends HttpServlet {
 
     @Override

@@ -99,11 +99,19 @@
         </div>
 
         <!-- Tabs -->
+        <c:choose>
+            <c:when test="${sessionScope.currentUser.roleId == 3 || sessionScope.currentUser.roleId == 6}">
+                <c:set var="profilePrefix" value="/manager" />
+            </c:when>
+            <c:otherwise>
+                <c:set var="profilePrefix" value="/hr" />
+            </c:otherwise>
+        </c:choose>
         <div class="nav-tabs-custom">
-            <a href="${pageContext.request.contextPath}/hr/employee-detail?userId=${employee.userId}" class="nav-tab">Thông tin cá nhân</a>
-            <a href="${pageContext.request.contextPath}/hr/employee-job-info?userId=${employee.userId}" class="nav-tab active">Thông tin công việc</a>
-            <a href="${pageContext.request.contextPath}/hr/employee-work-history?userId=${employee.userId}" class="nav-tab">Lịch sử công tác</a>
-            <a href="${pageContext.request.contextPath}/hr/employee-contracts?userId=${employee.userId}" class="nav-tab">Hợp đồng &amp; Lương</a>
+            <a href="${pageContext.request.contextPath}${profilePrefix}/employee-detail?userId=${employee.userId}" class="nav-tab">Thông tin cá nhân</a>
+            <a href="${pageContext.request.contextPath}${profilePrefix}/employee-job-info?userId=${employee.userId}" class="nav-tab active">Thông tin công việc</a>
+            <a href="${pageContext.request.contextPath}${profilePrefix}/employee-work-history?userId=${employee.userId}" class="nav-tab">Lịch sử công tác</a>
+            <a href="${pageContext.request.contextPath}${profilePrefix}/employee-contracts?userId=${employee.userId}" class="nav-tab">Hợp đồng &amp; Lương</a>
         </div>
 
         <!-- Tab Content: Thông tin công việc -->
@@ -173,9 +181,14 @@
             <h3 class="section-title"><i class="fas fa-clock"></i> Lịch &amp; Ca làm việc</h3>
             <div class="form-grid">
                 <div class="form-group full-width">
-                    <label class="form-label">Phân ca mặc định (Default Shift)</label>
-                    <div class="form-control-view">
-                        <span style="color: #94a3b8; font-style: italic;">Chưa thiết lập ca cố định (Tính năng dự kiến)</span>
+                    <label class="form-label">Ca làm việc</label>
+                    <div class="form-control-view" style="gap: 10px;">
+                        <i class="fas fa-calendar-alt" style="color: #64748b; font-size: 1rem;"></i>
+                        <span style="color: #475569;">Ca làm việc được quản lý trong module <strong>Phân ca</strong>.
+                            <a href="${pageContext.request.contextPath}/manager/shift-schedule" style="color: #2563eb; font-weight: 600; margin-left: 4px;">
+                                Xem lịch phân ca &rarr;
+                            </a>
+                        </span>
                     </div>
                 </div>
             </div>
