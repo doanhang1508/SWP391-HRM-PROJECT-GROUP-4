@@ -266,7 +266,7 @@ body { background: var(--bg); font-family: 'Inter', Arial, sans-serif; color: va
               <input type="hidden" name="requestId" value="${request.id}">
               <div class="reject-box">
                 <div class="reject-title">Nếu phát hiện sai sót, vui lòng nhập lý do từ chối để HR sửa lại:</div>
-                <textarea name="rejectReason" id="rejectReason" class="reject-textarea" placeholder="Ví dụ: Thiếu số điện thoại liên hệ, thông tin ngày sinh bị sai lệch so với CCCD..."></textarea>
+                <textarea name="rejectReason" id="rejectReason" class="reject-textarea" placeholder="Ví dụ: Thiếu số điện thoại liên hệ, ..."></textarea>
               </div>
             </form>
           </c:when>
