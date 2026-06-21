@@ -107,19 +107,13 @@ public class AuthFilter implements Filter {
 
         // ── 4. /hr/* → HR Manager (2) hoặc HR Staff (5) ────────────────────
         if (path.startsWith("/hr/")) {
-            // Ngoại lệ: Cho phép Quản đốc (3) và Trưởng phòng (6) xem chi tiết hồ sơ
-            if (path.equals("/hr/employee-detail") || 
-                path.equals("/hr/employee-job-info") || 
-                path.equals("/hr/employee-work-history") || 
-                path.equals("/hr/employee-contracts")) {
-                
-                if (roleId != ROLE_HR_MANAGER && roleId != ROLE_HR_STAFF 
-                        && roleId != ROLE_FACTORY_MGR && roleId != ROLE_DEPT_MGR) {
+            if (path.equals("/hr/employee-detail")) {
+                if (roleId != ROLE_HR_MANAGER && roleId != ROLE_HR_STAFF && roleId != ROLE_FACTORY_MGR && roleId != ROLE_DEPT_MGR) {
                     redirectToAppropriate(req, resp, roleId);
                     return;
                 }
-            } else if (path.equals("/hr/resolve-claim")) {
-                if (roleId != ROLE_HR_MANAGER && roleId != ROLE_DIRECTOR && roleId != ROLE_HR_STAFF && roleId != ROLE_ACCOUNTANT) {
+            } else if (path.equals("/hr/timesheet-lock")) {
+                if (roleId != ROLE_ADMIN && roleId != ROLE_HR_MANAGER) {
                     redirectToAppropriate(req, resp, roleId);
                     return;
                 }
@@ -135,13 +129,6 @@ public class AuthFilter implements Filter {
         if (path.startsWith("/manager/") && isEmployee(roleId)) {
             redirectToAppropriate(req, resp, roleId);
             return;
-        }
-        // /manager/employee-* chỉ cho phép role có quyền xem hồ sơ (không cho role 7, 8)
-        if (path.startsWith("/manager/employee-")) {
-            if (roleId == ROLE_EMPLOYEE || roleId == ROLE_ACCOUNTANT || roleId == 0) {
-                redirectToAppropriate(req, resp, roleId);
-                return;
-            }
         }
 
         // ── 4c. /director/* → chỉ Director (4) ───────────────────────────
