@@ -34,5 +34,6 @@ public interface LeaveRequestDAO {
     boolean approveLeaveRequest(int requestId, int approvedBy) throws Exception;
     boolean rejectLeaveRequest(int requestId, int approvedBy, String rejectReason) throws Exception;
     List<LeaveRequest> getAllLeaveRequests();
+    double getPaidLeaveDays(int employeeId, int month, int year);
 }
 

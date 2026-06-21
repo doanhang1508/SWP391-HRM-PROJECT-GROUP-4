@@ -526,11 +526,29 @@ public class PayrollDAO {
         List<Integer> eligibleIds = getAllEligibleEmployeeIds(month, year);
         int createdCount = 0;
         PayrollClaimDAO claimDAO = new PayrollClaimDAO();
+        AttendanceDAO attendanceDAO = new AttendanceDAO();
+        LeaveRequestDAOImpl leaveDAO = new LeaveRequestDAOImpl();
+        PayrollConfigDAO configDAO = new PayrollConfigDAO();
+        
+        BigDecimal standardWorkDays = configDAO.getConfigValue("STANDARD_WORK_DAYS", new BigDecimal("22"));
+        
         for (int userId : eligibleIds) {
             Payroll existing = getPayroll(userId, month, year);
             if (existing == null) {
                 EmployeeSalaryInfo salaryInfo = getEmployeeSalaryInfo(userId);
                 BigDecimal baseSalary = (salaryInfo != null && salaryInfo.baseSalary != null) ? salaryInfo.baseSalary : BigDecimal.ZERO;
+                
+                // 1. Get working days from Attendance and Paid Leaves
+                int presentDays = attendanceDAO.getPresentDays(userId, month, year);
+                double paidLeaveDays = leaveDAO.getPaidLeaveDays(userId, month, year);
+                double totalDays = presentDays + paidLeaveDays;
+                
+                // 2. Calculate BaseWorkedSalary
+                BigDecimal baseWorkedSalary = BigDecimal.ZERO;
+                if (standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
+                    BigDecimal daysRatio = new BigDecimal(totalDays).divide(standardWorkDays, 4, java.math.RoundingMode.HALF_UP);
+                    baseWorkedSalary = baseSalary.multiply(daysRatio);
+                }
                 
                 BigDecimal hourlyRate = BigDecimal.ZERO;
                 if (baseSalary.compareTo(BigDecimal.ZERO) > 0) {
@@ -543,23 +561,32 @@ public class PayrollDAO {
                 // Get resolved adjustments
                 BigDecimal adjustment = claimDAO.getResolvedAdjustment(userId, month, year);
                 
-                // Add adjustment to allowance or bonus (e.g. as bonus/allowance or directly to gross)
-                BigDecimal grossSalary = baseSalary.add(overtimeAmount).add(allowanceAmount).add(adjustment);
+                // 3. Gross Salary (includes base worked, OT, allowance, adjustment)
+                BigDecimal grossSalary = baseWorkedSalary.add(overtimeAmount).add(allowanceAmount).add(adjustment);
+                
+                // Placeholders for Member 2 and Member 3
+                // TODO: calculateInsurance(grossSalary)
+                BigDecimal insuranceAmount = BigDecimal.ZERO; 
+                // TODO: calculatePIT(taxableIncome)
+                BigDecimal taxAmount = BigDecimal.ZERO;
+                
+                BigDecimal totalDeductions = insuranceAmount.add(taxAmount);
+                BigDecimal netSalary = grossSalary.subtract(totalDeductions);
                 
                 Payroll p = new Payroll();
                 p.setUserId(userId);
                 p.setMonth(month);
                 p.setYear(year);
-                p.setBaseSalary(baseSalary);
-                p.setWorkingDays(22); // Default to 22
+                p.setBaseSalary(baseWorkedSalary); // Saving base worked salary
+                p.setWorkingDays((int) Math.round(totalDays));
                 p.setOvertimeAmount(overtimeAmount);
                 p.setAllowanceAmount(allowanceAmount);
-                p.setBonusAmount(adjustment); // Save adjustment in bonus_amount or let it modify gross directly
+                p.setBonusAmount(adjustment); 
                 p.setDeductionAmount(BigDecimal.ZERO);
-                p.setInsuranceAmount(BigDecimal.ZERO);
-                p.setTaxAmount(BigDecimal.ZERO);
+                p.setInsuranceAmount(insuranceAmount);
+                p.setTaxAmount(taxAmount);
                 p.setGrossSalary(grossSalary);
-                p.setNetSalary(grossSalary);
+                p.setNetSalary(netSalary);
                 p.setStatus("Draft");
                 
                 if (insertOrUpdatePayroll(p)) {
