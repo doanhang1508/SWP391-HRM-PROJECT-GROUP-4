@@ -191,22 +191,7 @@
             </div>
         </div>
         
-        <div class="content-card">
-            <h3 class="section-title"><i class="fas fa-clock"></i> Lịch &amp; Ca làm việc</h3>
-            <div class="form-grid">
-                <div class="form-group full-width">
-                    <label class="form-label">Ca làm việc</label>
-                    <div class="form-control-view" style="gap: 10px;">
-                        <i class="fas fa-calendar-alt" style="color: #64748b; font-size: 1rem;"></i>
-                        <span style="color: #475569;">Ca làm việc được quản lý trong module <strong>Phân ca</strong>.
-                            <a href="${pageContext.request.contextPath}/manager/shift-schedule" style="color: #2563eb; font-weight: 600; margin-left: 4px;">
-                                Xem lịch phân ca &rarr;
-                            </a>
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
+
 
     </div>
 </div>
