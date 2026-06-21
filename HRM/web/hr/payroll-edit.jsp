@@ -1,5 +1,5 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%@taglib prefix="c" uri="jakarta.tags.core" %>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
 <c:set var="pageTitle" value="Chỉnh sửa bảng lương nháp - Enterprise HRM" scope="request" />
@@ -219,6 +219,7 @@
                     <div class="col-md-6">
                         <label class="form-label">Số ngày công thực tế <span class="text-danger">*</span></label>
                         <input type="number" name="workingDays" class="form-control" value="${payroll.workingDays}" required min="0" max="31">
+                        <small class="text-muted d-block mt-1"><i class="fas fa-magic"></i> Giá trị khởi tạo được tổng hợp tự động từ hệ thống chấm công và nghỉ phép có lương.</small>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Tiền làm thêm giờ (Tăng ca) <span class="text-danger">*</span></label>

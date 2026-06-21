@@ -111,11 +111,19 @@
         </div>
 
         <!-- Tabs -->
+        <c:choose>
+            <c:when test="${sessionScope.currentUser.roleId == 3 || sessionScope.currentUser.roleId == 6}">
+                <c:set var="profilePrefix" value="/manager" />
+            </c:when>
+            <c:otherwise>
+                <c:set var="profilePrefix" value="/hr" />
+            </c:otherwise>
+        </c:choose>
         <div class="nav-tabs-custom">
-            <a href="${pageContext.request.contextPath}/hr/employee-detail?userId=${employee.userId}" class="nav-tab">Thông tin cá nhân</a>
-            <a href="${pageContext.request.contextPath}/hr/employee-job-info?userId=${employee.userId}" class="nav-tab">Thông tin công việc</a>
-            <a href="${pageContext.request.contextPath}/hr/employee-work-history?userId=${employee.userId}" class="nav-tab active">Lịch sử công tác</a>
-            <a href="${pageContext.request.contextPath}/hr/employee-contracts?userId=${employee.userId}" class="nav-tab">Hợp đồng &amp; Lương</a>
+            <a href="${pageContext.request.contextPath}${profilePrefix}/employee-detail?userId=${employee.userId}" class="nav-tab">Thông tin cá nhân</a>
+            <a href="${pageContext.request.contextPath}${profilePrefix}/employee-job-info?userId=${employee.userId}" class="nav-tab">Thông tin công việc</a>
+            <a href="${pageContext.request.contextPath}${profilePrefix}/employee-work-history?userId=${employee.userId}" class="nav-tab active">Lịch sử công tác</a>
+            <a href="${pageContext.request.contextPath}${profilePrefix}/employee-contracts?userId=${employee.userId}" class="nav-tab">Hợp đồng &amp; Lương</a>
         </div>
 
         <!-- Tab Content: Lịch sử công tác -->

@@ -22,7 +22,7 @@ import java.util.List;
  * HrEmployeeWorkHistoryController — Xem lịch sử công tác của nhân viên (dành cho HR).
  * URL: /hr/employee-work-history?userId=...  (GET)
  */
-@WebServlet(name = "HrEmployeeWorkHistoryController", urlPatterns = {"/hr/employee-work-history"})
+@WebServlet(name = "HrEmployeeWorkHistoryController", urlPatterns = {"/hr/employee-work-history", "/manager/employee-work-history"})
 public class HrEmployeeWorkHistoryController extends HttpServlet {
 
     @Override

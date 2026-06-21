@@ -136,6 +136,13 @@ public class AuthFilter implements Filter {
             redirectToAppropriate(req, resp, roleId);
             return;
         }
+        // /manager/employee-* chỉ cho phép role có quyền xem hồ sơ (không cho role 7, 8)
+        if (path.startsWith("/manager/employee-")) {
+            if (roleId == ROLE_EMPLOYEE || roleId == ROLE_ACCOUNTANT || roleId == 0) {
+                redirectToAppropriate(req, resp, roleId);
+                return;
+            }
+        }
 
         // ── 4c. /director/* → chỉ Director (4) ───────────────────────────
         if (path.startsWith("/director/")) {

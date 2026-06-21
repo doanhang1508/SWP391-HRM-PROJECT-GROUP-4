@@ -47,6 +47,7 @@
     .form-group.full-width { grid-column: span 2; }
     .form-label { font-size: 0.85rem; font-weight: 700; color: #475569; }
     .form-control-view { background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 16px; border-radius: 8px; font-size: 0.95rem; color: #0f172a; font-weight: 500; width: 100%; min-height: 42px; display: flex; align-items: center; }
+    .text-muted-italic { color: #94a3b8; font-style: italic; }
 
 </style>
 
@@ -92,11 +93,20 @@
         </div>
 
         <!-- Tabs -->
+        <%-- Tự động chọn prefix URL theo role để URL trên thanh địa chỉ phù hợp --%>
+        <c:choose>
+            <c:when test="${sessionScope.currentUser.roleId == 3 || sessionScope.currentUser.roleId == 6}">
+                <c:set var="profilePrefix" value="/manager" />
+            </c:when>
+            <c:otherwise>
+                <c:set var="profilePrefix" value="/hr" />
+            </c:otherwise>
+        </c:choose>
         <div class="nav-tabs-custom">
-            <a href="${pageContext.request.contextPath}/hr/employee-detail?userId=${employee.userId}" class="nav-tab active">Thông tin cá nhân</a>
-            <a href="${pageContext.request.contextPath}/hr/employee-job-info?userId=${employee.userId}" class="nav-tab">Thông tin công việc</a>
-            <a href="${pageContext.request.contextPath}/hr/employee-work-history?userId=${employee.userId}" class="nav-tab">Lịch sử công tác</a>
-            <a href="${pageContext.request.contextPath}/hr/employee-contracts?userId=${employee.userId}" class="nav-tab">Hợp đồng & Lương</a>
+            <a href="${pageContext.request.contextPath}${profilePrefix}/employee-detail?userId=${employee.userId}" class="nav-tab active">Thông tin cá nhân</a>
+            <a href="${pageContext.request.contextPath}${profilePrefix}/employee-job-info?userId=${employee.userId}" class="nav-tab">Thông tin công việc</a>
+            <a href="${pageContext.request.contextPath}${profilePrefix}/employee-work-history?userId=${employee.userId}" class="nav-tab">Lịch sử công tác</a>
+            <a href="${pageContext.request.contextPath}${profilePrefix}/employee-contracts?userId=${employee.userId}" class="nav-tab">Hợp đồng &amp; Lương</a>
         </div>
 
         <!-- Tab Content: Thông tin cá nhân -->
@@ -119,7 +129,16 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Ngày vào làm</label>
-                    <div class="form-control-view"><fmt:formatDate value="${employee.createdAt}" pattern="dd/MM/yyyy"/></div>
+                    <div class="form-control-view">
+                        <c:choose>
+                            <c:when test="${empProfile != null && empProfile.hireDate != null}">
+                                <fmt:formatDate value="${empProfile.hireDate}" pattern="dd/MM/yyyy"/>
+                            </c:when>
+                            <c:otherwise>
+                                <fmt:formatDate value="${employee.createdAt}" pattern="dd/MM/yyyy"/>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -131,28 +150,56 @@
                     <div class="form-control-view">${employee.email}</div>
                 </div>
 
-                <!-- Các trường tĩnh -->
+                <!-- Các trường từ employee_profiles -->
                 <div class="form-group">
                     <label class="form-label">Giới tính</label>
-                    <div class="form-control-view" style="color: #94a3b8; font-style: italic;">Chưa cập nhật</div>
+                    <div class="form-control-view">
+                        <c:choose>
+                            <c:when test="${empProfile != null && empProfile.gender != null}">
+                                ${empProfile.genderLabel}
+                            </c:when>
+                            <c:otherwise><span class="text-muted-italic">Chưa cập nhật</span></c:otherwise>
+                        </c:choose>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Ngày sinh</label>
-                    <div class="form-control-view" style="color: #94a3b8; font-style: italic;">Chưa cập nhật</div>
+                    <div class="form-control-view">
+                        <c:choose>
+                            <c:when test="${empProfile != null && empProfile.dob != null}">
+                                <fmt:formatDate value="${empProfile.dob}" pattern="dd/MM/yyyy"/>
+                            </c:when>
+                            <c:otherwise><span class="text-muted-italic">Chưa cập nhật</span></c:otherwise>
+                        </c:choose>
+                    </div>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">CMND/CCCD</label>
-                    <div class="form-control-view" style="color: #94a3b8; font-style: italic;">Chưa cập nhật</div>
+                    <div class="form-control-view">
+                        <c:choose>
+                            <c:when test="${empProfile != null && not empty empProfile.idCard}">
+                                ${empProfile.idCard}
+                            </c:when>
+                            <c:otherwise><span class="text-muted-italic">Chưa cập nhật</span></c:otherwise>
+                        </c:choose>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Tình trạng hôn nhân</label>
-                    <div class="form-control-view" style="color: #94a3b8; font-style: italic;">Chưa cập nhật</div>
+                    <div class="form-control-view"><span class="text-muted-italic">Chưa cập nhật</span></div>
                 </div>
                 
                 <div class="form-group full-width">
                     <label class="form-label">Địa chỉ hiện tại</label>
-                    <div class="form-control-view" style="color: #94a3b8; font-style: italic;">Chưa cập nhật</div>
+                    <div class="form-control-view">
+                        <c:choose>
+                            <c:when test="${empProfile != null && not empty empProfile.address}">
+                                ${empProfile.address}
+                            </c:when>
+                            <c:otherwise><span class="text-muted-italic">Chưa cập nhật</span></c:otherwise>
+                        </c:choose>
+                    </div>
                 </div>
             </div>
         </div>

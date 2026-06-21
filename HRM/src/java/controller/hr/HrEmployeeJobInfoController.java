@@ -4,10 +4,12 @@ import dao.DepartmentDAO;
 import dao.PositionDAO;
 import dao.RoleDAO;
 import dao.UserDAO;
+import dao.EmployeeProfileDAO;
 import model.Department;
 import model.Position;
 import model.Role;
 import model.User;
+import model.EmployeeProfile;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -21,7 +23,7 @@ import java.io.IOException;
  * HrEmployeeJobInfoController — Xem thông tin công việc của nhân viên (dành cho HR).
  * URL: /hr/employee-job-info?userId=...  (GET)
  */
-@WebServlet(name = "HrEmployeeJobInfoController", urlPatterns = {"/hr/employee-job-info"})
+@WebServlet(name = "HrEmployeeJobInfoController", urlPatterns = {"/hr/employee-job-info", "/manager/employee-job-info"})
 public class HrEmployeeJobInfoController extends HttpServlet {
 
     @Override
@@ -83,10 +85,14 @@ public class HrEmployeeJobInfoController extends HttpServlet {
                 }
             }
 
+            EmployeeProfileDAO profileDAO = new EmployeeProfileDAO();
+            EmployeeProfile empProfile = profileDAO.getByUserId(userId);
+
             request.setAttribute("employee", employee);
             request.setAttribute("empDept", dept);
             request.setAttribute("empPos", pos);
             request.setAttribute("userRole", userRole);
+            request.setAttribute("empProfile", empProfile);
 
             request.getRequestDispatcher("/hr/employee-job-info.jsp").forward(request, response);
 

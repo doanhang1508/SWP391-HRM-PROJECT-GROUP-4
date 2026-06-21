@@ -388,6 +388,19 @@
                                                         <i class="fas fa-key"></i> Phân quyền hệ thống
                                                     </a>
                                                 </li>
+                                                <li class="sidebar-menu-category">Cấu hình Thuế</li>
+                                                <li class="sidebar-item">
+                                                    <a href="${pageContext.request.contextPath}/admin/tax?action=rules"
+                                                        class="sidebar-link ${param.activeMenu eq 'admin-tax-rules' ? 'active' : ''}">
+                                                        <i class="fas fa-percentage"></i> Biểu Thuế TNCN
+                                                    </a>
+                                                </li>
+                                                <li class="sidebar-item">
+                                                    <a href="${pageContext.request.contextPath}/admin/tax?action=auditLog"
+                                                        class="sidebar-link ${param.activeMenu eq 'admin-audit-log' ? 'active' : ''}">
+                                                        <i class="fas fa-history"></i> Lịch Sử Hệ Thống PIT
+                                                    </a>
+                                                </li>
                                             </c:if>
 
                                             <%-- ══════ HR MANAGER (roleId=2): Quản lý nhân sự ══════ --%>
@@ -451,6 +464,12 @@
                                                         <a href="${pageContext.request.contextPath}/hr/salary-grade"
                                                             class="sidebar-link ${param.activeMenu eq 'salary-grade' ? 'active' : ''}">
                                                             <i class="fas fa-money-bill-wave"></i> Bậc lương
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/payroll-configs"
+                                                            class="sidebar-link ${param.activeMenu eq 'payroll-configs' ? 'active' : ''}">
+                                                            <i class="fas fa-cogs"></i> Cấu hình Tham số Lương
                                                         </a>
                                                     </li>
 
@@ -596,6 +615,12 @@
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/pit"
+                                                                        class="sidebar-link ${param.activeMenu eq 'pit' ? 'active' : ''}">
+                                                                        <i class="fas fa-calculator"></i> Tính thuế TNCN
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/resolve-claim"
                                                                         class="sidebar-link ${param.activeMenu eq 'payroll-claims' ? 'active' : ''}">
                                                                         <i class="fas fa-exclamation-circle"></i> Khiếu nại lương
@@ -684,6 +709,12 @@
                                                                         <a href="${pageContext.request.contextPath}/employee/payroll"
                                                                             class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
                                                                             <i class="fas fa-file-invoice-dollar"></i> Bảng lương
+                                                                        </a>
+                                                                    </li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/employee/pit"
+                                                                            class="sidebar-link ${param.activeMenu eq 'employee-pit' ? 'active' : ''}">
+                                                                            <i class="fas fa-file-invoice"></i> Chi tiết Thuế TNCN
                                                                         </a>
                                                                     </li>
                                                                 </c:if>
