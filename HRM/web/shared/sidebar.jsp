@@ -388,17 +388,12 @@
                                                         <i class="fas fa-key"></i> Phân quyền hệ thống
                                                     </a>
                                                 </li>
-                                                <li class="sidebar-menu-category">Cấu hình Thuế</li>
+
+                                                <li class="sidebar-menu-category">Quản lý Chấm công</li>
                                                 <li class="sidebar-item">
-                                                    <a href="${pageContext.request.contextPath}/admin/tax?action=rules"
-                                                        class="sidebar-link ${param.activeMenu eq 'admin-tax-rules' ? 'active' : ''}">
-                                                        <i class="fas fa-percentage"></i> Biểu Thuế TNCN
-                                                    </a>
-                                                </li>
-                                                <li class="sidebar-item">
-                                                    <a href="${pageContext.request.contextPath}/admin/tax?action=auditLog"
-                                                        class="sidebar-link ${param.activeMenu eq 'admin-audit-log' ? 'active' : ''}">
-                                                        <i class="fas fa-history"></i> Lịch Sử Hệ Thống PIT
+                                                    <a href="${pageContext.request.contextPath}/hr/timesheet-lock"
+                                                        class="sidebar-link ${param.activeMenu eq 'timesheet-lock' ? 'active' : ''}">
+                                                        <i class="fas fa-lock-open"></i> Khóa/Mở khóa công
                                                     </a>
                                                 </li>
                                             </c:if>
@@ -466,26 +461,13 @@
                                                             <i class="fas fa-money-bill-wave"></i> Bậc lương
                                                         </a>
                                                     </li>
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/payroll-configs"
-                                                            class="sidebar-link ${param.activeMenu eq 'payroll-configs' ? 'active' : ''}">
-                                                            <i class="fas fa-cogs"></i> Cấu hình Tham số Lương
-                                                        </a>
-                                                    </li>
 
                                                     <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/hr/payroll"
                                                             class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
                                                             <i class="fas fa-file-invoice-dollar"></i> Bảng lương
-                                                         </a>
-                                                     </li>
-
-                                                     <li class="sidebar-item">
-                                                         <a href="${pageContext.request.contextPath}/hr/resolve-claim"
-                                                             class="sidebar-link ${param.activeMenu eq 'payroll-claims' ? 'active' : ''}">
-                                                             <i class="fas fa-exclamation-circle"></i> Khiếu nại lương
-                                                         </a>
-                                                     </li>
+                                                        </a>
+                                                    </li>
 
                                                     <li class="sidebar-menu-category">Chấm công</li>
                                                     <li class="sidebar-item">
@@ -523,18 +505,6 @@
                                                             </a>
                                                         </li>
                                                         <li class="sidebar-menu-category">Chấm công</li>
-                                                        <li class="sidebar-item">
-                                                            <a href="${pageContext.request.contextPath}/manager/attendance-claims"
-                                                                class="sidebar-link ${param.activeMenu eq 'attendance-claims' ? 'active' : ''}">
-                                                                <i class="fas fa-clipboard-check"></i> Duyệt khiếu nại CC
-                                                            </a>
-                                                        </li>
-                                                        <li class="sidebar-item">
-                                                            <a href="${pageContext.request.contextPath}/manager/overtime"
-                                                                class="sidebar-link ${param.activeMenu eq 'overtime' ? 'active' : ''}">
-                                                                <i class="fas fa-clock"></i> Quản lý Tăng ca
-                                                            </a>
-                                                        </li>
 
                                                     </c:if>
 
@@ -557,12 +527,6 @@
                                                                 <a href="${pageContext.request.contextPath}/director/payroll"
                                                                     class="sidebar-link ${param.activeMenu eq 'director-payroll' ? 'active' : ''}">
                                                                     <i class="fas fa-file-invoice-dollar"></i> Duyệt bảng lương
-                                                                </a>
-                                                            </li>
-                                                            <li class="sidebar-item">
-                                                                <a href="${pageContext.request.contextPath}/hr/resolve-claim"
-                                                                    class="sidebar-link ${param.activeMenu eq 'payroll-claims' ? 'active' : ''}">
-                                                                    <i class="fas fa-exclamation-circle"></i> Khiếu nại lương
                                                                 </a>
                                                             </li>
                                                             <li class="sidebar-menu-category">Báo cáo</li>
@@ -615,18 +579,6 @@
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
-                                                                    <a href="${pageContext.request.contextPath}/hr/pit"
-                                                                        class="sidebar-link ${param.activeMenu eq 'pit' ? 'active' : ''}">
-                                                                        <i class="fas fa-calculator"></i> Tính thuế TNCN
-                                                                    </a>
-                                                                </li>
-                                                                <li class="sidebar-item">
-                                                                    <a href="${pageContext.request.contextPath}/hr/resolve-claim"
-                                                                        class="sidebar-link ${param.activeMenu eq 'payroll-claims' ? 'active' : ''}">
-                                                                        <i class="fas fa-exclamation-circle"></i> Khiếu nại lương
-                                                                    </a>
-                                                                </li>
-                                                                <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/insurance-rate"
                                                                         class="sidebar-link ${param.activeMenu eq 'insurance-rate' ? 'active' : ''}">
                                                                         <i class="fas fa-shield-alt"></i> Bảo hiểm
@@ -661,12 +613,6 @@
                                                                         </a>
                                                                     </li>
                                                                     <li class="sidebar-menu-category">Chấm công</li>
-                                                                    <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/manager/attendance-claims"
-                                                                            class="sidebar-link ${param.activeMenu eq 'attendance-claims' ? 'active' : ''}">
-                                                                            <i class="fas fa-clipboard-check"></i> Duyệt khiếu nại CC
-                                                                        </a>
-                                                                    </li>
 
                                                                 </c:if>
 
@@ -711,12 +657,6 @@
                                                                             <i class="fas fa-file-invoice-dollar"></i> Bảng lương
                                                                         </a>
                                                                     </li>
-                                                                    <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/employee/pit"
-                                                                            class="sidebar-link ${param.activeMenu eq 'employee-pit' ? 'active' : ''}">
-                                                                            <i class="fas fa-file-invoice"></i> Chi tiết Thuế TNCN
-                                                                        </a>
-                                                                    </li>
                                                                 </c:if>
 
                                                                 <%-- ══════ ACCOUNTANT (roleId=8) ══════
@@ -730,12 +670,6 @@
                                                                             <i class="fas fa-file-invoice-dollar"></i> Bảng Lương
                                                                         </a>
                                                                     </li>
-                                                                <li class="sidebar-item">
-                                                                    <a href="${pageContext.request.contextPath}/hr/resolve-claim"
-                                                                        class="sidebar-link ${param.activeMenu eq 'payroll-claims' ? 'active' : ''}">
-                                                                        <i class="fas fa-exclamation-circle"></i> Khiếu nại lương
-                                                                    </a>
-                                                                </li>
                                                                 </c:if>
 
                                                                 <%-- ══════ TÀI KHOẢN (chung) ══════ --%>
