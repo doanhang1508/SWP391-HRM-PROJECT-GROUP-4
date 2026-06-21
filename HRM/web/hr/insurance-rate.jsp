@@ -412,24 +412,24 @@
             <h3 class="modal-title"><i class="fas fa-plus-circle" style="color:var(--blue);"></i> Thêm Mức Bảo Hiểm Mới</h3>
             <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
         </div>
-        <form method="post" action="${pageContext.request.contextPath}/hr/insurance-rate" onsubmit="return validateDateRange(this)">
+        <form method="post" action="${pageContext.request.contextPath}/hr/insurance-rate">
             <input type="hidden" name="action" value="add">
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Mã Bảo Hiểm <span style="color:#e11d48;">*</span></label>
-                    <input type="text" name="insuranceCode" class="form-control" placeholder="VD: BHXH" required maxlength="20" style="text-transform:uppercase;">
+                    <input type="text" name="insuranceCode" class="form-control" placeholder="VD: BHXH" style="text-transform:uppercase;">
                     <div class="hint-text">Mã viết tắt, không trùng</div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Tên Loại Bảo Hiểm <span style="color:#e11d48;">*</span></label>
-                    <input type="text" name="insuranceName" class="form-control" placeholder="VD: Bảo hiểm xã hội" required maxlength="100">
+                    <input type="text" name="insuranceName" class="form-control" placeholder="VD: Bảo hiểm xã hội">
                 </div>
             </div>
             <div class="form-row-3">
                 <div class="form-group">
                     <label class="form-label">Tỷ Lệ DN (%) <span style="color:#e11d48;">*</span></label>
                     <div class="input-group">
-                        <input type="number" name="companyRate" id="addCompany" class="form-control" placeholder="0.00" step="0.01" min="0" max="100" required style="padding-right:34px;" oninput="calcAddTotal()">
+                        <input type="text" name="companyRate" id="addCompany" class="form-control" placeholder="0.00" style="padding-right:34px;" oninput="calcAddTotal()">
                         <span class="input-suffix">%</span>
                     </div>
                     <div class="hint-text">Phần DN đóng góp</div>
@@ -437,7 +437,7 @@
                 <div class="form-group">
                     <label class="form-label">Tỷ Lệ NV (%) <span style="color:#e11d48;">*</span></label>
                     <div class="input-group">
-                        <input type="number" name="employeeRate" id="addEmployee" class="form-control" placeholder="0.00" step="0.01" min="0" max="100" required style="padding-right:34px;" oninput="calcAddTotal()">
+                        <input type="text" name="employeeRate" id="addEmployee" class="form-control" placeholder="0.00" style="padding-right:34px;" oninput="calcAddTotal()">
                         <span class="input-suffix">%</span>
                     </div>
                     <div class="hint-text">Phần NV phải đóng</div>
@@ -445,7 +445,7 @@
                 <div class="form-group">
                     <label class="form-label">Tổng Tỷ Lệ (%)</label>
                     <div class="input-group">
-                        <input type="number" id="addTotal" class="form-control" readonly placeholder="0.00" style="padding-right:34px;background:#f8fafc;">
+                        <input type="text" id="addTotal" class="form-control" readonly placeholder="0.00" style="padding-right:34px;background:#f8fafc;">
                         <span class="input-suffix">%</span>
                     </div>
                     <div class="hint-text">Tự động tính</div>
@@ -463,7 +463,7 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Mô Tả</label>
-                <textarea name="description" class="form-control" maxlength="255" placeholder="Mô tả chi tiết về loại bảo hiểm..."></textarea>
+                <textarea name="description" class="form-control" placeholder="Mô tả chi tiết về loại bảo hiểm..."></textarea>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-cancel" onclick="closeModal('addModal')">Hủy</button>
@@ -480,38 +480,38 @@
             <h3 class="modal-title"><i class="fas fa-pen" style="color:var(--blue);"></i> Cập Nhật Mức Bảo Hiểm</h3>
             <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
         </div>
-        <form method="post" action="${pageContext.request.contextPath}/hr/insurance-rate" onsubmit="return validateDateRange(this)">
+        <form method="post" action="${pageContext.request.contextPath}/hr/insurance-rate">
             <input type="hidden" name="action" value="edit">
             <input type="hidden" name="id" id="editId">
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Mã Bảo Hiểm <span style="color:#e11d48;">*</span></label>
-                    <input type="text" name="insuranceCode" id="editCode" class="form-control" required maxlength="20" style="text-transform:uppercase;">
+                    <input type="text" name="insuranceCode" id="editCode" class="form-control" style="text-transform:uppercase;">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Tên Loại Bảo Hiểm <span style="color:#e11d48;">*</span></label>
-                    <input type="text" name="insuranceName" id="editName" class="form-control" required maxlength="100">
+                    <input type="text" name="insuranceName" id="editName" class="form-control">
                 </div>
             </div>
             <div class="form-row-3">
                 <div class="form-group">
                     <label class="form-label">Tỷ Lệ DN (%) <span style="color:#e11d48;">*</span></label>
                     <div class="input-group">
-                        <input type="number" name="companyRate" id="editCompany" class="form-control" step="0.01" min="0" max="100" required style="padding-right:34px;" oninput="calcEditTotal()">
+                        <input type="text" name="companyRate" id="editCompany" class="form-control" style="padding-right:34px;" oninput="calcEditTotal()">
                         <span class="input-suffix">%</span>
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Tỷ Lệ NV (%) <span style="color:#e11d48;">*</span></label>
                     <div class="input-group">
-                        <input type="number" name="employeeRate" id="editEmployee" class="form-control" step="0.01" min="0" max="100" required style="padding-right:34px;" oninput="calcEditTotal()">
+                        <input type="text" name="employeeRate" id="editEmployee" class="form-control" style="padding-right:34px;" oninput="calcEditTotal()">
                         <span class="input-suffix">%</span>
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Tổng Tỷ Lệ (%)</label>
                     <div class="input-group">
-                        <input type="number" id="editTotal" class="form-control" readonly style="padding-right:34px;background:#f8fafc;">
+                        <input type="text" id="editTotal" class="form-control" readonly style="padding-right:34px;background:#f8fafc;">
                         <span class="input-suffix">%</span>
                     </div>
                 </div>
@@ -528,7 +528,7 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Mô Tả</label>
-                <textarea name="description" id="editDesc" class="form-control"  maxlength="255" ></textarea>
+                <textarea name="description" id="editDesc" class="form-control"></textarea>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-cancel" onclick="closeModal('editModal')">Hủy</button>
@@ -539,20 +539,7 @@
 </div>
 
 <script>
-/* ─── Date validation helper ─── */
-function validateDateRange(form) {
-    var fromVal = form.querySelector('[name="effectiveFrom"]').value;
-    var toVal = form.querySelector('[name="effectiveTo"]').value;
-    if (fromVal && toVal) {
-        var fromDate = new Date(fromVal);
-        var toDate = new Date(toVal);
-        if (fromDate > toDate) {
-            alert('Ngày bắt đầu áp dụng không được lớn hơn ngày kết thúc áp dụng!');
-            return false;
-        }
-    }
-    return true;
-}
+
 
 /* ─── Modal helpers ─── */
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
