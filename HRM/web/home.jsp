@@ -135,20 +135,6 @@ body{background:#f0ede8;font-family:'Inter',sans-serif;overflow-x:hidden}
         <div class="hero-img-wrap">
             <div class="hero-img-label">Nhà máy — KCN Bắc Ninh</div>
         </div>
-        <div class="hero-stats-bar">
-            <div class="hstat">
-                <div class="hstat-n">500+</div>
-                <div class="hstat-l">Nhân sự</div>
-            </div>
-            <div class="hstat">
-                <div class="hstat-n">08</div>
-                <div class="hstat-l">Phòng ban</div>
-            </div>
-            <div class="hstat">
-                <div class="hstat-n">15+</div>
-                <div class="hstat-l">Năm hoạt động</div>
-            </div>
-        </div>
     </div>
 </section>
 
