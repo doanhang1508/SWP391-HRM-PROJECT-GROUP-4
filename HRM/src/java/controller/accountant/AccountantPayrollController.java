@@ -139,11 +139,17 @@ public class AccountantPayrollController extends HttpServlet {
                         if (u != null && u.getEmail() != null && !u.getEmail().isBlank()) {
                             final int mailMonth = month;
                             final int mailYear = year;
+                            final int accountantId = currentUser.getUserId();
                             new Thread(() -> {
                                 try {
                                     service.EmailService emailService = new service.EmailService();
                                     emailService.sendPayrollEmail(u.getEmail(), u.getFullName(), mailMonth, mailYear, target.getNetSalary());
-                                } catch (Exception ignored) {}
+                                } catch (Exception e) {
+                                    dao.notificationDAO notiDAO = new dao.notificationDAO();
+                                    notiDAO.create(accountantId, "error", "Gửi email lương thất bại", 
+                                        "Lỗi gửi email lương cho " + u.getFullName() + " (" + u.getEmail() + ").", 
+                                        "/accountant/payroll?month=" + mailMonth + "&year=" + mailYear);
+                                }
                             }).start();
                         }
                     }
@@ -166,14 +172,20 @@ public class AccountantPayrollController extends HttpServlet {
                 UserDAO userDAO = new UserDAO();
                 final int mailMonth = month;
                 final int mailYear = year;
+                final int accountantId = currentUser.getUserId();
                 new Thread(() -> {
                     service.EmailService emailService = new service.EmailService();
+                    dao.notificationDAO notiDAO = new dao.notificationDAO();
                     for (Payroll p : approvedList) {
                         User u = userDAO.getUserById(p.getUserId());
                         if (u != null && u.getEmail() != null && !u.getEmail().isBlank()) {
                             try {
                                 emailService.sendPayrollEmail(u.getEmail(), u.getFullName(), mailMonth, mailYear, p.getNetSalary());
-                            } catch (Exception ignored) {}
+                            } catch (Exception e) {
+                                notiDAO.create(accountantId, "error", "Gửi email lương thất bại", 
+                                    "Lỗi gửi email lương cho " + u.getFullName() + " (" + u.getEmail() + ").", 
+                                    "/accountant/payroll?month=" + mailMonth + "&year=" + mailYear);
+                            }
                         }
                     }
                 }).start();
