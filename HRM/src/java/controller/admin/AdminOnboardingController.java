@@ -109,9 +109,8 @@ public class AdminOnboardingController extends HttpServlet {
             return;
         }
 
-        // Tạo username từ fullName
-        String baseUsername = buildUsername(onbReq.getFullName());
-        String finalUsername = ensureUnique(baseUsername);
+        // Sử dụng email làm username luôn vì hệ thống đăng nhập bằng email
+        String finalUsername = onbReq.getEmail();
         String rawPassword   = generatePassword();
 
         // Transaction: tạo user + cập nhật status
@@ -193,23 +192,7 @@ public class AdminOnboardingController extends HttpServlet {
 
     // ─── Helpers ─────────────────────────────────────────────────
 
-    /** Chuyển "Nguyễn Văn An" → "nguyenvanan" */
-    private String buildUsername(String fullName) {
-        if (fullName == null || fullName.trim().isEmpty()) return "employee";
-        String normalized = Normalizer.normalize(fullName.trim().toLowerCase(), Normalizer.Form.NFD)
-                                      .replaceAll("\\p{M}", "")
-                                      .replaceAll("đ", "d")
-                                      .replaceAll("[^a-z0-9]", "");
-        return normalized.length() > 20 ? normalized.substring(0, 20) : normalized;
-    }
 
-    /** Đảm bảo username không trùng bằng cách thêm số */
-    private String ensureUnique(String base) {
-        if (!dao.isUsernameExists(base)) return base;
-        int suffix = 1;
-        while (dao.isUsernameExists(base + suffix)) suffix++;
-        return base + suffix;
-    }
 
     /** Mật khẩu ngẫu nhiên 10 ký tự có chữ hoa, thường, số, ký tự đặc biệt */
     private String generatePassword() {

@@ -64,7 +64,7 @@ public class EmailService {
              + "<p style='color:#334155;font-size:16px;line-height:1.6'>Xin chào <strong>" + fullName + "</strong>,</p>"
              + "<p style='color:#334155;font-size:15px;line-height:1.6'>Tài khoản nhân sự của bạn đã được tạo thành công. Dưới đây là thông tin đăng nhập vào hệ thống HRM:</p>"
              + "<div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin:20px 0'>"
-             + "<div style='margin-bottom:12px'><span style='color:#64748b;font-size:13px;display:block;margin-bottom:4px'>Tên đăng nhập (Username):</span>"
+             + "<div style='margin-bottom:12px'><span style='color:#64748b;font-size:13px;display:block;margin-bottom:4px'>Tên đăng nhập (Email):</span>"
              + "<span style='font-size:18px;font-weight:700;color:#0f172a;'>" + username + "</span></div>"
              + "<div><span style='color:#64748b;font-size:13px;display:block;margin-bottom:4px'>Mật khẩu:</span>"
              + "<span style='font-size:18px;font-weight:700;color:#0f172a;font-family:monospace;letter-spacing:2px'>" + password + "</span></div>"
