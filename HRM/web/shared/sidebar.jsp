@@ -351,6 +351,7 @@
                                 <ul class="sidebar-menu">
 
                                     <%-- ══════ MENU CHUNG cho mọi role ══════ --%>
+                                    <c:if test="${sessionScope.currentUser.roleId != 4}">
                                         <li class="sidebar-menu-category">Tổng quan</li>
                                         <li class="sidebar-item">
                                             <a href="${pageContext.request.contextPath}/dashboard"
@@ -358,6 +359,7 @@
                                                 <i class="fas fa-chart-line"></i> Bảng điều khiển
                                             </a>
                                         </li>
+                                    </c:if>
 
                                         <%-- ══════ ADMIN (roleId=1): CHỈ quản trị hệ thống ══════ --%>
                                             <c:if test="${sessionScope.currentUser.roleId == 1}">
