@@ -29,7 +29,7 @@ public class AllowanceController extends HttpServlet {
             return false;
         }
         User user = (User) session.getAttribute("currentUser");
-        if (user.getRoleId() != 1 && user.getRoleId() != 2) {
+        if (user.getRoleId() != 1 && user.getRoleId() != 2 && user.getRoleId() != 5) {
             resp.sendRedirect(req.getContextPath() + "/home");
             return false;
         }

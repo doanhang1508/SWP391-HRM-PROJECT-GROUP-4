@@ -188,7 +188,7 @@
 <div class="dashboard-wrapper">
     <!-- Sidebar -->
     <jsp:include page="../shared/sidebar.jsp">
-        <jsp:param name="activeMenu" value="payroll" />
+        <jsp:param name="activeMenu" value="resolve-claim" />
     </jsp:include>
 
     <!-- Main Content -->

@@ -436,12 +436,7 @@
                                                             <i class="fas fa-cogs"></i> Cấu hình lương
                                                         </a>
                                                     </li>
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/admin/tax?action=rules"
-                                                            class="sidebar-link ${param.activeMenu eq 'tax-rules' ? 'active' : ''}">
-                                                            <i class="fas fa-sliders-h"></i> Cấu hình Biểu Thuế
-                                                        </a>
-                                                    </li>
+
                                                     <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/hr/salary-grade"
                                                             class="sidebar-link ${param.activeMenu eq 'salary-grade' ? 'active' : ''}">
@@ -610,12 +605,7 @@
                                                                         <i class="fas fa-file-invoice-dollar"></i> Bảng lương
                                                                     </a>
                                                                 </li>
-                                                                <li class="sidebar-item">
-                                                                    <a href="${pageContext.request.contextPath}/hr/pit"
-                                                                        class="sidebar-link ${param.activeMenu eq 'pit' ? 'active' : ''}">
-                                                                        <i class="fas fa-calculator"></i> Tính thuế TNCN
-                                                                    </a>
-                                                                </li>
+
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/resolve-claim"
                                                                         class="sidebar-link ${param.activeMenu eq 'resolve-claim' ? 'active' : ''}">
@@ -707,12 +697,7 @@
                                                                             <i class="fas fa-file-invoice-dollar"></i> Phiếu lương
                                                                         </a>
                                                                     </li>
-                                                                    <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/employee/pit"
-                                                                            class="sidebar-link ${param.activeMenu eq 'pit' ? 'active' : ''}">
-                                                                            <i class="fas fa-calculator"></i> Thuế TNCN (PIT)
-                                                                        </a>
-                                                                    </li>
+
                                                                 </c:if>
 
                                                                 <%-- ══════ ACCOUNTANT (roleId=8) ══════

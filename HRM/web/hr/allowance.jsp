@@ -203,7 +203,9 @@
 </c:forEach>
 
 <div class="page-wrapper">
-    <jsp:include page="../shared/sidebar.jsp" />
+    <jsp:include page="../shared/sidebar.jsp">
+        <jsp:param name="activeMenu" value="allowance" />
+    </jsp:include>
 
     <main class="page-main">
 
