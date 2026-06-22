@@ -123,7 +123,23 @@ public class AuthFilter implements Filter {
                     redirectToAppropriate(req, resp, roleId);
                     return;
                 }
+            } else if (path.startsWith("/hr/department") || path.startsWith("/hr/position") || 
+                       path.startsWith("/hr/contract-type") || path.startsWith("/hr/shifts") || 
+                       path.startsWith("/hr/allowance")) {
+                // Các danh mục cấu hình vận hành cơ bản: CHỈ HR Staff (5) được phép truy cập
+                if (roleId != ROLE_HR_STAFF) {
+                    redirectToAppropriate(req, resp, roleId);
+                    return;
+                }
+            } else if (path.startsWith("/hr/salary-grade") || path.startsWith("/hr/reward-disciplines") || 
+                       path.startsWith("/hr/payroll-configs")) {
+                // Các danh mục cấu hình chính sách lương, thưởng: CHỈ HR Manager (2) được phép truy cập
+                if (roleId != ROLE_HR_MANAGER) {
+                    redirectToAppropriate(req, resp, roleId);
+                    return;
+                }
             } else {
+                // Các route /hr/ khác (như danh sách nhân viên, bảng lương...) cho cả Manager và Staff
                 if (roleId != ROLE_HR_MANAGER && roleId != ROLE_HR_STAFF) {
                     redirectToAppropriate(req, resp, roleId);
                     return;
