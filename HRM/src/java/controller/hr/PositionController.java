@@ -48,6 +48,7 @@ public class PositionController extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
+        User user = (User) session.getAttribute("currentUser");
         // HR Manager (role 2) và HR Staff (role 5) được quản lý chức vụ
         if (user.getRoleId() != 2 && user.getRoleId() != 5) {
             response.sendRedirect(request.getContextPath() + "/dashboard");
