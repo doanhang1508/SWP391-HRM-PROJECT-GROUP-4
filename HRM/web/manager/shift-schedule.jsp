@@ -5,6 +5,7 @@
 <c:set var="pageTitle" value="Xếp Lịch Ca - Quản đốc" scope="request" />
 <jsp:include page="../header.jsp" />
 
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
 footer, #chatWidget { display: none !important; }
 body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-top: 0 !important; }
@@ -181,7 +182,7 @@ body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-top: 0 !im
                 <div class="row g-3 align-items-end">
                     <div class="col-md-3">
                         <label class="form-label">Công nhân</label>
-                        <select name="userId" class="form-select" required>
+                        <select id="workerSelect" name="userId" class="form-select" required>
                             <option value="">-- Chọn công nhân --</option>
                             <c:forEach var="w" items="${workers}">
                                 <option value="${w.userId}">${w.fullName}</option>
@@ -308,5 +309,22 @@ body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-top: 0 !im
 
     </div><%-- end main-content --%>
 </div><%-- end dashboard-wrapper --%>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#workerSelect').select2({
+            placeholder: "-- Chọn công nhân --",
+            allowClear: true,
+            width: '100%',
+            language: {
+                noResults: function() {
+                    return "Không tìm thấy công nhân nào";
+                }
+            }
+        });
+    });
+</script>
 
 <jsp:include page="../footer.jsp"/>
