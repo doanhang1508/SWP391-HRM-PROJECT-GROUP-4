@@ -351,6 +351,7 @@
                                 <ul class="sidebar-menu">
 
                                     <%-- ══════ MENU CHUNG cho mọi role ══════ --%>
+                                    <c:if test="${sessionScope.currentUser.roleId != 4}">
                                         <li class="sidebar-menu-category">Tổng quan</li>
                                         <li class="sidebar-item">
                                             <a href="${pageContext.request.contextPath}/dashboard"
@@ -358,6 +359,7 @@
                                                 <i class="fas fa-chart-line"></i> Bảng điều khiển
                                             </a>
                                         </li>
+                                    </c:if>
 
                                         <%-- ══════ ADMIN (roleId=1): CHỈ quản trị hệ thống ══════ --%>
                                             <c:if test="${sessionScope.currentUser.roleId == 1}">
@@ -475,6 +477,12 @@
                                                         </a>
                                                     </li>
                                                     <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/payroll-configs"
+                                                            class="sidebar-link ${param.activeMenu eq 'payroll-configs' ? 'active' : ''}">
+                                                            <i class="fas fa-cogs"></i> Cấu hình lương
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/hr/resolve-claim"
                                                             class="sidebar-link ${param.activeMenu eq 'resolve-claim' ? 'active' : ''}">
                                                             <i class="fas fa-balance-scale"></i> Khiếu nại lương
@@ -541,12 +549,6 @@
                                                                     <i class="fas fa-file-invoice-dollar"></i> Duyệt bảng lương
                                                                 </a>
                                                             </li>
-                                                            <li class="sidebar-item">
-                                                                <a href="${pageContext.request.contextPath}/hr/resolve-claim"
-                                                                    class="sidebar-link ${param.activeMenu eq 'resolve-claim' ? 'active' : ''}">
-                                                                    <i class="fas fa-balance-scale"></i> Khiếu nại lương
-                                                                </a>
-                                                            </li>
                                                             <li class="sidebar-menu-category">Báo cáo</li>
                                                             <li class="sidebar-item">
                                                                 <a href="${pageContext.request.contextPath}/director/reports" class="sidebar-link ${param.activeMenu eq 'director-reports' ? 'active' : ''}">
@@ -600,6 +602,12 @@
                                                                     <a href="${pageContext.request.contextPath}/hr/payroll"
                                                                         class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
                                                                         <i class="fas fa-file-invoice-dollar"></i> Bảng lương
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/payroll-configs"
+                                                                        class="sidebar-link ${param.activeMenu eq 'payroll-configs' ? 'active' : ''}">
+                                                                        <i class="fas fa-cogs"></i> Cấu hình lương
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
