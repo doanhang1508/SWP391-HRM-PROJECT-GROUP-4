@@ -129,18 +129,73 @@ public class AccountantPayrollController extends HttpServlet {
                     int payrollId = Integer.parseInt(payrollIdStr);
                     PayrollDAO payrollDAO = new PayrollDAO();
                     payrollDAO.markAsPaidWithTracking(payrollId, currentUser.getUserId());
-                    session.setAttribute("successMessage", "Đã xác nhận chuyển khoản thành công!");
+                    
+                    // Gửi email ngầm cho 1 người
+                    List<Payroll> list = payrollDAO.getByMonthYear(month, year);
+                    Payroll target = list.stream().filter(p -> p.getPayrollId() == payrollId).findFirst().orElse(null);
+                    if (target != null) {
+                        UserDAO userDAO = new UserDAO();
+                        User u = userDAO.getUserById(target.getUserId());
+                        if (u != null && u.getEmail() != null && !u.getEmail().isBlank()) {
+                            final int mailMonth = month;
+                            final int mailYear = year;
+                            final int accountantId = currentUser.getUserId();
+                            new Thread(() -> {
+                                try {
+                                    service.EmailService emailService = new service.EmailService();
+                                    emailService.sendPayrollEmail(u.getEmail(), u.getFullName(), mailMonth, mailYear, target.getNetSalary());
+                                } catch (Exception e) {
+                                    dao.notificationDAO notiDAO = new dao.notificationDAO();
+                                    notiDAO.create(accountantId, "error", "Gửi email lương thất bại", 
+                                        "Lỗi gửi email lương cho " + u.getFullName() + " (" + u.getEmail() + ").", 
+                                        "/accountant/payroll?month=" + mailMonth + "&year=" + mailYear);
+                                }
+                            }).start();
+                        }
+                    }
+                    
+                    session.setAttribute("successMessage", "Đã xác nhận chuyển khoản thành công và đang gửi Email!");
                 } catch (NumberFormatException e) {
                     session.setAttribute("errorMessage", "Dữ liệu không hợp lệ.");
                 }
             }
         } else if ("markAllPaid".equals(action)) {
             PayrollDAO payrollDAO = new PayrollDAO();
+            
+            // Lấy danh sách cần gửi email TRƯỚC khi update status
+            List<Payroll> approvedList = payrollDAO.getByMonthYear(month, year);
+            approvedList.removeIf(p -> !"Approved".equals(p.getStatus()));
+            
             int updated = payrollDAO.markAllApprovedAsPaid(month, year, currentUser.getUserId());
-            session.setAttribute("successMessage", "Đã xác nhận chuyển khoản cho " + updated + " nhân viên!");
+            
+            if (updated > 0) {
+                UserDAO userDAO = new UserDAO();
+                final int mailMonth = month;
+                final int mailYear = year;
+                final int accountantId = currentUser.getUserId();
+                new Thread(() -> {
+                    service.EmailService emailService = new service.EmailService();
+                    dao.notificationDAO notiDAO = new dao.notificationDAO();
+                    for (Payroll p : approvedList) {
+                        User u = userDAO.getUserById(p.getUserId());
+                        if (u != null && u.getEmail() != null && !u.getEmail().isBlank()) {
+                            try {
+                                emailService.sendPayrollEmail(u.getEmail(), u.getFullName(), mailMonth, mailYear, p.getNetSalary());
+                            } catch (Exception e) {
+                                notiDAO.create(accountantId, "error", "Gửi email lương thất bại", 
+                                    "Lỗi gửi email lương cho " + u.getFullName() + " (" + u.getEmail() + ").", 
+                                    "/accountant/payroll?month=" + mailMonth + "&year=" + mailYear);
+                            }
+                        }
+                    }
+                }).start();
+            }
+            
+            session.setAttribute("successMessage", "Đã xác nhận chuyển khoản cho " + updated + " nhân viên! Hệ thống đang tự động gửi Email báo lương.");
         }
 
         response.sendRedirect(request.getContextPath() + "/accountant/payroll?month=" + month + "&year=" + year);
+
     }
 
     private int getParamOrDefault(HttpServletRequest request, String name, int def) {
@@ -184,133 +239,94 @@ public class AccountantPayrollController extends HttpServlet {
         PayrollDAO payrollDAO = new PayrollDAO();
         List<Payroll> list = payrollDAO.getPayrollsWithBankDetails(month, year);
 
-        // Set response headers for XLS download (HTML-based Excel)
-        String fileName = "DanhSachChuyenKhoanLuong_Thang" + month + "_" + year + ".xls";
-        response.setContentType("application/vnd.ms-excel; charset=UTF-8");
+        // Xuất định dạng chuẩn .xlsx của Microsoft Excel
+        String fileName = "DanhSachChuyenKhoanLuong_Thang" + month + "_" + year + ".xlsx";
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
-        response.setCharacterEncoding("UTF-8");
 
-        try (java.io.PrintWriter writer = response.getWriter()) {
-            writer.println("<html xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:x=\"urn:schemas-microsoft-com:office:excel\" xmlns=\"http://www.w3.org/TR/REC-html40\">");
-            writer.println("<head>");
-            writer.println("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">");
-            writer.println("<!--[if gte mso 9]>");
-            writer.println("<xml>");
-            writer.println(" <x:ExcelWorkbook>");
-            writer.println("  <x:ExcelWorksheets>");
-            writer.println("   <x:ExcelWorksheet>");
-            writer.println("    <x:Name>Chuyển Khoản Lương</x:Name>");
-            writer.println("    <x:WorksheetOptions>");
-            writer.println("     <x:DisplayGridlines/>");
-            writer.println("    </x:WorksheetOptions>");
-            writer.println("   </x:ExcelWorksheet>");
-            writer.println("  </x:ExcelWorksheets>");
-            writer.println(" </x:ExcelWorkbook>");
-            writer.println("</xml>");
-            writer.println("<![endif]-->");
-            writer.println("<style>");
-            writer.println("  body { font-family: 'Segoe UI', Arial, sans-serif; }");
-            writer.println("  .title-row { font-size: 16pt; font-weight: bold; color: #0f766e; text-align: center; height: 40px; }");
-            writer.println("  .subtitle-row { font-size: 11pt; color: #64748b; text-align: center; height: 25px; }");
-            writer.println("  th { background-color: #0d9488; color: #ffffff; font-weight: bold; border: 0.5pt solid #cbd5e1; text-align: center; vertical-align: middle; height: 35px; font-size: 10pt; }");
-            writer.println("  td { border: 0.5pt solid #e2e8f0; vertical-align: middle; height: 28px; font-size: 10pt; }");
-            writer.println("  .text-center { text-align: center; }");
-            writer.println("  .text-left { text-align: left; }");
-            writer.println("  .text-right { text-align: right; }");
-            writer.println("  .number-format { mso-number-format: \"\\#\\,\\#\\#0\"; text-align: right; }");
-            writer.println("  .text-format { mso-number-format: \"\\@\"; text-align: center; }");
-            writer.println("  .status-approved { background-color: #d1fae5; color: #059669; text-align: center; font-weight: bold; }");
-            writer.println("  .status-paid { background-color: #dbeafe; color: #2563eb; text-align: center; font-weight: bold; }");
-            writer.println("  .status-pending { background-color: #fef3c7; color: #d97706; text-align: center; font-weight: bold; }");
-            writer.println("  .status-rejected { background-color: #fee2e2; color: #b91c1c; text-align: center; font-weight: bold; }");
-            writer.println("  .status-draft { background-color: #f1f5f9; color: #475569; text-align: center; font-weight: bold; }");
-            writer.println("  .total-label { font-weight: bold; background-color: #f8fafc; border-top: 1pt double #0d9488; border-bottom: 1pt double #0d9488; }");
-            writer.println("  .total-val { font-weight: bold; background-color: #f8fafc; mso-number-format: \"\\#\\,\\#\\#0\"; text-align: right; border-top: 1pt double #0d9488; border-bottom: 1pt double #0d9488; }");
-            writer.println("</style>");
-            writer.println("</head>");
-            writer.println("<body>");
+        try (org.apache.poi.xssf.usermodel.XSSFWorkbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+            org.apache.poi.xssf.usermodel.XSSFSheet sheet = workbook.createSheet("Chuyen Khoan Luong");
 
-            // Title block
-            writer.println("<table>");
-            writer.println("  <tr><td colspan=\"8\" class=\"title-row\">DANH SÁCH CHUYỂN KHOẢN LƯƠNG NHÂN VIÊN</td></tr>");
-            writer.println("  <tr><td colspan=\"8\" class=\"subtitle-row\">Kỳ lương: Tháng " + month + " năm " + year + "</td></tr>");
-            writer.println("  <tr><td colspan=\"8\" style=\"height: 15px;\"></td></tr>");
-            writer.println("</table>");
+            // Tạo CellStyle cho dòng Tiêu đề (Header)
+            org.apache.poi.xssf.usermodel.XSSFCellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFillForegroundColor(org.apache.poi.ss.usermodel.IndexedColors.TEAL.getIndex());
+            headerStyle.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+            
+            org.apache.poi.xssf.usermodel.XSSFFont headerFont = workbook.createFont();
+            headerFont.setColor(org.apache.poi.ss.usermodel.IndexedColors.WHITE.getIndex());
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
 
-            // Table headers
-            writer.println("<table>");
-            writer.println("  <thead>");
-            writer.println("    <tr>");
-            writer.println("      <th style=\"width: 50px;\">STT</th>");
-            writer.println("      <th style=\"width: 80px;\">Mã NV</th>");
-            writer.println("      <th style=\"width: 200px;\">Họ và tên</th>");
-            writer.println("      <th style=\"width: 150px;\">Số tài khoản</th>");
-            writer.println("      <th style=\"width: 180px;\">Ngân hàng thụ hưởng</th>");
-            writer.println("      <th style=\"width: 130px;\">Số tiền chuyển (VND)</th>");
-            writer.println("      <th style=\"width: 300px;\">Nội dung chuyển khoản</th>");
-            writer.println("      <th style=\"width: 120px;\">Trạng thái</th>");
-            writer.println("    </tr>");
-            writer.println("  </thead>");
-            writer.println("  <tbody>");
+            // Cấu hình format số tiền (VND)
+            org.apache.poi.xssf.usermodel.XSSFCellStyle moneyStyle = workbook.createCellStyle();
+            org.apache.poi.xssf.usermodel.XSSFDataFormat format = workbook.createDataFormat();
+            moneyStyle.setDataFormat(format.getFormat("#,##0"));
 
-            java.math.BigDecimal totalTransfer = java.math.BigDecimal.ZERO;
+            // Khởi tạo dòng Header
+            org.apache.poi.ss.usermodel.Row headerRow = sheet.createRow(0);
+            String[] columns = {"STT", "Mã NV", "Họ và tên", "Số tài khoản", "Ngân hàng thụ hưởng", "Số tiền chuyển (VND)", "Nội dung chuyển khoản", "Trạng thái"};
+            for (int i = 0; i < columns.length; i++) {
+                org.apache.poi.ss.usermodel.Cell cell = headerRow.createCell(i);
+                cell.setCellValue(columns[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Bơm dữ liệu
+            int rowNum = 1;
             int stt = 1;
+            java.math.BigDecimal totalTransfer = java.math.BigDecimal.ZERO;
+
             for (Payroll p : list) {
                 if (p.getNetSalary() != null) {
                     totalTransfer = totalTransfer.add(p.getNetSalary());
                 }
 
-                // Check bank details
+                org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowNum++);
+                
                 String account = p.getBankAccount() != null ? p.getBankAccount() : "—";
                 String bank = p.getBankName() != null ? p.getBankName() : "—";
                 String fullName = p.getFullName() != null ? p.getFullName() : "";
                 String content = "Chuyen khoan luong thang " + month + "/" + year + " cho " + fullName;
+                String statusText = p.getStatus() != null ? p.getStatus() : "Draft";
 
-                String statusClass = "";
-                String statusText = p.getStatus() != null ? p.getStatus() : "";
-                if ("Approved".equalsIgnoreCase(statusText)) {
-                    statusClass = "status-approved";
-                    statusText = "Chờ CK";
-                } else if ("Paid".equalsIgnoreCase(statusText)) {
-                    statusClass = "status-paid";
-                    statusText = "Đã TK";
-                } else if ("Pending".equalsIgnoreCase(statusText)) {
-                    statusClass = "status-pending";
-                    statusText = "Chờ duyệt";
-                } else if ("Rejected".equalsIgnoreCase(statusText)) {
-                    statusClass = "status-rejected";
-                    statusText = "Từ chối";
+                // Dịch trạng thái sang tiếng Việt cho Kế toán dễ đọc
+                if ("Approved".equalsIgnoreCase(statusText)) statusText = "Chờ CK";
+                else if ("Paid".equalsIgnoreCase(statusText)) statusText = "Đã CK";
+
+                row.createCell(0).setCellValue(stt++);
+                row.createCell(1).setCellValue(p.getUserId());
+                row.createCell(2).setCellValue(fullName);
+                row.createCell(3).setCellValue(account);
+                row.createCell(4).setCellValue(bank);
+                
+                org.apache.poi.ss.usermodel.Cell moneyCell = row.createCell(5);
+                if (p.getNetSalary() != null) {
+                    moneyCell.setCellValue(p.getNetSalary().doubleValue());
+                    moneyCell.setCellStyle(moneyStyle);
                 } else {
-                    statusClass = "status-draft";
-                    statusText = "Nháp";
+                    moneyCell.setCellValue(0);
                 }
 
-                writer.println("    <tr>");
-                writer.println("      <td class=\"text-center\">" + stt++ + "</td>");
-                writer.println("      <td class=\"text-center\">" + p.getUserId() + "</td>");
-                writer.println("      <td class=\"text-left\">" + escapeHtml(fullName) + "</td>");
-                writer.println("      <td class=\"text-format\">" + account + "</td>");
-                writer.println("      <td class=\"text-left\">" + escapeHtml(bank) + "</td>");
-                writer.println("      <td class=\"number-format\">" + formatNum(p.getNetSalary()) + "</td>");
-                writer.println("      <td class=\"text-left\">" + escapeHtml(content) + "</td>");
-                writer.println("      <td class=\"" + statusClass + "\">" + statusText + "</td>");
-                writer.println("    </tr>");
+                row.createCell(6).setCellValue(content);
+                row.createCell(7).setCellValue(statusText);
             }
 
-            // Totals Row
-            writer.println("    <tr>");
-            writer.println("      <td colspan=\"3\" class=\"total-label text-center\">TỔNG CỘNG</td>");
-            writer.println("      <td class=\"total-label\"></td>");
-            writer.println("      <td class=\"total-label\"></td>");
-            writer.println("      <td class=\"total-val\">" + totalTransfer.toPlainString() + "</td>");
-            writer.println("      <td class=\"total-label\"></td>");
-            writer.println("      <td class=\"total-label\"></td>");
-            writer.println("    </tr>");
+            // Dòng Tổng Cộng
+            org.apache.poi.ss.usermodel.Row totalRow = sheet.createRow(rowNum);
+            org.apache.poi.ss.usermodel.Cell totalLabelCell = totalRow.createCell(4);
+            totalLabelCell.setCellValue("TỔNG CỘNG:");
+            totalLabelCell.setCellStyle(headerStyle); // Dùng lại màu xanh cho nổi
 
-            writer.println("  </tbody>");
-            writer.println("</table>");
-            writer.println("</body>");
-            writer.println("</html>");
+            org.apache.poi.ss.usermodel.Cell totalValueCell = totalRow.createCell(5);
+            totalValueCell.setCellValue(totalTransfer.doubleValue());
+            totalValueCell.setCellStyle(moneyStyle);
+
+            // Auto-size các cột để vừa nội dung
+            for (int i = 0; i < columns.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(response.getOutputStream());
         }
     }
 }

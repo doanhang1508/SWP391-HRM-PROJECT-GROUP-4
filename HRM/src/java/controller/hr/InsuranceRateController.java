@@ -105,15 +105,95 @@ public class InsuranceRateController extends HttpServlet {
         String fromStr       = request.getParameter("effectiveFrom");
         String toStr         = request.getParameter("effectiveTo");
 
-        try {
-            BigDecimal companyRate  = new BigDecimal(companyRateS);
-            BigDecimal employeeRate = new BigDecimal(employeeRateS);
-            Date effectiveFrom = (fromStr != null && !fromStr.isBlank()) ? Date.valueOf(fromStr) : null;
-            Date effectiveTo   = (toStr   != null && !toStr.isBlank())   ? Date.valueOf(toStr)   : null;
+        String errorMsg = null;
 
+        if (insuranceCode == null || insuranceCode.trim().isEmpty()) {
+            errorMsg = "Mã bảo hiểm không được trống.";
+        } else if (insuranceCode.length() > 20) {
+            errorMsg = "Mã bảo hiểm không được vượt quá 20 ký tự.";
+        } else if (!insuranceCode.matches("^[\\p{L}0-9_\\- ]+$")) {
+            errorMsg = "Mã bảo hiểm chỉ được chứa chữ cái, số, khoảng trắng, gạch ngang và gạch dưới.";
+        } else if (insuranceName == null || insuranceName.trim().isEmpty()) {
+            errorMsg = "Tên loại bảo hiểm không được trống.";
+        } else if (insuranceName.length() > 100) {
+            errorMsg = "Tên loại bảo hiểm không được vượt quá 100 ký tự.";
+        }
+
+        BigDecimal companyRate = null;
+        BigDecimal employeeRate = null;
+
+        if (errorMsg == null) {
+            if (companyRateS == null || companyRateS.trim().isEmpty()) {
+                errorMsg = "Tỷ lệ DN không được trống.";
+            } else {
+                try {
+                    companyRate = new BigDecimal(companyRateS.trim());
+                    if (companyRate.compareTo(BigDecimal.ZERO) < 0) {
+                        errorMsg = "Tỷ lệ DN không được nhỏ hơn 0.";
+                    } else if (companyRate.compareTo(new BigDecimal("100")) > 0) {
+                        errorMsg = "Tỷ lệ DN không được lớn hơn 100.";
+                    }
+                } catch (NumberFormatException e) {
+                    errorMsg = "Tỷ lệ DN phải là một số.";
+                }
+            }
+        }
+
+        if (errorMsg == null) {
+            if (employeeRateS == null || employeeRateS.trim().isEmpty()) {
+                errorMsg = "Tỷ lệ NV không được trống.";
+            } else {
+                try {
+                    employeeRate = new BigDecimal(employeeRateS.trim());
+                    if (employeeRate.compareTo(BigDecimal.ZERO) < 0) {
+                        errorMsg = "Tỷ lệ NV không được nhỏ hơn 0.";
+                    } else if (employeeRate.compareTo(new BigDecimal("100")) > 0) {
+                        errorMsg = "Tỷ lệ NV không được lớn hơn 100.";
+                    }
+                } catch (NumberFormatException e) {
+                    errorMsg = "Tỷ lệ NV phải là một số.";
+                }
+            }
+        }
+
+        Date effectiveFrom = null;
+        Date effectiveTo = null;
+
+        if (errorMsg == null) {
+            try {
+                effectiveFrom = (fromStr != null && !fromStr.isBlank()) ? Date.valueOf(fromStr) : null;
+            } catch (IllegalArgumentException e) {
+                errorMsg = "Ngày bắt đầu không hợp lệ.";
+            }
+        }
+        if (errorMsg == null) {
+            try {
+                effectiveTo = (toStr != null && !toStr.isBlank()) ? Date.valueOf(toStr) : null;
+            } catch (IllegalArgumentException e) {
+                errorMsg = "Ngày kết thúc không hợp lệ.";
+            }
+        }
+
+        if (errorMsg == null) {
             if (effectiveFrom != null && effectiveTo != null && effectiveFrom.after(effectiveTo)) {
-                request.getSession().setAttribute("errorMsg", "Ngày bắt đầu áp dụng không được lớn hơn ngày kết thúc.");
-            } else if ("add".equals(action)) {
+                errorMsg = "Ngày bắt đầu áp dụng không được lớn hơn ngày kết thúc.";
+            }
+        }
+
+        if (errorMsg == null) {
+            if (description != null && description.length() > 255) {
+                errorMsg = "Mô tả không được vượt quá 255 ký tự.";
+            }
+        }
+
+        if (errorMsg != null) {
+            request.getSession().setAttribute("errorMsg", errorMsg);
+            response.sendRedirect(request.getContextPath() + LIST_URL);
+            return;
+        }
+
+        try {
+            if ("add".equals(action)) {
                 if (dao.isDuplicate(insuranceName, 0)) {
                     request.getSession().setAttribute("errorMsg", "Tên loại bảo hiểm đã tồn tại.");
                 } else if (dao.isCodeDuplicate(insuranceCode, 0)) {
@@ -139,8 +219,8 @@ public class InsuranceRateController extends HttpServlet {
                     request.getSession().setAttribute("successMsg", "Cập nhật mức bảo hiểm thành công.");
                 }
             }
-        } catch (IllegalArgumentException e) {
-            request.getSession().setAttribute("errorMsg", "Dữ liệu nhập không hợp lệ.");
+        } catch (Exception e) {
+            request.getSession().setAttribute("errorMsg", "Lỗi xử lý dữ liệu.");
         }
 
         response.sendRedirect(request.getContextPath() + LIST_URL);

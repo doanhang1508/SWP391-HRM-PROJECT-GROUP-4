@@ -10,7 +10,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.OnboardingRequest;
 import model.User;
-import util.EmailUtil;
+import service.EmailService;
+import dao.notificationDAO;
 
 import java.io.IOException;
 import java.text.Normalizer;
@@ -108,9 +109,8 @@ public class AdminOnboardingController extends HttpServlet {
             return;
         }
 
-        // Tạo username từ fullName
-        String baseUsername = buildUsername(onbReq.getFullName());
-        String finalUsername = ensureUnique(baseUsername);
+        // Sử dụng email làm username luôn vì hệ thống đăng nhập bằng email
+        String finalUsername = onbReq.getEmail();
         String rawPassword   = generatePassword();
 
         // Transaction: tạo user + cập nhật status
@@ -121,7 +121,8 @@ public class AdminOnboardingController extends HttpServlet {
             boolean emailSent = false;
             String emailError = "";
             try {
-                EmailUtil.sendWelcomeEmail(onbReq.getEmail(), onbReq.getFullName(),
+                EmailService emailService = new EmailService();
+                emailService.sendWelcomeEmail(onbReq.getEmail(), onbReq.getFullName(),
                                            createdUsername, rawPassword);
                 emailSent = true;
             } catch (Exception e) {
@@ -129,6 +130,23 @@ public class AdminOnboardingController extends HttpServlet {
                 System.err.println("[AdminOnboarding] Gửi welcome email thất bại: " + e.getMessage());
                 emailError = e.getMessage();
             }
+
+            // Lưu log vào notifications, kèm theo trạng thái gửi email
+            String notifBody = "Tài khoản cho " + onbReq.getFullName() + " đã được tạo thành công.";
+            if (emailSent) {
+                notifBody += " Email thông tin đăng nhập đã được gửi tới ứng viên.";
+            } else {
+                notifBody += " Tuy nhiên, lỗi khi gửi email: " + emailError;
+                
+                // Tự động báo cho HR biết để sửa lại email
+                new notificationDAO().create(onbReq.getCreatedBy(), "system", "Lỗi gửi email cấp quyền", 
+                    "Tài khoản cho " + onbReq.getFullName() + " đã được duyệt. Tuy nhiên, hệ thống không thể gửi email. Vui lòng vào Quản lý nhân viên kiểm tra lại địa chỉ email.", 
+                    "/hr/employee/list");
+            }
+
+            new notificationDAO().create(admin.getUserId(), "system", "Phê duyệt ứng viên", 
+                notifBody, 
+                "/admin/onboarding/detail?id=" + requestId);
             
             String redirectUrl = req.getContextPath() + "/admin/onboarding/list?msg=approved&name="
                               + java.net.URLEncoder.encode(onbReq.getFullName(), "UTF-8");
@@ -161,6 +179,11 @@ public class AdminOnboardingController extends HttpServlet {
 
         boolean ok = dao.rejectRequest(requestId, admin.getUserId(), reason.trim());
         if (ok) {
+            // Lưu log vào notifications
+            new notificationDAO().create(admin.getUserId(), "system", "Từ chối ứng viên", 
+                "Bạn đã từ chối yêu cầu tuyển dụng (ID: " + requestId + ").", 
+                "/admin/onboarding/detail?id=" + requestId);
+
             resp.sendRedirect(req.getContextPath() + "/admin/onboarding/list?msg=rejected");
         } else {
             resp.sendRedirect(req.getContextPath() + "/admin/onboarding/detail?id=" + requestId + "&error=reject_failed");
@@ -169,23 +192,7 @@ public class AdminOnboardingController extends HttpServlet {
 
     // ─── Helpers ─────────────────────────────────────────────────
 
-    /** Chuyển "Nguyễn Văn An" → "nguyenvanan" */
-    private String buildUsername(String fullName) {
-        if (fullName == null || fullName.trim().isEmpty()) return "employee";
-        String normalized = Normalizer.normalize(fullName.trim().toLowerCase(), Normalizer.Form.NFD)
-                                      .replaceAll("\\p{M}", "")
-                                      .replaceAll("đ", "d")
-                                      .replaceAll("[^a-z0-9]", "");
-        return normalized.length() > 20 ? normalized.substring(0, 20) : normalized;
-    }
 
-    /** Đảm bảo username không trùng bằng cách thêm số */
-    private String ensureUnique(String base) {
-        if (!dao.isUsernameExists(base)) return base;
-        int suffix = 1;
-        while (dao.isUsernameExists(base + suffix)) suffix++;
-        return base + suffix;
-    }
 
     /** Mật khẩu ngẫu nhiên 10 ký tự có chữ hoa, thường, số, ký tự đặc biệt */
     private String generatePassword() {

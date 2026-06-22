@@ -238,6 +238,14 @@
                                                 <i class="fas ${u.status == 1 ? 'fa-lock' : 'fa-unlock'}"></i>
                                             </button>
                                         </form>
+                                        <!-- Đặt lại mật khẩu (Gửi mail) -->
+                                        <form method="post" action="${pageContext.request.contextPath}/admin/users" class="m-0" onsubmit="return confirm('Bạn có chắc chắn muốn tạo mật khẩu mới ngẫu nhiên và gửi vào email của ${u.fullName} không?');">
+                                            <input type="hidden" name="action" value="resetPassword" />
+                                            <input type="hidden" name="userId" value="${u.userId}" />
+                                            <button type="submit" class="btn-action" style="background:#fef08a;color:#ca8a04;" title="Cấp lại mật khẩu qua Email">
+                                                <i class="fas fa-key"></i>
+                                            </button>
+                                        </form>
                                         <!-- Xem chi tiết -->
                                         <a href="${pageContext.request.contextPath}/profile?userId=${u.userId}" class="btn-action btn-view" title="Xem chi tiết">
                                             <i class="fas fa-eye"></i>

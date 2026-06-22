@@ -17,26 +17,31 @@
     .btn-back { display: inline-flex; align-items: center; gap: 8px; color: #64748b; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: color 0.2s; }
     .btn-back:hover { color: #0f172a; }
 
+    /* Alert */
+    .alert-success { background: #dcfce7; border: 1px solid #a7f3d0; color: #065f46; padding: 14px 20px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-weight: 500; }
+    .alert-error { background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; padding: 14px 20px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-weight: 500; }
+
     /* Content Card */
-    .content-card { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); max-width: 900px; margin: 0 auto; }
-    .section-title { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0 0 24px; display: flex; align-items: center; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; }
+    .content-card { background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); max-width: 960px; margin: 0 auto; }
+    .section-title { font-size: 1.05rem; font-weight: 700; color: #0f172a; margin: 0 0 20px; display: flex; align-items: center; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; }
     .section-title i { color: #2563eb; }
+    .section-gap { margin-top: 36px; }
     
     /* Form Grid */
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 8px; }
     .form-group { display: flex; flex-direction: column; gap: 8px; }
     .form-group.full-width { grid-column: span 2; }
-    .form-label { font-size: 0.9rem; font-weight: 600; color: #334155; }
+    .form-label { font-size: 0.88rem; font-weight: 600; color: #334155; }
     .form-label span.required { color: #ef4444; margin-left: 4px; }
     
-    .form-control { background: #fff; border: 1px solid #cbd5e1; padding: 12px 16px; border-radius: 8px; font-size: 0.95rem; color: #0f172a; transition: all 0.2s; width: 100%; box-sizing: border-box; }
+    .form-control { background: #fff; border: 1px solid #cbd5e1; padding: 11px 16px; border-radius: 8px; font-size: 0.93rem; color: #0f172a; transition: all 0.2s; width: 100%; box-sizing: border-box; }
     .form-control:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
     .form-control:disabled { background: #f8fafc; color: #94a3b8; cursor: not-allowed; }
     
     .form-select { appearance: none; background: #fff url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") no-repeat right 12px center/12px 12px; }
     
     /* Form Actions */
-    .form-actions { display: flex; justify-content: flex-end; gap: 16px; border-top: 1px solid #e2e8f0; padding-top: 24px; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 16px; border-top: 1px solid #e2e8f0; padding-top: 24px; margin-top: 24px; }
     .btn { padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; border: none; text-decoration: none; display: inline-block; }
     .btn-cancel { background: #f1f5f9; color: #475569; }
     .btn-cancel:hover { background: #e2e8f0; color: #0f172a; }
@@ -61,10 +66,19 @@
             </div>
         </div>
 
+        <!-- Alert messages -->
+        <c:if test="${param.msg == 'update_success'}">
+            <div class="alert-success"><i class="fas fa-check-circle"></i> Cập nhật thông tin nhân viên thành công!</div>
+        </c:if>
+        <c:if test="${param.error == 'save_failed'}">
+            <div class="alert-error"><i class="fas fa-exclamation-circle"></i> Lưu thất bại. Vui lòng thử lại.</div>
+        </c:if>
+
         <div class="content-card">
             <form action="${pageContext.request.contextPath}/hr/employee-edit" method="POST">
                 <input type="hidden" name="userId" value="${employee.userId}" />
                 
+                <!-- PHẦN 1: THÔNG TIN CƠ BẢN -->
                 <h3 class="section-title"><i class="fas fa-user"></i> Thông tin cơ bản</h3>
                 <div class="form-grid">
                     <div class="form-group full-width">
@@ -91,9 +105,41 @@
                         <label class="form-label">Số điện thoại</label>
                         <input type="text" class="form-control" name="phone" value="${employee.phone}" />
                     </div>
+
+                    <div class="form-group">
+                        <label class="form-label">CMND/CCCD</label>
+                        <input type="text" class="form-control" name="idCard" value="${empProfile != null ? empProfile.idCard : ''}" placeholder="Số CMND hoặc CCCD" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Giới tính</label>
+                        <select name="gender" class="form-control form-select">
+                            <option value="">-- Chọn --</option>
+                            <option value="1" ${empProfile != null && empProfile.gender == 1 ? 'selected' : ''}>Nam</option>
+                            <option value="0" ${empProfile != null && empProfile.gender == 0 ? 'selected' : ''}>Nữ</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Ngày sinh</label>
+                        <input type="date" class="form-control" name="dob"
+                               value="${empProfile != null && empProfile.dob != null ? empProfile.dob : ''}" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Ngày vào làm</label>
+                        <input type="date" class="form-control" name="hireDate"
+                               value="${empProfile != null && empProfile.hireDate != null ? empProfile.hireDate : ''}" />
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label">Địa chỉ</label>
+                        <input type="text" class="form-control" name="address" value="${empProfile != null ? empProfile.address : ''}" placeholder="Địa chỉ hiện tại" />
+                    </div>
                 </div>
 
-                <h3 class="section-title" style="margin-top: 40px;"><i class="fas fa-briefcase"></i> Vị trí &amp; Tổ chức</h3>
+                <!-- PHẦN 2: VỊ TRÍ & TỔ CHỨC -->
+                <h3 class="section-title section-gap"><i class="fas fa-briefcase"></i> Vị trí &amp; Tổ chức</h3>
                 <div class="form-grid">
                     <div class="form-group">
                         <label class="form-label">Phòng ban (Department)</label>
@@ -130,6 +176,59 @@
                             <option value="1" ${employee.status == 1 ? 'selected' : ''}>Đang làm việc</option>
                             <option value="0" ${employee.status == 0 ? 'selected' : ''}>Đã nghỉ việc / Khóa</option>
                         </select>
+                    </div>
+                </div>
+
+                <!-- PHẦN 3: HỢP ĐỒNG & LƯƠNG -->
+                <h3 class="section-title section-gap"><i class="fas fa-file-contract" style="color:#d97706;"></i> Hợp đồng &amp; Lương</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Loại hợp đồng</label>
+                        <select name="contractTypeId" class="form-control form-select">
+                            <option value="">-- Chọn loại hợp đồng --</option>
+                            <c:forEach var="ct" items="${contractTypeList}">
+                                <option value="${ct.contractTypeId}"
+                                    ${empProfile != null && empProfile.contractTypeId == ct.contractTypeId ? 'selected' : ''}>
+                                    ${ct.typeName}
+                                </option>
+                            </c:forEach>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Ngạch lương (Salary Grade)</label>
+                        <select name="salaryGradeId" class="form-control form-select">
+                            <option value="">-- Chọn ngạch lương --</option>
+                            <c:forEach var="sg" items="${salaryGradeList}">
+                                <option value="${sg.salaryGradeId}"
+                                    ${empProfile != null && empProfile.salaryGradeId == sg.salaryGradeId ? 'selected' : ''}>
+                                    ${sg.gradeName}
+                                </option>
+                            </c:forEach>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Mã số thuế</label>
+                        <input type="text" class="form-control" name="taxCode" value="${empProfile != null ? empProfile.taxCode : ''}" placeholder="Mã số thuế cá nhân" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Số sổ BHXH</label>
+                        <input type="text" class="form-control" name="socialInsuranceNo" value="${empProfile != null ? empProfile.socialInsuranceNo : ''}" placeholder="Số sổ bảo hiểm xã hội" />
+                    </div>
+                </div>
+
+                <!-- PHẦN 4: NGÂN HÀNG -->
+                <h3 class="section-title section-gap"><i class="fas fa-university" style="color:#3b82f6;"></i> Tài khoản Ngân hàng</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Tên Ngân hàng</label>
+                        <input type="text" class="form-control" name="bankName" value="${empProfile != null ? empProfile.bankName : ''}" placeholder="Vd: Vietcombank, BIDV..." />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Số tài khoản</label>
+                        <input type="text" class="form-control" name="bankAccount" value="${empProfile != null ? empProfile.bankAccount : ''}" placeholder="Số tài khoản nhận lương" />
                     </div>
                 </div>
                 

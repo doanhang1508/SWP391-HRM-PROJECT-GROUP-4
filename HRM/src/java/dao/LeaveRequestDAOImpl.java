@@ -514,6 +514,28 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
     public List<LeaveRequest> getLeaveHistoryByUserId(int userId) {
         return this.getRequestsByUserId(userId);
     }
+
+    @Override
+    public double getPaidLeaveDays(int employeeId, int month, int year) {
+        String sql = "SELECT SUM(total_days) FROM leave_requests lr " +
+                     "JOIN leave_types lt ON lr.leave_type_id = lt.leave_type_id " +
+                     "WHERE lr.user_id = ? AND MONTH(lr.start_date) = ? AND YEAR(lr.start_date) = ? " +
+                     "AND lr.status = 'Approved' AND lt.paid_leave = 1";
+        try (Connection c = DBContext.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getDouble(1);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
 }
 
 

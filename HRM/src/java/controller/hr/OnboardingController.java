@@ -104,10 +104,29 @@ public class OnboardingController extends HttpServlet {
             if (r.getId() > 0) {
                 ok = onbDAO.update(r);
             } else {
-                ok = onbDAO.create(r) > 0;
+                int newId = onbDAO.create(r);
+                if (newId > 0) {
+                    r.setId(newId);
+                    ok = true;
+                } else {
+                    ok = false;
+                }
             }
 
             if (ok) {
+                if (!isDraft) {
+                    // Gửi thông báo cho toàn bộ Admin (role_id = 1)
+                    dao.UserDAO userDAO = new dao.UserDAO();
+                    dao.notificationDAO notifDAO = new dao.notificationDAO();
+                    java.util.List<model.User> allUsers = userDAO.getAllUsers();
+                    for (model.User admin : allUsers) {
+                        if (admin.getRoleId() == 1) {
+                            notifDAO.create(admin.getUserId(), "system", "Yêu cầu tuyển dụng mới", 
+                                "HR " + currentUser.getFullName() + " vừa gửi yêu cầu tạo tài khoản cho ứng viên " + r.getFullName() + ".", 
+                                "/admin/onboarding/detail?id=" + r.getId());
+                        }
+                    }
+                }
                 String msg = isDraft ? "Đã lưu bản nháp thành công!" : "Đã gửi yêu cầu lên Admin!";
                 resp.sendRedirect(
                         req.getContextPath() + "/hr/onboarding/list?msg=" + java.net.URLEncoder.encode(msg, "UTF-8"));

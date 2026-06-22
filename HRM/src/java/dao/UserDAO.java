@@ -435,4 +435,30 @@ public class UserDAO {
             }
         }
     }
+
+    // ── Cập nhật đầy đủ thông tin nhân viên từ form chỉnh sửa ──
+    public boolean updateUserFull(int userId, String fullName, String email, String phone,
+                                  int departmentId, int positionId, int roleId, int status) {
+        String sql = "UPDATE users SET full_name = ?, email = ?, phone = ?, " +
+                     "department_id = ?, position_id = ?, role_id = ?, status = ? " +
+                     "WHERE user_id = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, fullName);
+            ps.setString(2, email);
+            ps.setString(3, phone);
+            if (departmentId > 0) ps.setInt(4, departmentId);
+            else ps.setNull(4, java.sql.Types.INTEGER);
+            if (positionId > 0) ps.setInt(5, positionId);
+            else ps.setNull(5, java.sql.Types.INTEGER);
+            ps.setInt(6, roleId);
+            ps.setInt(7, status);
+            ps.setInt(8, userId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi updateUserFull: " + e.getMessage());
+        }
+        return false;
+    }
 }

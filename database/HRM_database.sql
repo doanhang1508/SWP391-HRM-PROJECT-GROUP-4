@@ -813,38 +813,6 @@ INSERT INTO leave_requests (user_id, leave_type_id, start_date, end_date, total_
 -- Nghỉ thai sản (leave_type_id = 3)
 (31, 3, '2026-06-01', '2026-11-30', 130.0,'Nghỉ thai sản theo chế độ BHXH 6 tháng', 'Approved', 4);
 
-INSERT INTO payroll (user_id, month, year, base_salary, working_days, overtime_amount, allowance_amount, bonus_amount, deduction_amount, insurance_amount, tax_amount, gross_salary, net_salary, status) VALUES
-
--- Giám đốc (user 2) - Ngạch Quản lý: base 30,000,000
-(2,  5, 2026, 30000000, 22.0, 0,       1800000, 5000000, 0,      3225000, 2500000, 36800000, 31075000, 'Paid'),
-
--- Trưởng phòng Nhân sự (user 3) - Ngạch Chuyên viên: base 12,000,000
-(3,  5, 2026, 12000000, 22.0, 0,       1300000, 1500000, 0,      1290000,  750000, 14800000, 12760000, 'Paid'),
-
--- Quản đốc (user 4) - Ngạch Chuyên viên: base 12,000,000
-(4,  5, 2026, 12000000, 21.0, 780000,  1300000, 0,       150000, 1290000,  720000, 14080000, 11920000, 'Paid'),
-
--- Trưởng phòng Hành chính (user 6) - Ngạch Quản lý: base 30,000,000
-(6,  5, 2026, 30000000, 22.0, 500000,  1800000, 2000000, 0,      3225000, 2300000, 34300000, 28775000, 'Approved'),
-
--- HR Staff (user 10) - Ngạch Chuyên viên: base 12,000,000
-(10, 5, 2026, 12000000, 22.0, 0,       1300000, 1500000, 0,      1290000,  680000, 14800000, 12830000, 'Approved'),
-
--- Kế toán trưởng (user 14) - Ngạch Quản lý: base 30,000,000
-(14, 5, 2026, 30000000, 22.0, 0,       1800000, 5000000, 0,      3225000, 2500000, 36800000, 31075000, 'Approved'),
-
--- Nhân viên kế toán (user 16) - Ngạch Chuyên viên: base 12,000,000
-(16, 5, 2026, 12000000, 20.0, 0,       1300000, 0,       150000, 1290000,  580000, 13300000, 11280000, 'Draft'),
-
--- Trưởng phòng Kinh doanh (user 19) - Ngạch Quản lý: base 30,000,000
-(19, 5, 2026, 30000000, 22.0, 1500000, 1800000, 3000000, 0,      3225000, 2800000, 36300000, 30275000, 'Approved'),
-
--- Nhân viên Kinh doanh (user 21) - Ngạch Kinh doanh: base 10,000,000
-(21, 5, 2026, 10000000, 22.0, 0,       1300000, 2500000, 0,      1075000,  850000, 13800000, 11875000, 'Draft'),
-
--- Tổ trưởng xưởng (user 29) - Ngạch Chuyên viên: base 12,000,000
-(29, 5, 2026, 12000000, 22.0, 1560000, 2300000, 0,       0,      1290000,  780000, 15860000, 13790000, 'Draft');
-
 INSERT INTO shift_assignments (user_id, shift_id, assigned_date) VALUES
 
 -- Ca Hành Chính (shift_id = 1): Khối văn phòng ngày 04/06/2026
@@ -1056,3 +1024,298 @@ INSERT INTO overtime_assignments (assignment_id, plan_id, user_id, assigned_hour
 (3, 1, 30, 2.5, 'Pending'),   -- Tổ trưởng 2: 2.5h OT
 (4, 2, 31, 2.0, 'Cancelled'), -- Tổ trưởng 3: cancelled
 (5, 2, 32, 3.0, 'Pending');   -- Tổ phó: 3h OT
+
+-- TABLE 4: payroll_claims
+DROP TABLE IF EXISTS payroll_claims;
+CREATE TABLE IF NOT EXISTS payroll_claims (
+    claim_id INT PRIMARY KEY AUTO_INCREMENT,
+    payroll_id INT NOT NULL,
+    complaint_type VARCHAR(100) NOT NULL,
+    description TEXT NOT NULL,
+    expected_amount DECIMAL(15,2) DEFAULT 0,
+    evidence VARCHAR(255) DEFAULT NULL,
+    status VARCHAR(50) DEFAULT 'Pending',
+    hr_staff_note TEXT DEFAULT NULL,
+    accountant_note TEXT DEFAULT NULL,
+    proposed_adjustment DECIMAL(15,2) DEFAULT 0,
+    hr_manager_note TEXT DEFAULT NULL,
+    director_note TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (payroll_id) REFERENCES payroll(payroll_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+/* ================================================================
+   MIGRATION: Progressive PIT (Personal Income Tax) Module
+   
+   Mô tả: Tạo các bảng phục vụ tính thuế TNCN lũy tiến theo
+   Quest.md cho HRM Payroll system.
+   
+   Bảng mới:
+     - tax_brackets         (Bậc thuế lũy tiến, versioned)
+     - tax_deductions       (Giảm trừ bản thân, người phụ thuộc)
+     - employee_tax_profiles(Đăng ký thuế của nhân viên)
+     - payroll_periods      (Kỳ lương)
+     - payroll_runs         (Mỗi lần chạy tính lương)
+     - payroll_run_items    (Kết quả từng nhân viên trong kỳ)
+     - audit_logs           (Nhật ký thay đổi)
+     - payslips             (Phiếu lương cuối cùng)
+   
+   Bảng hiện có KHÔNG tạo lại:
+     - employees (= users), employee_contracts (= employee_profiles),
+       salary_components (= employee_allowances + employee_rewards_disciplines),
+       payroll, dependents, insurance_rates
+   ================================================================ */
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ══════════════════════════════════════════════════════
+-- TABLE 1: tax_brackets (Biểu thuế lũy tiến 7 bậc)
+-- ══════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS tax_brackets (
+    bracket_id      INT             PRIMARY KEY AUTO_INCREMENT,
+    bracket_no      INT             NOT NULL COMMENT 'Bậc thuế (1-7)',
+    income_from     DECIMAL(15,2)   NOT NULL COMMENT 'Thu nhập tính thuế từ',
+    income_to       DECIMAL(15,2)   NULL     COMMENT 'Thu nhập tính thuế đến (NULL = vô cùng)',
+    rate            DECIMAL(5,2)    NOT NULL COMMENT 'Thuế suất (%)',
+    effective_from  DATE            NOT NULL COMMENT 'Ngày bắt đầu hiệu lực',
+    effective_to    DATE            NULL     COMMENT 'Ngày hết hiệu lực (NULL = đang hiệu lực)',
+    rounding_rule   VARCHAR(20)     NOT NULL DEFAULT 'HALF_UP' COMMENT 'Quy tắc làm tròn',
+    status          TINYINT(1)      NOT NULL DEFAULT 1 COMMENT '1=Active, 0=Inactive',
+    created_by      INT             NULL,
+    updated_by      INT             NULL,
+    created_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_bracket_version (bracket_no, effective_from),
+    CONSTRAINT fk_tb_created_by FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL,
+    CONSTRAINT fk_tb_updated_by FOREIGN KEY (updated_by) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ══════════════════════════════════════════════════════
+-- TABLE 2: tax_deductions (Giảm trừ thuế)
+-- ══════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS tax_deductions (
+    deduction_id    INT             PRIMARY KEY AUTO_INCREMENT,
+    deduction_type  VARCHAR(50)     NOT NULL COMMENT 'PERSONAL, DEPENDENT, OTHER',
+    deduction_name  VARCHAR(100)    NOT NULL,
+    amount          DECIMAL(15,2)   NOT NULL,
+    effective_from  DATE            NOT NULL,
+    effective_to    DATE            NULL,
+    status          TINYINT(1)      NOT NULL DEFAULT 1,
+    created_by      INT             NULL,
+    updated_by      INT             NULL,
+    created_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_deduction_version (deduction_type, effective_from),
+    CONSTRAINT fk_td_created_by FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL,
+    CONSTRAINT fk_td_updated_by FOREIGN KEY (updated_by) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ══════════════════════════════════════════════════════
+-- TABLE 3: employee_tax_profiles (Hồ sơ thuế nhân viên)
+-- ══════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS employee_tax_profiles (
+    tax_profile_id      INT             PRIMARY KEY AUTO_INCREMENT,
+    user_id             INT             NOT NULL,
+    tax_code            VARCHAR(50)     NULL COMMENT 'Mã số thuế cá nhân',
+    tax_registration    TINYINT(1)      NOT NULL DEFAULT 1 COMMENT '1=Đã đăng ký, 0=Chưa',
+    dependent_count     INT             NOT NULL DEFAULT 0 COMMENT 'Số người phụ thuộc đã đăng ký',
+    personal_deduction  DECIMAL(15,2)   NOT NULL DEFAULT 11000000 COMMENT 'Giảm trừ bản thân',
+    dependent_deduction DECIMAL(15,2)   NOT NULL DEFAULT 4400000  COMMENT 'Giảm trừ mỗi NPT',
+    status              TINYINT(1)      NOT NULL DEFAULT 1,
+    notes               VARCHAR(500)    NULL,
+    created_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_tax_profile_user (user_id),
+    CONSTRAINT fk_etp_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ══════════════════════════════════════════════════════
+-- TABLE 4: payroll_periods (Kỳ lương)
+-- ══════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS payroll_periods (
+    period_id       INT             PRIMARY KEY AUTO_INCREMENT,
+    period_name     VARCHAR(100)    NOT NULL COMMENT 'VD: Tháng 06/2026',
+    month           INT             NOT NULL,
+    year            INT             NOT NULL,
+    start_date      DATE            NOT NULL,
+    end_date        DATE            NOT NULL,
+    status          VARCHAR(20)     NOT NULL DEFAULT 'OPEN' COMMENT 'OPEN, LOCKED, CLOSED',
+    locked_by       INT             NULL,
+    locked_at       TIMESTAMP       NULL,
+    created_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_period_month_year (month, year),
+    CONSTRAINT fk_pp_locked_by FOREIGN KEY (locked_by) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ══════════════════════════════════════════════════════
+-- TABLE 5: payroll_runs (Mỗi lần chạy tính lương)
+-- ══════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS payroll_runs (
+    run_id          INT             PRIMARY KEY AUTO_INCREMENT,
+    period_id       INT             NOT NULL,
+    run_type        VARCHAR(20)     NOT NULL DEFAULT 'CALCULATE' COMMENT 'CALCULATE, RECALCULATE',
+    run_by          INT             NOT NULL COMMENT 'User thực hiện',
+    status          VARCHAR(20)     NOT NULL DEFAULT 'RUNNING' COMMENT 'RUNNING, COMPLETED, FAILED',
+    total_employees INT             NOT NULL DEFAULT 0,
+    total_gross     DECIMAL(15,2)   DEFAULT 0,
+    total_pit       DECIMAL(15,2)   DEFAULT 0,
+    total_net       DECIMAL(15,2)   DEFAULT 0,
+    error_count     INT             DEFAULT 0,
+    started_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at    TIMESTAMP       NULL,
+    notes           VARCHAR(500)    NULL,
+    CONSTRAINT fk_pr_period FOREIGN KEY (period_id) REFERENCES payroll_periods(period_id) ON DELETE CASCADE,
+    CONSTRAINT fk_pr_user   FOREIGN KEY (run_by)    REFERENCES users(user_id)             ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ══════════════════════════════════════════════════════
+-- TABLE 6: payroll_run_items (Kết quả từng NV trong kỳ)
+-- ══════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS payroll_run_items (
+    item_id             INT             PRIMARY KEY AUTO_INCREMENT,
+    run_id              INT             NOT NULL,
+    user_id             INT             NOT NULL,
+    base_salary         DECIMAL(15,2)   NOT NULL DEFAULT 0,
+    overtime_amount     DECIMAL(15,2)   NOT NULL DEFAULT 0,
+    allowance_amount    DECIMAL(15,2)   NOT NULL DEFAULT 0,
+    bonus_amount        DECIMAL(15,2)   NOT NULL DEFAULT 0,
+    gross_income        DECIMAL(15,2)   NOT NULL DEFAULT 0,
+    insurance_amount    DECIMAL(15,2)   NOT NULL DEFAULT 0,
+    personal_deduction  DECIMAL(15,2)   NOT NULL DEFAULT 0,
+    dependent_deduction DECIMAL(15,2)   NOT NULL DEFAULT 0,
+    other_deduction     DECIMAL(15,2)   NOT NULL DEFAULT 0,
+    taxable_income      DECIMAL(15,2)   NOT NULL DEFAULT 0,
+    pit_amount          DECIMAL(15,2)   NOT NULL DEFAULT 0,
+    pit_breakdown       TEXT            NULL COMMENT 'JSON breakdown theo bậc thuế',
+    net_salary          DECIMAL(15,2)   NOT NULL DEFAULT 0,
+    has_warning         TINYINT(1)      NOT NULL DEFAULT 0,
+    warning_message     VARCHAR(500)    NULL,
+    UNIQUE KEY uk_run_user (run_id, user_id),
+    CONSTRAINT fk_pri_run   FOREIGN KEY (run_id)  REFERENCES payroll_runs(run_id) ON DELETE CASCADE,
+    CONSTRAINT fk_pri_user  FOREIGN KEY (user_id) REFERENCES users(user_id)       ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ══════════════════════════════════════════════════════
+-- TABLE 7: audit_logs (Nhật ký thay đổi)
+-- ══════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS audit_logs (
+    log_id          INT             PRIMARY KEY AUTO_INCREMENT,
+    entity_type     VARCHAR(50)     NOT NULL COMMENT 'payroll, tax_bracket, tax_deduction, etc.',
+    entity_id       INT             NOT NULL,
+    action          VARCHAR(50)     NOT NULL COMMENT 'CREATE, UPDATE, DELETE, CALCULATE, APPROVE, REJECT',
+    old_value       TEXT            NULL COMMENT 'JSON old values',
+    new_value       TEXT            NULL COMMENT 'JSON new values',
+    changed_by      INT             NOT NULL,
+    changed_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ip_address      VARCHAR(50)     NULL,
+    description     VARCHAR(500)    NULL,
+    CONSTRAINT fk_al_user FOREIGN KEY (changed_by) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_audit_entity (entity_type, entity_id),
+    INDEX idx_audit_date (changed_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ══════════════════════════════════════════════════════
+-- TABLE 8: payslips (Phiếu lương)
+-- ══════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS payslips (
+    payslip_id      INT             PRIMARY KEY AUTO_INCREMENT,
+    payroll_id      INT             NOT NULL,
+    user_id         INT             NOT NULL,
+    period_id       INT             NULL,
+    payslip_code    VARCHAR(50)     NOT NULL COMMENT 'Mã phiếu lương VD: PS-2026-06-001',
+    gross_income    DECIMAL(15,2)   NOT NULL DEFAULT 0,
+    total_deduction DECIMAL(15,2)   NOT NULL DEFAULT 0,
+    insurance_amount DECIMAL(15,2)  NOT NULL DEFAULT 0,
+    pit_amount      DECIMAL(15,2)   NOT NULL DEFAULT 0,
+    net_salary      DECIMAL(15,2)   NOT NULL DEFAULT 0,
+    pit_breakdown   TEXT            NULL COMMENT 'JSON PIT breakdown theo bậc',
+    status          VARCHAR(20)     NOT NULL DEFAULT 'GENERATED' COMMENT 'GENERATED, FINALIZED',
+    generated_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    finalized_by    INT             NULL,
+    finalized_at    TIMESTAMP       NULL,
+    UNIQUE KEY uk_payslip_code (payslip_code),
+    CONSTRAINT fk_ps_payroll  FOREIGN KEY (payroll_id)   REFERENCES payroll(payroll_id)          ON DELETE CASCADE,
+    CONSTRAINT fk_ps_user     FOREIGN KEY (user_id)      REFERENCES users(user_id)               ON DELETE CASCADE,
+    CONSTRAINT fk_ps_period   FOREIGN KEY (period_id)    REFERENCES payroll_periods(period_id)   ON DELETE SET NULL,
+    CONSTRAINT fk_ps_finalize FOREIGN KEY (finalized_by) REFERENCES users(user_id)               ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- ══════════════════════════════════════════════════════
+-- SEED DATA: Biểu thuế TNCN lũy tiến 7 bậc (Việt Nam)
+-- ══════════════════════════════════════════════════════
+
+INSERT INTO tax_brackets (bracket_no, income_from, income_to, rate, effective_from, rounding_rule, status, created_by) VALUES
+(1,         0,  5000000,  5.00, '2020-01-01', 'HALF_UP', 1, 1),
+(2,   5000000, 10000000, 10.00, '2020-01-01', 'HALF_UP', 1, 1),
+(3,  10000000, 18000000, 15.00, '2020-01-01', 'HALF_UP', 1, 1),
+(4,  18000000, 32000000, 20.00, '2020-01-01', 'HALF_UP', 1, 1),
+(5,  32000000, 52000000, 25.00, '2020-01-01', 'HALF_UP', 1, 1),
+(6,  52000000, 80000000, 30.00, '2020-01-01', 'HALF_UP', 1, 1),
+(7,  80000000,     NULL, 35.00, '2020-01-01', 'HALF_UP', 1, 1);
+
+-- ══════════════════════════════════════════════════════
+-- SEED DATA: Giảm trừ thuế (theo Luật thuế TNCN VN)
+-- ══════════════════════════════════════════════════════
+
+INSERT INTO tax_deductions (deduction_type, deduction_name, amount, effective_from, status, created_by) VALUES
+('PERSONAL',  'Giảm trừ bản thân',        11000000, '2020-07-01', 1, 1),
+('DEPENDENT', 'Giảm trừ người phụ thuộc',   4400000, '2020-07-01', 1, 1);
+
+-- ══════════════════════════════════════════════════════
+-- SEED DATA: employee_tax_profiles (auto-sync từ dependents)
+-- ══════════════════════════════════════════════════════
+
+INSERT INTO employee_tax_profiles (user_id, tax_code, tax_registration, dependent_count, personal_deduction, dependent_deduction)
+SELECT 
+    ep.user_id,
+    ep.tax_code,
+    1,
+    COALESCE((SELECT COUNT(*) FROM dependents d WHERE d.user_id = ep.user_id AND d.status = 1), 0),
+    11000000,
+    4400000
+FROM employee_profiles ep
+WHERE ep.user_id IN (SELECT user_id FROM users WHERE status = 1)
+ON DUPLICATE KEY UPDATE 
+    dependent_count = COALESCE((SELECT COUNT(*) FROM dependents d WHERE d.user_id = ep.user_id AND d.status = 1), 0);
+
+-- ══════════════════════════════════════════════════════
+-- SEED DATA: Kỳ lương mẫu
+-- ══════════════════════════════════════════════════════
+
+INSERT INTO payroll_periods (period_name, month, year, start_date, end_date, status) VALUES
+('Tháng 05/2026', 5, 2026, '2026-05-01', '2026-05-31', 'CLOSED'),
+('Tháng 06/2026', 6, 2026, '2026-06-01', '2026-06-30', 'OPEN');
+
+-- ══════════════════════════════════════════════════════
+-- PERMISSIONS: Thêm quyền cho module PIT
+-- ══════════════════════════════════════════════════════
+
+INSERT INTO permissions (permission_id, permission_name, description, module) VALUES
+(30, 'PIT_VIEW',       'Xem biểu thuế và thông tin PIT',       'PIT'),
+(31, 'PIT_MANAGE',     'Quản lý cấu hình biểu thuế',          'PIT'),
+(32, 'PIT_CALCULATE',  'Chạy tính thuế TNCN',                  'PIT'),
+(33, 'AUDIT_VIEW',     'Xem nhật ký thay đổi',                 'AUDIT')
+ON DUPLICATE KEY UPDATE permission_name = VALUES(permission_name);
+
+-- Admin: toàn quyền PIT
+INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
+(1, 30), (1, 31), (1, 32), (1, 33);
+
+-- HR Manager: xem + tính PIT
+INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
+(2, 30), (2, 32), (2, 33);
+
+-- HR Staff: xem + tính PIT
+INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
+(5, 30), (5, 32);
+
+-- Director: xem
+INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
+(4, 30), (4, 33);
+
+-- Accountant: xem
+INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
+(8, 30);
+

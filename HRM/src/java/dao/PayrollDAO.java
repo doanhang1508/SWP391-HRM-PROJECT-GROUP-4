@@ -474,32 +474,119 @@ public class PayrollDAO {
         return list;
     }
 
+    public BigDecimal getTotalOTPay(int empId, int month, int year, BigDecimal hourlyRate) {
+        String sql = "SELECT SUM(oa.assigned_hours) FROM overtime_assignments oa " +
+                     "JOIN overtime_plans op ON oa.plan_id = op.plan_id " +
+                     "WHERE oa.user_id = ? AND oa.status = 'Approved' " +
+                     "AND MONTH(op.target_date) = ? AND YEAR(op.target_date) = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, empId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    BigDecimal hours = rs.getBigDecimal(1);
+                    if (hours != null) {
+                        return hours.multiply(hourlyRate).multiply(new BigDecimal("1.5"));
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return BigDecimal.ZERO;
+    }
+
+    public BigDecimal getFixedAllowances(int empId) {
+        String sql = "SELECT SUM(amount) FROM employee_allowances WHERE user_id = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, empId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    BigDecimal total = rs.getBigDecimal(1);
+                    if (total != null) {
+                        return total;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return BigDecimal.ZERO;
+    }
+
     public int generatePayrollDraft(int month, int year) {
         if (month < 1 || month > 12 || year < 2000) {
             throw new IllegalArgumentException("Tháng hoặc năm không hợp lệ");
         }
         List<Integer> eligibleIds = getAllEligibleEmployeeIds(month, year);
         int createdCount = 0;
+        PayrollClaimDAO claimDAO = new PayrollClaimDAO();
+        AttendanceDAO attendanceDAO = new AttendanceDAO();
+        LeaveRequestDAOImpl leaveDAO = new LeaveRequestDAOImpl();
+        PayrollConfigDAO configDAO = new PayrollConfigDAO();
+        
+        BigDecimal standardWorkDays = configDAO.getConfigValue("STANDARD_WORK_DAYS", new BigDecimal("22"));
+        
         for (int userId : eligibleIds) {
             Payroll existing = getPayroll(userId, month, year);
             if (existing == null) {
                 EmployeeSalaryInfo salaryInfo = getEmployeeSalaryInfo(userId);
                 BigDecimal baseSalary = (salaryInfo != null && salaryInfo.baseSalary != null) ? salaryInfo.baseSalary : BigDecimal.ZERO;
                 
+                // 1. Get working days from Attendance and Paid Leaves
+                int presentDays = attendanceDAO.getPresentDays(userId, month, year);
+                double paidLeaveDays = leaveDAO.getPaidLeaveDays(userId, month, year);
+                double totalDays = presentDays + paidLeaveDays;
+                
+                // 2. Calculate BaseWorkedSalary
+                BigDecimal baseWorkedSalary = BigDecimal.ZERO;
+                if (standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
+                    BigDecimal daysRatio = new BigDecimal(totalDays).divide(standardWorkDays, 4, java.math.RoundingMode.HALF_UP);
+                    baseWorkedSalary = baseSalary.multiply(daysRatio);
+                }
+                
+                BigDecimal hourlyRate = BigDecimal.ZERO;
+                if (baseSalary.compareTo(BigDecimal.ZERO) > 0) {
+                    hourlyRate = baseSalary.divide(new BigDecimal("176"), 2, java.math.RoundingMode.HALF_UP);
+                }
+                
+                BigDecimal overtimeAmount = getTotalOTPay(userId, month, year, hourlyRate);
+                BigDecimal allowanceAmount = getFixedAllowances(userId);
+                
+                // Get resolved adjustments
+                BigDecimal adjustment = claimDAO.getResolvedAdjustment(userId, month, year);
+                
+                // 3. Gross Salary (includes base worked, OT, allowance, adjustment)
+                BigDecimal grossSalary = baseWorkedSalary.add(overtimeAmount).add(allowanceAmount).add(adjustment);
+                
+                // Placeholders for Member 2 and Member 3
+                // TODO: calculateInsurance(grossSalary)
+                BigDecimal insuranceAmount = BigDecimal.ZERO; 
+                // TODO: calculatePIT(taxableIncome)
+                BigDecimal taxAmount = BigDecimal.ZERO;
+                
+                BigDecimal totalDeductions = insuranceAmount.add(taxAmount);
+                BigDecimal netSalary = grossSalary.subtract(totalDeductions);
+                
                 Payroll p = new Payroll();
                 p.setUserId(userId);
                 p.setMonth(month);
                 p.setYear(year);
-                p.setBaseSalary(baseSalary);
-                p.setWorkingDays(22); // Default to 22
-                p.setOvertimeAmount(BigDecimal.ZERO);
-                p.setAllowanceAmount(BigDecimal.ZERO);
-                p.setBonusAmount(BigDecimal.ZERO);
+                p.setBaseSalary(baseWorkedSalary); // Saving base worked salary
+                p.setWorkingDays((int) Math.round(totalDays));
+                p.setOvertimeAmount(overtimeAmount);
+                p.setAllowanceAmount(allowanceAmount);
+                p.setBonusAmount(adjustment); 
                 p.setDeductionAmount(BigDecimal.ZERO);
-                p.setInsuranceAmount(BigDecimal.ZERO);
-                p.setTaxAmount(BigDecimal.ZERO);
-                p.setGrossSalary(baseSalary);
-                p.setNetSalary(baseSalary);
+                p.setInsuranceAmount(insuranceAmount);
+                p.setTaxAmount(taxAmount);
+                p.setGrossSalary(grossSalary);
+                p.setNetSalary(netSalary);
                 p.setStatus("Draft");
                 
                 if (insertOrUpdatePayroll(p)) {
@@ -870,10 +957,10 @@ public class PayrollDAO {
 
     /**
      * Task 35: Tính bảo hiểm (BHXH, BHYT, BHTN)
-     * Công thức: insuranceAmount = baseSalary * tổng % (mặc định 10.5% hoặc lấy từ DB)
+     * Công thức: insuranceAmount = grossSalary * tổng % (mặc định 10.5% hoặc lấy từ DB)
      */
-    public static BigDecimal calculateInsurance(BigDecimal baseSalary) {
-        if (baseSalary == null || baseSalary.compareTo(BigDecimal.ZERO) <= 0) {
+    public static BigDecimal calculateInsurance(BigDecimal grossSalary) {
+        if (grossSalary == null || grossSalary.compareTo(BigDecimal.ZERO) <= 0) {
             return BigDecimal.ZERO;
         }
         
@@ -898,7 +985,7 @@ public class PayrollDAO {
             totalEmployeeRate = new BigDecimal("10.5");
         }
         
-        return baseSalary.multiply(totalEmployeeRate).divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
+        return grossSalary.multiply(totalEmployeeRate).divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
     }
 
     /**
@@ -951,5 +1038,20 @@ public class PayrollDAO {
         }
 
         return BigDecimal.valueOf(pit).setScale(2, java.math.RoundingMode.HALF_UP);
+    }
+
+    public boolean deletePayrollDraft(int userId, int month, int year) {
+        String sql = "DELETE FROM payroll WHERE user_id = ? AND month = ? AND year = ? AND status = 'Draft'";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }

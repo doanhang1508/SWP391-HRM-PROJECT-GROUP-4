@@ -359,20 +359,7 @@
             tại một nơi duy nhất.
         </p>
 
-        <div class="panel-stats">
-            <div>
-                <span class="pstat-n">24/7</span>
-                <span class="pstat-l">Vận hành</span>
-            </div>
-            <div>
-                <span class="pstat-n">99.9%</span>
-                <span class="pstat-l">Uptime</span>
-            </div>
-            <div>
-                <span class="pstat-n">10K+</span>
-                <span class="pstat-l">Nhân sự</span>
-            </div>
-        </div>
+        
     </div>
 </div>
 
