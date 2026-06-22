@@ -13,6 +13,7 @@ import model.User;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Controller: Nhân viên xem lịch sử chấm công cá nhân.
@@ -48,7 +49,45 @@ public class ViewPersonalAttendanceController extends HttpServlet {
             try { year = Integer.parseInt(yearParam); } catch (NumberFormatException ignored) {}
         }
 
+        String weekParam = request.getParameter("week");
+        int selectedWeek = 0;
+        if (weekParam != null && !weekParam.isEmpty()) {
+            try { selectedWeek = Integer.parseInt(weekParam); } catch (NumberFormatException ignored) {}
+        }
+
         List<Attendance> records = attendanceDAO.getAttendanceByUser(user.getUserId(), month, year);
+        
+        // Tạo danh sách đầy đủ các ngày trong tuần/tháng
+        List<Attendance> fullRecords = new java.util.ArrayList<>();
+        int startDay = 1;
+        int endDay = LocalDate.of(year, month, 1).lengthOfMonth();
+
+        if (selectedWeek == 1) { endDay = 7; }
+        else if (selectedWeek == 2) { startDay = 8; endDay = 14; }
+        else if (selectedWeek == 3) { startDay = 15; endDay = 21; }
+        else if (selectedWeek == 4) { startDay = 22; endDay = 28; }
+        else if (selectedWeek == 5) { startDay = 29; }
+
+        for (int i = startDay; i <= endDay; i++) {
+            if (i > LocalDate.of(year, month, 1).lengthOfMonth()) break;
+            int currentDay = i;
+            Attendance existing = records.stream()
+                .filter(a -> a.getWorkDate().toLocalDate().getDayOfMonth() == currentDay)
+                .findFirst().orElse(null);
+                
+            if (existing != null) {
+                fullRecords.add(existing);
+            } else {
+                Attendance dummy = new Attendance();
+                dummy.setWorkDate(java.sql.Date.valueOf(LocalDate.of(year, month, currentDay)));
+                dummy.setStatus("Chưa có dữ liệu");
+                dummy.setShiftName("—");
+                fullRecords.add(dummy);
+            }
+        }
+        
+        records = fullRecords;
+        
         int[] summary = attendanceDAO.getAttendanceSummary(user.getUserId(), month, year);
 
         request.setAttribute("attendanceList", records);
@@ -58,6 +97,7 @@ public class ViewPersonalAttendanceController extends HttpServlet {
         request.setAttribute("summaryOT", summary[3]);
         request.setAttribute("selectedMonth", month);
         request.setAttribute("selectedYear", year);
+        request.setAttribute("selectedWeek", selectedWeek);
 
         // Generate year options (last 3 years)
         int currentYear = LocalDate.now().getYear();
