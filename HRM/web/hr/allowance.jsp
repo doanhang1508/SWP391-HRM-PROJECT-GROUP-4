@@ -180,6 +180,14 @@
     .btn-danger    { background: #e11d48; color: #fff; border: none; padding: 9px 22px; border-radius: 8px; font-weight: 600; font-size: .875rem; cursor: pointer; font-family: 'Inter', sans-serif; transition: background .2s; display: inline-block; text-decoration: none; }
     .btn-danger:hover { background: #be123c; }
 
+    /* PAGINATION */
+    .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+    .pagination-info { font-size: 0.82rem; color: var(--muted); }
+    .pagination-buttons { display: flex; gap: 8px; }
+    .btn-pag { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); font-size: 0.82rem; font-weight: 600; color: var(--text); cursor: pointer; transition: all 0.2s; }
+    .btn-pag:hover:not(:disabled) { background: #f1f5f9; border-color: #94a3b8; }
+    .btn-pag:disabled { opacity: 0.5; cursor: not-allowed; }
+
     @media (max-width:900px) {
         .page-main { padding: 20px 16px; }
         .summary-grid { grid-template-columns: 1fr 1fr; }
@@ -418,6 +426,16 @@
                                 </c:forEach>
                             </tbody>
                         </table>
+                    </div>
+                    <!-- Pagination container -->
+                    <div class="pagination-container">
+                        <div class="pagination-info" id="pageInfo">
+                            Hiển thị 0 - 0 trong số 0 phụ cấp.
+                        </div>
+                        <div class="pagination-buttons">
+                            <button class="btn-pag" id="btnPrev" onclick="prevPage()"><i class="fas fa-chevron-left"></i> Trước</button>
+                            <button class="btn-pag" id="btnNext" onclick="nextPage()">Sau <i class="fas fa-chevron-right"></i></button>
+                        </div>
                     </div>
                 </c:otherwise>
             </c:choose>
@@ -692,11 +710,80 @@
         if (!str) return '';
         return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
+
+    // ── Pagination & Filter ───────────────────────────────────────────
+    let allRows = [];
+    let filteredRows = [];
+    let currentPage = 1;
+    const rowsPerPage = 10;
+
+    document.addEventListener("DOMContentLoaded", function() {
+        let table = document.getElementById('allowanceTable');
+        if (table) {
+            allRows = Array.from(table.querySelectorAll('tbody tr'));
+            liveFilter(); // Initial filter & pagination setup
+        }
+    });
+
     function liveFilter() {
         var q = document.getElementById('searchInput').value.toLowerCase();
-        document.querySelectorAll('#allowanceTable tbody tr').forEach(function(row) {
-            row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+        
+        if (allRows.length === 0) {
+            let table = document.getElementById('allowanceTable');
+            if (table) allRows = Array.from(table.querySelectorAll('tbody tr'));
+        }
+
+        filteredRows = allRows.filter(function(row) {
+            return row.textContent.toLowerCase().includes(q);
         });
+
+        currentPage = 1;
+        updatePagination();
+    }
+
+    function updatePagination() {
+        allRows.forEach(function(r) { r.style.display = 'none'; });
+
+        var total = filteredRows.length;
+        var totalPages = Math.ceil(total / rowsPerPage) || 1;
+        var page = currentPage;
+
+        if (page > totalPages) page = totalPages;
+        if (page < 1) page = 1;
+        currentPage = page;
+
+        var start = (page - 1) * rowsPerPage;
+        var end   = Math.min(start + rowsPerPage, total);
+
+        for (var i = start; i < end; i++) {
+            filteredRows[i].style.display = '';
+        }
+
+        var info = document.getElementById('pageInfo');
+        if (info) {
+            info.textContent = total === 0 ? 'Không tìm thấy kết quả.' : 'Hiển thị ' + (start + 1) + ' - ' + end + ' trong số ' + total + ' phụ cấp.';
+        }
+
+        var btnPrev = document.getElementById('btnPrev');
+        var btnNext = document.getElementById('btnNext');
+        if (btnPrev) btnPrev.disabled = (page === 1);
+        if (btnNext) btnNext.disabled = (page === totalPages);
+    }
+
+    function prevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            updatePagination();
+        }
+    }
+
+    function nextPage() {
+        var total = filteredRows.length;
+        var totalPages = Math.ceil(total / rowsPerPage) || 1;
+        if (currentPage < totalPages) {
+            currentPage++;
+            updatePagination();
+        }
     }
 
     // Auto-dismiss alerts
