@@ -146,6 +146,15 @@
                         <option value="${y}" ${y == selectedYear ? 'selected' : ''}>${y}</option>
                     </c:forEach>
                 </select>
+                <label>Tuần:</label>
+                <select name="week" style="margin-right: 10px;">
+                    <option value="0" ${selectedWeek == 0 ? 'selected' : ''}>Cả tháng</option>
+                    <option value="1" ${selectedWeek == 1 ? 'selected' : ''}>Tuần 1 (Ngày 1-7)</option>
+                    <option value="2" ${selectedWeek == 2 ? 'selected' : ''}>Tuần 2 (Ngày 8-14)</option>
+                    <option value="3" ${selectedWeek == 3 ? 'selected' : ''}>Tuần 3 (Ngày 15-21)</option>
+                    <option value="4" ${selectedWeek == 4 ? 'selected' : ''}>Tuần 4 (Ngày 22-28)</option>
+                    <option value="5" ${selectedWeek == 5 ? 'selected' : ''}>Tuần 5 (Ngày 29-cuối tháng)</option>
+                </select>
                 <button type="submit" class="btn-filter"><i class="fas fa-search"></i> Xem</button>
             </div>
         </form>

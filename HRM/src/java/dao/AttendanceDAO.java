@@ -29,9 +29,12 @@ public class AttendanceDAO {
      * @return số bản ghi đã insert thành công
      */
     public int bulkImportAttendance(List<Attendance> records) {
-        String sql = "INSERT IGNORE INTO attendance " +
+        String sql = "INSERT INTO attendance " +
                      "(user_id, shift_id, work_date, check_in, check_out, status, overtime_hrs, ot_reason, created_at) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW()) " +
+                     "ON DUPLICATE KEY UPDATE " +
+                     "shift_id=VALUES(shift_id), check_in=VALUES(check_in), check_out=VALUES(check_out), " +
+                     "status=VALUES(status), overtime_hrs=VALUES(overtime_hrs), ot_reason=VALUES(ot_reason)";
         int successCount = 0;
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
