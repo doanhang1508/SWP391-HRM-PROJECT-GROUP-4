@@ -450,6 +450,12 @@
 
                                                     <li class="sidebar-menu-category">Lương &amp; Phúc lợi</li>
                                                     <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/payroll-configs"
+                                                            class="sidebar-link ${param.activeMenu eq 'payroll-configs' ? 'active' : ''}">
+                                                            <i class="fas fa-cogs"></i> Cấu hình lương
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/hr/allowance"
                                                             class="sidebar-link ${param.activeMenu eq 'allowance' ? 'active' : ''}">
                                                             <i class="fas fa-hand-holding-usd"></i> Phụ cấp
@@ -584,6 +590,12 @@
                                                                 </li>
 
                                                                 <li class="sidebar-menu-category">Lương &amp; Phúc lợi</li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/payroll-configs"
+                                                                        class="sidebar-link ${param.activeMenu eq 'payroll-configs' ? 'active' : ''}">
+                                                                        <i class="fas fa-cogs"></i> Cấu hình lương
+                                                                    </a>
+                                                                </li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/payroll"
                                                                         class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
