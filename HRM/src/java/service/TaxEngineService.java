@@ -49,6 +49,19 @@ public class TaxEngineService {
         public int dependentCount = 0;
         public boolean hasWarning = false;
         public String warningMessage = null;
+
+        public BigDecimal getGrossIncome() { return grossIncome; }
+        public BigDecimal getInsuranceAmount() { return insuranceAmount; }
+        public BigDecimal getPersonalDeduction() { return personalDeduction; }
+        public BigDecimal getDependentDeduction() { return dependentDeduction; }
+        public BigDecimal getTotalDeduction() { return totalDeduction; }
+        public BigDecimal getTaxableIncome() { return taxableIncome; }
+        public BigDecimal getPitAmount() { return pitAmount; }
+        public BigDecimal getNetSalary() { return netSalary; }
+        public String getPitBreakdown() { return pitBreakdown; }
+        public int getDependentCount() { return dependentCount; }
+        public boolean isHasWarning() { return hasWarning; }
+        public String getWarningMessage() { return warningMessage; }
     }
 
     /**
