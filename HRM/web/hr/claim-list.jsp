@@ -557,7 +557,7 @@
                                                                                 </button>
                                                                             </div>
                                                                         </c:when>
-                                                                        <c:when test="${c.status eq 'Chờ đóng khiếu nại'}">
+                                                                        <c:when test="${c.status eq 'Pending Close'}">
                                                                             <input type="hidden" name="action" value="hrManagerClose" />
                                                                             <div style="display:flex;gap:10px;">
                                                                                 <button type="submit" onclick="return confirmPayrollClaimAction('approve', this)" style="flex:1;padding:10px 20px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:600;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(16,185,129,.35)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
