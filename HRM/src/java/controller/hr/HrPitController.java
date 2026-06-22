@@ -41,8 +41,8 @@ public class HrPitController extends HttpServlet {
         HttpSession session = req.getSession(false);
         User user = (session != null) ? (User) session.getAttribute("currentUser") : null;
         if (user == null) { resp.sendRedirect(req.getContextPath() + "/login"); return false; }
-        // HR Manager (2), HR Staff (5), Admin (1)
-        if (user.getRoleId() != 1 && user.getRoleId() != 2 && user.getRoleId() != 5) {
+        // HR Staff (5)
+        if (user.getRoleId() != 5) {
             resp.sendRedirect(req.getContextPath() + "/dashboard");
             return false;
         }

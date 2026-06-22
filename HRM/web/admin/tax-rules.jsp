@@ -32,6 +32,7 @@
                 <h2 class="fw-bold" style="color:var(--txt);">Cấu hình Biểu Thuế Lũy Tiến</h2>
                 <p class="text-muted mb-0"><a href="${pageContext.request.contextPath}/admin/tax?action=rules" style="text-decoration:none;color:var(--pri);">Thuế TNCN</a> &gt; Biểu thuế</p>
             </div>
+            <a href="${pageContext.request.contextPath}/admin/tax?action=auditLog" class="btn btn-secondary" style="border-radius:8px;"><i class="fas fa-history"></i> Lịch sử Audit</a>
         </div>
 
         <div class="row">

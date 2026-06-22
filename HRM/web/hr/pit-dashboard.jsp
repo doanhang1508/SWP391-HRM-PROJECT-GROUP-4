@@ -59,11 +59,11 @@
                 </p>
             </div>
             <div class="d-flex gap-2">
-                <c:if test="${sessionScope.currentUser.roleId == 1}">
+                <c:if test="${sessionScope.currentUser.roleId == 2}">
                     <a href="${pageContext.request.contextPath}/admin/tax?action=rules" class="btn-action" style="background:#64748b;"><i class="fas fa-sliders-h"></i> Cấu hình Thuế</a>
                 </c:if>
                 <a href="?action=taxProfiles" class="btn-action" style="background:#0d9488;"><i class="fas fa-users"></i> Hồ sơ Thuế NV</a>
-                <c:if test="${sessionScope.currentUser.roleId == 1}">
+                <c:if test="${sessionScope.currentUser.roleId == 2}">
                     <a href="${pageContext.request.contextPath}/admin/tax?action=auditLog" class="btn-action" style="background:#8b5cf6;"><i class="fas fa-history"></i> Lịch sử Audit</a>
                 </c:if>
             </div>
@@ -134,7 +134,7 @@
                         </select>
                         <button type="submit" class="btn btn-outline-secondary" style="border-radius:8px;">Xem</button>
                     </form>
-                    <c:if test="${sessionScope.currentUser.roleId == 5}">
+                    <c:if test="${sessionScope.currentUser.roleId == 1 || sessionScope.currentUser.roleId == 2 || sessionScope.currentUser.roleId == 5}">
                         <form method="POST" action="pit" style="display:inline;" onsubmit="return confirm('Bạn có chắc muốn tính lại thuế cho toàn bộ nhân viên trong kỳ ${selectedMonth}/${selectedYear}? Việc này sẽ cập nhật lại bảng lương (nếu chưa chốt).');">
                             <input type="hidden" name="action" value="calculate">
                             <input type="hidden" name="month" value="${selectedMonth}">

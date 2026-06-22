@@ -35,7 +35,7 @@ public class AdminTaxController extends HttpServlet {
 
     private boolean checkAccess(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         User user = (User) req.getSession().getAttribute("currentUser");
-        if (user == null || user.getRoleId() != 1) { // 1 = Admin
+        if (user == null || user.getRoleId() != 2) { // 2 = HR Manager
             resp.sendRedirect(req.getContextPath() + "/login.jsp");
             return false;
         }
