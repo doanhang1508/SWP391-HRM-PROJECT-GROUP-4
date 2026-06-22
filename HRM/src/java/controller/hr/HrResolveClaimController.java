@@ -31,9 +31,9 @@ public class HrResolveClaimController extends HttpServlet {
             return;
         }
 
-        // Allow HR Manager (2), Director (4), HR Staff (5), Accountant (8)
+        // Allow HR Manager (2), HR Staff (5), Accountant (8)
         int roleId = currentUser.getRoleId();
-        if (roleId != 2 && roleId != 4 && roleId != 5 && roleId != 8) {
+        if (roleId != 2 && roleId != 5 && roleId != 8) {
             response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }
@@ -55,7 +55,7 @@ public class HrResolveClaimController extends HttpServlet {
         }
 
         int roleId = currentUser.getRoleId();
-        if (roleId != 2 && roleId != 4 && roleId != 5 && roleId != 8) {
+        if (roleId != 2 && roleId != 5 && roleId != 8) {
             response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }
@@ -145,25 +145,11 @@ public class HrResolveClaimController extends HttpServlet {
                 } else if ("hrManagerReject".equals(action)) {
                     claim.setStatus("Rejected");
                     success = claimDAO.updateClaimWorkflow(claim);
-                } else if ("hrManagerForwardDirector".equals(action)) {
-                    claim.setStatus("Director Reviewing");
+                } else if ("hrManagerForwardAccountantAdjust".equals(action)) {
+                    claim.setStatus("Accountant Adjusting");
                     success = claimDAO.updateClaimWorkflow(claim);
                 } else if ("hrManagerRequestRecheck".equals(action)) {
                     claim.setStatus("Accountant Checking");
-                    success = claimDAO.updateClaimWorkflow(claim);
-                }
-            }
-            // Director (Role 4)
-            else if (roleId == 4) {
-                String note = request.getParameter("directorNote");
-                claim.setDirectorNote(note != null ? note.trim() : "");
-                claim.setDirectorId(currentUser.getUserId());
-
-                if ("directorApprove".equals(action)) {
-                    claim.setStatus("Accountant Adjusting");
-                    success = claimDAO.updateClaimWorkflow(claim);
-                } else if ("directorReject".equals(action)) {
-                    claim.setStatus("Rejected");
                     success = claimDAO.updateClaimWorkflow(claim);
                 }
             }
