@@ -468,6 +468,12 @@
                                                             <i class="fas fa-file-invoice-dollar"></i> Bảng lương
                                                         </a>
                                                     </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/resolve-claim"
+                                                            class="sidebar-link ${param.activeMenu eq 'resolve-claim' ? 'active' : ''}">
+                                                            <i class="fas fa-balance-scale"></i> Khiếu nại lương
+                                                        </a>
+                                                    </li>
 
                                                     <li class="sidebar-menu-category">Chấm công</li>
                                                     <li class="sidebar-item">
@@ -529,6 +535,12 @@
                                                                     <i class="fas fa-file-invoice-dollar"></i> Duyệt bảng lương
                                                                 </a>
                                                             </li>
+                                                            <li class="sidebar-item">
+                                                                <a href="${pageContext.request.contextPath}/hr/resolve-claim"
+                                                                    class="sidebar-link ${param.activeMenu eq 'resolve-claim' ? 'active' : ''}">
+                                                                    <i class="fas fa-balance-scale"></i> Khiếu nại lương
+                                                                </a>
+                                                            </li>
                                                             <li class="sidebar-menu-category">Báo cáo</li>
                                                             <li class="sidebar-item">
                                                                 <a href="${pageContext.request.contextPath}/director/reports" class="sidebar-link ${param.activeMenu eq 'director-reports' ? 'active' : ''}">
@@ -576,6 +588,12 @@
                                                                     <a href="${pageContext.request.contextPath}/hr/payroll"
                                                                         class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
                                                                         <i class="fas fa-file-invoice-dollar"></i> Bảng lương
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/resolve-claim"
+                                                                        class="sidebar-link ${param.activeMenu eq 'resolve-claim' ? 'active' : ''}">
+                                                                        <i class="fas fa-balance-scale"></i> Khiếu nại lương
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
@@ -668,6 +686,12 @@
                                                                         <a href="${pageContext.request.contextPath}/accountant/payroll"
                                                                             class="sidebar-link ${param.activeMenu eq 'accountant-payroll' ? 'active' : ''}">
                                                                             <i class="fas fa-file-invoice-dollar"></i> Bảng Lương
+                                                                        </a>
+                                                                    </li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/hr/resolve-claim"
+                                                                            class="sidebar-link ${param.activeMenu eq 'resolve-claim' ? 'active' : ''}">
+                                                                            <i class="fas fa-balance-scale"></i> Khiếu nại lương
                                                                         </a>
                                                                     </li>
                                                                 </c:if>
