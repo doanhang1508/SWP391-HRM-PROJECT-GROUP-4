@@ -1,7 +1,6 @@
 package controller.employee;
 
 import dao.PayrollDAO;
-import dao.PayrollClaimDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -26,7 +25,7 @@ import model.User;
 public class PayrollController extends HttpServlet {
 
     private final PayrollDAO payrollDAO = new PayrollDAO();
-    private final PayrollClaimDAO claimDAO = new PayrollClaimDAO();
+
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -235,7 +234,7 @@ public class PayrollController extends HttpServlet {
             // Mặc định: Hiển thị danh sách
             List<Payroll> payslips = payrollDAO.getVisiblePayslips(currentUser.getUserId());
             request.setAttribute("payslipList", payslips);
-            request.setAttribute("claims", claimDAO.getClaimsByUserId(currentUser.getUserId()));
+
             request.setAttribute("viewMode", "list");
         }
 

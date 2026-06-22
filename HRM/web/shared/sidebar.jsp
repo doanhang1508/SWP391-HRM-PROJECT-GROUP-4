@@ -451,12 +451,7 @@
                                                         </a>
                                                     </li>
 
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/resolve-claim"
-                                                            class="sidebar-link ${param.activeMenu eq 'resolve-claim' ? 'active' : ''}">
-                                                            <i class="fas fa-balance-scale"></i> Khiếu nại lương
-                                                        </a>
-                                                    </li>
+
 
                                                     <li class="sidebar-menu-category">Chấm công</li>
                                                     <li class="sidebar-item">
@@ -606,12 +601,7 @@
                                                                     </a>
                                                                 </li>
 
-                                                                <li class="sidebar-item">
-                                                                    <a href="${pageContext.request.contextPath}/hr/resolve-claim"
-                                                                        class="sidebar-link ${param.activeMenu eq 'resolve-claim' ? 'active' : ''}">
-                                                                        <i class="fas fa-balance-scale"></i> Khiếu nại lương
-                                                                    </a>
-                                                                </li>
+
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/insurance-rate"
                                                                         class="sidebar-link ${param.activeMenu eq 'insurance-rate' ? 'active' : ''}">
@@ -711,12 +701,7 @@
                                                                             <i class="fas fa-file-invoice-dollar"></i> Bảng Lương
                                                                         </a>
                                                                     </li>
-                                                                    <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/hr/resolve-claim"
-                                                                            class="sidebar-link ${param.activeMenu eq 'resolve-claim' ? 'active' : ''}">
-                                                                            <i class="fas fa-balance-scale"></i> Khiếu nại lương
-                                                                        </a>
-                                                                    </li>
+
                                                                 </c:if>
 
                                                                 <%-- ══════ TÀI KHOẢN (chung) ══════ --%>

@@ -525,7 +525,7 @@ public class PayrollDAO {
         }
         List<Integer> eligibleIds = getAllEligibleEmployeeIds(month, year);
         int createdCount = 0;
-        PayrollClaimDAO claimDAO = new PayrollClaimDAO();
+
         AttendanceDAO attendanceDAO = new AttendanceDAO();
         LeaveRequestDAOImpl leaveDAO = new LeaveRequestDAOImpl();
         PayrollConfigDAO configDAO = new PayrollConfigDAO();
@@ -558,8 +558,7 @@ public class PayrollDAO {
                 BigDecimal overtimeAmount = getTotalOTPay(userId, month, year, hourlyRate);
                 BigDecimal allowanceAmount = getFixedAllowances(userId);
                 
-                // Get resolved adjustments
-                BigDecimal adjustment = claimDAO.getResolvedAdjustment(userId, month, year);
+                BigDecimal adjustment = BigDecimal.ZERO;
                 
                 // 3. Gross Salary (includes base worked, OT, allowance, adjustment)
                 BigDecimal grossSalary = baseWorkedSalary.add(overtimeAmount).add(allowanceAmount).add(adjustment);
