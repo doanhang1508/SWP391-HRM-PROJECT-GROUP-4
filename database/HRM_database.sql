@@ -1034,13 +1034,21 @@ CREATE TABLE IF NOT EXISTS payroll_claims (
     expected_amount DECIMAL(15,2) DEFAULT 0,
     evidence VARCHAR(255) DEFAULT NULL,
     status VARCHAR(50) DEFAULT 'Pending',
+    hr_staff_id INT DEFAULT NULL,
     hr_staff_note TEXT DEFAULT NULL,
+    accountant_id INT DEFAULT NULL,
     accountant_note TEXT DEFAULT NULL,
     proposed_adjustment DECIMAL(15,2) DEFAULT 0,
+    hr_manager_id INT DEFAULT NULL,
     hr_manager_note TEXT DEFAULT NULL,
+    director_id INT DEFAULT NULL,
     director_note TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (payroll_id) REFERENCES payroll(payroll_id) ON DELETE CASCADE
+    FOREIGN KEY (payroll_id) REFERENCES payroll(payroll_id) ON DELETE CASCADE,
+    FOREIGN KEY (hr_staff_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (accountant_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (hr_manager_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (director_id) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /* ================================================================
