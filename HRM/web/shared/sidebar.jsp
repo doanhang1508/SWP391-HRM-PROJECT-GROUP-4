@@ -409,31 +409,9 @@
                                                             <i class="fas fa-users"></i> Danh sách nhân viên
                                                         </a>
                                                     </li>
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/department"
-                                                            class="sidebar-link ${param.activeMenu eq 'department' ? 'active' : ''}">
-                                                            <i class="fas fa-building"></i> Phòng ban
-                                                        </a>
-                                                    </li>
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/position"
-                                                            class="sidebar-link ${param.activeMenu eq 'position' ? 'active' : ''}">
-                                                            <i class="fas fa-id-card-alt"></i> Chức vụ
-                                                        </a>
-                                                    </li>
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/contract-type"
-                                                            class="sidebar-link ${param.activeMenu eq 'contract-type' ? 'active' : ''}">
-                                                            <i class="fas fa-file-contract"></i> Loại hợp đồng
-                                                        </a>
-                                                    </li>
+
                                                     <li class="sidebar-menu-category">Cấu hình Chính sách</li>
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/shifts"
-                                                            class="sidebar-link ${param.activeMenu eq 'shifts' ? 'active' : ''}">
-                                                            <i class="fas fa-clock"></i> Quản lý Ca làm việc
-                                                        </a>
-                                                    </li>
+
 
 
                                                     <li class="sidebar-item">
@@ -457,12 +435,7 @@
                                                             <i class="fas fa-cogs"></i> Cấu hình lương
                                                         </a>
                                                     </li>
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/allowance"
-                                                            class="sidebar-link ${param.activeMenu eq 'allowance' ? 'active' : ''}">
-                                                            <i class="fas fa-hand-holding-usd"></i> Phụ cấp
-                                                        </a>
-                                                    </li>
+
                                                     <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/hr/salary-grade"
                                                             class="sidebar-link ${param.activeMenu eq 'salary-grade' ? 'active' : ''}">
@@ -476,12 +449,7 @@
                                                             <i class="fas fa-file-invoice-dollar"></i> Bảng lương
                                                         </a>
                                                     </li>
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/payroll-configs"
-                                                            class="sidebar-link ${param.activeMenu eq 'payroll-configs' ? 'active' : ''}">
-                                                            <i class="fas fa-cogs"></i> Cấu hình lương
-                                                        </a>
-                                                    </li>
+
                                                     <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/hr/resolve-claim"
                                                             class="sidebar-link ${param.activeMenu eq 'resolve-claim' ? 'active' : ''}">
@@ -525,6 +493,12 @@
                                                             </a>
                                                         </li>
                                                         <li class="sidebar-menu-category">Chấm công</li>
+                                                        <li class="sidebar-item">
+                                                            <a href="${pageContext.request.contextPath}/manager/attendance-claims"
+                                                                class="sidebar-link ${param.activeMenu eq 'attendance-claims' ? 'active' : ''}">
+                                                                <i class="fas fa-balance-scale"></i> Giải quyết khiếu nại công
+                                                            </a>
+                                                        </li>
 
                                                     </c:if>
 
@@ -571,6 +545,24 @@
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/department"
+                                                                        class="sidebar-link ${param.activeMenu eq 'department' ? 'active' : ''}">
+                                                                        <i class="fas fa-building"></i> Phòng ban
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/position"
+                                                                        class="sidebar-link ${param.activeMenu eq 'position' ? 'active' : ''}">
+                                                                        <i class="fas fa-id-card-alt"></i> Chức vụ
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/contract-type"
+                                                                        class="sidebar-link ${param.activeMenu eq 'contract-type' ? 'active' : ''}">
+                                                                        <i class="fas fa-file-contract"></i> Loại hợp đồng
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/onboarding/list"
                                                                         class="sidebar-link ${param.activeMenu eq 'onboarding' ? 'active' : ''}">
                                                                         <i class="fas fa-user-clock"></i> Tiếp nhận nhân viên
@@ -580,6 +572,14 @@
                                                                     <a href="${pageContext.request.contextPath}/hr/terminate-employee"
                                                                         class="sidebar-link ${param.activeMenu eq 'termination' ? 'active' : ''}">
                                                                         <i class="fas fa-user-minus"></i> Quản lý nghỉ việc
+                                                                    </a>
+                                                                </li>
+
+                                                                <li class="sidebar-menu-category">Cấu hình Chính sách</li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/shifts"
+                                                                        class="sidebar-link ${param.activeMenu eq 'shifts' ? 'active' : ''}">
+                                                                        <i class="fas fa-clock"></i> Quản lý Ca làm việc
                                                                     </a>
                                                                 </li>
 
@@ -593,9 +593,9 @@
 
                                                                 <li class="sidebar-menu-category">Lương &amp; Phúc lợi</li>
                                                                 <li class="sidebar-item">
-                                                                    <a href="${pageContext.request.contextPath}/hr/payroll-configs"
-                                                                        class="sidebar-link ${param.activeMenu eq 'payroll-configs' ? 'active' : ''}">
-                                                                        <i class="fas fa-cogs"></i> Cấu hình lương
+                                                                    <a href="${pageContext.request.contextPath}/hr/allowance"
+                                                                        class="sidebar-link ${param.activeMenu eq 'allowance' ? 'active' : ''}">
+                                                                        <i class="fas fa-hand-holding-usd"></i> Phụ cấp
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
@@ -604,12 +604,7 @@
                                                                         <i class="fas fa-file-invoice-dollar"></i> Bảng lương
                                                                     </a>
                                                                 </li>
-                                                                <li class="sidebar-item">
-                                                                    <a href="${pageContext.request.contextPath}/hr/payroll-configs"
-                                                                        class="sidebar-link ${param.activeMenu eq 'payroll-configs' ? 'active' : ''}">
-                                                                        <i class="fas fa-cogs"></i> Cấu hình lương
-                                                                    </a>
-                                                                </li>
+
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/resolve-claim"
                                                                         class="sidebar-link ${param.activeMenu eq 'resolve-claim' ? 'active' : ''}">
@@ -651,6 +646,12 @@
                                                                         </a>
                                                                     </li>
                                                                     <li class="sidebar-menu-category">Chấm công</li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/manager/attendance-claims"
+                                                                            class="sidebar-link ${param.activeMenu eq 'attendance-claims' ? 'active' : ''}">
+                                                                            <i class="fas fa-balance-scale"></i> Giải quyết khiếu nại công
+                                                                        </a>
+                                                                    </li>
 
                                                                 </c:if>
 
