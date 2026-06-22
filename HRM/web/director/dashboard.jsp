@@ -84,7 +84,7 @@ body {
 
 <div class="dashboard-wrapper">
     <jsp:include page="../shared/sidebar.jsp">
-        <jsp:param name="activeMenu" value="dashboard" />
+        <jsp:param name="activeMenu" value="director-dashboard" />
     </jsp:include>
 
     <div class="dash-main">

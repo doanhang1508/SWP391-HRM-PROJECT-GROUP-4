@@ -70,8 +70,8 @@ public class ShiftController extends HttpServlet {
             return;
         }
 
-        // Only HR Manager (role 2) and Admin (role 1) can define shifts
-        if (user.getRoleId() != 2 && user.getRoleId() != 1) {
+        // Only HR Manager (role 2), HR Staff (role 5), and Admin (role 1) can define shifts
+        if (user.getRoleId() != 2 && user.getRoleId() != 1 && user.getRoleId() != 5) {
             resp.sendRedirect(req.getContextPath() + "/dashboard");
             return;
         }
@@ -96,8 +96,8 @@ public class ShiftController extends HttpServlet {
             return;
         }
 
-        // Only HR Manager (role 2) and Admin (role 1)
-        if (user.getRoleId() != 2 && user.getRoleId() != 1) {
+        // Only HR Manager (role 2), HR Staff (role 5) and Admin (role 1)
+        if (user.getRoleId() != 2 && user.getRoleId() != 1 && user.getRoleId() != 5) {
             resp.sendRedirect(req.getContextPath() + "/dashboard");
             return;
         }

@@ -23,8 +23,8 @@ public class PositionController extends HttpServlet {
             return;
         }
         User user = (User) session.getAttribute("currentUser");
-        // ChÃ¡Â»â€° HR Manager (role 2) mÃ¡Â»â€ºi Ã„â€˜Ã†Â°Ã¡Â»Â£c quÃ¡ÂºÂ£n lÃƒÂ½ chÃ¡Â»Â©c vÃ¡Â»Â¥
-        if (user.getRoleId() != 2) {
+        // HR Manager (role 2) và HR Staff (role 5) được quản lý chức vụ
+        if (user.getRoleId() != 2 && user.getRoleId() != 5) {
             response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }
@@ -46,6 +46,11 @@ public class PositionController extends HttpServlet {
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("currentUser") == null) {
             response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+        // HR Manager (role 2) và HR Staff (role 5) được quản lý chức vụ
+        if (user.getRoleId() != 2 && user.getRoleId() != 5) {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }
 
