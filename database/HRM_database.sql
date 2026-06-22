@@ -304,7 +304,8 @@ CREATE TABLE attendance (
     ot_reason     VARCHAR(255),
     created_at    TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_att_user  FOREIGN KEY (user_id)  REFERENCES users(user_id)   ON DELETE CASCADE,
-    CONSTRAINT fk_att_shift FOREIGN KEY (shift_id) REFERENCES shifts(shift_id) ON DELETE RESTRICT
+    CONSTRAINT fk_att_shift FOREIGN KEY (shift_id) REFERENCES shifts(shift_id) ON DELETE RESTRICT,
+    UNIQUE KEY uk_user_date (user_id, work_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE leave_requests (

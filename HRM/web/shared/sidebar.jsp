@@ -388,6 +388,14 @@
                                                         <i class="fas fa-key"></i> Phân quyền hệ thống
                                                     </a>
                                                 </li>
+
+                                                <li class="sidebar-menu-category">Quản lý Chấm công</li>
+                                                <li class="sidebar-item">
+                                                    <a href="${pageContext.request.contextPath}/hr/timesheet-lock"
+                                                        class="sidebar-link ${param.activeMenu eq 'timesheet-lock' ? 'active' : ''}">
+                                                        <i class="fas fa-lock-open"></i> Khóa/Mở khóa công
+                                                    </a>
+                                                </li>
                                             </c:if>
 
                                             <%-- ══════ HR MANAGER (roleId=2): Quản lý nhân sự ══════ --%>
