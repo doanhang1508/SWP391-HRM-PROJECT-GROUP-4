@@ -317,6 +317,8 @@ CREATE TABLE leave_requests (
     reason        VARCHAR(255),
     status        VARCHAR(20)  DEFAULT 'Pending',
     approved_by   INT,
+    reject_reason VARCHAR(255),
+    attachment    VARCHAR(255),
     created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_leave_user     FOREIGN KEY (user_id)       REFERENCES users(user_id)                 ON DELETE CASCADE,
     CONSTRAINT fk_leave_type     FOREIGN KEY (leave_type_id) REFERENCES leave_types(leave_type_id)     ON DELETE RESTRICT

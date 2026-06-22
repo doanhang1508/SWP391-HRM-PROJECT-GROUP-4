@@ -106,8 +106,12 @@ public class EmployeeLeaveController extends HttpServlet {
                     }
                 }
 
-                service.submitLeaveRequest(lr);
-                session.setAttribute("successMessage", "Leave request submitted successfully.");
+                boolean success = service.submitLeaveRequest(lr);
+                if (success) {
+                    session.setAttribute("successMessage", "Leave request submitted successfully.");
+                } else {
+                    session.setAttribute("errorMessage", "Failed to submit leave request. Please check database connection or schema.");
+                }
 
             }
         } catch (Exception e) {

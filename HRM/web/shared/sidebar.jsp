@@ -475,6 +475,12 @@
                                                         </a>
                                                     </li>
                                                     <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/payroll-configs"
+                                                            class="sidebar-link ${param.activeMenu eq 'payroll-configs' ? 'active' : ''}">
+                                                            <i class="fas fa-cogs"></i> Cấu hình lương
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/hr/resolve-claim"
                                                             class="sidebar-link ${param.activeMenu eq 'resolve-claim' ? 'active' : ''}">
                                                             <i class="fas fa-balance-scale"></i> Khiếu nại lương
@@ -594,6 +600,12 @@
                                                                     <a href="${pageContext.request.contextPath}/hr/payroll"
                                                                         class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
                                                                         <i class="fas fa-file-invoice-dollar"></i> Bảng lương
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/payroll-configs"
+                                                                        class="sidebar-link ${param.activeMenu eq 'payroll-configs' ? 'active' : ''}">
+                                                                        <i class="fas fa-cogs"></i> Cấu hình lương
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">

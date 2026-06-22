@@ -816,6 +816,40 @@
                                                             </button>
                                                         </div>
 
+                                                        <!-- BỘ LỌC VÀ TÌM KIẾM -->
+                                                        <div class="filter-container" style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; align-items: center; background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                                                            <div style="position: relative; flex: 1; min-width: 250px;">
+                                                                <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+                                                                <input type="text" id="searchInput" placeholder="Tìm kiếm theo tên nhân viên, lý do..." class="form-control" style="padding-left: 40px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: none;" onkeyup="applyFiltersAndPagination()">
+                                                            </div>
+                                                            <div style="min-width: 180px;">
+                                                                <select id="typeFilter" class="form-select" style="border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: none;" onchange="applyFiltersAndPagination()">
+                                                                    <option value="">Tất cả loại nghỉ</option>
+                                                                    <option value="Nghỉ ốm">Nghỉ ốm</option>
+                                                                    <option value="Nghỉ phép năm">Nghỉ phép năm</option>
+                                                                    <option value="Nghỉ không lương">Nghỉ không lương</option>
+                                                                    <option value="Nghỉ thai sản">Nghỉ thai sản</option>
+                                                                    <option value="Khác">Khác</option>
+                                                                </select>
+                                                            </div>
+                                                            <div id="statusFilterContainer" style="display: none; min-width: 180px;">
+                                                                <select id="statusFilter" class="form-select" style="border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: none;" onchange="applyFiltersAndPagination()">
+                                                                    <option value="">Tất cả trạng thái</option>
+                                                                    <option value="đã duyệt">Đã duyệt</option>
+                                                                    <option value="từ chối">Từ chối</option>
+                                                                    <option value="chờ duyệt">Chờ duyệt</option>
+                                                                </select>
+                                                            </div>
+                                                            <div style="min-width: 120px;">
+                                                                <select id="pageSizeFilter" class="form-select" style="border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: none;" onchange="changePageSize()">
+                                                                    <option value="5">5 dòng/trang</option>
+                                                                    <option value="10" selected>10 dòng/trang</option>
+                                                                    <option value="20">20 dòng/trang</option>
+                                                                    <option value="50">50 dòng/trang</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+
                                                         <%-- LEAVE TAB --%>
                                                             <div class="mgr-tab-pane active" id="leavePane">
                                                                 <c:choose>
@@ -1235,11 +1269,132 @@
                     </div>
 
                     <script>
+                        let currentPage = 1;
+                        let rowsPerPage = 10;
+
+                        function changePageSize() {
+                            rowsPerPage = parseInt(document.getElementById('pageSizeFilter').value);
+                            currentPage = 1;
+                            applyFiltersAndPagination();
+                        }
+
+                        function applyFiltersAndPagination() {
+                            const activePane = document.querySelector('.mgr-tab-pane.active');
+                            if (!activePane) return;
+                            
+                            const table = activePane.querySelector('table tbody');
+                            if (!table) return; 
+                            
+                            const rows = Array.from(table.querySelectorAll('tr'));
+                            if (rows.length === 0) return;
+                            
+                            const searchValue = document.getElementById('searchInput').value.toLowerCase();
+                            const typeValue = document.getElementById('typeFilter').value.toLowerCase();
+                            const statusValue = document.getElementById('statusFilter').value.toLowerCase();
+                            
+                            let filteredRows = [];
+                            
+                            rows.forEach(row => {
+                                const empName = row.querySelector('.emp-name') ? row.querySelector('.emp-name').textContent.toLowerCase() : '';
+                                const reason = row.querySelector('.reason-cell') ? row.querySelector('.reason-cell').textContent.toLowerCase() : '';
+                                const leaveType = row.querySelector('.leave-type-badge') ? row.querySelector('.leave-type-badge').textContent.toLowerCase() : '';
+                                
+                                let status = '';
+                                if (activePane.id === 'historyPane') {
+                                    const statusBadge = row.querySelector('td:nth-child(8) .badge');
+                                    if (statusBadge) status = statusBadge.textContent.toLowerCase();
+                                }
+                                
+                                const matchSearch = empName.includes(searchValue) || reason.includes(searchValue);
+                                const matchType = typeValue === '' || leaveType.includes(typeValue);
+                                const matchStatus = statusValue === '' || status.includes(statusValue);
+                                
+                                if (matchSearch && matchType && matchStatus) {
+                                    filteredRows.push(row);
+                                } else {
+                                    row.style.display = 'none';
+                                }
+                            });
+                            
+                            const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+                            if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+                            if (currentPage === 0 && totalPages > 0) currentPage = 1;
+                            
+                            const startIndex = (currentPage - 1) * rowsPerPage;
+                            const endIndex = startIndex + rowsPerPage;
+                            
+                            filteredRows.forEach((row, index) => {
+                                if (index >= startIndex && index < endIndex) {
+                                    row.style.display = '';
+                                } else {
+                                    row.style.display = 'none';
+                                }
+                            });
+                            
+                            renderPagination(totalPages, activePane);
+                        }
+
+                        function renderPagination(totalPages, activePane) {
+                            let paginationContainer = activePane.querySelector('.pagination-container');
+                            if (!paginationContainer) {
+                                paginationContainer = document.createElement('div');
+                                paginationContainer.className = 'pagination-container';
+                                paginationContainer.style.display = 'flex';
+                                paginationContainer.style.justifyContent = 'space-between';
+                                paginationContainer.style.alignItems = 'center';
+                                paginationContainer.style.marginTop = '20px';
+                                paginationContainer.style.padding = '10px 0';
+                                activePane.appendChild(paginationContainer);
+                            }
+                            
+                            if (totalPages <= 1) {
+                                paginationContainer.innerHTML = '';
+                                return;
+                            }
+                            
+                            let html = '<div style="color: #64748b; font-size: 0.9rem;">Trang ' + currentPage + ' / ' + totalPages + '</div>';
+                            html += '<div style="display: flex; gap: 5px;">';
+                            html += '<button class="btn btn-sm btn-outline-secondary" onclick="changePage(' + (currentPage - 1) + ')" ' + (currentPage === 1 ? 'disabled' : '') + '>Trước</button>';
+                            
+                            for (let i = 1; i <= totalPages; i++) {
+                                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                                    let btnClass = (i === currentPage) ? 'btn-primary' : 'btn-outline-secondary';
+                                    html += '<button class="btn btn-sm ' + btnClass + '" onclick="changePage(' + i + ')">' + i + '</button>';
+                                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                                    html += '<span style="padding: 4px 8px; color: #94a3b8;">...</span>';
+                                }
+                            }
+                            
+                            html += '<button class="btn btn-sm btn-outline-secondary" onclick="changePage(' + (currentPage + 1) + ')" ' + (currentPage === totalPages ? 'disabled' : '') + '>Sau</button>';
+                            html += '</div>';
+                            
+                            paginationContainer.innerHTML = html;
+                        }
+
+                        function changePage(page) {
+                            currentPage = page;
+                            applyFiltersAndPagination();
+                        }
+
+                        document.addEventListener('DOMContentLoaded', () => {
+                            applyFiltersAndPagination();
+                        });
+
                         function switchTab(evt, tabId) {
                             document.querySelectorAll('.mgr-tab').forEach(t => t.classList.remove('active'));
                             document.querySelectorAll('.mgr-tab-pane').forEach(p => p.classList.remove('active'));
                             evt.currentTarget.classList.add('active');
                             document.getElementById(tabId).classList.add('active');
+
+                            if (tabId === 'historyPane') {
+                                document.getElementById('statusFilterContainer').style.display = 'block';
+                            } else {
+                                document.getElementById('statusFilterContainer').style.display = 'none';
+                                document.getElementById('statusFilter').value = '';
+                            }
+                            
+                            currentPage = 1;
+                            applyFiltersAndPagination();
                         }
 
                         function handleReject(form, userName) {
