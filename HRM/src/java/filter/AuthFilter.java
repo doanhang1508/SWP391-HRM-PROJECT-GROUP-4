@@ -117,6 +117,7 @@ public class AuthFilter implements Filter {
                     redirectToAppropriate(req, resp, roleId);
                     return;
                 }
+
             } else if (path.equals("/hr/resolve-claim")) {
                 if (roleId != ROLE_HR_MANAGER && roleId != ROLE_HR_STAFF && roleId != ROLE_ACCOUNTANT) {
                     redirectToAppropriate(req, resp, roleId);
