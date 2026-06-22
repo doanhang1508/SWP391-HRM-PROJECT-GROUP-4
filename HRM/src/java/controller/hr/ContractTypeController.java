@@ -92,7 +92,7 @@ public class ContractTypeController extends HttpServlet {
             return false;
         }
         User user = (User) session.getAttribute(ATTR_CURRENT_USER);
-        if (user.getRoleId() != 2) {
+        if (user.getRoleId() != 2 && user.getRoleId() != 5) {
             redirect(response, request.getContextPath() + DASHBOARD_URL);
             return false;
         }
