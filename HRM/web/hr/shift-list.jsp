@@ -302,7 +302,7 @@
 
 <script>
     let currentPage = 1;       
-    const itemsPerPage = 8;    
+    const itemsPerPage = 10;    
     let filteredRows = [];     
     let allRows = [];          
 
