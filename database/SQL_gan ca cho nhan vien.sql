@@ -2,6 +2,8 @@ USE hrm_system;
 
 DELIMITER //
 
+DROP PROCEDURE IF EXISTS AssignAdminShiftToAll //
+
 CREATE PROCEDURE AssignAdminShiftToAll(
     IN p_start_date DATE,
     IN p_end_date DATE
@@ -12,9 +14,8 @@ BEGIN
 
     WHILE v_current_date <= p_end_date DO
 
-        -- Bỏ qua Thứ 7 (7) và Chủ Nhật (1)
-        IF DAYOFWEEK(v_current_date) != 1 
-           AND DAYOFWEEK(v_current_date) != 7 THEN
+        -- Chỉ bỏ qua Chủ Nhật (1)
+        IF DAYOFWEEK(v_current_date) != 1 THEN
 
             INSERT IGNORE INTO shift_assignments 
                 (user_id, shift_id, assigned_date)
