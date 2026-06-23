@@ -14,7 +14,7 @@ import model.User;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.List;
+import java.util.*;
 
 @WebServlet(name = "EmployeeTimesheetController", urlPatterns = {"/employee/timesheet"})
 public class EmployeeTimesheetController extends HttpServlet {
@@ -32,56 +32,61 @@ public class EmployeeTimesheetController extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("currentUser");
+        int userId = user.getUserId();
+        int deptId = user.getDepartmentId();
 
-        int month = LocalDate.now().getMonthValue();
-        int year = LocalDate.now().getYear();
+        // Lấy danh sách tất cả kỳ (tháng/năm) có dữ liệu chấm công của user này
+        List<AttendanceDAO.MonthYearOption> allPeriods = attendanceDAO.getPeriodsForUser(userId);
 
-        String monthParam = request.getParameter("month");
-        String yearParam = request.getParameter("year");
-        if (monthParam != null && !monthParam.isEmpty()) {
-            try { month = Integer.parseInt(monthParam); } catch (NumberFormatException ignored) {}
-        }
-        if (yearParam != null && !yearParam.isEmpty()) {
-            try { year = Integer.parseInt(yearParam); } catch (NumberFormatException ignored) {}
-        }
+        // Với mỗi kỳ, build một PeriodData object chứa summary + danh sách ngày
+        List<Map<String, Object>> periodDataList = new ArrayList<>();
 
-        List<Attendance> records = attendanceDAO.getAttendanceByUser(user.getUserId(), month, year);
-        
-        // Generate full list of days in the month
-        List<Attendance> fullRecords = new java.util.ArrayList<>();
-        int endDay = LocalDate.of(year, month, 1).lengthOfMonth();
+        for (AttendanceDAO.MonthYearOption p : allPeriods) {
+            int month = p.getMonth();
+            int year  = p.getYear();
 
-        for (int i = 1; i <= endDay; i++) {
-            int currentDay = i;
-            Attendance existing = records.stream()
-                .filter(a -> a.getWorkDate().toLocalDate().getDayOfMonth() == currentDay)
-                .findFirst().orElse(null);
-                
-            if (existing != null) {
-                fullRecords.add(existing);
-            } else {
-                Attendance dummy = new Attendance();
-                dummy.setWorkDate(java.sql.Date.valueOf(LocalDate.of(year, month, currentDay)));
-                dummy.setStatus("ABSENT");
-                dummy.setShiftName("—");
-                fullRecords.add(dummy);
+            // Lấy attendance thực tế
+            List<Attendance> records = attendanceDAO.getAttendanceByUser(userId, month, year);
+            if (records.isEmpty()) continue;
+
+            // Fill đủ các ngày trong tháng (kể cả ngày không có data)
+            List<Attendance> fullRecords = new ArrayList<>();
+            int endDay = LocalDate.of(year, month, 1).lengthOfMonth();
+            for (int d = 1; d <= endDay; d++) {
+                final int currentDay = d;
+                Attendance existing = records.stream()
+                    .filter(a -> a.getWorkDate().toLocalDate().getDayOfMonth() == currentDay)
+                    .findFirst().orElse(null);
+                if (existing != null) {
+                    fullRecords.add(existing);
+                } else {
+                    Attendance dummy = new Attendance();
+                    dummy.setWorkDate(java.sql.Date.valueOf(LocalDate.of(year, month, currentDay)));
+                    dummy.setStatus("NO_DATA");
+                    dummy.setShiftName("—");
+                    fullRecords.add(dummy);
+                }
             }
+
+            // Summary stats
+            int[] summary = attendanceDAO.getAttendanceSummary(userId, month, year);
+
+            // Dept confirmation status
+            TimesheetConfirmation tc = tcDAO.getConfirmationByPeriodAndDept(month, year, deptId);
+
+            Map<String, Object> periodData = new LinkedHashMap<>();
+            periodData.put("month", month);
+            periodData.put("year", year);
+            periodData.put("attendanceList", fullRecords);
+            periodData.put("present", summary[0]);
+            periodData.put("late", summary[1]);
+            periodData.put("absent", summary[2]);
+            periodData.put("ot", summary[3]);
+            periodData.put("confirmation", tc);
+            periodDataList.add(periodData);
         }
-        
-        int[] summary = attendanceDAO.getAttendanceSummary(user.getUserId(), month, year);
 
-        // Fetch department timesheet status for info
-        TimesheetConfirmation deptConfirmation = tcDAO.getConfirmationByPeriodAndDept(month, year, user.getDepartmentId());
-
-        request.setAttribute("attendanceList", fullRecords);
-        request.setAttribute("summaryPresent", summary[0]);
-        request.setAttribute("summaryLate", summary[1]);
-        request.setAttribute("summaryAbsent", summary[2]);
-        request.setAttribute("summaryOT", summary[3]);
-        request.setAttribute("selectedMonth", month);
-        request.setAttribute("selectedYear", year);
-        request.setAttribute("deptConfirmation", deptConfirmation);
-
+        request.setAttribute("periodDataList", periodDataList);
         request.getRequestDispatcher("/employee/timesheet.jsp").forward(request, response);
     }
 }
