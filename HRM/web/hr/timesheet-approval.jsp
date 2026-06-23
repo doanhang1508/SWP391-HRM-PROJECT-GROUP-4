@@ -309,7 +309,7 @@
                                     <th>Kỳ Công</th>
                                     <th>Trạng Thái</th>
                                     <th>Xác Nhận Bởi</th>
-                                    <th>Lý Do Phản Hồi</th>
+                             
                                     <th class="text-end">Hành Động</th>
                                 </tr>
                             </thead>
@@ -322,7 +322,7 @@
                                             <c:choose>
                                                 <c:when test="${c.status == 'DEPARTMENT_CONFIRMED'}"><span class="badge-s b-pending"><i class="fas fa-check"></i> Trưởng phòng xác nhận</span></c:when>
                                                 <c:when test="${c.status == 'SENT_TO_HR_MANAGER'}"><span class="badge-s b-info"><i class="fas fa-user-tie"></i> Chờ duyệt cuối</span></c:when>
-                                                <c:when test="${c.status == 'HR_MANAGER_APPROVED'}"><span class="badge-s b-approved" style="background:#ecfdf5;color:#047857;"><i class="fas fa-check-double"></i> Đã duyệt cuối (Khóa)</span></c:when>
+                                                <c:when test="${c.status == 'HR_MANAGER_APPROVED'}"><span class="badge-s b-approved" style="background:#ecfdf5;color:#047857;"><i class="fas fa-check-double"></i> Đã duyệt cuối</span></c:when>
                                                 <c:when test="${c.status == 'HR_MANAGER_REJECTED'}"><span class="badge-s b-rejected"><i class="fas fa-times"></i> Đã từ chối duyệt</span></c:when>
                                             </c:choose>
                                         </td>
@@ -334,7 +334,7 @@
                                                 </c:if>
                                             </div>
                                         </td>
-                                        <td class="text-danger small" style="max-width:200px">${c.rejectReason != null ? c.rejectReason : '-'}</td>
+                                        
                                         <td class="text-end">
                                             <c:if test="${c.status == 'SENT_TO_HR_MANAGER' || c.status == 'DEPARTMENT_CONFIRMED'}">
                                                 <c:choose>

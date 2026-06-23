@@ -83,25 +83,7 @@ public class AttendanceDAO {
     }
 
     public boolean isUserMonthLocked(int userId, int month, int year) {
-        if (isMonthLocked(month, year)) {
-            return true;
-        }
-        String sql = "SELECT 1 FROM timesheet_confirmations tc " +
-                     "JOIN users u ON tc.department_id = u.department_id " +
-                     "WHERE u.user_id = ? AND tc.month = ? AND tc.year = ? AND tc.status = 'HR_MANAGER_APPROVED'";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            ps.setInt(2, month);
-            ps.setInt(3, year);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
+        return isMonthLocked(month, year);
     }
 
     public boolean isAttendanceLocked(int attendanceId) {
@@ -114,20 +96,6 @@ public class AttendanceDAO {
             ps.setInt(1, attendanceId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return true;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        String sql2 = "SELECT 1 FROM attendance a " +
-                      "JOIN users u ON a.user_id = u.user_id " +
-                      "JOIN timesheet_confirmations tc ON u.department_id = tc.department_id " +
-                      "WHERE a.attendance_id = ? AND tc.month = MONTH(a.work_date) AND tc.year = YEAR(a.work_date) AND tc.status = 'HR_MANAGER_APPROVED'";
-        try (Connection conn = dbContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql2)) {
-            ps.setInt(1, attendanceId);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
             }
         } catch (SQLException e) {
             e.printStackTrace();

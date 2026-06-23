@@ -230,7 +230,7 @@ public class HrPayrollController extends HttpServlet {
 
         dao.PayrollDAO.PayrollGenerationResult result = payrollDAO.generatePayrollDraft(month, year);
         if (result.isNoAttendanceData()) {
-            request.getSession().setAttribute("errorMessage", "Chưa có dữ liệu chấm công tháng " + month + "/" + year + ". Vui lòng import chấm công trước khi tạo payroll draft.");
+            request.getSession().setAttribute("errorMessage", "Chưa có dữ liệu chấm công tháng. Vui lòng import chấm công trước khi tạo payroll draft.");
             response.sendRedirect(request.getContextPath() + "/hr/payroll");
         } else {
             String msg = "Khởi tạo bảng lương tháng " + month + "/" + year + " thành công: " +
