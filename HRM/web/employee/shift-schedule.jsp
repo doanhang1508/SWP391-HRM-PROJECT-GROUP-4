@@ -292,10 +292,9 @@
 
             <!-- Legend -->
             <div class="legend">
-                <div class="legend-item"><div class="legend-dot" style="background:rgba(245,158,11,.6)"></div>Ca Sáng</div>
-                <div class="legend-item"><div class="legend-dot" style="background:rgba(59,130,246,.6)"></div>Ca Chiều</div>
-                <div class="legend-item"><div class="legend-dot" style="background:rgba(139,92,246,.6)"></div>Ca Đêm</div>
-                <div class="legend-item"><div class="legend-dot" style="background:rgba(16,185,129,.6)"></div>Hành chính</div>
+                <div class="legend-item"><div class="legend-dot" style="background:rgba(16,185,129,.6)"></div>Ca Hành chính</div>
+                <div class="legend-item"><div class="legend-dot" style="background:rgba(245,158,11,.6)"></div>Ca Đêm 1</div>
+                <div class="legend-item"><div class="legend-dot" style="background:rgba(139,92,246,.6)"></div>Ca Đêm 2</div>
                 <div class="legend-item"><div class="legend-dot" style="background:#dd6b20"></div>Nghỉ</div>
             </div>
         </div>

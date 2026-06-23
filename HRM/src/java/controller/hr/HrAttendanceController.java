@@ -7,6 +7,7 @@ import model.AttendanceSummary;
 import model.User;
 
 import java.io.IOException;
+import java.sql.Time;
 import java.time.LocalDate;
 import java.util.List;
 import jakarta.servlet.ServletException;
@@ -82,20 +83,86 @@ public class HrAttendanceController extends HttpServlet {
 
     private void viewDetail(HttpServletRequest request, HttpServletResponse response, int month, int year)
             throws ServletException, IOException {
-        String userIdStr = request.getParameter("userId");
-        Integer userId = null;
-        if (userIdStr != null && !userIdStr.isEmpty()) {
-            userId = Integer.parseInt(userIdStr);
-            request.setAttribute("selectedUserId", userId);
+        String userName = request.getParameter("userName");
+        String workDateStr = request.getParameter("workDate");
+        java.sql.Date workDate = null;
+        if (workDateStr != null && !workDateStr.trim().isEmpty()) {
+            try {
+                workDate = java.sql.Date.valueOf(workDateStr);
+            } catch (Exception e) {}
+        }
+        
+        if (userName != null) {
+            userName = userName.trim();
         }
 
-        List<Attendance> detailList = attendanceDAO.getAllAttendance(month, year, userId);
+        request.setAttribute("selectedUserName", userName);
+        request.setAttribute("selectedWorkDate", workDateStr);
+
+        List<Attendance> detailList = attendanceDAO.getAllAttendance(month, year, userName, workDate);
         request.setAttribute("detailList", detailList);
         
-        // Load user list for filtering
-        List<User> userList = userDAO.getAllUsers();
-        request.setAttribute("userList", userList);
-
         request.getRequestDispatcher("/hr/attendance-detail.jsp").forward(request, response);
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("currentUser") == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser.getRoleId() != 2 && currentUser.getRoleId() != 5) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền thực hiện hành động này.");
+            return;
+        }
+
+        String action = request.getParameter("action");
+        if ("update".equals(action)) {
+            try {
+                int attendanceId = Integer.parseInt(request.getParameter("attendanceId"));
+                int month = Integer.parseInt(request.getParameter("month"));
+                int year = Integer.parseInt(request.getParameter("year"));
+                String userName = request.getParameter("userName");
+                String workDateStr = request.getParameter("workDate");
+                String checkInStr = request.getParameter("checkIn");
+                String checkOutStr = request.getParameter("checkOut");
+                String status = request.getParameter("status");
+
+                // Check if month is locked
+                if (attendanceDAO.isMonthLocked(month, year)) {
+                    session.setAttribute("errorMsg", "Không thể sửa dữ liệu chấm công vì tháng này đã bị khóa!");
+                } else {
+                    Time checkIn = (checkInStr != null && !checkInStr.trim().isEmpty()) ? Time.valueOf(checkInStr.length() == 5 ? checkInStr + ":00" : checkInStr) : null;
+                    Time checkOut = (checkOutStr != null && !checkOutStr.trim().isEmpty()) ? Time.valueOf(checkOutStr.length() == 5 ? checkOutStr + ":00" : checkOutStr) : null;
+
+                    boolean success = attendanceDAO.updateAttendanceHR(attendanceId, checkIn, checkOut, status);
+                    if (success) {
+                        session.setAttribute("successMsg", "Cập nhật chấm công thành công.");
+                    } else {
+                        session.setAttribute("errorMsg", "Cập nhật thất bại. Vui lòng thử lại.");
+                    }
+                }
+                
+                String redirectUrl = request.getContextPath() + "/hr/attendance-management?action=detail&month=" + month + "&year=" + year;
+                if (userName != null && !userName.trim().isEmpty()) {
+                    redirectUrl += "&userName=" + java.net.URLEncoder.encode(userName.trim(), "UTF-8");
+                }
+                if (workDateStr != null && !workDateStr.trim().isEmpty()) {
+                    redirectUrl += "&workDate=" + workDateStr;
+                }
+                response.sendRedirect(redirectUrl);
+            } catch (Exception e) {
+                e.printStackTrace();
+                session.setAttribute("errorMsg", "Dữ liệu không hợp lệ: " + e.getMessage());
+                response.sendRedirect(request.getContextPath() + "/hr/attendance-management?action=detail");
+            }
+        } else {
+            response.sendRedirect(request.getContextPath() + "/hr/attendance-management?action=summary");
+        }
     }
 }
