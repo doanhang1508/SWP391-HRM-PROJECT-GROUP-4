@@ -405,13 +405,6 @@
                                                          <i class="fas fa-user-check"></i> Duyệt bảng công
                                                      </a>
                                                  </li>
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/manager/timesheet-confirm"
-                                                            class="sidebar-link ${param.activeMenu eq 'timesheet-confirm' ? 'active' : ''}">
-                                                            <i class="fas fa-check-double"></i> XÃ¡c nháº­n báº£ng cÃ´ng
-                                                        </a>
-                                                    </li>
-
                                             </c:if>
 
                                             <%-- ══════ HR MANAGER (roleId=2): Quản lý nhân sự ══════ --%>
