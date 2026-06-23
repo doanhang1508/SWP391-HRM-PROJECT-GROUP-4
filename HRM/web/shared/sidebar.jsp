@@ -410,6 +410,12 @@
                                                          <i class="fas fa-user-check"></i> Duyệt bảng công
                                                      </a>
                                                  </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/manager/timesheet-confirm"
+                                                            class="sidebar-link ${param.activeMenu eq 'timesheet-confirm' ? 'active' : ''}">
+                                                            <i class="fas fa-check-double"></i> XÃ¡c nháº­n báº£ng cÃ´ng
+                                                        </a>
+                                                    </li>
 
                                             </c:if>
 
@@ -473,6 +479,12 @@
                                                         </a>
                                                     </li>
                                                     <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/manager/timesheet-confirm"
+                                                            class="sidebar-link ${param.activeMenu eq 'timesheet-confirm' ? 'active' : ''}">
+                                                            <i class="fas fa-check-double"></i> Xác nhận bảng công
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/hr/timesheet-approval"
                                                             class="sidebar-link ${param.activeMenu eq 'timesheet-approval' ? 'active' : ''}">
                                                             <i class="fas fa-user-check"></i> Duyệt bảng công
@@ -519,6 +531,12 @@
                                                                 <i class="fas fa-balance-scale"></i> Giải quyết khiếu nại công
                                                             </a>
                                                         </li>
+                                                         <li class="sidebar-item">
+                                                             <a href="${pageContext.request.contextPath}/manager/timesheet-confirm"
+                                                                 class="sidebar-link ${param.activeMenu eq 'timesheet-confirm' ? 'active' : ''}">
+                                                                 <i class="fas fa-check-double"></i> Xác nhận bảng công
+                                                             </a>
+                                                         </li>
 
                                                     </c:if>
 
@@ -610,12 +628,12 @@
                                                                         <i class="fas fa-file-import"></i> Import chấm công
                                                                     </a>
                                                                 </li>
-                                                                 <li class="sidebar-item">
-                                                                     <a href="${pageContext.request.contextPath}/manager/timesheet-confirm"
-                                                                         class="sidebar-link ${param.activeMenu eq 'timesheet-confirm' ? 'active' : ''}">
-                                                                         <i class="fas fa-check-double"></i> Xác nhận bảng công
-                                                                     </a>
-                                                                 </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/manager/timesheet-confirm"
+                                                                        class="sidebar-link ${param.activeMenu eq 'timesheet-confirm' ? 'active' : ''}">
+                                                                        <i class="fas fa-check-double"></i> Xác nhận bảng công
+                                                                    </a>
+                                                                </li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/attendance-management?action=summary"
                                                                         class="sidebar-link ${param.activeMenu eq 'attendance-summary' || param.activeMenu eq 'attendance-detail' ? 'active' : ''}">
@@ -748,6 +766,14 @@
 
                                                                 <%-- ══════ TÀI KHOẢN (chung) ══════ --%>
                                                                     <li class="sidebar-menu-category">Tài khoản</li>
+                                                                    <c:if test="${sessionScope.currentUser.roleId != 7}">
+                                                                        <li class="sidebar-item">
+                                                                            <a href="${pageContext.request.contextPath}/employee/timesheet"
+                                                                                class="sidebar-link ${param.activeMenu eq 'personal-timesheet' ? 'active' : ''}">
+                                                                                <i class="fas fa-fingerprint"></i> Bảng công cá nhân
+                                                                            </a>
+                                                                        </li>
+                                                                    </c:if>
                                                                     <li class="sidebar-item">
                                                                         <a href="${pageContext.request.contextPath}/profile"
                                                                             class="sidebar-link ${param.activeMenu eq 'profile' ? 'active' : ''}">

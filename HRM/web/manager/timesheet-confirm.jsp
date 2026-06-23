@@ -295,7 +295,7 @@
             </script>
 
             <!-- ================= VIEW FOR HR STAFF / MANAGER / ADMIN ================= -->
-            <c:if test="${sessionScope.currentUser.roleId == 1 || sessionScope.currentUser.roleId == 2 || sessionScope.currentUser.roleId == 5}">
+            <c:if test="${sessionScope.currentUser.roleId == 1 || sessionScope.currentUser.roleId == 5}">
 
 
 
@@ -504,7 +504,7 @@
 
 
             <!-- ================= VIEW FOR DEPARTMENT MANAGER ================= -->
-            <c:if test="${sessionScope.currentUser.roleId == 6}">
+            <c:if test="${sessionScope.currentUser.roleId == 6 || sessionScope.currentUser.roleId == 3 || sessionScope.currentUser.roleId == 2}">
                 <div class="mb-4">
                     <h4 class="h6 fw-bold text-muted mb-2">Trạng thái Bảng Công Phòng Ban:</h4>
                     <c:choose>

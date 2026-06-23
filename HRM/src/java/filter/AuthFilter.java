@@ -106,7 +106,7 @@ public class AuthFilter implements Filter {
         }
 
         if (path.equals("/manager/timesheet-confirm")) {
-            if (roleId != ROLE_HR_MANAGER && roleId != ROLE_HR_STAFF && roleId != ROLE_DEPT_MGR && roleId != ROLE_ADMIN) {
+            if (roleId != ROLE_HR_MANAGER && roleId != ROLE_HR_STAFF && roleId != ROLE_DEPT_MGR && roleId != ROLE_ADMIN && roleId != ROLE_FACTORY_MGR) {
                 redirectToAppropriate(req, resp, roleId);
                 return;
             }

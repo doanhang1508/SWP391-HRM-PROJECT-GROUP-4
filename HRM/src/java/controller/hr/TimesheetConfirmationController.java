@@ -37,8 +37,8 @@ public class TimesheetConfirmationController extends HttpServlet {
         User currentUser = (User) session.getAttribute("currentUser");
         int roleId = currentUser.getRoleId();
 
-        // Allow Admin (1), HR Manager (2), HR Staff (5), Department Manager (6)
-        if (roleId != 1 && roleId != 2 && roleId != 5 && roleId != 6) {
+        // Allow Admin (1), HR Manager (2), Factory Manager (3), HR Staff (5), Department Manager (6)
+        if (roleId != 1 && roleId != 2 && roleId != 3 && roleId != 5 && roleId != 6) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền truy cập chức năng này.");
             return;
         }
@@ -53,7 +53,7 @@ public class TimesheetConfirmationController extends HttpServlet {
         request.setAttribute("selectedMonth", month);
         request.setAttribute("selectedYear", year);
 
-        if (roleId == 6) { // Department Manager
+        if (roleId == 6 || roleId == 3 || roleId == 2) { // Department Manager, Factory Manager, HR Manager (as dept manager)
             int deptId = currentUser.getDepartmentId();
             TimesheetConfirmation confirmation = tcDAO.getConfirmationByPeriodAndDept(month, year, deptId);
             if (confirmation == null) {
@@ -83,7 +83,7 @@ public class TimesheetConfirmationController extends HttpServlet {
             request.setAttribute("attendanceList", attendanceList);
             request.setAttribute("empSummaryList", empSummaryList);
             request.getRequestDispatcher("/manager/timesheet-confirm.jsp").forward(request, response);
-        } else { // Admin, HR Manager, HR Staff
+        } else { // Admin, HR Staff
             List<Department> activeDepts = tcDAO.getDepartmentsWithAttendance(month, year);
             for (Department dept : activeDepts) {
                 TimesheetConfirmation existing = tcDAO.getConfirmationByPeriodAndDept(month, year, dept.getDepartmentId());
@@ -227,9 +227,9 @@ public class TimesheetConfirmationController extends HttpServlet {
             }
         } 
         else if ("departmentConfirm".equals(action)) {
-            if (roleId != 1 && roleId != 6) {
+            if (roleId != 1 && roleId != 6 && roleId != 3 && roleId != 2) {
                 session.setAttribute("errorMessage", "Bạn không có quyền thực hiện hành động này.");
-            } else if (roleId == 6 && currentUser.getDepartmentId() != tc.getDepartmentId()) {
+            } else if ((roleId == 6 || roleId == 3 || roleId == 2) && currentUser.getDepartmentId() != tc.getDepartmentId()) {
                 session.setAttribute("errorMessage", "Bạn chỉ được duyệt bảng công của phòng ban mình.");
             } else if (!"SENT_TO_DEPARTMENT".equals(tc.getStatus())) {
                 session.setAttribute("errorMessage", "Trạng thái hiện tại không hợp lệ để xác nhận.");
@@ -247,9 +247,9 @@ public class TimesheetConfirmationController extends HttpServlet {
             String reason = request.getParameter("reason");
             if (reason == null || reason.trim().isEmpty()) {
                 session.setAttribute("errorMessage", "Vui lòng nhập lý do từ chối.");
-            } else if (roleId != 1 && roleId != 6) {
+            } else if (roleId != 1 && roleId != 6 && roleId != 3 && roleId != 2) {
                 session.setAttribute("errorMessage", "Bạn không có quyền thực hiện hành động này.");
-            } else if (roleId == 6 && currentUser.getDepartmentId() != tc.getDepartmentId()) {
+            } else if ((roleId == 6 || roleId == 3 || roleId == 2) && currentUser.getDepartmentId() != tc.getDepartmentId()) {
                 session.setAttribute("errorMessage", "Bạn chỉ được phản hồi bảng công của phòng ban mình.");
             } else if (!"SENT_TO_DEPARTMENT".equals(tc.getStatus())) {
                 session.setAttribute("errorMessage", "Trạng thái hiện tại không hợp lệ để từ chối.");
