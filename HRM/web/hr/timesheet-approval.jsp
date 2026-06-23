@@ -385,6 +385,32 @@
                                                     </div>
                                                 </div>
                                             </c:if>
+
+                                            <!-- Nút khóa/mở khóa khi đã duyệt cuối -->
+                                            <c:if test="${c.status == 'HR_MANAGER_APPROVED'}">
+                                                <c:choose>
+                                                    <c:when test="${!isLocked}">
+                                                        <form action="${pageContext.request.contextPath}/hr/timesheet-approval" method="post" style="display:inline-block">
+                                                            <input type="hidden" name="action" value="lockMonth">
+                                                            <input type="hidden" name="month" value="${selectedMonth}">
+                                                            <input type="hidden" name="year" value="${selectedYear}">
+                                                            <button type="submit" class="btn-a" style="background:#b91c1c;color:#fff" onclick="return confirm('Bạn chắc chắn muốn KHÓA bảng công tháng này? Mọi người sẽ không thể chỉnh sửa nữa.')">
+                                                                <i class="fas fa-lock"></i> Khóa công
+                                                            </button>
+                                                        </form>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <form action="${pageContext.request.contextPath}/hr/timesheet-approval" method="post" style="display:inline-block">
+                                                            <input type="hidden" name="action" value="unlockMonth">
+                                                            <input type="hidden" name="month" value="${selectedMonth}">
+                                                            <input type="hidden" name="year" value="${selectedYear}">
+                                                            <button type="submit" class="btn-a" style="background:#059669;color:#fff" onclick="return confirm('Bạn chắc chắn muốn MỞ KHÓA bảng công tháng này?')">
+                                                                <i class="fas fa-lock-open"></i> Mở khóa
+                                                            </button>
+                                                        </form>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </c:if>
                                         </td>
                                     </tr>
                                 </c:forEach>

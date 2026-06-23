@@ -391,6 +391,20 @@
                                                     </a>
                                                 </li>
 
+                                                <li class="sidebar-menu-category">Quản lý Chấm công</li>
+
+                                                 <li class="sidebar-item">
+                                                     <a href="${pageContext.request.contextPath}/manager/timesheet-confirm"
+                                                         class="sidebar-link ${param.activeMenu eq 'timesheet-confirm' ? 'active' : ''}">
+                                                         <i class="fas fa-check-double"></i> Xác nhận bảng công
+                                                     </a>
+                                                 </li>
+                                                 <li class="sidebar-item">
+                                                     <a href="${pageContext.request.contextPath}/hr/timesheet-approval"
+                                                         class="sidebar-link ${param.activeMenu eq 'timesheet-approval' ? 'active' : ''}">
+                                                         <i class="fas fa-user-check"></i> Duyệt bảng công
+                                                     </a>
+                                                 </li>
                                             </c:if>
 
                                             <%-- ══════ HR MANAGER (roleId=2): Quản lý nhân sự ══════ --%>
@@ -446,12 +460,7 @@
 
 
                                                     <li class="sidebar-menu-category">Chấm công</li>
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/timesheet-lock"
-                                                            class="sidebar-link ${param.activeMenu eq 'timesheet-lock' ? 'active' : ''}">
-                                                            <i class="fas fa-lock"></i> Khóa công
-                                                        </a>
-                                                    </li>
+
                                                     <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/manager/timesheet-confirm"
                                                             class="sidebar-link ${param.activeMenu eq 'timesheet-confirm' ? 'active' : ''}">
