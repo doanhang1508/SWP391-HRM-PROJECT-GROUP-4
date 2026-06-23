@@ -652,25 +652,40 @@ public class AttendanceDAO {
         return list;
     }
 
-    public List<Attendance> getAllAttendance(int month, int year, Integer userId) {
+    public List<Attendance> getAllAttendance(int month, int year, String userName, java.sql.Date workDate) {
         List<Attendance> list = new ArrayList<>();
-        String sql = "SELECT a.*, u.full_name AS user_name, s.shift_name " +
-                     "FROM attendance a " +
-                     "JOIN users u ON a.user_id = u.user_id " +
-                     "JOIN shifts s ON a.shift_id = s.shift_id " +
-                     "WHERE MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? ";
-        if (userId != null) {
-            sql += " AND a.user_id = ? ";
+        StringBuilder sql = new StringBuilder(
+            "SELECT a.*, u.full_name AS user_name, s.shift_name " +
+            "FROM attendance a " +
+            "JOIN users u ON a.user_id = u.user_id " +
+            "JOIN shifts s ON a.shift_id = s.shift_id " +
+            "WHERE MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? "
+        );
+        
+        if (userName != null && !userName.trim().isEmpty()) {
+            sql.append(" AND u.full_name LIKE ? ");
         }
-        sql += "ORDER BY a.work_date DESC, u.full_name";
+        if (workDate != null) {
+            sql.append(" AND a.work_date = ? ");
+        }
+        
+        sql.append("ORDER BY a.work_date DESC, u.full_name");
+        
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            
             ps.setInt(1, month);
             ps.setInt(2, year);
-            if (userId != null) {
-                ps.setInt(3, userId);
+            
+            int paramIndex = 3;
+            if (userName != null && !userName.trim().isEmpty()) {
+                ps.setString(paramIndex++, "%" + userName.trim() + "%");
             }
+            if (workDate != null) {
+                ps.setDate(paramIndex++, workDate);
+            }
+            
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     list.add(mapAttendanceRow(rs));
@@ -682,6 +697,7 @@ public class AttendanceDAO {
         return list;
     }
 
+<<<<<<< Updated upstream
     public List<Attendance> getAttendanceByDepartment(int month, int year, int departmentId) {
         List<Attendance> list = new ArrayList<>();
         String sql = "SELECT a.*, u.full_name AS user_name, s.shift_name " +
@@ -704,5 +720,24 @@ public class AttendanceDAO {
             e.printStackTrace();
         }
         return list;
+=======
+    /**
+     * HR cập nhật trực tiếp bản ghi chấm công
+     */
+    public boolean updateAttendanceHR(int attendanceId, Time checkIn, Time checkOut, String status) {
+        String sql = "UPDATE attendance SET check_in = ?, check_out = ?, status = ? WHERE attendance_id = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setTime(1, checkIn);
+            ps.setTime(2, checkOut);
+            ps.setString(3, status);
+            ps.setInt(4, attendanceId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+>>>>>>> Stashed changes
     }
 }

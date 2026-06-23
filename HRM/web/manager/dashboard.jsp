@@ -178,8 +178,8 @@ document.addEventListener('DOMContentLoaded', function () {
     new Chart(document.getElementById('shiftChart').getContext('2d'), {
         type: 'pie',
         data: {
-            labels: ['Ca Hành Chính','Ca Sáng','Ca Chiều','Ca Đêm'],
-            datasets: [{ data:[40,25,20,15], backgroundColor:['#3b82f6','#10b981','#f59e0b','#6366f1'], borderWidth:2 }]
+            labels: ['Ca Hành Chính','Ca Đêm 1','Ca Đêm 2','Nghỉ'],
+            datasets: [{ data:[40,25,20,15], backgroundColor:['#10b981','#f59e0b','#6366f1','#dd6b20'], borderWidth:2 }]
         },
         options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right' } } }
     });
