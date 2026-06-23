@@ -125,7 +125,8 @@ public class ImportAttendanceController extends HttpServlet {
             
             // Tự động tạo bảng lương nháp dựa trên bảng công vừa import
             dao.PayrollDAO payrollDAO = new dao.PayrollDAO();
-            int payrollsCreated = payrollDAO.generatePayrollDraft(month, year);
+            dao.PayrollDAO.PayrollGenerationResult payrollResult = payrollDAO.generatePayrollDraft(month, year);
+            int payrollsCreated = payrollResult.getCreatedCount() + payrollResult.getUpdatedCount();
             
             String msg = "Import thành công " + imported + "/" + records.size() + " bản ghi. Đã tự động tạo " + payrollsCreated + " bảng lương nháp.";
             if (!parseErrors.isEmpty()) {
