@@ -119,7 +119,7 @@ public class AuthFilter implements Filter {
                     redirectToAppropriate(req, resp, roleId);
                     return;
                 }
-            } else if (path.equals("/hr/timesheet-lock") || path.equals("/hr/timesheet-approval")) {
+            } else if (path.equals("/hr/timesheet-approval")) {
                 if (roleId != ROLE_ADMIN && roleId != ROLE_HR_MANAGER) {
                     redirectToAppropriate(req, resp, roleId);
                     return;

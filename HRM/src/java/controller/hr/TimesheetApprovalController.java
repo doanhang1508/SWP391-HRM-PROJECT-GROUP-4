@@ -2,7 +2,9 @@ package controller.hr;
 
 import dao.TimesheetConfirmationDAO;
 import dao.AuditLogDAO;
+import dao.AttendanceDAO;
 import model.TimesheetConfirmation;
+import model.TimesheetLock;
 import model.User;
 
 import jakarta.servlet.ServletException;
@@ -22,6 +24,7 @@ public class TimesheetApprovalController extends HttpServlet {
 
     private final TimesheetConfirmationDAO tcDAO = new TimesheetConfirmationDAO();
     private final AuditLogDAO auditDAO = new AuditLogDAO();
+    private final AttendanceDAO attendanceDAO = new AttendanceDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -66,6 +69,10 @@ public class TimesheetApprovalController extends HttpServlet {
         }
 
         request.setAttribute("confirmations", pendingConfirmations);
+        
+        boolean isLocked = attendanceDAO.isMonthLocked(month, year);
+        request.setAttribute("isLocked", isLocked);
+
         boolean allDeptsConfirmed = tcDAO.areAllActiveDepartmentsConfirmed(month, year);
         request.setAttribute("allDeptsConfirmed", allDeptsConfirmed);
         request.getRequestDispatcher("/hr/timesheet-approval.jsp").forward(request, response);
@@ -141,6 +148,32 @@ public class TimesheetApprovalController extends HttpServlet {
                     session.setAttribute("errorMessage", "Từ chối thất bại.");
                 }
             }
+        }
+        else if ("lockMonth".equals(action)) {
+            if (roleId != 1 && roleId != 2) {
+                session.setAttribute("errorMessage", "Chỉ HR Manager mới có quyền khóa công.");
+            } else {
+                if (attendanceDAO.lockMonth(month, year, currentUser.getUserId(), "Khóa công sau khi duyệt")) {
+                    session.setAttribute("successMessage", "Đã khóa bảng công tháng " + month + "/" + year);
+                } else {
+                    session.setAttribute("errorMessage", "Lỗi khi khóa bảng công.");
+                }
+            }
+            response.sendRedirect(request.getContextPath() + "/hr/timesheet-approval?month=" + month + "&year=" + year);
+            return;
+        }
+        else if ("unlockMonth".equals(action)) {
+            if (roleId != 1 && roleId != 2) {
+                session.setAttribute("errorMessage", "Chỉ HR Manager mới có quyền mở khóa công.");
+            } else {
+                if (attendanceDAO.unlockMonth(month, year)) {
+                    session.setAttribute("successMessage", "Đã mở khóa bảng công tháng " + month + "/" + year);
+                } else {
+                    session.setAttribute("errorMessage", "Lỗi khi mở khóa bảng công.");
+                }
+            }
+            response.sendRedirect(request.getContextPath() + "/hr/timesheet-approval?month=" + month + "&year=" + year);
+            return;
         }
 
         response.sendRedirect(request.getContextPath() + "/hr/timesheet-approval?month=" + month + "&year=" + year);
