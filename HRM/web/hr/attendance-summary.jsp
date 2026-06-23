@@ -114,6 +114,25 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Pagination -->
+            <c:if test="${totalPages > 1}">
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
+                            <a class="page-link" href="?action=summary&month=${selectedMonth}&year=${selectedYear}&page=${currentPage - 1}">Trước</a>
+                        </li>
+                        <c:forEach begin="1" end="${totalPages}" var="i">
+                            <li class="page-item ${currentPage == i ? 'active' : ''}">
+                                <a class="page-link" href="?action=summary&month=${selectedMonth}&year=${selectedYear}&page=${i}">${i}</a>
+                            </li>
+                        </c:forEach>
+                        <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
+                            <a class="page-link" href="?action=summary&month=${selectedMonth}&year=${selectedYear}&page=${currentPage + 1}">Sau</a>
+                        </li>
+                    </ul>
+                </nav>
+            </c:if>
         </div>
     </div>
 </div>
