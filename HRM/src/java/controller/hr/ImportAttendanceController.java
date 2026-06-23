@@ -123,12 +123,7 @@ public class ImportAttendanceController extends HttpServlet {
 
             int imported = attendanceDAO.bulkImportAttendance(records);
             
-            // Tự động tạo bảng lương nháp dựa trên bảng công vừa import
-            dao.PayrollDAO payrollDAO = new dao.PayrollDAO();
-            dao.PayrollDAO.PayrollGenerationResult payrollResult = payrollDAO.generatePayrollDraft(month, year);
-            int payrollsCreated = payrollResult.getCreatedCount() + payrollResult.getUpdatedCount();
-            
-            String msg = "Import thành công " + imported + "/" + records.size() + " bản ghi. Đã tự động tạo " + payrollsCreated + " bảng lương nháp.";
+            String msg = "Import thành công " + imported + "/" + records.size() + " bản ghi.";
             if (!parseErrors.isEmpty()) {
                 msg += " Có " + parseErrors.size() + " dòng lỗi định dạng bị bỏ qua.";
             }
