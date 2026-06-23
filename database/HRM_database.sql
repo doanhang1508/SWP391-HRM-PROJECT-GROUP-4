@@ -1295,4 +1295,20 @@ INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
 -- Accountant: xem
 INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
 (8, 30);
+CREATE TABLE IF NOT EXISTS timesheet_confirmations (
+    id              INT PRIMARY KEY AUTO_INCREMENT,
+    month           INT          NOT NULL,
+    year            INT          NOT NULL,
+    department_id   INT          NOT NULL,
+    status          VARCHAR(50)  NOT NULL DEFAULT 'DRAFT',
+    reject_reason   VARCHAR(500) NULL,
+    created_by      INT          NOT NULL,
+    created_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by      INT          NULL,
+    updated_at      TIMESTAMP    NULL,
+    CONSTRAINT fk_tc_dept   FOREIGN KEY (department_id) REFERENCES departments(department_id),
+    CONSTRAINT fk_tc_creator FOREIGN KEY (created_by) REFERENCES users(user_id),
+    CONSTRAINT fk_tc_updater FOREIGN KEY (updated_by) REFERENCES users(user_id),
+    UNIQUE KEY uk_dept_month_year (department_id, month, year)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

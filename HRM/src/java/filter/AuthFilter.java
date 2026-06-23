@@ -105,6 +105,13 @@ public class AuthFilter implements Filter {
             }
         }
 
+        if (path.equals("/manager/timesheet-confirm")) {
+            if (roleId != ROLE_HR_MANAGER && roleId != ROLE_HR_STAFF && roleId != ROLE_DEPT_MGR && roleId != ROLE_ADMIN) {
+                redirectToAppropriate(req, resp, roleId);
+                return;
+            }
+        }
+
         // ── 4. /hr/* → HR Manager (2) hoặc HR Staff (5) ────────────────────
         if (path.startsWith("/hr/")) {
             if (path.equals("/hr/employee-detail")) {
@@ -112,7 +119,7 @@ public class AuthFilter implements Filter {
                     redirectToAppropriate(req, resp, roleId);
                     return;
                 }
-            } else if (path.equals("/hr/timesheet-lock")) {
+            } else if (path.equals("/hr/timesheet-lock") || path.equals("/hr/timesheet-approval")) {
                 if (roleId != ROLE_ADMIN && roleId != ROLE_HR_MANAGER) {
                     redirectToAppropriate(req, resp, roleId);
                     return;

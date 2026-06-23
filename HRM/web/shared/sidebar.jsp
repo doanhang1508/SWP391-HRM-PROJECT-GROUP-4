@@ -398,6 +398,18 @@
                                                         <i class="fas fa-lock-open"></i> Khóa/Mở khóa công
                                                     </a>
                                                 </li>
+                                                 <li class="sidebar-item">
+                                                     <a href="${pageContext.request.contextPath}/manager/timesheet-confirm"
+                                                         class="sidebar-link ${param.activeMenu eq 'timesheet-confirm' ? 'active' : ''}">
+                                                         <i class="fas fa-check-double"></i> Xác nhận bảng công
+                                                     </a>
+                                                 </li>
+                                                 <li class="sidebar-item">
+                                                     <a href="${pageContext.request.contextPath}/hr/timesheet-approval"
+                                                         class="sidebar-link ${param.activeMenu eq 'timesheet-approval' ? 'active' : ''}">
+                                                         <i class="fas fa-user-check"></i> Duyệt bảng công
+                                                     </a>
+                                                 </li>
 
                                             </c:if>
 
@@ -458,6 +470,12 @@
                                                         <a href="${pageContext.request.contextPath}/hr/timesheet-lock"
                                                             class="sidebar-link ${param.activeMenu eq 'timesheet-lock' ? 'active' : ''}">
                                                             <i class="fas fa-lock"></i> Khóa công
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/timesheet-approval"
+                                                            class="sidebar-link ${param.activeMenu eq 'timesheet-approval' ? 'active' : ''}">
+                                                            <i class="fas fa-user-check"></i> Duyệt bảng công
                                                         </a>
                                                     </li>
                                                     <li class="sidebar-item">
@@ -592,6 +610,12 @@
                                                                         <i class="fas fa-file-import"></i> Import chấm công
                                                                     </a>
                                                                 </li>
+                                                                 <li class="sidebar-item">
+                                                                     <a href="${pageContext.request.contextPath}/manager/timesheet-confirm"
+                                                                         class="sidebar-link ${param.activeMenu eq 'timesheet-confirm' ? 'active' : ''}">
+                                                                         <i class="fas fa-check-double"></i> Xác nhận bảng công
+                                                                     </a>
+                                                                 </li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/attendance-management?action=summary"
                                                                         class="sidebar-link ${param.activeMenu eq 'attendance-summary' || param.activeMenu eq 'attendance-detail' ? 'active' : ''}">
@@ -655,6 +679,12 @@
                                                                             <i class="fas fa-balance-scale"></i> Giải quyết khiếu nại công
                                                                         </a>
                                                                     </li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/manager/timesheet-confirm"
+                                                                            class="sidebar-link ${param.activeMenu eq 'timesheet-confirm' ? 'active' : ''}">
+                                                                            <i class="fas fa-check-double"></i> Xác nhận bảng công
+                                                                        </a>
+                                                                    </li>
 
                                                                 </c:if>
 
@@ -668,9 +698,9 @@
                                                                         </a>
                                                                     </li>
                                                                     <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/employee/attendance"
-                                                                            class="sidebar-link ${param.activeMenu eq 'attendance' ? 'active' : ''}">
-                                                                            <i class="fas fa-fingerprint"></i> Bảng chấm công
+                                                                        <a href="${pageContext.request.contextPath}/employee/timesheet"
+                                                                            class="sidebar-link ${param.activeMenu eq 'personal-timesheet' ? 'active' : ''}">
+                                                                            <i class="fas fa-fingerprint"></i> Bảng công cá nhân
                                                                         </a>
                                                                     </li>
                                                                     <li class="sidebar-item">

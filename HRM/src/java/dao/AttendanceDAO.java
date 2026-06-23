@@ -681,4 +681,28 @@ public class AttendanceDAO {
         }
         return list;
     }
+
+    public List<Attendance> getAttendanceByDepartment(int month, int year, int departmentId) {
+        List<Attendance> list = new ArrayList<>();
+        String sql = "SELECT a.*, u.full_name AS user_name, s.shift_name " +
+                     "FROM attendance a " +
+                     "JOIN users u ON a.user_id = u.user_id " +
+                     "JOIN shifts s ON a.shift_id = s.shift_id " +
+                     "WHERE MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? AND u.department_id = ? " +
+                     "ORDER BY a.work_date DESC, u.full_name";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            ps.setInt(3, departmentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapAttendanceRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }
