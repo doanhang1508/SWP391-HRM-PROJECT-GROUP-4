@@ -697,7 +697,7 @@ public class AttendanceDAO {
         return list;
     }
 
-<<<<<<< Updated upstream
+
     public List<Attendance> getAttendanceByDepartment(int month, int year, int departmentId) {
         List<Attendance> list = new ArrayList<>();
         String sql = "SELECT a.*, u.full_name AS user_name, s.shift_name " +
@@ -720,7 +720,8 @@ public class AttendanceDAO {
             e.printStackTrace();
         }
         return list;
-=======
+    }
+
     /**
      * HR cập nhật trực tiếp bản ghi chấm công
      */
@@ -738,6 +739,5 @@ public class AttendanceDAO {
             e.printStackTrace();
         }
         return false;
->>>>>>> Stashed changes
     }
 }

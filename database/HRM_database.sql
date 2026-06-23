@@ -648,80 +648,35 @@ INSERT INTO dependents (user_id, full_name, relationship, dob) VALUES
 
 -- ── 17. Nhân viên Quản lý (user_id 6-32, 27 người) ──
 
--- Phòng Hành Chính (dept=1): 4 mới + giam_doc = 5
+-- Phòng Hành Chính (dept=1)
 INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
-(6, 'tp_hanh_chinh','@123456','Đỗ Thị Hà',    'tp_hc@hrm.com',  '0901000006',6,1,2),
-(7, 'pp_hanh_chinh','@123456','Ngô Văn Tài',   'pp_hc@hrm.com',  '0901000007',7,1,3),
-(8, 'cv_hc_01',     '@123456','Vũ Thị Nga',    'cv_hc1@hrm.com', '0901000008',7,1,7),
-(9, 'cv_hc_02',     '@123456','Đinh Văn Phúc', 'cv_hc2@hrm.com', '0901000009',7,1,7);
+(6, 'tp_hanh_chinh','@123456','Đỗ Thị Hà',    'tp_hc@hrm.com',  '0901000006',6,1,2);
 
--- Phòng Nhân Sự (dept=2): 4 HR Staff + hr_manager = 5
+-- Phòng Nhân Sự (dept=2)
 INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
-(10,'hr_staff_01','@123456','Đặng Thị Hồng','hrs1@hrm.com','0901000010',5,2,8),
-(11,'hr_staff_02','@123456','Chu Văn Minh', 'hrs2@hrm.com','0901000011',5,2,8),
-(12,'hr_staff_03','@123456','Lý Thị Loan',  'hrs3@hrm.com','0901000012',5,2,8),
-(13,'hr_staff_04','@123456','Tạ Văn Sơn',   'hrs4@hrm.com','0901000013',5,2,8);
+(10,'hr_staff_01','@123456','Đặng Thị Hồng','hrs1@hrm.com','0901000010',5,2,8);
 
--- Phòng Kế Toán (dept=3): 5 mới
+-- Phòng Kế Toán (dept=3)
 INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
-(14,'ke_toan_truong','@123456','Phan Thị Khánh','ktt@hrm.com',    '0901000014',6,3,6),
-(15,'pp_ke_toan',    '@123456','Trịnh Văn Hùng','pp_kt@hrm.com',  '0901000015',7,3,3),
-(16,'cv_kt_01',      '@123456','Cao Thị Lan',   'cv_kt1@hrm.com', '0901000016',7,3,7),
-(17,'cv_kt_02',      '@123456','Bùi Văn Tuấn',  'cv_kt2@hrm.com', '0901000017',7,3,7),
-(18,'cv_kt_03',      '@123456','Đinh Thị Mai',  'cv_kt3@hrm.com', '0901000018',7,3,7);
+(14,'ke_toan_truong','@123456','Phan Thị Khánh','ktt@hrm.com',    '0901000014',6,3,6);
 
--- Phòng Kinh Doanh (dept=4): 10 mới
+-- Phòng Kinh Doanh (dept=4)
 INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
 (19,'tp_kinh_doanh','@123456','Hoàng Văn Lộc', 'tp_kd@hrm.com',  '0901000019',6,4,2),
-(20,'pp_kinh_doanh','@123456','Vũ Thị Thủy',   'pp_kd@hrm.com',  '0901000020',7,4,3),
-(21,'nv_kd_01',     '@123456','Nguyễn Văn Phú','nv_kd1@hrm.com', '0901000021',7,4,8),
-(22,'nv_kd_02',     '@123456','Trần Thị Bích', 'nv_kd2@hrm.com', '0901000022',7,4,8),
-(23,'nv_kd_03',     '@123456','Lê Văn Sáng',   'nv_kd3@hrm.com', '0901000023',7,4,8),
-(24,'nv_kd_04',     '@123456','Phạm Thị Dung', 'nv_kd4@hrm.com', '0901000024',7,4,8),
-(25,'nv_kd_05',     '@123456','Đỗ Văn Hòa',    'nv_kd5@hrm.com', '0901000025',7,4,8),
-(26,'nv_kd_06',     '@123456','Ngô Thị Xuân',  'nv_kd6@hrm.com', '0901000026',7,4,8),
-(27,'nv_kd_07',     '@123456','Bùi Văn Cường', 'nv_kd7@hrm.com', '0901000027',7,4,8),
-(28,'nv_kd_08',     '@123456','Hoàng Thị Ánh', 'nv_kd8@hrm.com', '0901000028',7,4,8);
+(20,'pp_kinh_doanh','@123456','Vũ Thị Thủy',   'pp_kd@hrm.com',  '0901000020',7,4,3);
 
--- Xưởng Sản Xuất - Quản lý (dept=5): 4 mới + quan_doc = 5
+-- Xưởng Sản Xuất (dept=5) + Ke Toan
 INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
-(29,'to_truong_01','@123456','Lý Văn Dũng',   'tt1@hrm.com',  '0901000029',6,5,5),
-(30,'to_truong_02','@123456','Tống Văn Thắng','tt2@hrm.com',  '0901000030',6,5,5),
-(31,'to_truong_03','@123456','Hà Thị Giang',  'tt3@hrm.com',  '0901000031',6,5,5),
-(32,'to_pho_01',   '@123456','Đinh Văn Khoa', 'tp_x@hrm.com', '0901000032',7,5,5),
 (33, 'ke_toan_01', '@123456', 'Nguyễn Thị Kế Toán', 'ketoan01@hrm.com', '0901000033', 8, 3, 7);
 
--- ── Profiles quản lý (user_id 6-32) ──
--- Format: (uid, id_card, dob, gender, address, hire_date, tax_code, bank_account, ct, sg, es, el)
+-- ── Profiles quản lý ──
 -- Format: (uid, dept_id, id_card, dob, gender, address, hire_date, tax_code, social_insurance_no, bank_account, bank_name, ct, sg, es, el)
 INSERT INTO employee_profiles (user_id,department_id,id_card,dob,gender,address,hire_date,tax_code,social_insurance_no,bank_account,bank_name,contract_type_id,salary_grade_id,employment_status_id,education_level_id) VALUES
 (6, 1,'024880000006','1988-06-20',0,'Cầu Giấy, Hà Nội',     '2018-03-01','8012345706','0200001006','0011234506','Vietcombank',4,1,2,2),
-(7, 1,'024920000007','1992-04-10',1,'Đống Đa, Hà Nội',       '2020-05-01','8012345707','0200001007','0011234507','BIDV',        4,2,2,2),
-(8, 1,'024950000008','1995-08-15',0,'Ba Đình, Hà Nội',        '2021-01-10','8012345708','0200001008','0011234508','Techcombank', 3,2,2,2),
-(9, 1,'024930000009','1993-11-22',1,'Hoàn Kiếm, Hà Nội',     '2022-03-15','8012345709','0200001009','0011234509','Agribank',    2,2,2,2),
 (10,2,'024940000010','1994-02-28',0,'Hà Nội',                 '2021-06-01','8012345710','0200001010','0011234510','VPBank',      4,2,2,2),
-(11,2,'024960000011','1996-07-14',1,'Hà Nội',                 '2022-08-01','8012345711','0200001011','0011234511','Techcombank', 3,2,2,2),
-(12,2,'024970000012','1997-03-05',0,'Hà Nội',                 '2023-01-10','8012345712','0200001012','0011234512','BIDV',        2,2,2,3),
-(13,2,'024980000013','1998-09-20',1,'Hà Nội',                 '2023-07-01','8012345713','0200001013','0011234513','Agribank',    1,2,1,3),
 (14,3,'024820000014','1982-12-10',0,'Hai Bà Trưng, Hà Nội',  '2015-02-01','8012345714','0200001014','0011234514','Vietcombank', 4,1,2,1),
-(15,3,'024870000015','1987-05-18',1,'Thanh Xuân, Hà Nội',    '2018-10-01','8012345715','0200001015','0011234515','BIDV',        4,2,2,2),
-(16,3,'024910000016','1991-01-25',0,'Cầu Giấy, Hà Nội',      '2019-04-01','8012345716','0200001016','0011234516','VPBank',      4,2,2,2),
-(17,3,'024930000017','1993-08-30',1,'Nam Từ Liêm, Hà Nội',   '2020-01-15','8012345717','0200001017','0011234517','Techcombank', 4,2,2,2),
-(18,3,'024950000018','1995-04-12',0,'Hà Nội',                 '2021-09-01','8012345718','0200001018','0011234518','Agribank',    3,2,2,2),
 (19,4,'024830000019','1983-07-22',1,'Đống Đa, Hà Nội',       '2016-01-01','8012345719','0200001019','0011234519','Vietcombank', 4,1,2,2),
 (20,4,'024890000020','1989-11-08',0,'Hà Nội',                 '2019-03-01','8012345720','0200001020','0011234520','BIDV',        4,2,2,2),
-(21,4,'024910000021','1991-05-15',1,'Hà Nội',                 '2020-06-01','8012345721','0200001021','0011234521','VPBank',      3,3,2,2),
-(22,4,'024930000022','1993-02-28',0,'Hà Nội',                 '2020-10-01','8012345722','0200001022','0011234522','Agribank',    3,3,2,2),
-(23,4,'024940000023','1994-09-10',1,'Hà Nội',                 '2021-03-01','8012345723','0200001023','0011234523','Techcombank', 2,3,2,2),
-(24,4,'024960000024','1996-06-20',0,'TP. Hồ Chí Minh',       '2021-08-15','8012345724','0200001024','0011234524','Vietcombank', 2,3,2,2),
-(25,4,'024920000025','1992-12-01',1,'TP. Hồ Chí Minh',       '2022-01-10','8012345725','0200001025','0011234525','BIDV',        3,3,2,2),
-(26,4,'024980000026','1998-04-05',0,'Hà Nội',                 '2022-07-01','8012345726','0200001026','0011234526','VPBank',      2,3,2,3),
-(27,4,'024970000027','1997-08-18',1,'Hà Nội',                 '2023-01-05','8012345727','0200001027','0011234527','Agribank',    2,3,2,2),
-(28,4,'024990000028','1999-03-22',0,'Hà Nội',                 '2023-06-01','8012345728','0200001028','0011234528','Techcombank', 1,3,1,2),
-(29,5,'056800000029','1980-08-15',1,'Từ Sơn, Bắc Ninh',      '2015-06-01','8012345729','0200001029','0011234529','Vietcombank', 4,2,2,3),
-(30,5,'056820000030','1982-03-10',1,'Từ Sơn, Bắc Ninh',      '2017-01-01','8012345730','0200001030','0011234530','BIDV',        4,2,2,3),
-(31,5,'056850000031','1985-11-25',0,'Từ Sơn, Bắc Ninh',      '2018-04-01','8012345731','0200001031','0011234531','Agribank',    4,2,2,3),
-(32,5,'056880000032','1988-06-30',1,'Từ Sơn, Bắc Ninh',      '2020-09-01','8012345732','0200001032','0011234532','Techcombank', 4,2,2,3),
 (33,3,'024910000033','1991-07-15',0,'Cầu Giấy, Hà Nội',       '2020-03-01','8012345733','0200001033','0011234533','Vietcombank', 4,2,2,2);
 
 -- ================================================================
@@ -737,67 +692,27 @@ INSERT INTO employee_rewards_disciplines (user_id, reward_discipline_id, amount,
 (19, 1, 3000000, 'Thưởng KPI tháng 5/2026 - Doanh thu vượt mục tiêu',      '2026-05-31'),
 
 -- Thưởng Dự án (reward_discipline_id = 2)
-(14, 2, 5000000, 'Thưởng hoàn thành xuất sắc dự án kiểm toán nội bộ Q1',   '2026-04-30'),
-(21, 2, 2500000, 'Thưởng ký kết hợp đồng lớn với đối tác mới',             '2026-05-15'),
-
--- Thưởng Chuyên cần (reward_discipline_id = 3)
-(9,  3,  500000, 'Chuyên cần tháng 5/2026 - Không nghỉ, không đi muộn',    '2026-05-31'),
-(17, 3,  500000, 'Chuyên cần tháng 5/2026 - Không nghỉ, không đi muộn',    '2026-05-31'),
-
--- Phạt Đi muộn/Về sớm (reward_discipline_id = 4)
-(7,  4,  100000, 'Đi muộn 3 lần trong tháng 5/2026',                       '2026-05-31'),
-(18, 4,  150000, 'Đi muộn 4 lần trong tháng 5/2026',                       '2026-05-31'),
-
--- Phạt Vi phạm An toàn LĐ (reward_discipline_id = 5)
-(29, 5,  500000, 'Không đeo bảo hộ khi vận hành máy tại xưởng ngày 20/5',  '2026-05-20');
+(14, 2, 5000000, 'Thưởng hoàn thành xuất sắc dự án kiểm toán nội bộ Q1',   '2026-04-30');
 
 INSERT INTO employee_shifts (user_id, shift_id, work_date) VALUES
 (6,  1, '2026-06-03'),
-(7,  1, '2026-06-03'),
-(8,  1, '2026-06-03'),
-(9,  1, '2026-06-03'),
 (10, 1, '2026-06-03'),
-(29, 1, '2026-06-03'),
-(30, 1, '2026-06-03'),
-(31, 2, '2026-06-03'),
-(32, 2, '2026-06-03'),
 (4,  1, '2026-06-03');
 
 INSERT INTO leave_requests (user_id, leave_type_id, start_date, end_date, total_days, reason, status, approved_by) VALUES
 -- Nghỉ phép năm (leave_type_id = 1)
-(7,  1, '2026-06-05', '2026-06-06', 2.0, 'Về quê thăm gia đình',                    'Approved', 6),
-(21, 1, '2026-06-10', '2026-06-12', 3.0, 'Nghỉ phép năm theo kế hoạch',             'Approved', 19),
-(16, 1, '2026-06-15', '2026-06-15', 1.0, 'Giải quyết việc cá nhân',                 'Pending',  NULL),
+(6,  1, '2026-06-05', '2026-06-06', 2.0, 'Về quê thăm gia đình',                    'Approved', 2),
 
 -- Nghỉ ốm hưởng BHXH (leave_type_id = 2)
-(12, 2, '2026-06-03', '2026-06-04', 2.0, 'Sốt cao, có giấy nghỉ của bác sĩ',        'Approved', 3),
-(25, 2, '2026-06-05', '2026-06-05', 1.0, 'Khám sức khỏe định kỳ',                   'Approved', 19),
-
--- Nghỉ việc riêng có lương (leave_type_id = 4)
-(9,  4, '2026-06-08', '2026-06-08', 1.0, 'Đám cưới anh trai',                       'Approved', 6),
-(17, 4, '2026-06-09', '2026-06-10', 2.0, 'Người thân mất, lo tang lễ',              'Approved', 14),
-
--- Nghỉ không lương (leave_type_id = 5)
-(22, 5, '2026-06-16', '2026-06-19', 4.0, 'Du lịch nước ngoài, xin nghỉ không lương','Pending',  NULL),
-(27, 5, '2026-06-20', '2026-06-20', 1.0, 'Giải quyết thủ tục hành chính cá nhân',   'Rejected', 19),
-
--- Nghỉ thai sản (leave_type_id = 3)
-(31, 3, '2026-06-01', '2026-11-30', 130.0,'Nghỉ thai sản theo chế độ BHXH 6 tháng', 'Approved', 4);
+(10, 2, '2026-06-03', '2026-06-04', 2.0, 'Sốt cao, có giấy nghỉ của bác sĩ',        'Approved', 3);
 
 INSERT INTO shift_assignments (user_id, shift_id, assigned_date) VALUES
 
 -- Ca Hành Chính (shift_id = 1): Khối văn phòng ngày 04/06/2026
 (6,  1, '2026-06-04'),
-(7,  1, '2026-06-04'),
 (10, 1, '2026-06-04'),
 (14, 1, '2026-06-04'),
 (19, 1, '2026-06-04'),
-
--- Ca Hành Chính (shift_id = 1): Tổ trưởng xưởng ngày 04/06/2026
-(29, 1, '2026-06-04'),
-(30, 1, '2026-06-04'),
-(31, 1, '2026-06-04'),
-(32, 1, '2026-06-04'),
 
 -- Ca Hành Chính (shift_id = 1): Quản đốc ngày 04/06/2026
 (4,  1, '2026-06-04');
@@ -868,14 +783,6 @@ INSERT INTO work_history (user_id, position_title, company_name, location, start
      'Phát triển khách hàng mới, chăm sóc khách hàng khu vực miền Nam',
      0),
 
--- Tổ trưởng xưởng (user 29) - Vị trí hiện tại
-(29, 'Tổ trưởng sản xuất',
-     'Công ty TNHH Group4',
-     'Bắc Ninh',
-     '2015-06-01', NULL,
-     'Quản lý tổ sản xuất 15 công nhân, giám sát chất lượng sản phẩm',
-     1),
-
 -- Trưởng phòng Hành chính (user 6) - Vị trí hiện tại
 (6,  'Trưởng phòng Hành chính',
      'Công ty TNHH Group4',
@@ -895,16 +802,8 @@ INSERT INTO employee_allowances (user_id, allowance_id, amount) VALUES
 (6,  2, 500000),
 (19, 2, 500000),
 
--- Phụ cấp Trách nhiệm (allowance_id = 3): 1,000,000đ - Quản đốc, Tổ trưởng
-(4,  3, 1000000),
-(29, 3, 1000000),
-
--- Phụ cấp Độc hại (allowance_id = 4): 300,000đ - Công nhân làm việc trực tiếp tại xưởng
-(29, 4, 300000),
-(30, 4, 300000),
-
--- Phụ cấp Chuyên cần (allowance_id = 5): 500,000đ - Không nghỉ, không đi muộn
-(9,  5, 500000);
+-- Phụ cấp Trách nhiệm (allowance_id = 3): 1,000,000đ - Quản đốc
+(4,  3, 1000000);
 
 /* ================================================================
    MIGRATION V2: Shift & Overtime Management Module
@@ -990,11 +889,7 @@ INSERT INTO overtime_plans (plan_id, dept_id, supervisor_id, target_date, descri
 
 -- Sample overtime assignments
 INSERT INTO overtime_assignments (assignment_id, plan_id, user_id, assigned_hours, status) VALUES
-(1, 1, 5,  3.0, 'Pending'),   -- Phạm Công Nhân: 3h OT
-(2, 1, 29, 2.0, 'Approved'),  -- Tổ trưởng 1: 2h OT (approved)
-(3, 1, 30, 2.5, 'Pending'),   -- Tổ trưởng 2: 2.5h OT
-(4, 2, 31, 2.0, 'Cancelled'), -- Tổ trưởng 3: cancelled
-(5, 2, 32, 3.0, 'Pending');   -- Tổ phó: 3h OT
+(1, 1, 5,  3.0, 'Pending');   -- Phạm Công Nhân: 3h OT
 
 -- TABLE 4: payroll_claims
 DROP TABLE IF EXISTS payroll_claims;
