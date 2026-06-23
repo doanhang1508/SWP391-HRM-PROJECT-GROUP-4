@@ -1,6 +1,7 @@
 package controller.director;
 
 import dao.PayrollDAO;
+import dao.notificationDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -118,9 +119,16 @@ public class DirectorPayrollController extends HttpServlet {
                 if (payrollIdStr != null) {
                     try {
                         int payrollId = Integer.parseInt(payrollIdStr);
+                        Payroll p = payrollDAO.getById(payrollId);
                         boolean success = payrollDAO.approvePayroll(payrollId, currentUser.getUserId());
                         if (success) {
                             session.setAttribute("successMessage", "Đã duyệt bảng lương thành công!");
+                            if (p != null) {
+                                notificationDAO notiDAO = new notificationDAO();
+                                notiDAO.create(p.getUserId(), "payroll", "Bảng lương đã được duyệt", 
+                                    "Bảng lương tháng " + p.getMonth() + "/" + p.getYear() + " của bạn đã được Giám đốc phê duyệt.", 
+                                    "/employee/payroll");
+                            }
                         } else {
                             session.setAttribute("errorMessage", "Không thể duyệt. Bảng lương không ở trạng thái Verified.");
                         }
@@ -138,9 +146,16 @@ public class DirectorPayrollController extends HttpServlet {
                         if (reason == null || reason.isBlank()) {
                             reason = "Không có lý do cụ thể";
                         }
+                        Payroll p = payrollDAO.getById(payrollId);
                         boolean success = payrollDAO.rejectPayroll(payrollId, reason);
                         if (success) {
                             session.setAttribute("successMessage", "Đã từ chối bảng lương.");
+                            if (p != null) {
+                                notificationDAO notiDAO = new notificationDAO();
+                                notiDAO.create(p.getUserId(), "payroll", "Bảng lương bị từ chối", 
+                                    "Bảng lương tháng " + p.getMonth() + "/" + p.getYear() + " của bạn bị Giám đốc từ chối. Lý do: " + reason, 
+                                    "/employee/payroll");
+                            }
                         } else {
                             session.setAttribute("errorMessage", "Không thể từ chối. Bảng lương không ở trạng thái Verified.");
                         }
@@ -150,7 +165,18 @@ public class DirectorPayrollController extends HttpServlet {
                 }
             }
             case "approveAll" -> {
+                List<Payroll> verifiedPayrolls = payrollDAO.getByMonthYear(month, year);
+                verifiedPayrolls.removeIf(p -> !"Verified".equals(p.getStatus()));
+                
                 int count = payrollDAO.approveAllPending(month, year, currentUser.getUserId());
+                if (count > 0) {
+                    notificationDAO notiDAO = new notificationDAO();
+                    for (Payroll p : verifiedPayrolls) {
+                        notiDAO.create(p.getUserId(), "payroll", "Bảng lương đã được duyệt", 
+                            "Bảng lương tháng " + p.getMonth() + "/" + p.getYear() + " của bạn đã được Giám đốc phê duyệt.", 
+                            "/employee/payroll");
+                    }
+                }
                 session.setAttribute("successMessage", "Đã duyệt thành công " + count + " bảng lương!");
             }
             default -> session.setAttribute("errorMessage", "Hành động không hợp lệ.");
