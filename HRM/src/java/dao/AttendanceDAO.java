@@ -221,6 +221,25 @@ public class AttendanceDAO {
         return false;
     }
 
+    /**
+     * Lấy ID bản ghi chấm công của nhân viên theo ngày.
+     */
+    public int getAttendanceIdByUserAndDate(int userId, java.sql.Date workDate) {
+        String sql = "SELECT attendance_id FROM attendance WHERE user_id=? AND work_date=? LIMIT 1";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setDate(2, workDate);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
     // ═══════════════════════════════════════════════════
     // MODULE 16: RESOLVE ATTENDANCE CLAIM (HR)
     // ═══════════════════════════════════════════════════

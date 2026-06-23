@@ -64,10 +64,35 @@ public class AttendanceClaimController extends HttpServlet {
 
         if ("submit".equals(action)) {
             try {
-                int attendanceId = Integer.parseInt(request.getParameter("attendanceId"));
+                String employeeCode = request.getParameter("employeeCode");
                 String workDateStr = request.getParameter("workDate");
                 String claimType = request.getParameter("claimType");
                 String description = request.getParameter("description");
+
+                // Validate Employee Code matches logged-in user
+                String expectedCode = "NV" + user.getUserId();
+                if (employeeCode == null || !employeeCode.trim().equalsIgnoreCase(expectedCode)) {
+                    session.setAttribute("errorMessage", "Bạn chỉ có thể tạo khiếu nại cho chính mình (" + expectedCode + ").");
+                    response.sendRedirect(request.getContextPath() + "/employee/attendance-claim");
+                    return;
+                }
+
+                Date workDate;
+                try {
+                    workDate = Date.valueOf(workDateStr);
+                } catch (Exception e) {
+                    session.setAttribute("errorMessage", "Ngày làm việc không hợp lệ.");
+                    response.sendRedirect(request.getContextPath() + "/employee/attendance-claim");
+                    return;
+                }
+
+                // Find attendanceId
+                int attendanceId = attendanceDAO.getAttendanceIdByUserAndDate(user.getUserId(), workDate);
+                if (attendanceId <= 0) {
+                    session.setAttribute("errorMessage", "Không tìm thấy dữ liệu chấm công của bạn vào ngày " + workDateStr);
+                    response.sendRedirect(request.getContextPath() + "/employee/attendance-claim");
+                    return;
+                }
 
                 // Validate
                 if (description == null || description.trim().length() < 10) {

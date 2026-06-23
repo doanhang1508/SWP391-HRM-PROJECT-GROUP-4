@@ -14,7 +14,7 @@
     }
     body { background: var(--bg); font-family: 'Inter', sans-serif; }
     .dashboard-wrapper { display: flex; min-height: calc(100vh - 64px); }
-    .main-content { flex: 1; padding: 30px; max-width: 900px; }
+    .main-content { flex: 1; padding: 30px; }
     .page-title { font-size: 1.5rem; font-weight: 700; color: var(--txt); margin: 0 0 4px; }
     .breadcrumb-c { font-size: .85rem; color: var(--muted); }
     .breadcrumb-c a { color: var(--pri); text-decoration: none; }
@@ -108,9 +108,9 @@
                 <input type="hidden" name="action" value="submit">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Mã bản ghi chấm công (Attendance ID) *</label>
-                        <input type="number" name="attendanceId" required min="1"
-                               value="${prefillAttendanceId}" placeholder="Nhập ID từ bảng chấm công">
+                        <label>Mã nhân viên *</label>
+                        <input type="text" name="employeeCode" required
+                               value="NV${sessionScope.currentUser.userId}" placeholder="Nhập mã nhân viên (VD: NV27)">
                     </div>
                     <div class="form-group">
                         <label>Ngày làm việc *</label>
