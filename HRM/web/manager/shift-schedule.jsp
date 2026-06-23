@@ -116,6 +116,52 @@ body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-top: 0 !im
 .empty-cell { color: #cbd5e1; font-size: 0.8rem; }
 
 @media (max-width: 768px) { .main-content { padding: 20px 16px !important; } }
+
+/* ── Custom Select2 Styling ── */
+.select2-container--default .select2-selection--multiple {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    padding: 3px 8px !important;
+    min-height: 38px !important;
+    transition: all 0.2s !important;
+    background-color: #fff !important;
+}
+.select2-container--default.select2-container--focus .select2-selection--multiple {
+    border-color: #d97706 !important;
+    box-shadow: 0 0 0 3px rgba(217,119,6,0.12) !important;
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background-color: #fef3c7 !important;
+    border: 1px solid #fde68a !important;
+    color: #92400e !important;
+    border-radius: 6px !important;
+    padding: 2px 8px !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    margin-top: 4px !important;
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: #b45309 !important;
+    margin-right: 5px !important;
+    border-right: 1px solid #fde68a !important;
+    padding-right: 4px !important;
+    background: none !important;
+    border-top-left-radius: 4px !important;
+    border-bottom-left-radius: 4px !important;
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+    background-color: #fde68a !important;
+    color: #78350f !important;
+}
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: #d97706 !important;
+    color: #fff !important;
+}
+.select2-dropdown {
+    border-color: #e2e8f0 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06) !important;
+}
 </style>
 
 <%
@@ -180,22 +226,21 @@ body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-top: 0 !im
             <form method="POST" action="${pageContext.request.contextPath}/manager/shift-schedule?action=assign"
                   class="assign-form">
                 <div class="row g-3 align-items-end">
-                    <div class="col-md-3">
-                        <label class="form-label">Công nhân</label>
-                        <select id="workerSelect" name="userId" class="form-select" required>
-                            <option value="">-- Chọn công nhân --</option>
+                    <div class="col-md-5">
+                        <label class="form-label"><i class="fas fa-search" style="color:#d97706; margin-right:6px;"></i>Tìm & Chọn công nhân (gõ tên để tìm kiếm)</label>
+                        <select id="workerSelect" name="userId" class="form-select" multiple="multiple" required>
                             <c:forEach var="w" items="${workers}">
                                 <option value="${w.userId}">${w.fullName}</option>
                             </c:forEach>
                         </select>
                     </div>
                     <!-- Time selection for custom OT -->
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label">Loại Tăng Ca (OT)</label>
                         <select name="otType" class="form-select" required>
                             <option value="">-- Chọn Loại OT --</option>
                             <option value="2">Ca Đêm 1 (18:00 - 20:00) - Không nghỉ</option>
-                            <option value="3">Ca Đêm 2 (18:00 - 22:00) - Nghỉ 20h-20h30</option>
+                            <option value="4">Ca Đêm 2 (18:00 - 22:00) - Nghỉ 20h-20h30</option>
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -206,8 +251,8 @@ body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-top: 0 !im
                         <label class="form-label">Đến ngày</label>
                         <input type="date" name="toDate" class="form-control" required>
                     </div>
-                    <div class="col-md-2">
-                        <button type="submit" class="btn-assign">
+                    <div class="col-12 text-end mt-3">
+                        <button type="submit" class="btn-assign" style="width: auto; min-width: 160px; display: inline-flex;">
                             <i class="fas fa-calendar-check"></i> Xếp lịch
                         </button>
                     </div>
@@ -315,7 +360,7 @@ body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-top: 0 !im
 <script>
     $(document).ready(function() {
         $('#workerSelect').select2({
-            placeholder: "-- Chọn công nhân --",
+            placeholder: "Gõ tên nhân viên để tìm kiếm...",
             allowClear: true,
             width: '100%',
             language: {

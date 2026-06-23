@@ -160,12 +160,12 @@ public class ShiftScheduleController extends HttpServlet {
     private void assignShift(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
-        Integer  userId  = parseIntParam(req, "userId");
+        String[] userIds = req.getParameterValues("userId");
         LocalDate from   = parseDate(req.getParameter("fromDate"));
         LocalDate to     = parseDate(req.getParameter("toDate"));
         String otType = req.getParameter("otType");
 
-        if (userId == null || from == null || to == null || otType == null || otType.isEmpty()) {
+        if (userIds == null || userIds.length == 0 || from == null || to == null || otType == null || otType.isEmpty()) {
             redirectSchedule(req, resp, "error", "Vui lòng điền đầy đủ thông tin");
             return;
         }
@@ -197,11 +197,34 @@ public class ShiftScheduleController extends HttpServlet {
             return;
         }
 
-        int inserted = assignmentService.batchAssign(userId, shiftId, from, to);
-        if (inserted > 0) {
-            redirectSchedule(req, resp, "message", "Đã xếp lịch " + inserted + " ngày thành công.");
+        int totalInserted = 0;
+        int successCount = 0;
+        int failCount = 0;
+
+        for (String uIdStr : userIds) {
+            if (uIdStr == null || uIdStr.trim().isEmpty()) continue;
+            try {
+                int userId = Integer.parseInt(uIdStr.trim());
+                int inserted = assignmentService.batchAssign(userId, shiftId, from, to);
+                if (inserted > 0) {
+                    totalInserted += inserted;
+                    successCount++;
+                } else {
+                    failCount++;
+                }
+            } catch (NumberFormatException e) {
+                // skip
+            }
+        }
+
+        if (successCount > 0) {
+            String msg = "Đã xếp lịch thành công cho " + successCount + " nhân viên (" + totalInserted + " ngày).";
+            if (failCount > 0) {
+                msg += " Có " + failCount + " nhân viên bị trùng lịch hoặc lỗi.";
+            }
+            redirectSchedule(req, resp, "message", msg);
         } else {
-            redirectSchedule(req, resp, "error", "Lỗi: Ca mới bị trùng giờ với ca cũ hoặc đã tồn tại.");
+            redirectSchedule(req, resp, "error", "Lỗi: Ca mới bị trùng giờ hoặc đã tồn tại đối với tất cả nhân viên được chọn.");
         }
     }
 
