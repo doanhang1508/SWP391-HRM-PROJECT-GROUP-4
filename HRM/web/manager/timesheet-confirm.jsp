@@ -521,7 +521,7 @@
                                         <c:when test="${confirmation.status == 'SENT_TO_DEPARTMENT'}"><span class="badge-s b-pending"><i class="fas fa-paper-plane"></i> Chờ Bạn Xác Nhận</span></c:when>
                                         <c:when test="${confirmation.status == 'DEPARTMENT_CONFIRMED'}"><span class="badge-s b-approved" style="background:#ecfdf5;color:#047857;"><i class="fas fa-check"></i> Đã xác nhận (Chờ duyệt cuối)</span></c:when>
                                         <c:when test="${confirmation.status == 'SENT_TO_HR_MANAGER'}"><span class="badge-s b-info"><i class="fas fa-user-tie"></i> Đang Chờ Trưởng Phòng NS Duyệt</span></c:when>
-                                        <c:when test="${confirmation.status == 'HR_MANAGER_APPROVED'}"><span class="badge-s b-approved" style="background:#ecfdf5;color:#047857;"><i class="fas fa-check-double"></i> Đã Được Duyệt Cuối (Đã khóa)</span></c:when>
+                                        <c:when test="${confirmation.status == 'HR_MANAGER_APPROVED'}"><span class="badge-s b-approved" style="background:#ecfdf5;color:#047857;"><i class="fas fa-check-double"></i> Đã Được Duyệt Cuối</span></c:when>
                                         <c:when test="${confirmation.status == 'HR_MANAGER_REJECTED'}"><span class="badge-s b-rejected"><i class="fas fa-undo"></i> Bị Trưởng Phòng NS Từ Chối</span></c:when>
                                     </c:choose>
                                     <c:if test="${not empty confirmation.rejectReason}">
