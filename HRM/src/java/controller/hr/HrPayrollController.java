@@ -2,6 +2,7 @@ package controller.hr;
 
 import dao.PayrollDAO;
 import dao.UserDAO;
+import dao.AttendanceDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -113,6 +114,11 @@ public class HrPayrollController extends HttpServlet {
             List<dao.PayrollDAO.PayrollMonthSummary> summaries = payrollDAO.getMonthlySummaries();
             request.setAttribute("monthlySummaries", summaries);
             request.setAttribute("viewMode", "months");
+            
+            AttendanceDAO attendanceDAO = new AttendanceDAO();
+            List<AttendanceDAO.MonthYearOption> periods = attendanceDAO.getAvailableAttendancePeriods();
+            request.setAttribute("attendancePeriods", periods);
+            
             request.getRequestDispatcher("/hr/payroll-list.jsp").forward(request, response);
             return;
         }
@@ -190,18 +196,42 @@ public class HrPayrollController extends HttpServlet {
 
     private void generateDraft(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        int month = getParamOrDefault(request, "month", getCurrentMonth());
-        int year = getParamOrDefault(request, "year", getCurrentYear());
+        String period = request.getParameter("period");
+        int month = 0;
+        int year = 0;
+        if (period != null && !period.isBlank()) {
+            try {
+                String[] parts = period.split("-");
+                if (parts.length == 2) {
+                    month = Integer.parseInt(parts[0]);
+                    year = Integer.parseInt(parts[1]);
+                }
+            } catch (NumberFormatException ignored) {}
+        }
+        
+        if (month == 0 || year == 0) {
+            month = getParamOrDefault(request, "month", getCurrentMonth());
+            year = getParamOrDefault(request, "year", getCurrentYear());
+        }
 
         if (month < 1 || month > 12 || year < 2000) {
             request.getSession().setAttribute("errorMessage", "Tháng hoặc năm không hợp lệ.");
-            response.sendRedirect(request.getContextPath() + "/hr/payroll?month=" + month + "&year=" + year);
+            response.sendRedirect(request.getContextPath() + "/hr/payroll");
             return;
         }
 
-        int count = payrollDAO.generatePayrollDraft(month, year);
-        request.getSession().setAttribute("successMessage", "Đã tạo thành công " + count + " bản ghi bảng lương nháp.");
-        response.sendRedirect(request.getContextPath() + "/hr/payroll?month=" + month + "&year=" + year);
+        dao.PayrollDAO.PayrollGenerationResult result = payrollDAO.generatePayrollDraft(month, year);
+        if (result.isNoAttendanceData()) {
+            request.getSession().setAttribute("errorMessage", "Chưa có dữ liệu chấm công tháng " + month + "/" + year + ". Vui lòng import chấm công trước khi tạo payroll draft.");
+            response.sendRedirect(request.getContextPath() + "/hr/payroll");
+        } else {
+            String msg = "Khởi tạo bảng lương tháng " + month + "/" + year + " thành công: " +
+                         "Tạo mới " + result.getCreatedCount() + ", " +
+                         "Cập nhật " + result.getUpdatedCount() + ", " +
+                         "Bỏ qua " + result.getSkippedCount() + " (đã duyệt/khóa).";
+            request.getSession().setAttribute("successMessage", msg);
+            response.sendRedirect(request.getContextPath() + "/hr/payroll?month=" + month + "&year=" + year);
+        }
     }
 
     private void updateDraft(HttpServletRequest request, HttpServletResponse response)
@@ -228,7 +258,7 @@ public class HrPayrollController extends HttpServlet {
                 return;
             }
 
-            int workingDays = Integer.parseInt(request.getParameter("workingDays"));
+            double workingDays = Double.parseDouble(request.getParameter("workingDays"));
             BigDecimal overtimeAmount = new BigDecimal(request.getParameter("overtimeAmount").replaceAll(",", ""));
             BigDecimal allowanceAmount = new BigDecimal(request.getParameter("allowanceAmount").replaceAll(",", ""));
             BigDecimal bonusAmount = new BigDecimal(request.getParameter("bonusAmount").replaceAll(",", ""));

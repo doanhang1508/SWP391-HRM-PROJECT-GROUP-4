@@ -8,6 +8,7 @@ import util.DBContext;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.math.BigDecimal;
 
 /**
  * AttendanceDAO - Xử lý tất cả thao tác DB liên quan đến:
@@ -505,5 +506,110 @@ public class AttendanceDAO {
             e.printStackTrace();
         }
         return 0;
+    }
+
+    public static class MonthYearOption {
+        private int month;
+        private int year;
+        
+        public MonthYearOption(int month, int year) {
+            this.month = month;
+            this.year = year;
+        }
+        
+        public int getMonth() { return month; }
+        public int getYear() { return year; }
+    }
+
+    public List<MonthYearOption> getAvailableAttendancePeriods() {
+        List<MonthYearOption> list = new ArrayList<>();
+        String sql = "SELECT DISTINCT MONTH(work_date) AS month, YEAR(work_date) AS year FROM attendance ORDER BY year DESC, month DESC";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(new MonthYearOption(rs.getInt("month"), rs.getInt("year")));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public boolean hasAttendanceData(int month, int year) {
+        String sql = "SELECT COUNT(*) FROM attendance WHERE MONTH(work_date)=? AND YEAR(work_date)=?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public double getPaidAttendanceDays(int userId, int month, int year) {
+        String sql = "SELECT COALESCE(SUM(CASE WHEN status IN ('PRESENT','LATE') THEN 1 WHEN status='HALFDAY' THEN 0.5 ELSE 0 END), 0) " +
+                     "FROM attendance WHERE user_id=? AND MONTH(work_date)=? AND YEAR(work_date)=?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getDouble(1);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0.0;
+    }
+
+    public List<Integer> getUserIdsWithAttendance(int month, int year) {
+        List<Integer> list = new ArrayList<>();
+        String sql = "SELECT DISTINCT user_id FROM attendance WHERE MONTH(work_date)=? AND YEAR(work_date)=?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(rs.getInt("user_id"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public BigDecimal getTotalOvertimeHoursFromAttendance(int userId, int month, int year) {
+        String sql = "SELECT COALESCE(SUM(overtime_hrs), 0) FROM attendance WHERE user_id=? AND MONTH(work_date)=? AND YEAR(work_date)=?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getBigDecimal(1);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return BigDecimal.ZERO;
     }
 }

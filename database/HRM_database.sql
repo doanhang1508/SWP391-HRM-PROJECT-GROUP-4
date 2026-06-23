@@ -729,37 +729,7 @@ INSERT INTO employee_profiles (user_id,department_id,id_card,dob,gender,address,
 -- 18. CÔNG NHÂN (user_id 33-181, 149 người)
 -- ================================================================
 -- (Chưa có seed data công nhân — sẽ bổ sung sau)
-INSERT INTO attendance (user_id, shift_id, work_date, check_in, check_out, status, overtime_hrs)
-VALUES
--- Nguyễn Văn Giám Đốc - Ca hành chính, đi đúng giờ
-(2, 1, '2026-06-03', '07:55:00', '17:00:00', 'Present', 0.00),
 
--- Trần Thị Nhân Sự - Ca hành chính, làm thêm giờ
-(3, 1, '2026-06-03', '08:00:00', '19:00:00', 'Present', 2.00),
-
--- Lê Văn Quản Đốc - Ca hành chính, đi muộn
-(4, 1, '2026-06-03', '08:25:00', '17:00:00', 'Late',    0.00),
-
--- Phạm Công Nhân - Ca Hành chính
-(5, 1, '2026-06-03', '07:30:00', '17:30:00', 'Present', 0.00),
-
--- Đỗ Thị Hà (Trưởng phòng HC) - Ca hành chính, nghỉ không phép
-(6, 1, '2026-06-03', NULL,        NULL,        'Absent',  0.00),
-
--- Ngô Văn Tài - Ca hành chính, đi muộn + làm thêm giờ
-(7, 1, '2026-06-03', '08:15:00', '18:30:00', 'Late',    1.00),
-
--- Vũ Thị Nga - Ca hành chính, đi đúng giờ
-(8, 1, '2026-06-03', '07:25:00', '17:30:00', 'Present', 0.00),
-
--- Đinh Văn Phúc - Tăng ca 1
-(9, 2, '2026-06-03', '18:00:00', '20:00:00', 'Present', 0.00),
-
--- Đặng Thị Hồng (HR Staff) - Ca hành chính, về sớm
-(10, 1, '2026-06-03', '07:30:00', '16:00:00', 'Early Leave', 0.00),
-
--- Chu Văn Minh (HR Staff) - Ca Hành chính
-(11, 1, '2026-06-03', '07:30:00', '17:30:00', 'Present', 0.00);
 
 INSERT INTO employee_rewards_disciplines (user_id, reward_discipline_id, amount, note, applied_date) VALUES
 -- Thưởng KPI Tháng (reward_discipline_id = 1)
@@ -1294,9 +1264,7 @@ ON DUPLICATE KEY UPDATE
 -- SEED DATA: Kỳ lương mẫu
 -- ══════════════════════════════════════════════════════
 
-INSERT INTO payroll_periods (period_name, month, year, start_date, end_date, status) VALUES
-('Tháng 05/2026', 5, 2026, '2026-05-01', '2026-05-31', 'CLOSED'),
-('Tháng 06/2026', 6, 2026, '2026-06-01', '2026-06-30', 'OPEN');
+
 
 -- ══════════════════════════════════════════════════════
 -- PERMISSIONS: Thêm quyền cho module PIT

@@ -218,7 +218,7 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label">Số ngày công thực tế <span class="text-danger">*</span></label>
-                        <input type="number" name="workingDays" class="form-control" value="${payroll.workingDays}" required min="0" max="31">
+                        <input type="number" step="any" name="workingDays" class="form-control" value="${payroll.workingDays}" required min="0" max="31">
                         <small class="text-muted d-block mt-1"><i class="fas fa-magic"></i> Giá trị khởi tạo được tổng hợp tự động từ hệ thống chấm công và nghỉ phép có lương.</small>
                     </div>
                     <div class="col-md-6">

@@ -20,6 +20,25 @@ public class PayrollDAO {
         public BigDecimal baseSalary;
     }
 
+    public static class PayrollGenerationResult {
+        private int createdCount = 0;
+        private int updatedCount = 0;
+        private int skippedCount = 0;
+        private boolean noAttendanceData = false;
+
+        public int getCreatedCount() { return createdCount; }
+        public void setCreatedCount(int createdCount) { this.createdCount = createdCount; }
+
+        public int getUpdatedCount() { return updatedCount; }
+        public void setUpdatedCount(int updatedCount) { this.updatedCount = updatedCount; }
+
+        public int getSkippedCount() { return skippedCount; }
+        public void setSkippedCount(int skippedCount) { this.skippedCount = skippedCount; }
+
+        public boolean isNoAttendanceData() { return noAttendanceData; }
+        public void setNoAttendanceData(boolean noAttendanceData) { this.noAttendanceData = noAttendanceData; }
+    }
+
     public static class PayrollMonthSummary {
         private int month;
         private int year;
@@ -76,7 +95,7 @@ public class PayrollDAO {
         p.setMonth(rs.getInt("month"));
         p.setYear(rs.getInt("year"));
         p.setBaseSalary(rs.getBigDecimal("base_salary"));
-        p.setWorkingDays(rs.getInt("working_days"));
+        p.setWorkingDays(rs.getDouble("working_days"));
         p.setOvertimeAmount(rs.getBigDecimal("overtime_amount"));
         p.setAllowanceAmount(rs.getBigDecimal("allowance_amount"));
         p.setBonusAmount(rs.getBigDecimal("bonus_amount"));
@@ -149,7 +168,7 @@ public class PayrollDAO {
             ps.setInt(2, p.getMonth());
             ps.setInt(3, p.getYear());
             ps.setBigDecimal(4, p.getBaseSalary() != null ? p.getBaseSalary() : BigDecimal.ZERO);
-            ps.setInt(5, p.getWorkingDays());
+            ps.setDouble(5, p.getWorkingDays());
             ps.setBigDecimal(6, p.getOvertimeAmount() != null ? p.getOvertimeAmount() : BigDecimal.ZERO);
             ps.setBigDecimal(7, p.getAllowanceAmount() != null ? p.getAllowanceAmount() : BigDecimal.ZERO);
             ps.setBigDecimal(8, p.getBonusAmount() != null ? p.getBonusAmount() : BigDecimal.ZERO);
@@ -519,81 +538,170 @@ public class PayrollDAO {
         return BigDecimal.ZERO;
     }
 
-    public int generatePayrollDraft(int month, int year) {
+    public boolean updateDraftWithAttendance(Payroll p) {
+        String sql = "UPDATE payroll SET " +
+                     "base_salary = ?, " +
+                     "working_days = ?, " +
+                     "overtime_amount = ?, " +
+                     "allowance_amount = ?, " +
+                     "bonus_amount = ?, " +
+                     "deduction_amount = ?, " +
+                     "insurance_amount = ?, " +
+                     "tax_amount = ?, " +
+                     "gross_salary = ?, " +
+                     "net_salary = ?, " +
+                     "status = 'Draft', " +
+                     "reject_reason = NULL, " +
+                     "approved_by = NULL, " +
+                     "approved_at = NULL " +
+                     "WHERE payroll_id = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setBigDecimal(1, p.getBaseSalary());
+            ps.setDouble(2, p.getWorkingDays());
+            ps.setBigDecimal(3, p.getOvertimeAmount());
+            ps.setBigDecimal(4, p.getAllowanceAmount());
+            ps.setBigDecimal(5, p.getBonusAmount());
+            ps.setBigDecimal(6, p.getDeductionAmount());
+            ps.setBigDecimal(7, p.getInsuranceAmount());
+            ps.setBigDecimal(8, p.getTaxAmount());
+            ps.setBigDecimal(9, p.getGrossSalary());
+            ps.setBigDecimal(10, p.getNetSalary());
+            ps.setInt(11, p.getPayrollId());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public PayrollGenerationResult generatePayrollDraft(int month, int year) {
         if (month < 1 || month > 12 || year < 2000) {
             throw new IllegalArgumentException("Tháng hoặc năm không hợp lệ");
         }
-        List<Integer> eligibleIds = getAllEligibleEmployeeIds(month, year);
-        int createdCount = 0;
-
+        
+        PayrollGenerationResult result = new PayrollGenerationResult();
         AttendanceDAO attendanceDAO = new AttendanceDAO();
+        
+        // 1. Check if has attendance data for month/year
+        if (!attendanceDAO.hasAttendanceData(month, year)) {
+            result.setNoAttendanceData(true);
+            return result;
+        }
+        
+        // 2. Get list of user IDs with attendance in the month
+        List<Integer> userIds = attendanceDAO.getUserIdsWithAttendance(month, year);
+        if (userIds.isEmpty()) {
+            result.setNoAttendanceData(true);
+            return result;
+        }
+        
         LeaveRequestDAOImpl leaveDAO = new LeaveRequestDAOImpl();
         PayrollConfigDAO configDAO = new PayrollConfigDAO();
         
         BigDecimal standardWorkDays = configDAO.getConfigValue("STANDARD_WORK_DAYS", new BigDecimal("22"));
         
-        for (int userId : eligibleIds) {
+        for (int userId : userIds) {
             Payroll existing = getPayroll(userId, month, year);
+            if (existing != null && !"Draft".equals(existing.getStatus()) && !"Rejected".equals(existing.getStatus())) {
+                result.setSkippedCount(result.getSkippedCount() + 1);
+                continue;
+            }
+            
+            EmployeeSalaryInfo salaryInfo = getEmployeeSalaryInfo(userId);
+            BigDecimal baseSalary = (salaryInfo != null && salaryInfo.baseSalary != null) ? salaryInfo.baseSalary : BigDecimal.ZERO;
+            
+            // Get working days from Attendance and Paid Leaves
+            double presentDays = attendanceDAO.getPaidAttendanceDays(userId, month, year);
+            double paidLeaveDays = leaveDAO.getPaidLeaveDays(userId, month, year);
+            double totalDays = presentDays + paidLeaveDays;
+            
+            // Calculate BaseWorkedSalary
+            BigDecimal baseWorkedSalary = BigDecimal.ZERO;
+            if (standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal daysRatio = new BigDecimal(totalDays).divide(standardWorkDays, 4, java.math.RoundingMode.HALF_UP);
+                baseWorkedSalary = baseSalary.multiply(daysRatio).setScale(2, java.math.RoundingMode.HALF_UP);
+            }
+            
+            BigDecimal hourlyRate = BigDecimal.ZERO;
+            if (baseSalary.compareTo(BigDecimal.ZERO) > 0) {
+                hourlyRate = baseSalary.divide(new BigDecimal("176"), 2, java.math.RoundingMode.HALF_UP);
+            }
+            
+            BigDecimal overtimeHours = attendanceDAO.getTotalOvertimeHoursFromAttendance(userId, month, year);
+            BigDecimal overtimeAmount = overtimeHours.multiply(hourlyRate).multiply(new BigDecimal("1.5")).setScale(2, java.math.RoundingMode.HALF_UP);
+            BigDecimal allowanceAmount = getFixedAllowances(userId);
+            
+            // Retrieve monthly rewards & disciplines
+            RewardDisciplineDAO rewardDisciplineDAO = new RewardDisciplineDAO();
+            List<EmployeeRewardDiscipline> erdRecords = rewardDisciplineDAO.getRecordsByUserIdAndMonthYear(userId, month, year);
+            
+            BigDecimal bonusAmount = BigDecimal.ZERO;
+            BigDecimal disciplineDeductionAmount = BigDecimal.ZERO;
+            
+            for (EmployeeRewardDiscipline erd : erdRecords) {
+                if ("Reward".equalsIgnoreCase(erd.getType())) {
+                    bonusAmount = bonusAmount.add(erd.getAmount());
+                } else if ("Discipline".equalsIgnoreCase(erd.getType())) {
+                    disciplineDeductionAmount = disciplineDeductionAmount.add(erd.getAmount());
+                }
+            }
+            
+            // Gross Salary = Base Worked Salary + Overtime + Allowances + Rewards (Bonus)
+            BigDecimal grossSalary = baseWorkedSalary.add(overtimeAmount).add(allowanceAmount).add(bonusAmount);
+            
+            // Calculate Insurance based on Gross Salary
+            BigDecimal insuranceAmount = calculateInsurance(grossSalary);
+            
+            // Calculate Taxable Income = Gross - Insurance - Personal_Deduction - (Dependents * Dependent_Deduction)
+            TaxProfileInfo taxProfile = getTaxProfile(userId);
+            BigDecimal totalDeductionForTax = insuranceAmount.add(taxProfile.personalDeduction)
+                .add(taxProfile.dependentDeduction.multiply(new BigDecimal(taxProfile.dependentCount)));
+            
+            BigDecimal taxableIncome = grossSalary.subtract(totalDeductionForTax);
+            if (taxableIncome.compareTo(BigDecimal.ZERO) < 0) {
+                taxableIncome = BigDecimal.ZERO;
+            }
+            
+            // Calculate PIT Tax using dynamic brackets
+            BigDecimal taxAmount = calculateDynamicPIT(taxableIncome);
+            
+            // Total Deductions = Discipline Penalties + Insurance + Tax
+            BigDecimal totalDeductions = disciplineDeductionAmount.add(insuranceAmount).add(taxAmount);
+            BigDecimal netSalary = grossSalary.subtract(totalDeductions);
+            if (netSalary.compareTo(BigDecimal.ZERO) < 0) {
+                netSalary = BigDecimal.ZERO;
+            }
+            
+            Payroll p = new Payroll();
+            p.setUserId(userId);
+            p.setMonth(month);
+            p.setYear(year);
+            p.setBaseSalary(baseWorkedSalary);
+            p.setWorkingDays(totalDays);
+            p.setOvertimeAmount(overtimeAmount);
+            p.setAllowanceAmount(allowanceAmount);
+            p.setBonusAmount(bonusAmount); 
+            p.setDeductionAmount(disciplineDeductionAmount);
+            p.setInsuranceAmount(insuranceAmount);
+            p.setTaxAmount(taxAmount);
+            p.setGrossSalary(grossSalary);
+            p.setNetSalary(netSalary);
+            p.setStatus("Draft");
+            
             if (existing == null) {
-                EmployeeSalaryInfo salaryInfo = getEmployeeSalaryInfo(userId);
-                BigDecimal baseSalary = (salaryInfo != null && salaryInfo.baseSalary != null) ? salaryInfo.baseSalary : BigDecimal.ZERO;
-                
-                // 1. Get working days from Attendance and Paid Leaves
-                int presentDays = attendanceDAO.getPresentDays(userId, month, year);
-                double paidLeaveDays = leaveDAO.getPaidLeaveDays(userId, month, year);
-                double totalDays = presentDays + paidLeaveDays;
-                
-                // 2. Calculate BaseWorkedSalary
-                BigDecimal baseWorkedSalary = BigDecimal.ZERO;
-                if (standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
-                    BigDecimal daysRatio = new BigDecimal(totalDays).divide(standardWorkDays, 4, java.math.RoundingMode.HALF_UP);
-                    baseWorkedSalary = baseSalary.multiply(daysRatio);
-                }
-                
-                BigDecimal hourlyRate = BigDecimal.ZERO;
-                if (baseSalary.compareTo(BigDecimal.ZERO) > 0) {
-                    hourlyRate = baseSalary.divide(new BigDecimal("176"), 2, java.math.RoundingMode.HALF_UP);
-                }
-                
-                BigDecimal overtimeAmount = getTotalOTPay(userId, month, year, hourlyRate);
-                BigDecimal allowanceAmount = getFixedAllowances(userId);
-                
-                BigDecimal adjustment = BigDecimal.ZERO;
-                
-                // 3. Gross Salary (includes base worked, OT, allowance, adjustment)
-                BigDecimal grossSalary = baseWorkedSalary.add(overtimeAmount).add(allowanceAmount).add(adjustment);
-                
-                // Placeholders for Member 2 and Member 3
-                // TODO: calculateInsurance(grossSalary)
-                BigDecimal insuranceAmount = BigDecimal.ZERO; 
-                // TODO: calculatePIT(taxableIncome)
-                BigDecimal taxAmount = BigDecimal.ZERO;
-                
-                BigDecimal totalDeductions = insuranceAmount.add(taxAmount);
-                BigDecimal netSalary = grossSalary.subtract(totalDeductions);
-                
-                Payroll p = new Payroll();
-                p.setUserId(userId);
-                p.setMonth(month);
-                p.setYear(year);
-                p.setBaseSalary(baseWorkedSalary); // Saving base worked salary
-                p.setWorkingDays((int) Math.round(totalDays));
-                p.setOvertimeAmount(overtimeAmount);
-                p.setAllowanceAmount(allowanceAmount);
-                p.setBonusAmount(adjustment); 
-                p.setDeductionAmount(BigDecimal.ZERO);
-                p.setInsuranceAmount(insuranceAmount);
-                p.setTaxAmount(taxAmount);
-                p.setGrossSalary(grossSalary);
-                p.setNetSalary(netSalary);
-                p.setStatus("Draft");
-                
                 if (insertOrUpdatePayroll(p)) {
-                    createdCount++;
+                    result.setCreatedCount(result.getCreatedCount() + 1);
+                }
+            } else {
+                p.setPayrollId(existing.getPayrollId());
+                if (updateDraftWithAttendance(p)) {
+                    result.setUpdatedCount(result.getUpdatedCount() + 1);
                 }
             }
         }
-        return createdCount;
+        return result;
     }
 
     public boolean updatePayrollDraft(Payroll payroll) {
@@ -632,7 +740,7 @@ public class PayrollDAO {
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, payroll.getWorkingDays());
+            ps.setDouble(1, payroll.getWorkingDays());
             ps.setBigDecimal(2, overtime);
             ps.setBigDecimal(3, allowance);
             ps.setBigDecimal(4, bonus);
@@ -1052,5 +1160,101 @@ public class PayrollDAO {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public static class TaxProfileInfo {
+        public BigDecimal personalDeduction = new BigDecimal("11000000");
+        public BigDecimal dependentDeduction = new BigDecimal("4400000");
+        public int dependentCount = 0;
+    }
+
+    public static class TaxBracket {
+        public int bracketNo;
+        public BigDecimal incomeFrom;
+        public BigDecimal incomeTo;
+        public BigDecimal rate;
+    }
+
+    public TaxProfileInfo getTaxProfile(int userId) {
+        TaxProfileInfo info = new TaxProfileInfo();
+        String sql = "SELECT personal_deduction, dependent_deduction, dependent_count " +
+                     "FROM employee_tax_profiles WHERE user_id = ? AND status = 1";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    BigDecimal pd = rs.getBigDecimal("personal_deduction");
+                    BigDecimal dd = rs.getBigDecimal("dependent_deduction");
+                    if (pd != null) info.personalDeduction = pd;
+                    if (dd != null) info.dependentDeduction = dd;
+                    info.dependentCount = rs.getInt("dependent_count");
+                    return info;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        // Fallback: get dependent count from dependents table
+        info.dependentCount = countActiveDependents(userId);
+        return info;
+    }
+
+    public List<TaxBracket> getActiveTaxBrackets() {
+        List<TaxBracket> brackets = new ArrayList<>();
+        String sql = "SELECT bracket_no, income_from, income_to, rate " +
+                     "FROM tax_brackets WHERE status = 1 ORDER BY bracket_no ASC";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                TaxBracket tb = new TaxBracket();
+                tb.bracketNo = rs.getInt("bracket_no");
+                tb.incomeFrom = rs.getBigDecimal("income_from");
+                tb.incomeTo = rs.getBigDecimal("income_to");
+                tb.rate = rs.getBigDecimal("rate");
+                brackets.add(tb);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return brackets;
+    }
+
+    public BigDecimal calculateDynamicPIT(BigDecimal taxableIncome) {
+        if (taxableIncome == null || taxableIncome.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        List<TaxBracket> brackets = getActiveTaxBrackets();
+        if (brackets.isEmpty()) {
+            return calculatePIT(taxableIncome);
+        }
+
+        BigDecimal pitTotal = BigDecimal.ZERO;
+        BigDecimal income = taxableIncome;
+
+        for (TaxBracket tb : brackets) {
+            BigDecimal from = tb.incomeFrom;
+            BigDecimal to = tb.incomeTo;
+            BigDecimal rate = tb.rate.divide(new BigDecimal("100"), 4, java.math.RoundingMode.HALF_UP);
+
+            if (income.compareTo(from) > 0) {
+                BigDecimal taxableInThisBracket;
+                if (to == null) {
+                    taxableInThisBracket = income.subtract(from);
+                } else {
+                    BigDecimal limit = to.subtract(from);
+                    BigDecimal excess = income.subtract(from);
+                    taxableInThisBracket = excess.min(limit);
+                }
+                BigDecimal taxInThisBracket = taxableInThisBracket.multiply(rate);
+                pitTotal = pitTotal.add(taxInThisBracket);
+            }
+        }
+
+        return pitTotal.setScale(2, java.math.RoundingMode.HALF_UP);
     }
 }

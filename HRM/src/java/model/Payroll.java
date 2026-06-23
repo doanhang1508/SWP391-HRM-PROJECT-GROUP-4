@@ -9,7 +9,7 @@ public class Payroll {
     private int month;
     private int year;
     private BigDecimal baseSalary;
-    private int workingDays;
+    private double workingDays;
     private BigDecimal overtimeAmount;
     private BigDecimal allowanceAmount;
     private BigDecimal bonusAmount;
@@ -94,8 +94,8 @@ public class Payroll {
     public BigDecimal getBaseSalary() { return baseSalary; }
     public void setBaseSalary(BigDecimal baseSalary) { this.baseSalary = baseSalary; }
 
-    public int getWorkingDays() { return workingDays; }
-    public void setWorkingDays(int workingDays) { this.workingDays = workingDays; }
+    public double getWorkingDays() { return workingDays; }
+    public void setWorkingDays(double workingDays) { this.workingDays = workingDays; }
 
     public BigDecimal getOvertimeAmount() { return overtimeAmount; }
     public void setOvertimeAmount(BigDecimal overtimeAmount) { this.overtimeAmount = overtimeAmount; }

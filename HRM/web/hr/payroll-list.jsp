@@ -606,22 +606,38 @@
                     </p>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Tháng</label>
-                        <select id="generateMonth" name="month" class="form-select" style="border-radius:10px;padding:10px 12px;">
-                            <c:forEach var="m" begin="1" end="12">
-                                <option value="${m}">Tháng ${m}</option>
+                        <label class="form-label fw-semibold">Chọn kỳ công (Có dữ liệu chấm công)</label>
+                        <select id="periodSelect" name="period" class="form-select" style="border-radius:10px;padding:10px 12px;" onchange="updateMonthYearValues()">
+                            <c:forEach var="p" items="${attendancePeriods}">
+                                <option value="${p.month}-${p.year}">Tháng ${p.month} / Năm ${p.year}</option>
                             </c:forEach>
+                            <c:if test="${empty attendancePeriods}">
+                                <option value="">-- Không có dữ liệu chấm công khả dụng --</option>
+                            </c:if>
                         </select>
+                        <input type="hidden" id="generateMonth" name="month" value="">
+                        <input type="hidden" id="generateYear" name="year" value="">
                     </div>
-
-                    <div class="mb-2">
-                        <label class="form-label fw-semibold">Năm</label>
-                        <select id="generateYear" name="year" class="form-select" style="border-radius:10px;padding:10px 12px;">
-                            <c:forEach var="y" begin="2024" end="2030">
-                                <option value="${y}">Năm ${y}</option>
-                            </c:forEach>
-                        </select>
-                    </div>
+                    <script>
+                        function updateMonthYearValues() {
+                            const select = document.getElementById('periodSelect');
+                            const val = select.value;
+                            if (val) {
+                                const parts = val.split('-');
+                                if (parts.length === 2) {
+                                    document.getElementById('generateMonth').value = parts[0];
+                                    document.getElementById('generateYear').value = parts[1];
+                                    return;
+                                }
+                            }
+                            document.getElementById('generateMonth').value = '';
+                            document.getElementById('generateYear').value = '';
+                        }
+                        // Run on load
+                        document.addEventListener("DOMContentLoaded", function() {
+                            updateMonthYearValues();
+                        });
+                    </script>
 
                     <div class="mt-4 p-3" style="background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;">
                         <div class="fw-semibold mb-1" style="color:var(--txt);">
