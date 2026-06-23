@@ -143,10 +143,10 @@
                 <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
                     <i class="fas fa-file-excel" style="color:#1D6F42"></i>
                     <h4>Kéo thả hoặc click để chọn file</h4>
-                    <p>Hỗ trợ <strong>.xlsx</strong>, <strong>.xls</strong> (Excel) và <strong>.csv</strong> — tối đa 10MB</p>
+                    <p>Hỗ trợ file Excel (<strong>.xlsx</strong>, <strong>.xls</strong>) — tối đa 10MB</p>
                     <div id="fileName"></div>
                 </div>
-                <input type="file" id="fileInput" name="attendanceFile" accept=".xlsx,.xls,.csv">
+                <input type="file" id="fileInput" name="attendanceFile" accept=".xlsx,.xls">
 
                 <div class="form-row">
                     <div class="form-group">
@@ -173,52 +173,26 @@
             </form>
         </div>
 
-        <!-- Format Guide -->
+        <!-- Timesheet / Bảng Công Info -->
         <div class="panel">
             <div class="panel-title" style="justify-content:space-between">
-                <span><i class="fas fa-info-circle"></i> Hướng dẫn định dạng file</span>
+                <span><i class="fas fa-calendar-check"></i> Bảng Chấm Công</span>
             </div>
 
-            <%-- Excel tip --%>
             <div style="margin-bottom:16px;padding:12px 16px;background:#f0fdf4;border-radius:8px;border-left:4px solid #10b981;display:flex;align-items:flex-start;gap:10px">
-                <i class="fas fa-file-excel" style="color:#10b981;margin-top:2px"></i>
+                <i class="fas fa-info-circle" style="color:#10b981;margin-top:2px"></i>
                 <div style="font-size:.85rem;color:#065f46">
-                    <strong>Excel (.xlsx/.xls):</strong> Mở file Excel bình thường, đảm bảo <strong>Sheet đầu tiên</strong> chứa dữ liệu với hàng đầu là tiêu đề cột theo thứ tự dưới đây.
-                    Ô ngày tháng có thể để định dạng ngày của Excel (dd/MM/yyyy) hoặc text <code>yyyy-MM-dd</code>.
-                    Ô giờ có thể để định dạng giờ Excel hoặc text <code>HH:mm</code>.
+                    <strong>Quy trình xử lý:</strong> Dữ liệu chấm công sau khi import thành công sẽ được lưu thẳng vào <strong>Bảng Công</strong>. Từ Bảng Công, hệ thống sẽ tổng hợp để tính toán ra <strong>Bảng Lương</strong> cuối tháng cho nhân viên.
                 </div>
             </div>
 
             <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">
-                Cả file Excel và CSV đều phải có <strong>hàng tiêu đề</strong> ở dòng đầu, các cột theo thứ tự:
+                Bạn có thể xem chi tiết dữ liệu công của các nhân viên và thực hiện Khóa công sau khi import dữ liệu thành công.
             </p>
-
-            <table class="guide-table">
-                <thead>
-                    <tr>
-                        <th>Cột</th><th>Tên cột</th><th>Định dạng</th><th>Ví dụ</th><th>Bắt buộc</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td>1</td><td>user_id</td><td>Số nguyên</td><td><code>101</code></td><td><span class="badge-req">Bắt buộc</span></td></tr>
-                    <tr><td>2</td><td>shift_id</td><td>Số nguyên</td><td><code>2</code></td><td><span class="badge-req">Bắt buộc</span></td></tr>
-                    <tr><td>3</td><td>work_date</td><td>yyyy-MM-dd</td><td><code>2025-06-01</code></td><td><span class="badge-req">Bắt buộc</span></td></tr>
-                    <tr><td>4</td><td>check_in</td><td>HH:mm</td><td><code>08:00</code></td><td><span class="badge-opt">Tuỳ chọn</span></td></tr>
-                    <tr><td>5</td><td>check_out</td><td>HH:mm</td><td><code>17:00</code></td><td><span class="badge-opt">Tuỳ chọn</span></td></tr>
-                    <tr><td>6</td><td>status</td><td>PRESENT/LATE/ABSENT/HALFDAY</td><td><code>PRESENT</code></td><td><span class="badge-req">Bắt buộc</span></td></tr>
-                    <tr><td>7</td><td>overtime_hrs</td><td>Số thực</td><td><code>2.5</code></td><td><span class="badge-opt">Tuỳ chọn</span></td></tr>
-                    <tr><td>8</td><td>ot_reason</td><td>Chuỗi ký tự</td><td><code>Dự án deadline</code></td><td><span class="badge-opt">Tuỳ chọn</span></td></tr>
-                </tbody>
-            </table>
-
-            <div style="margin-top:16px;padding:12px 16px;background:#fffbeb;border-radius:8px;border-left:4px solid var(--warn)">
-                <p style="margin:0;font-size:.83rem;color:#92400e">
-                    <strong><i class="fas fa-exclamation-triangle"></i> Lưu ý:</strong>
-                    Hệ thống sẽ bỏ qua các bản ghi bị trùng (cùng user_id + work_date + shift_id).
-                    Tháng đã bị khóa sẽ không cho phép import.
-                    Với file Excel, chỉ đọc <strong>Sheet đầu tiên</strong>.
-                </p>
-            </div>
+            
+            <a href="${pageContext.request.contextPath}/hr/timesheet-lock" class="btn-import" style="background:#10b981; text-decoration:none; margin-top:0;">
+                <i class="fas fa-eye"></i> Tới Bảng Công
+            </a>
         </div>
     </div>
 </div>

@@ -75,6 +75,22 @@ public class UserDAO {
         }
         return null;
     }
+
+    // ── Tìm theo Username ──
+    public User getUserByUsername(String username) {
+        String sql = "SELECT * FROM users WHERE username = ? AND status = 1";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, username);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapResultSetToUser(rs);
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi getUserByUsername: " + e.getMessage());
+        }
+        return null;
+    }
  
 
     // ── Cập nhật mật khẩu ──

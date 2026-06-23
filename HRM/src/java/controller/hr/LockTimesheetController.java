@@ -30,7 +30,7 @@ public class LockTimesheetController extends HttpServlet {
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("currentUser");
 
-        if (user == null || (user.getRoleId() != 1 && user.getRoleId() != 2)) {
+        if (user == null || (user.getRoleId() != 1 && user.getRoleId() != 2 && user.getRoleId() != 5)) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
@@ -58,7 +58,7 @@ public class LockTimesheetController extends HttpServlet {
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("currentUser");
 
-        if (user == null || (user.getRoleId() != 1 && user.getRoleId() != 2)) {
+        if (user == null || (user.getRoleId() != 1 && user.getRoleId() != 2 && user.getRoleId() != 5)) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
@@ -68,6 +68,11 @@ public class LockTimesheetController extends HttpServlet {
         int year = Integer.parseInt(request.getParameter("year"));
 
         if ("lock".equals(action)) {
+            if (user.getRoleId() == 5) {
+                session.setAttribute("errorMessage", "Bạn không có quyền khóa bảng công.");
+                response.sendRedirect(request.getContextPath() + "/hr/timesheet-lock");
+                return;
+            }
             String note = request.getParameter("note");
             int recordCount = attendanceDAO.countAttendanceInMonth(month, year);
 

@@ -460,6 +460,12 @@
                                                             <i class="fas fa-lock"></i> Khóa công
                                                         </a>
                                                     </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/attendance-management?action=summary"
+                                                            class="sidebar-link ${param.activeMenu eq 'attendance-summary' || param.activeMenu eq 'attendance-detail' ? 'active' : ''}">
+                                                            <i class="fas fa-clipboard-check"></i> Quản lý bảng công
+                                                        </a>
+                                                    </li>
 
 
                                                 </c:if>
@@ -584,6 +590,12 @@
                                                                     <a href="${pageContext.request.contextPath}/hr/import-attendance"
                                                                         class="sidebar-link ${param.activeMenu eq 'import-attendance' ? 'active' : ''}">
                                                                         <i class="fas fa-file-import"></i> Import chấm công
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/attendance-management?action=summary"
+                                                                        class="sidebar-link ${param.activeMenu eq 'attendance-summary' || param.activeMenu eq 'attendance-detail' ? 'active' : ''}">
+                                                                        <i class="fas fa-clipboard-check"></i> Quản lý bảng công
                                                                     </a>
                                                                 </li>
 

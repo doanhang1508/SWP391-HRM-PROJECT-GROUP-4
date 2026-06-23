@@ -1,6 +1,8 @@
 package controller.hr;
 
 import dao.AttendanceDAO;
+import dao.UserDAO;
+import dao.ShiftDAOImpl;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
@@ -11,6 +13,7 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.Part;
 import model.Attendance;
 import model.User;
+import model.Shift;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
@@ -75,10 +78,9 @@ public class ImportAttendanceController extends HttpServlet {
 
             String fileName = filePart.getSubmittedFileName().toLowerCase();
             boolean isExcel = fileName.endsWith(".xlsx") || fileName.endsWith(".xls");
-            boolean isCsv = fileName.endsWith(".csv");
 
-            if (!isExcel && !isCsv) {
-                session.setAttribute("errorMessage", "Chỉ hỗ trợ file Excel (.xlsx, .xls) hoặc CSV (.csv).");
+            if (!isExcel) {
+                session.setAttribute("errorMessage", "Chỉ hỗ trợ file Excel (.xlsx, .xls).");
                 response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
                 return;
             }
@@ -99,15 +101,11 @@ public class ImportAttendanceController extends HttpServlet {
             List<String> parseErrors = new ArrayList<>();
 
             try {
-                if (isExcel) {
-                    parseExcel(filePart.getInputStream(), records, parseErrors);
-                } else {
-                    parseCsv(filePart.getInputStream(), records, parseErrors);
-                }
+                parseExcel(filePart.getInputStream(), records, parseErrors);
             } catch (Exception ex) {
                 session.setAttribute("errorMessage",
                         "Lỗi đọc file: " + ex.getMessage() +
-                                ". Hãy đảm bảo file đúng định dạng Excel hoặc CSV.");
+                                ". Hãy đảm bảo file đúng định dạng Excel.");
                 response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
                 return;
             }
@@ -124,7 +122,12 @@ public class ImportAttendanceController extends HttpServlet {
             }
 
             int imported = attendanceDAO.bulkImportAttendance(records);
-            String msg = "Import thành công " + imported + "/" + records.size() + " bản ghi.";
+            
+            // Tự động tạo bảng lương nháp dựa trên bảng công vừa import
+            dao.PayrollDAO payrollDAO = new dao.PayrollDAO();
+            int payrollsCreated = payrollDAO.generatePayrollDraft(month, year);
+            
+            String msg = "Import thành công " + imported + "/" + records.size() + " bản ghi. Đã tự động tạo " + payrollsCreated + " bảng lương nháp.";
             if (!parseErrors.isEmpty()) {
                 msg += " Có " + parseErrors.size() + " dòng lỗi định dạng bị bỏ qua.";
             }
@@ -138,19 +141,31 @@ public class ImportAttendanceController extends HttpServlet {
 
     private void parseExcel(InputStream is, List<Attendance> records, List<String> errors)
             throws Exception {
+        UserDAO userDAO = new UserDAO();
+        ShiftDAOImpl shiftDAO = new ShiftDAOImpl();
+        List<Shift> allShifts = shiftDAO.getAllShifts();
+
         try (Workbook wb = WorkbookFactory.create(is)) {
-            Sheet sheet = wb.getSheetAt(0);
-            boolean firstRow = true;
-            int rowNum = 0;
+            Sheet sheet = wb.getSheet("CHI_TIET_CHAM_CONG");
+            if (sheet == null) {
+                // Thử tìm sheet có chứa chữ CHAM_CONG hoặc lấy sheet cuối cùng
+                for (int i = 0; i < wb.getNumberOfSheets(); i++) {
+                    if (wb.getSheetName(i).toUpperCase().contains("CHAM_CONG")) {
+                        sheet = wb.getSheetAt(i);
+                        break;
+                    }
+                }
+                if (sheet == null) sheet = wb.getSheetAt(0); // Fallback về sheet 0 nếu không tìm thấy
+            }
             for (Row row : sheet) {
-                rowNum++;
-                if (firstRow) { firstRow = false; continue; }
+                if (row.getRowNum() < 3) continue; // Bỏ qua 3 dòng đầu (headers)
+
                 if (isRowEmpty(row)) continue;
                 try {
-                    Attendance a = rowToAttendance(row, rowNum);
+                    Attendance a = rowToAttendance(row, row.getRowNum() + 1, userDAO, allShifts);
                     if (a != null) records.add(a);
                 } catch (Exception e) {
-                    errors.add("Dòng " + rowNum + ": " + e.getMessage());
+                    errors.add("Dòng " + (row.getRowNum() + 1) + ": " + e.getMessage());
                 }
             }
         }
@@ -158,61 +173,118 @@ public class ImportAttendanceController extends HttpServlet {
 
     private boolean isRowEmpty(Row row) {
         if (row == null) return true;
-        for (Cell cell : row) {
+        for (int i = 0; i < 20; i++) {
+            Cell cell = row.getCell(i);
             if (cell != null && cell.getCellType() != CellType.BLANK) return false;
         }
         return true;
     }
 
-    private Attendance rowToAttendance(Row row, int rowNum) throws Exception {
+    private Attendance rowToAttendance(Row row, int rowNum, UserDAO userDAO, List<Shift> allShifts) throws Exception {
         Attendance a = new Attendance();
-        a.setUserId((int) getNumericCell(row, 0, rowNum, "user_id"));
-        a.setShiftId((int) getNumericCell(row, 1, rowNum, "shift_id"));
 
-        String dateStr = getStringCell(row, 2);
-        if (dateStr == null || dateStr.isEmpty()) throw new Exception("Thiếu work_date");
-        Cell dateCell = row.getCell(2);
-        if (dateCell != null && dateCell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(dateCell)) {
+        // 1. Mã NV (Cột 1)
+        Cell empCodeCell = row.getCell(1);
+        if (empCodeCell == null || empCodeCell.getCellType() == CellType.BLANK) {
+            throw new Exception("Mã nhân viên trống.");
+        }
+        String employeeCode = empCodeCell.getStringCellValue().trim();
+        
+        User user = null;
+        if (employeeCode.toUpperCase().startsWith("NV")) {
+            try {
+                int userId = Integer.parseInt(employeeCode.substring(2));
+                user = userDAO.getUserById(userId);
+            } catch (NumberFormatException e) {
+                // Ignore parsing error, try username lookup next
+            }
+        }
+        if (user == null) {
+            user = userDAO.getUserByUsername(employeeCode);
+        }
+        
+        if (user == null) {
+            throw new Exception("Không tìm thấy nhân viên: " + employeeCode);
+        }
+        a.setUserId(user.getUserId());
+
+        Cell dateCell = row.getCell(5);
+        if (dateCell == null) throw new Exception("Thiếu Ngày làm việc");
+        if (dateCell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(dateCell)) {
             java.util.Date d = dateCell.getDateCellValue();
             a.setWorkDate(new Date(d.getTime()));
         } else {
+            String dateStr = getStringCell(row, 5);
+            if (dateStr == null || dateStr.trim().isEmpty()) throw new Exception("Thiếu Ngày làm việc");
             a.setWorkDate(Date.valueOf(LocalDate.parse(dateStr.trim(), DATE_FMT)));
         }
 
-        String checkIn = getStringCell(row, 3);
-        a.setCheckIn(checkIn != null && !checkIn.isEmpty() ? Time.valueOf(checkIn.trim() + ":00") : null);
-        String checkOut = getStringCell(row, 4);
-        a.setCheckOut(checkOut != null && !checkOut.isEmpty() ? Time.valueOf(checkOut.trim() + ":00") : null);
+        String shiftName = getStringCell(row, 7);
+        if (shiftName == null || shiftName.trim().isEmpty()) {
+            throw new Exception("Thiếu Ca làm việc");
+        }
+        shiftName = shiftName.trim();
+        int shiftId = -1;
+        for (Shift s : allShifts) {
+            if (s.getShiftName().equalsIgnoreCase(shiftName)) {
+                shiftId = s.getShiftId();
+                break;
+            }
+        }
+        if (shiftId == -1) {
+            throw new Exception("Không tìm thấy Ca làm việc: " + shiftName);
+        }
+        a.setShiftId(shiftId);
 
-        String status = getStringCell(row, 5);
-        if (status == null || status.isEmpty()) throw new Exception("Thiếu status");
+        String checkIn = getStringCell(row, 10);
+        if (checkIn != null && !checkIn.trim().isEmpty() && !checkIn.equalsIgnoreCase("BLANK")) {
+            if (checkIn.length() == 5) checkIn += ":00";
+            a.setCheckIn(Time.valueOf(checkIn.trim()));
+        } else {
+            a.setCheckIn(null);
+        }
+
+        String checkOut = getStringCell(row, 11);
+        if (checkOut != null && !checkOut.trim().isEmpty() && !checkOut.equalsIgnoreCase("BLANK")) {
+            if (checkOut.length() == 5) checkOut += ":00";
+            a.setCheckOut(Time.valueOf(checkOut.trim()));
+        } else {
+            a.setCheckOut(null);
+        }
+
+        String status = getStringCell(row, 20);
+        if (status == null || status.trim().isEmpty() || status.equalsIgnoreCase("BLANK")) {
+             status = "A"; // default absent
+        }
         status = status.trim().toUpperCase();
-        if (!status.matches("PRESENT|LATE|ABSENT|HALFDAY"))
-            throw new Exception("Status '" + status + "' không hợp lệ");
-        a.setStatus(status);
+        switch (status) {
+            case "P": a.setStatus("PRESENT"); break;
+            case "A": a.setStatus("ABSENT"); break;
+            case "L": a.setStatus("LATE"); break;
+            case "H": a.setStatus("HALFDAY"); break;
+            default: a.setStatus("PRESENT"); break; // Fallback
+        }
 
-        Cell otCell = row.getCell(6);
+        Cell otCell = row.getCell(16);
         if (otCell != null && otCell.getCellType() == CellType.NUMERIC) {
             a.setOvertimeHrs(otCell.getNumericCellValue());
         } else {
-            String otStr = getStringCell(row, 6);
-            a.setOvertimeHrs(otStr != null && !otStr.isEmpty() ? Double.parseDouble(otStr.trim()) : 0.0);
+            String otStr = getStringCell(row, 16);
+            if (otStr != null && !otStr.trim().isEmpty() && !otStr.equalsIgnoreCase("BLANK")) {
+                try {
+                    a.setOvertimeHrs(Double.parseDouble(otStr.trim()));
+                } catch (Exception e) {
+                    a.setOvertimeHrs(0.0);
+                }
+            } else {
+                a.setOvertimeHrs(0.0);
+            }
         }
 
-        String otReason = getStringCell(row, 7);
-        a.setOtReason(otReason != null ? otReason.trim() : "");
+        String otReason = getStringCell(row, 17);
+        a.setOtReason(otReason != null && !otReason.equalsIgnoreCase("BLANK") ? otReason.trim() : "");
+        
         return a;
-    }
-
-    private double getNumericCell(Row row, int col, int rowNum, String name) throws Exception {
-        Cell cell = row.getCell(col);
-        if (cell == null) throw new Exception("Thiếu cột " + name);
-        if (cell.getCellType() == CellType.NUMERIC) return cell.getNumericCellValue();
-        if (cell.getCellType() == CellType.STRING) {
-            try { return Double.parseDouble(cell.getStringCellValue().trim()); }
-            catch (NumberFormatException e) { throw new Exception("Cột " + name + " phải là số"); }
-        }
-        throw new Exception("Cột " + name + " không đọc được");
     }
 
     private String getStringCell(Row row, int col) {
@@ -227,42 +299,27 @@ public class ImportAttendanceController extends HttpServlet {
                     cal.setTime(d);
                     return String.format("%02d:%02d", cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE));
                 }
-                return String.valueOf((long) cell.getNumericCellValue());
-            case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
-            default: return null;
-        }
-    }
-
-    private void parseCsv(InputStream is, List<Attendance> records, List<String> errors) throws IOException {
-        int rowNum = 0;
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"))) {
-            String line;
-            boolean firstLine = true;
-            while ((line = reader.readLine()) != null) {
-                rowNum++;
-                if (firstLine) { firstLine = false; continue; }
-                if (line.trim().isEmpty()) continue;
-                String[] cols = line.split(",");
-                try {
-                    Attendance a = new Attendance();
-                    a.setUserId(Integer.parseInt(cols[0].trim()));
-                    a.setShiftId(Integer.parseInt(cols[1].trim()));
-                    a.setWorkDate(Date.valueOf(cols[2].trim()));
-                    a.setCheckIn(cols[3].trim().isEmpty() ? null : Time.valueOf(cols[3].trim() + ":00"));
-                    a.setCheckOut(cols[4].trim().isEmpty() ? null : Time.valueOf(cols[4].trim() + ":00"));
-                    String status = cols[5].trim().toUpperCase();
-                    if (!status.matches("PRESENT|LATE|ABSENT|HALFDAY")) {
-                        errors.add("Dòng " + rowNum + ": Status '" + status + "' không hợp lệ.");
-                        continue;
-                    }
-                    a.setStatus(status);
-                    a.setOvertimeHrs(cols.length > 6 && !cols[6].trim().isEmpty() ? Double.parseDouble(cols[6].trim()) : 0.0);
-                    a.setOtReason(cols.length > 7 ? cols[7].trim() : "");
-                    records.add(a);
-                } catch (Exception e) {
-                    errors.add("Dòng " + rowNum + ": Lỗi định dạng - " + e.getMessage());
+                double numValue = cell.getNumericCellValue();
+                if (numValue == (long) numValue) {
+                    return String.format("%d", (long) numValue);
+                } else {
+                    return String.format("%s", numValue);
                 }
-            }
+            case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
+            case FORMULA:
+                switch(cell.getCachedFormulaResultType()) {
+                    case STRING: return cell.getStringCellValue();
+                    case NUMERIC:
+                        double numValueF = cell.getNumericCellValue();
+                        if (numValueF == (long) numValueF) {
+                            return String.format("%d", (long) numValueF);
+                        } else {
+                            return String.format("%s", numValueF);
+                        }
+                    case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
+                    default: return null;
+                }
+            default: return null;
         }
     }
 }

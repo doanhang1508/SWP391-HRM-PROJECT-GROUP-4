@@ -612,4 +612,73 @@ public class AttendanceDAO {
         }
         return BigDecimal.ZERO;
     }
+
+    public List<model.AttendanceSummary> getAttendanceSummaryAllUsers(int month, int year) {
+        List<model.AttendanceSummary> list = new ArrayList<>();
+        String sql = "SELECT u.user_id, u.full_name AS user_name, d.department_name, " +
+                     "SUM(CASE WHEN a.status='PRESENT' THEN 1 ELSE 0 END) AS present_cnt, " +
+                     "SUM(CASE WHEN a.status='LATE' THEN 1 ELSE 0 END) AS late_cnt, " +
+                     "SUM(CASE WHEN a.status='ABSENT' THEN 1 ELSE 0 END) AS absent_cnt, " +
+                     "SUM(CASE WHEN a.overtime_hrs > 0 THEN 1 ELSE 0 END) AS ot_cnt, " +
+                     "SUM(IFNULL(a.overtime_hrs, 0)) AS total_ot_hrs " +
+                     "FROM users u " +
+                     "LEFT JOIN employee_profiles ep ON u.user_id = ep.user_id " +
+                     "LEFT JOIN departments d ON ep.department_id = d.department_id " +
+                     "JOIN attendance a ON u.user_id = a.user_id AND MONTH(a.work_date)=? AND YEAR(a.work_date)=? " +
+                     "GROUP BY u.user_id, u.full_name, d.department_name " +
+                     "ORDER BY u.full_name";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    model.AttendanceSummary s = new model.AttendanceSummary();
+                    s.setUserId(rs.getInt("user_id"));
+                    s.setUserName(rs.getString("user_name"));
+                    s.setDepartment(rs.getString("department_name"));
+                    s.setPresentCount(rs.getInt("present_cnt"));
+                    s.setLateCount(rs.getInt("late_cnt"));
+                    s.setAbsentCount(rs.getInt("absent_cnt"));
+                    s.setOvertimeCount(rs.getInt("ot_cnt"));
+                    s.setTotalOvertimeHrs(rs.getDouble("total_ot_hrs"));
+                    list.add(s);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Attendance> getAllAttendance(int month, int year, Integer userId) {
+        List<Attendance> list = new ArrayList<>();
+        String sql = "SELECT a.*, u.full_name AS user_name, s.shift_name " +
+                     "FROM attendance a " +
+                     "JOIN users u ON a.user_id = u.user_id " +
+                     "JOIN shifts s ON a.shift_id = s.shift_id " +
+                     "WHERE MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? ";
+        if (userId != null) {
+            sql += " AND a.user_id = ? ";
+        }
+        sql += "ORDER BY a.work_date DESC, u.full_name";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            if (userId != null) {
+                ps.setInt(3, userId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapAttendanceRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }

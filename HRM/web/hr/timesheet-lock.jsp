@@ -146,6 +146,7 @@
         </div>
 
         <!-- Lock form -->
+        <c:if test="${sessionScope.currentUser.roleId != 5}">
         <div class="panel">
             <div class="panel-title"><i class="fas fa-calendar-check"></i> Khóa Tháng Mới</div>
             <form method="post" action="${pageContext.request.contextPath}/hr/timesheet-lock"
@@ -178,6 +179,7 @@
                 </div>
             </form>
         </div>
+        </c:if>
 
         <!-- Lock history -->
         <div class="panel">

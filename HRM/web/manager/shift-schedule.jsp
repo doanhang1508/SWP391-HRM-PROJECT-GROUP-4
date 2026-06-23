@@ -195,7 +195,7 @@ body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-top: 0 !im
                         <select name="otType" class="form-select" required>
                             <option value="">-- Chọn Loại OT --</option>
                             <option value="2">Ca Đêm 1 (18:00 - 20:00) - Không nghỉ</option>
-                            <option value="4">Ca Đêm 2 (18:00 - 22:00) - Nghỉ 20h-20h30</option>
+                            <option value="3">Ca Đêm 2 (18:00 - 22:00) - Nghỉ 20h-20h30</option>
                         </select>
                     </div>
                     <div class="col-md-2">
