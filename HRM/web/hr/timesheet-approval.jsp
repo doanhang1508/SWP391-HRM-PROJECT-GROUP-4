@@ -276,6 +276,41 @@
                         </c:forEach>
                     </select>
                 </div>
+                <div class="col-md-8 text-end">
+                    <div class="d-inline-flex align-items-center p-2 rounded bg-white border" style="gap:15px;">
+                        <div class="text-start">
+                            <div class="small text-muted fw-bold mb-1">Trạng thái Bảng Công</div>
+                            <c:choose>
+                                <c:when test="${isMonthLocked}">
+                                    <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill"><i class="fas fa-lock me-1"></i> ĐÃ KHÓA (DUYỆT CUỐI)</span>
+                                </c:when>
+                                <c:otherwise>
+                                    <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill"><i class="fas fa-lock-open me-1"></i> ĐANG MỞ</span>
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
+                        <div class="border-start ps-3">
+                            <form action="${pageContext.request.contextPath}/hr/timesheet-approval" method="post" class="m-0">
+                                <input type="hidden" name="month" value="${selectedMonth}">
+                                <input type="hidden" name="year" value="${selectedYear}">
+                                <c:choose>
+                                    <c:when test="${isMonthLocked}">
+                                        <input type="hidden" name="action" value="unlockMonth">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm fw-bold" onclick="return confirm('Mở khóa sẽ cho phép thay đổi dữ liệu chấm công. Tiếp tục?');">
+                                            <i class="fas fa-unlock"></i> Mở Khóa Bảng Công
+                                        </button>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <input type="hidden" name="action" value="lockMonth">
+                                        <button type="submit" class="btn btn-success btn-sm fw-bold" onclick="return confirm('Khóa bảng công sẽ chốt toàn bộ dữ liệu chấm công tháng này để tính lương. Bạn có chắc chắn Duyệt Cuối toàn bộ bảng công?');">
+                                            <i class="fas fa-lock"></i> Khóa Bảng Công (Duyệt)
+                                        </button>
+                                    </c:otherwise>
+                                </c:choose>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <script>
@@ -331,15 +366,7 @@
                                         <td class="text-danger small" style="max-width:200px">${c.rejectReason != null ? c.rejectReason : '-'}</td>
                                         <td class="text-end">
                                             <c:if test="${c.status == 'SENT_TO_HR_MANAGER' || c.status == 'DEPARTMENT_CONFIRMED'}">
-                                                <form action="${pageContext.request.contextPath}/hr/timesheet-approval" method="post" style="display:inline-block">
-                                                    <input type="hidden" name="action" value="hrManagerApprove">
-                                                    <input type="hidden" name="id" value="${c.id}">
-                                                    <input type="hidden" name="month" value="${selectedMonth}">
-                                                    <input type="hidden" name="year" value="${selectedYear}">
-                                                    <button type="submit" class="btn-a btn-submit" onclick="return confirm('Bạn chắc chắn muốn DUYỆT CUỐI bảng công phòng ban này?')">
-                                                        <i class="fas fa-check"></i> Duyệt
-                                                    </button>
-                                                </form>
+
                                                 <button class="btn-a btn-edit" style="background:var(--ng);" data-bs-toggle="modal" data-bs-target="#rejectModal${c.id}">
                                                     <i class="fas fa-times"></i> Từ chối
                                                 </button>

@@ -106,7 +106,7 @@ public class AuthFilter implements Filter {
         }
 
         if (path.equals("/manager/timesheet-confirm")) {
-            if (roleId != ROLE_HR_MANAGER && roleId != ROLE_HR_STAFF && roleId != ROLE_DEPT_MGR && roleId != ROLE_ADMIN) {
+            if (roleId != ROLE_HR_MANAGER && roleId != ROLE_HR_STAFF && roleId != ROLE_DEPT_MGR) {
                 redirectToAppropriate(req, resp, roleId);
                 return;
             }
@@ -119,8 +119,8 @@ public class AuthFilter implements Filter {
                     redirectToAppropriate(req, resp, roleId);
                     return;
                 }
-            } else if (path.equals("/hr/timesheet-lock") || path.equals("/hr/timesheet-approval")) {
-                if (roleId != ROLE_ADMIN && roleId != ROLE_HR_MANAGER) {
+            } else if (path.equals("/hr/timesheet-approval")) {
+                if (roleId != ROLE_HR_MANAGER) {
                     redirectToAppropriate(req, resp, roleId);
                     return;
                 }
