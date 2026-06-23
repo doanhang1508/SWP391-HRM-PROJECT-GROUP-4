@@ -101,7 +101,7 @@ public class ImportAttendanceController extends HttpServlet {
             List<String> parseErrors = new ArrayList<>();
 
             try {
-                parseExcel(filePart.getInputStream(), records, parseErrors);
+                parseExcel(filePart.getInputStream(), records, parseErrors, month, year);
             } catch (Exception ex) {
                 session.setAttribute("errorMessage",
                         "Lỗi đọc file: " + ex.getMessage() +
@@ -135,7 +135,7 @@ public class ImportAttendanceController extends HttpServlet {
         }
     }
 
-    private void parseExcel(InputStream is, List<Attendance> records, List<String> errors)
+    private void parseExcel(InputStream is, List<Attendance> records, List<String> errors, int month, int year)
             throws Exception {
         UserDAO userDAO = new UserDAO();
         ShiftDAOImpl shiftDAO = new ShiftDAOImpl();
@@ -159,7 +159,12 @@ public class ImportAttendanceController extends HttpServlet {
                 if (isRowEmpty(row)) continue;
                 try {
                     Attendance a = rowToAttendance(row, row.getRowNum() + 1, userDAO, allShifts);
-                    if (a != null) records.add(a);
+                    if (a != null) {
+                        if (attendanceDAO.isUserMonthLocked(a.getUserId(), month, year)) {
+                            throw new Exception("Nhân viên " + a.getUserId() + " thuộc phòng ban đã duyệt cuối/khóa bảng công.");
+                        }
+                        records.add(a);
+                    }
                 } catch (Exception e) {
                     errors.add("Dòng " + (row.getRowNum() + 1) + ": " + e.getMessage());
                 }

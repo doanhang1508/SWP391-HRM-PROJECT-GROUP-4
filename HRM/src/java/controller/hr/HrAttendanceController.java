@@ -133,9 +133,9 @@ public class HrAttendanceController extends HttpServlet {
                 String checkOutStr = request.getParameter("checkOut");
                 String status = request.getParameter("status");
 
-                // Check if month is locked
-                if (attendanceDAO.isMonthLocked(month, year)) {
-                    session.setAttribute("errorMsg", "Không thể sửa dữ liệu chấm công vì tháng này đã bị khóa!");
+                // Check if attendance is locked
+                if (attendanceDAO.isAttendanceLocked(attendanceId)) {
+                    session.setAttribute("errorMsg", "Không thể sửa dữ liệu chấm công vì bảng công đã được duyệt cuối/khóa!");
                 } else {
                     Time checkIn = (checkInStr != null && !checkInStr.trim().isEmpty()) ? Time.valueOf(checkInStr.length() == 5 ? checkInStr + ":00" : checkInStr) : null;
                     Time checkOut = (checkOutStr != null && !checkOutStr.trim().isEmpty()) ? Time.valueOf(checkOutStr.length() == 5 ? checkOutStr + ":00" : checkOutStr) : null;

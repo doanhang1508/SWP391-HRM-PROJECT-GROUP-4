@@ -82,6 +82,60 @@ public class AttendanceDAO {
         return false;
     }
 
+    public boolean isUserMonthLocked(int userId, int month, int year) {
+        if (isMonthLocked(month, year)) {
+            return true;
+        }
+        String sql = "SELECT 1 FROM timesheet_confirmations tc " +
+                     "JOIN users u ON tc.department_id = u.department_id " +
+                     "WHERE u.user_id = ? AND tc.month = ? AND tc.year = ? AND tc.status = 'HR_MANAGER_APPROVED'";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean isAttendanceLocked(int attendanceId) {
+        String sql1 = "SELECT 1 FROM attendance a " +
+                      "JOIN timesheet_lock tl ON MONTH(a.work_date) = tl.month AND YEAR(a.work_date) = tl.year " +
+                      "WHERE a.attendance_id = ? AND tl.status = 'LOCKED'";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql1)) {
+            ps.setInt(1, attendanceId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        String sql2 = "SELECT 1 FROM attendance a " +
+                      "JOIN users u ON a.user_id = u.user_id " +
+                      "JOIN timesheet_confirmations tc ON u.department_id = tc.department_id " +
+                      "WHERE a.attendance_id = ? AND tc.month = MONTH(a.work_date) AND tc.year = YEAR(a.work_date) AND tc.status = 'HR_MANAGER_APPROVED'";
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql2)) {
+            ps.setInt(1, attendanceId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+
     // ═══════════════════════════════════════════════════
     // MODULE 14: VIEW PERSONAL ATTENDANCE
     // ═══════════════════════════════════════════════════
@@ -536,6 +590,30 @@ public class AttendanceDAO {
         }
         return list;
     }
+
+    /**
+     * Lấy danh sách kỳ (tháng/năm) có dữ liệu chấm công của một nhân viên cụ thể,
+     * sắp xếp mới nhất trước.
+     */
+    public List<MonthYearOption> getPeriodsForUser(int userId) {
+        List<MonthYearOption> list = new ArrayList<>();
+        String sql = "SELECT DISTINCT MONTH(work_date) AS month, YEAR(work_date) AS year " +
+                     "FROM attendance WHERE user_id=? ORDER BY year DESC, month DESC";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new MonthYearOption(rs.getInt("month"), rs.getInt("year")));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
 
     public boolean hasAttendanceData(int month, int year) {
         String sql = "SELECT COUNT(*) FROM attendance WHERE MONTH(work_date)=? AND YEAR(work_date)=?";
