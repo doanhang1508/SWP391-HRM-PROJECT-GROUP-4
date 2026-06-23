@@ -348,9 +348,6 @@
                                             </form>
                                         </c:if>
                                     </c:if>
-                                    <button type="button" class="btn-a btn-view" id="btnToggleDepts" onclick="toggleDeptTable()" style="height:36px; font-size:.85rem; padding: 6px 16px;">
-                                        <i class="fas fa-eye"></i> Xem các phòng ban
-                                    </button>
                                 </td>
                             </tr>
                         </tbody>
@@ -368,8 +365,16 @@
 
                 <!-- Collapsible Department list -->
                 <c:if test="${not empty confirmations}">
-                <div class="table-responsive" id="deptTableContainer" style="display: none; border-top: 1px dashed #cbd5e1; padding-top: 20px; margin-top: 15px;">
-                    <h5 class="fw-bold mb-3 text-muted" style="font-size: 0.95rem;"><i class="fas fa-list me-1"></i> Chi tiết trạng thái các phòng ban</h5>
+                <div class="table-responsive" id="deptTableContainer" style="display: block; border-top: 1px dashed #cbd5e1; padding-top: 20px; margin-top: 15px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <h5 class="fw-bold mb-0 text-muted" style="font-size: 0.95rem;"><i class="fas fa-list me-1"></i> Chi tiết trạng thái các phòng ban</h5>
+                        <div style="width: 250px;">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0 text-muted" style="border-color:#e2e8f0; border-top-left-radius:8px; border-bottom-left-radius:8px;"><i class="fas fa-search"></i></span>
+                                <input type="text" id="searchDept" onkeyup="filterDepts()" class="form-control border-start-0" placeholder="Tìm phòng ban..." style="border-color:#e2e8f0; border-top-right-radius:8px; border-bottom-right-radius:8px; font-size:0.875rem; padding: 8px 12px; outline:none; box-shadow:none;">
+                            </div>
+                        </div>
+                    </div>
                     <table class="tbl">
                         <thead>
                             <tr>
@@ -381,9 +386,9 @@
                                 <th class="text-end">Hành Động</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="tbodyDepts">
                             <c:forEach var="c" items="${confirmations}">
-                                <tr>
+                                <tr data-dept-name="${c.departmentName}">
                                     <td><strong>${c.departmentName}</strong></td>
                                     <td>
                                         <c:choose>
@@ -483,22 +488,118 @@
                             </c:forEach>
                         </tbody>
                     </table>
+                    <!-- Front-end Pagination Controls for Departments -->
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:20px;border-top:1px solid #f1f5f9;flex-wrap:wrap;gap:8px;">
+                        <div class="text-muted small fw-semibold" id="deptPaginationInfo">
+                            Hiển thị 0 - 0 trong số 0 phòng ban.
+                        </div>
+                        <div id="deptPaginationControls" style="display:flex;gap:8px;">
+                            <!-- Dynamically rendered buttons -->
+                        </div>
+                    </div>
                 </div>
                 </c:if>
 
                 <script>
-                    function toggleDeptTable() {
-                        var container = document.getElementById('deptTableContainer');
-                        var btn = document.getElementById('btnToggleDepts');
-                        if (!container || !btn) return;
-                        if (container.style.display === 'none') {
-                            container.style.display = 'block';
-                            btn.innerHTML = '<i class="fas fa-eye-slash"></i> Ẩn các phòng ban';
-                        } else {
-                            container.style.display = 'none';
-                            btn.innerHTML = '<i class="fas fa-eye"></i> Xem các phòng ban';
-                        }
+                    const deptRowsPerPage = 10;
+                    let currentDeptPage = 1;
+
+                    function initDeptPagination() {
+                        currentDeptPage = 1;
+                        updateDeptPagination();
                     }
+
+                    function updateDeptPagination() {
+                        const searchInput = document.getElementById('searchDept');
+                        const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+                        const rows = Array.from(document.querySelectorAll('#tbodyDepts tr'));
+                        
+                        if (rows.length === 0) {
+                            const infoEl = document.getElementById('deptPaginationInfo');
+                            if (infoEl) infoEl.innerText = "Không có dữ liệu phòng ban.";
+                            const controlsEl = document.getElementById('deptPaginationControls');
+                            if (controlsEl) controlsEl.innerHTML = "";
+                            return;
+                        }
+
+                        // Filter rows based on query
+                        const filteredRows = rows.filter(row => {
+                            const deptName = (row.getAttribute('data-dept-name') || '').toLowerCase();
+                            return deptName.includes(query);
+                        });
+
+                        const totalRecords = filteredRows.length;
+                        const totalPages = Math.ceil(totalRecords / deptRowsPerPage);
+
+                        if (currentDeptPage > totalPages) {
+                            currentDeptPage = totalPages;
+                        }
+                        if (currentDeptPage < 1) {
+                            currentDeptPage = 1;
+                        }
+
+                        const startIdx = totalRecords === 0 ? 0 : (currentDeptPage - 1) * deptRowsPerPage;
+                        const endIdx = Math.min(currentDeptPage * deptRowsPerPage, totalRecords);
+
+                        // Toggle visibility of rows
+                        rows.forEach(row => {
+                            row.style.display = 'none';
+                        });
+
+                        if (totalRecords === 0) {
+                            const infoEl = document.getElementById('deptPaginationInfo');
+                            if (infoEl) infoEl.innerText = "Không tìm thấy kết quả.";
+                            const controlsEl = document.getElementById('deptPaginationControls');
+                            if (controlsEl) controlsEl.innerHTML = "";
+                            return;
+                        }
+
+                        filteredRows.slice(startIdx, endIdx).forEach(row => {
+                            row.style.display = '';
+                        });
+
+                        // Update pagination information label
+                        const infoEl = document.getElementById('deptPaginationInfo');
+                        if (infoEl) {
+                            infoEl.innerText = "Hiển thị " + (startIdx + 1) + " - " + endIdx + " trong số " + totalRecords + " phòng ban.";
+                        }
+
+                        // Render pagination controls
+                        const controlsEl = document.getElementById('deptPaginationControls');
+                        if (!controlsEl) return;
+                        
+                        let html = '';
+
+                        // Previous button
+                        if (currentDeptPage === 1) {
+                            html += '<button disabled style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:#cbd5e1;cursor:not-allowed;opacity:0.6;"><i class="fas fa-chevron-left"></i></button>';
+                        } else {
+                            html += '<button type="button" onclick="changeDeptPage(' + (currentDeptPage - 1) + ')" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--muted);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor=\'var(--pri)\';this.style.color=\'var(--pri)\';" onmouseout="this.style.borderColor=\'#e2e8f0\';this.style.color=\'var(--muted)\';"><i class="fas fa-chevron-left"></i></button>';
+                        }
+
+                        // Next button
+                        if (currentDeptPage === totalPages || totalRecords === 0) {
+                            html += '<button disabled style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:#cbd5e1;cursor:not-allowed;opacity:0.6;"><i class="fas fa-chevron-right"></i></button>';
+                        } else {
+                            html += '<button type="button" onclick="changeDeptPage(' + (currentDeptPage + 1) + ')" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--muted);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor=\'var(--pri)\';this.style.color=\'var(--pri)\';" onmouseout="this.style.borderColor=\'#e2e8f0\';this.style.color=\'var(--muted)\';"><i class="fas fa-chevron-right"></i></button>';
+                        }
+
+                        controlsEl.innerHTML = html;
+                    }
+
+                    function changeDeptPage(page) {
+                        currentDeptPage = page;
+                        updateDeptPagination();
+                    }
+
+                    function filterDepts() {
+                        currentDeptPage = 1;
+                        updateDeptPagination();
+                    }
+
+                    document.addEventListener("DOMContentLoaded", function() {
+                        initDeptPagination();
+                    });
                 </script>
             </c:if>
 
@@ -626,6 +727,16 @@
                                 </table>
                             </div>
 
+                            <!-- Front-end Pagination Controls -->
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:20px;border-top:1px solid #f1f5f9;flex-wrap:wrap;gap:8px;">
+                                <div class="text-muted small fw-semibold" id="paginationInfo">
+                                    Hiển thị 0 - 0 trong số 0 nhân viên.
+                                </div>
+                                <div id="paginationControls" style="display:flex;gap:8px;">
+                                    <!-- Dynamically rendered buttons -->
+                                </div>
+                            </div>
+
                             <!-- Detail Modal -->
                             <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
                                 <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -709,21 +820,108 @@
                                     myModal.show();
                                 }
 
-                                function filterEmployees() {
-                                    const query = document.getElementById('searchEmployee').value.toLowerCase().trim();
-                                    const rows = document.querySelectorAll('#empTableBody tr');
-                                    rows.forEach(row => {
-                                        const empId = row.getAttribute('data-id');
-                                        const empName = row.getAttribute('data-name');
-                                        if (empId && empName) {
-                                            if (empId.toLowerCase().includes(query) || empName.toLowerCase().includes(query)) {
-                                                row.style.display = '';
-                                            } else {
-                                                row.style.display = 'none';
-                                            }
-                                        }
-                                    });
+                                const rowsPerPage = 10;
+                                let currentPage = 1;
+
+                                function initPagination() {
+                                    currentPage = 1;
+                                    updatePagination();
                                 }
+
+                                function updatePagination() {
+                                    const query = document.getElementById('searchEmployee').value.toLowerCase().trim();
+                                    const rows = Array.from(document.querySelectorAll('#empTableBody tr'));
+                                    
+                                    // Filter rows that are not placeholders
+                                    const validRows = rows.filter(row => row.getAttribute('data-id') !== null);
+
+                                    if (validRows.length === 0) {
+                                        const paginationInfo = document.getElementById('paginationInfo');
+                                        if (paginationInfo) paginationInfo.innerText = "Không tìm thấy kết quả.";
+                                        const paginationControls = document.getElementById('paginationControls');
+                                        if (paginationControls) paginationControls.innerHTML = "";
+                                        return;
+                                    }
+
+                                    // Filter rows based on query
+                                    const filteredRows = validRows.filter(row => {
+                                        const empId = row.getAttribute('data-id').toLowerCase();
+                                        const empName = row.getAttribute('data-name').toLowerCase();
+                                        return empId.includes(query) || empName.includes(query);
+                                    });
+
+                                    const totalRecords = filteredRows.length;
+                                    const totalPages = Math.ceil(totalRecords / rowsPerPage);
+
+                                    if (currentPage > totalPages) {
+                                        currentPage = totalPages;
+                                    }
+                                    if (currentPage < 1) {
+                                        currentPage = 1;
+                                    }
+
+                                    const startIdx = totalRecords === 0 ? 0 : (currentPage - 1) * rowsPerPage;
+                                    const endIdx = Math.min(currentPage * rowsPerPage, totalRecords);
+
+                                    // Toggle visibility of rows
+                                    validRows.forEach(row => {
+                                        row.style.display = 'none';
+                                    });
+
+                                    if (totalRecords === 0) {
+                                        const paginationInfo = document.getElementById('paginationInfo');
+                                        if (paginationInfo) paginationInfo.innerText = "Không tìm thấy kết quả.";
+                                        const paginationControls = document.getElementById('paginationControls');
+                                        if (paginationControls) paginationControls.innerHTML = "";
+                                        return;
+                                    }
+
+                                    filteredRows.slice(startIdx, endIdx).forEach(row => {
+                                        row.style.display = '';
+                                    });
+
+                                    // Update pagination information label
+                                    const paginationInfo = document.getElementById('paginationInfo');
+                                    if (paginationInfo) {
+                                        paginationInfo.innerText = "Hiển thị " + (startIdx + 1) + " - " + endIdx + " trong số " + totalRecords + " nhân viên.";
+                                    }
+
+                                    // Render pagination controls
+                                    const paginationControls = document.getElementById('paginationControls');
+                                    if (!paginationControls) return;
+                                    
+                                    let html = '';
+
+                                    // Previous button
+                                    if (currentPage === 1) {
+                                        html += '<button disabled style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:#cbd5e1;cursor:not-allowed;opacity:0.6;"><i class="fas fa-chevron-left"></i></button>';
+                                    } else {
+                                        html += '<button type="button" onclick="changePage(' + (currentPage - 1) + ')" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--muted);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor=\'var(--pri)\';this.style.color=\'var(--pri)\';" onmouseout="this.style.borderColor=\'#e2e8f0\';this.style.color=\'var(--muted)\';"><i class="fas fa-chevron-left"></i></button>';
+                                    }
+
+                                    // Next button
+                                    if (currentPage === totalPages || totalPages === 0) {
+                                        html += '<button disabled style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:#cbd5e1;cursor:not-allowed;opacity:0.6;"><i class="fas fa-chevron-right"></i></button>';
+                                    } else {
+                                        html += '<button type="button" onclick="changePage(' + (currentPage + 1) + ')" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--muted);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor=\'var(--pri)\';this.style.color=\'var(--pri)\';" onmouseout="this.style.borderColor=\'#e2e8f0\';this.style.color=\'var(--muted)\';"><i class="fas fa-chevron-right"></i></button>';
+                                    }
+
+                                    paginationControls.innerHTML = html;
+                                }
+
+                                function changePage(page) {
+                                    currentPage = page;
+                                    updatePagination();
+                                }
+
+                                function filterEmployees() {
+                                    currentPage = 1;
+                                    updatePagination();
+                                }
+
+                                document.addEventListener("DOMContentLoaded", function() {
+                                    initPagination();
+                                });
                             </script>
                         </c:otherwise>
                     </c:choose>

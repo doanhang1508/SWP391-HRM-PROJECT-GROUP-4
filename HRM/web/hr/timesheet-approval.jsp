@@ -377,9 +377,6 @@
                                                 </c:choose>
                                             </c:otherwise>
                                         </c:choose>
-                                        <button type="button" class="btn-a btn-view" id="btnToggleDepts" onclick="toggleDeptTable()" style="height:36px; font-size:.85rem; padding: 6px 16px;">
-                                            <i class="fas fa-eye"></i> Xem các phòng ban
-                                        </button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -387,8 +384,16 @@
                     </div>
 
                     <!-- Collapsible Department details list -->
-                    <div class="table-responsive" id="deptTableContainer" style="display: none; border-top: 1px dashed #cbd5e1; padding-top: 20px; margin-top: 15px;">
-                        <h5 class="fw-bold mb-3 text-muted" style="font-size: 0.95rem;"><i class="fas fa-list me-1"></i> Chi tiết trạng thái các phòng ban</h5>
+                    <div class="table-responsive" id="deptTableContainer" style="display: block; border-top: 1px dashed #cbd5e1; padding-top: 20px; margin-top: 15px;">
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <h5 class="fw-bold mb-0 text-muted" style="font-size: 0.95rem;"><i class="fas fa-list me-1"></i> Chi tiết trạng thái các phòng ban</h5>
+                            <div style="width: 250px;">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0 text-muted" style="border-color:#e2e8f0; border-top-left-radius:8px; border-bottom-left-radius:8px;"><i class="fas fa-search"></i></span>
+                                    <input type="text" id="searchDept" onkeyup="filterDepts()" class="form-control border-start-0" placeholder="Tìm phòng ban..." style="border-color:#e2e8f0; border-top-right-radius:8px; border-bottom-right-radius:8px; font-size:0.875rem; padding: 8px 12px; outline:none; box-shadow:none;">
+                                </div>
+                            </div>
+                        </div>
                         <table class="tbl">
                             <thead>
                                 <tr>
@@ -398,9 +403,9 @@
                                     <th>Xác Nhận Bởi</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="deptTableBody">
                                 <c:forEach var="c" items="${confirmations}">
-                                    <tr>
+                                    <tr data-name="${c.departmentName}">
                                         <td><strong>${c.departmentName}</strong></td>
                                         <td>Tháng ${c.month}/${c.year}</td>
                                         <td>
@@ -483,21 +488,117 @@
                                 </c:forEach>
                             </tbody>
                         </table>
+                        <!-- Front-end Pagination Controls -->
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:20px;border-top:1px solid #f1f5f9;flex-wrap:wrap;gap:8px;">
+                            <div class="text-muted small fw-semibold" id="paginationInfo">
+                                Hiển thị 0 - 0 trong số 0 phòng ban.
+                            </div>
+                            <div id="paginationControls" style="display:flex;gap:8px;">
+                                <!-- Dynamically rendered buttons -->
+                            </div>
+                        </div>
                     </div>
 
                     <script>
-                        function toggleDeptTable() {
-                            var container = document.getElementById('deptTableContainer');
-                            var btn = document.getElementById('btnToggleDepts');
-                            if (!container || !btn) return;
-                            if (container.style.display === 'none') {
-                                container.style.display = 'block';
-                                btn.innerHTML = '<i class="fas fa-eye-slash"></i> Ẩn các phòng ban';
-                            } else {
-                                container.style.display = 'none';
-                                btn.innerHTML = '<i class="fas fa-eye"></i> Xem các phòng ban';
-                            }
+                        const rowsPerPage = 10;
+                        let currentPage = 1;
+
+                        function initPagination() {
+                            currentPage = 1;
+                            updatePagination();
                         }
+
+                        function updatePagination() {
+                            const searchInput = document.getElementById('searchDept');
+                            const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+                            const rows = Array.from(document.querySelectorAll('#deptTableBody tr'));
+                            
+                            if (rows.length === 0) {
+                                const paginationInfo = document.getElementById('paginationInfo');
+                                if (paginationInfo) paginationInfo.innerText = "Không có dữ liệu phòng ban.";
+                                const paginationControls = document.getElementById('paginationControls');
+                                if (paginationControls) paginationControls.innerHTML = "";
+                                return;
+                            }
+
+                            // Filter rows based on query
+                            const filteredRows = rows.filter(row => {
+                                const deptName = (row.getAttribute('data-name') || '').toLowerCase();
+                                return deptName.includes(query);
+                            });
+
+                            const totalRecords = filteredRows.length;
+                            const totalPages = Math.ceil(totalRecords / rowsPerPage);
+
+                            if (currentPage > totalPages) {
+                                currentPage = totalPages;
+                            }
+                            if (currentPage < 1) {
+                                currentPage = 1;
+                            }
+
+                            const startIdx = totalRecords === 0 ? 0 : (currentPage - 1) * rowsPerPage;
+                            const endIdx = Math.min(currentPage * rowsPerPage, totalRecords);
+
+                            // Toggle visibility of rows
+                            rows.forEach(row => {
+                                row.style.display = 'none';
+                            });
+
+                            if (totalRecords === 0) {
+                                const paginationInfo = document.getElementById('paginationInfo');
+                                if (paginationInfo) paginationInfo.innerText = "Không tìm thấy kết quả.";
+                                const paginationControls = document.getElementById('paginationControls');
+                                if (paginationControls) paginationControls.innerHTML = "";
+                                return;
+                            }
+
+                            filteredRows.slice(startIdx, endIdx).forEach(row => {
+                                row.style.display = '';
+                            });
+
+                            // Update pagination information label
+                            const paginationInfo = document.getElementById('paginationInfo');
+                            if (paginationInfo) {
+                                paginationInfo.innerText = "Hiển thị " + (startIdx + 1) + " - " + endIdx + " trong số " + totalRecords + " phòng ban.";
+                            }
+
+                            // Render pagination controls
+                            const paginationControls = document.getElementById('paginationControls');
+                            if (!paginationControls) return;
+                            
+                            let html = '';
+
+                            // Previous button
+                            if (currentPage === 1) {
+                                html += '<button disabled style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:#cbd5e1;cursor:not-allowed;opacity:0.6;"><i class="fas fa-chevron-left"></i></button>';
+                            } else {
+                                html += '<button type="button" onclick="changePage(' + (currentPage - 1) + ')" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--muted);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor=\'var(--pri)\';this.style.color=\'var(--pri)\';" onmouseout="this.style.borderColor=\'#e2e8f0\';this.style.color=\'var(--muted)\';"><i class="fas fa-chevron-left"></i></button>';
+                            }
+
+                            // Next button
+                            if (currentPage === totalPages || totalRecords === 0) {
+                                html += '<button disabled style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:#cbd5e1;cursor:not-allowed;opacity:0.6;"><i class="fas fa-chevron-right"></i></button>';
+                            } else {
+                                html += '<button type="button" onclick="changePage(' + (currentPage + 1) + ')" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--muted);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor=\'var(--pri)\';this.style.color=\'var(--pri)\';" onmouseout="this.style.borderColor=\'#e2e8f0\';this.style.color=\'var(--muted)\';"><i class="fas fa-chevron-right"></i></button>';
+                            }
+
+                            paginationControls.innerHTML = html;
+                        }
+
+                        function changePage(page) {
+                            currentPage = page;
+                            updatePagination();
+                        }
+
+                        function filterDepts() {
+                            currentPage = 1;
+                            updatePagination();
+                        }
+
+                        document.addEventListener("DOMContentLoaded", function() {
+                            initPagination();
+                        });
                     </script>
                 </c:otherwise>
             </c:choose>
