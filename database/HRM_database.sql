@@ -629,14 +629,14 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 -- ── 16a. Users cốt lõi (user_id 1-5) ──
 INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
 (1,'admin',     '@123456','Quản Trị Viên',          'admin@hrm.com',     '0900000001',1,NULL,NULL),
-(2,'giam_doc',  '@123456','Nguyễn Văn Giám Đốc',    'giamdoc@hrm.com',   '0901000002',4,1,1),
+(2,'giam_doc',  '@123456','Nguyễn Văn Giám Đốc',    'giamdoc@hrm.com',   '0901000002',4,NULL,1),
 (3,'hr_manager','@123456','Trần Thị Nhân Sự',       'hr@hrm.com',        '0901000003',2,2,2),
 (4,'quan_doc',  '@123456','Lê Văn Quản Đốc',        'quandoc@hrm.com',   '0901000004',3,5,4),
 (5,'cong_nhan', '@123456','Phạm Công Nhân',          'cn1@hrm.com',       '0901000005',7,5,9);
 
 -- ── 16b. Profiles users 2-5 ──
 INSERT INTO employee_profiles (user_id,department_id,id_card,dob,gender,address,hire_date,tax_code,social_insurance_no,bank_account,bank_name,contract_type_id,salary_grade_id,employment_status_id,education_level_id) VALUES
-(2,1,'001085000001','1985-01-01',1,'Hà Nội',     '2020-01-01','8012345678','0100001001','190300001','Vietcombank',4,1,2,1),
+(2,NULL,'001085000001','1985-01-01',1,'Hà Nội',     '2020-01-01','8012345678','0100001001','190300001','Vietcombank',4,1,2,1),
 (3,2,'001090000002','1990-05-15',0,'Hà Nội',     '2021-03-10','8012345679','0100001002','190300002','BIDV',        4,2,2,2),
 (4,5,'001088000003','1988-08-20',1,'Hải Phòng',  '2020-06-01','8012345680','0100001003','190300003','Techcombank',4,2,2,2),
 (5,5,'001095000004','1995-12-10',1,'Bắc Ninh',   '2022-02-15','8012345681','0100001004','190300004','Agribank',   2,4,2,5);
