@@ -78,10 +78,12 @@ public class TimesheetConfirmationController extends HttpServlet {
             }
             List<Attendance> attendanceList = tcDAO.getDepartmentAttendance(month, year, deptId);
             List<TimesheetConfirmationDAO.EmployeeTimesheetSummary> empSummaryList = tcDAO.getDepartmentEmployeeSummary(month, year, deptId);
+            boolean allEmployeesConfirmed = tcDAO.haveAllEmployeesConfirmed(month, year, deptId);
 
             request.setAttribute("confirmation", confirmation);
             request.setAttribute("attendanceList", attendanceList);
             request.setAttribute("empSummaryList", empSummaryList);
+            request.setAttribute("allEmployeesConfirmed", allEmployeesConfirmed);
             request.getRequestDispatcher("/manager/timesheet-confirm.jsp").forward(request, response);
         } else { // Admin, HR Staff
             List<Department> activeDepts = tcDAO.getDepartmentsWithAttendance(month, year);
@@ -233,6 +235,8 @@ public class TimesheetConfirmationController extends HttpServlet {
                 session.setAttribute("errorMessage", "Bạn chỉ được duyệt bảng công của phòng ban mình.");
             } else if (!"SENT_TO_DEPARTMENT".equals(tc.getStatus())) {
                 session.setAttribute("errorMessage", "Trạng thái hiện tại không hợp lệ để xác nhận.");
+            } else if (!tcDAO.haveAllEmployeesConfirmed(tc.getMonth(), tc.getYear(), tc.getDepartmentId())) {
+                session.setAttribute("errorMessage", "Còn nhân viên chưa xác nhận phiếu công.");
             } else {
                 if (tcDAO.updateStatus(id, "DEPARTMENT_CONFIRMED", currentUser.getUserId(), null)) {
                     auditDAO.logWithValues("timesheet_confirmations", id, "DEPARTMENT_CONFIRM", currentUser.getUserId(),

@@ -258,6 +258,12 @@
                 </h3>
             </div>
 
+            <c:if test="${not empty confirmations && !allDeptsConfirmed}">
+                <div class="alert alert-c a-err mb-4" style="background:#fffbeb; color:#b45309; border-left: 4px solid var(--warn);">
+                    <i class="fas fa-exclamation-triangle me-2"></i> <strong>Lưu ý:</strong> Một số phòng ban chưa hoàn thành xác nhận bảng công (còn ở trạng thái DRAFT hoặc SENT_TO_DEPARTMENT). HR Manager chỉ có thể duyệt cuối khi tất cả phòng ban có dữ liệu chấm công đã hoàn thành xác nhận.
+                </div>
+            </c:if>
+
             <!-- Filter Month/Year -->
             <div class="row g-3 align-items-center mb-4">
                 <div class="col-md-2">
@@ -331,15 +337,24 @@
                                         <td class="text-danger small" style="max-width:200px">${c.rejectReason != null ? c.rejectReason : '-'}</td>
                                         <td class="text-end">
                                             <c:if test="${c.status == 'SENT_TO_HR_MANAGER' || c.status == 'DEPARTMENT_CONFIRMED'}">
-                                                <form action="${pageContext.request.contextPath}/hr/timesheet-approval" method="post" style="display:inline-block">
-                                                    <input type="hidden" name="action" value="hrManagerApprove">
-                                                    <input type="hidden" name="id" value="${c.id}">
-                                                    <input type="hidden" name="month" value="${selectedMonth}">
-                                                    <input type="hidden" name="year" value="${selectedYear}">
-                                                    <button type="submit" class="btn-a btn-submit" onclick="return confirm('Bạn chắc chắn muốn DUYỆT CUỐI bảng công phòng ban này?')">
-                                                        <i class="fas fa-check"></i> Duyệt
-                                                    </button>
-                                                </form>
+                                                <c:choose>
+                                                    <c:when test="${allDeptsConfirmed}">
+                                                        <form action="${pageContext.request.contextPath}/hr/timesheet-approval" method="post" style="display:inline-block">
+                                                            <input type="hidden" name="action" value="hrManagerApprove">
+                                                            <input type="hidden" name="id" value="${c.id}">
+                                                            <input type="hidden" name="month" value="${selectedMonth}">
+                                                            <input type="hidden" name="year" value="${selectedYear}">
+                                                            <button type="submit" class="btn-a btn-submit" onclick="return confirm('Bạn chắc chắn muốn DUYỆT CUỐI bảng công phòng ban này?')">
+                                                                <i class="fas fa-check"></i> Duyệt
+                                                            </button>
+                                                        </form>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <button type="button" class="btn-a btn-submit" style="opacity: 0.5; cursor: not-allowed;" disabled title="Còn phòng ban chưa hoàn thành xác nhận bảng công.">
+                                                            <i class="fas fa-ban"></i> Duyệt
+                                                        </button>
+                                                    </c:otherwise>
+                                                </c:choose>
                                                 <button class="btn-a btn-edit" style="background:var(--ng);" data-bs-toggle="modal" data-bs-target="#rejectModal${c.id}">
                                                     <i class="fas fa-times"></i> Từ chối
                                                 </button>

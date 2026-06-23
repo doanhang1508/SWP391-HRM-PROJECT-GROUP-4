@@ -66,6 +66,8 @@ public class TimesheetApprovalController extends HttpServlet {
         }
 
         request.setAttribute("confirmations", pendingConfirmations);
+        boolean allDeptsConfirmed = tcDAO.areAllActiveDepartmentsConfirmed(month, year);
+        request.setAttribute("allDeptsConfirmed", allDeptsConfirmed);
         request.getRequestDispatcher("/hr/timesheet-approval.jsp").forward(request, response);
     }
 
@@ -110,6 +112,8 @@ public class TimesheetApprovalController extends HttpServlet {
                 session.setAttribute("errorMessage", "Chỉ Trưởng phòng Nhân sự (HR Manager) mới có quyền duyệt.");
             } else if (!"SENT_TO_HR_MANAGER".equals(tc.getStatus()) && !"DEPARTMENT_CONFIRMED".equals(tc.getStatus())) {
                 session.setAttribute("errorMessage", "Bảng công chưa ở trạng thái sẵn sàng duyệt.");
+            } else if (!tcDAO.areAllActiveDepartmentsConfirmed(tc.getMonth(), tc.getYear())) {
+                session.setAttribute("errorMessage", "Chưa thể duyệt cuối do một số phòng ban chưa hoàn thành xác nhận bảng công.");
             } else {
                 if (tcDAO.updateStatus(id, "HR_MANAGER_APPROVED", currentUser.getUserId(), null)) {
                     auditDAO.logWithValues("timesheet_confirmations", id, "HR_MANAGER_APPROVE", currentUser.getUserId(),

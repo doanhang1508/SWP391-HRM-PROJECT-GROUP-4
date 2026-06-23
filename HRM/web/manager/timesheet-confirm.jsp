@@ -530,17 +530,34 @@
                                 </div>
                                 
                                 <div>
-                                    <c:if test="${confirmation.status == 'SENT_TO_DEPARTMENT'}">
-                                        <form action="${pageContext.request.contextPath}/manager/timesheet-confirm" method="post" style="display:inline-block">
-                                            <input type="hidden" name="action" value="departmentConfirm">
-                                            <input type="hidden" name="id" value="${confirmation.id}">
-                                            <input type="hidden" name="month" value="${selectedMonth}">
-                                            <input type="hidden" name="year" value="${selectedYear}">
-                                            <button type="submit" class="btn-a btn-submit" style="height:38px;" onclick="return confirm('Bạn xác nhận dữ liệu chấm công của phòng ban là chính xác?')">
-                                                <i class="fas fa-check"></i> Xác Nhận Bảng Công
-                                            </button>
-                                        </form>
-                                    </c:if>
+                                    <c:choose>
+                                        <c:when test="${confirmation.status == 'SENT_TO_DEPARTMENT'}">
+                                            <c:choose>
+                                                <c:when test="${allEmployeesConfirmed}">
+                                                    <form action="${pageContext.request.contextPath}/manager/timesheet-confirm" method="post" style="display:inline-block">
+                                                        <input type="hidden" name="action" value="departmentConfirm">
+                                                        <input type="hidden" name="id" value="${confirmation.id}">
+                                                        <input type="hidden" name="month" value="${selectedMonth}">
+                                                        <input type="hidden" name="year" value="${selectedYear}">
+                                                        <button type="submit" class="btn-a btn-submit" style="height:38px;" onclick="return confirm('Bạn xác nhận dữ liệu chấm công của phòng ban là chính xác?')">
+                                                            <i class="fas fa-check"></i> Xác Nhận Bảng Công Phòng Ban
+                                                        </button>
+                                                    </form>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <button type="button" class="btn-a btn-submit" style="height:38px; opacity:0.5; cursor:not-allowed;" disabled title="Còn nhân viên chưa xác nhận phiếu công.">
+                                                            <i class="fas fa-ban"></i> Xác Nhận Bảng Công Phòng Ban
+                                                        </button>
+                                                        <span class="text-danger small fw-bold"><i class="fas fa-exclamation-triangle"></i> Còn nhân viên chưa xác nhận phiếu công.</span>
+                                                    </div>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </c:when>
+                                        <c:when test="${confirmation.status == 'DEPARTMENT_CONFIRMED' || confirmation.status == 'SENT_TO_HR_MANAGER'}">
+                                            <span class="badge-s b-approved text-success" style="background:#ecfdf5; padding:8px 16px; font-weight:700;"><i class="fas fa-check-circle"></i> Phòng ban đã xác nhận</span>
+                                        </c:when>
+                                    </c:choose>
                                 </div>
                             </div>
 
@@ -565,7 +582,7 @@
                                             <th>Tổng ngày làm việc</th>
                                             <th>Tổng ngày nghỉ</th>
                                             <th>Tổng giờ tăng ca</th>
-                                            <th>Trạng thái bảng công</th>
+                                            <th>Xác nhận cá nhân</th>
                                             <th class="text-end">Hành động</th>
                                         </tr>
                                     </thead>
@@ -588,10 +605,12 @@
                                                         <td>${emp.totalOTHours}</td>
                                                         <td>
                                                             <c:choose>
-                                                                <c:when test="${confirmation.status == 'SENT_TO_DEPARTMENT'}"><span class="badge-s b-pending">Chờ xác nhận</span></c:when>
-                                                                <c:when test="${confirmation.status == 'DEPARTMENT_CONFIRMED' || confirmation.status == 'SENT_TO_HR_MANAGER'}"><span class="badge-s b-approved">Đã xác nhận</span></c:when>
-                                                                <c:when test="${confirmation.status == 'HR_MANAGER_APPROVED'}"><span class="badge-s b-approved" style="background:#ecfdf5;color:#047857;">Đã duyệt cuối</span></c:when>
-                                                                <c:when test="${confirmation.status == 'HR_MANAGER_REJECTED'}"><span class="badge-s b-rejected">Bị từ chối</span></c:when>
+                                                                <c:when test="${emp.confirmed}">
+                                                                    <span class="badge-s b-approved"><i class="fas fa-check-circle"></i> Đã xác nhận</span>
+                                                                </c:when>
+                                                                <c:otherwise>
+                                                                    <span class="badge-s b-pending"><i class="fas fa-clock"></i> Chưa xác nhận</span>
+                                                                </c:otherwise>
                                                             </c:choose>
                                                         </td>
                                                         <td class="text-end">

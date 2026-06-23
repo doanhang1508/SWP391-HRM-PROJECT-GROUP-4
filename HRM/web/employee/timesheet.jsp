@@ -208,6 +208,21 @@ body { background: var(--bg); font-family: 'Inter', sans-serif; color: var(--txt
 
 .no-results-row td { text-align: center; padding: 32px; color: var(--muted); font-size: .88rem; }
 
+.alert-c {
+    border: none;
+    border-radius: 10px;
+    font-size: .88rem;
+    padding: 12px 20px;
+}
+.a-ok {
+    background: #d1fae5;
+    color: #065f46;
+}
+.a-err {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
 @media(max-width: 900px) {
     .main-content { width: 100%; padding: 20px 16px; }
     .period-head { flex-direction: column; align-items: flex-start; }
@@ -235,6 +250,22 @@ body { background: var(--bg); font-family: 'Inter', sans-serif; color: var(--txt
             </div>
         </div>
 
+        <!-- Message Alerts -->
+        <c:if test="${not empty sessionScope.successMessage}">
+            <div class="alert alert-c a-ok alert-dismissible fade show mb-4" role="alert">
+                <i class="fas fa-check-circle me-2"></i> ${sessionScope.successMessage}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <c:remove var="successMessage" scope="session"/>
+        </c:if>
+        <c:if test="${not empty sessionScope.errorMessage}">
+            <div class="alert alert-c a-err alert-dismissible fade show mb-4" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i> ${sessionScope.errorMessage}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <c:remove var="errorMessage" scope="session"/>
+        </c:if>
+
         <!-- Content -->
         <c:choose>
             <c:when test="${empty periodDataList}">
@@ -258,7 +289,7 @@ body { background: var(--bg); font-family: 'Inter', sans-serif; color: var(--txt
                     <div class="period-card" id="${cardId}">
 
                         <!-- ── Card Header ── -->
-                        <div class="period-head" onclick="togglePeriod('${detailId}','${filterId}','${btnId}')">
+                        <div class="period-head" <c:if test="${not empty pd.confirmation && pd.confirmation.status != 'DRAFT'}">onclick="togglePeriod('${detailId}','${filterId}','${btnId}')"</c:if>>
 
                             <!-- Left: Period label + mini stats -->
                             <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
@@ -270,141 +301,177 @@ body { background: var(--bg); font-family: 'Inter', sans-serif; color: var(--txt
                                     </div>
                                 </div>
 
-                                <div class="period-stats">
-                                    <span class="pstat pstat-ok"><i class="fas fa-circle-check"></i> ${pd.present} đi làm</span>
-                                    <span class="pstat pstat-warn"><i class="fas fa-clock"></i> ${pd.late} trễ</span>
-                                    <span class="pstat pstat-ng"><i class="fas fa-circle-xmark"></i> ${pd.absent} vắng</span>
-                                    <c:if test="${pd.ot > 0}">
-                                        <span class="pstat pstat-info"><i class="fas fa-bolt"></i> ${pd.ot} tăng ca</span>
-                                    </c:if>
-                                </div>
+                                <c:if test="${not empty pd.confirmation && pd.confirmation.status != 'DRAFT'}">
+                                    <div class="period-stats">
+                                        <span class="pstat pstat-ok"><i class="fas fa-circle-check"></i> ${pd.present} đi làm</span>
+                                        <span class="pstat pstat-warn"><i class="fas fa-clock"></i> ${pd.late} trễ</span>
+                                        <span class="pstat pstat-ng"><i class="fas fa-circle-xmark"></i> ${pd.absent} vắng</span>
+                                        <c:if test="${pd.ot > 0}">
+                                            <span class="pstat pstat-info"><i class="fas fa-bolt"></i> ${pd.ot} tăng ca</span>
+                                        </c:if>
+                                    </div>
+                                </c:if>
                             </div>
 
                             <!-- Right: Status badge + toggle button -->
                             <div class="period-head-right" onclick="event.stopPropagation();">
-                                <!-- Dept confirmation status -->
-                                <c:if test="${not empty pd.confirmation}">
-                                    <c:choose>
-                                        <c:when test="${pd.confirmation.status == 'DRAFT'}">
-                                            <span class="dept-pill dp-draft"><i class="fas fa-circle-dot"></i> Bản nháp</span>
-                                        </c:when>
-                                        <c:when test="${pd.confirmation.status == 'SENT_TO_DEPARTMENT'}">
-                                            <span class="dept-pill dp-pending"><i class="fas fa-hourglass-half"></i> Chờ xác nhận</span>
-                                        </c:when>
-                                        <c:when test="${pd.confirmation.status == 'DEPARTMENT_CONFIRMED' || pd.confirmation.status == 'SENT_TO_HR_MANAGER'}">
-                                            <span class="dept-pill dp-confirmed"><i class="fas fa-check"></i> Đã xác nhận PB</span>
-                                        </c:when>
-                                        <c:when test="${pd.confirmation.status == 'HR_MANAGER_APPROVED'}">
-                                            <span class="dept-pill dp-approved"><i class="fas fa-check-double"></i> HR đã duyệt</span>
-                                        </c:when>
-                                        <c:when test="${pd.confirmation.status == 'HR_MANAGER_REJECTED'}">
-                                            <span class="dept-pill dp-rejected"><i class="fas fa-xmark"></i> Bị từ chối</span>
-                                        </c:when>
-                                    </c:choose>
+                                <c:choose>
+                                    <c:when test="${empty pd.confirmation || pd.confirmation.status == 'DRAFT'}">
+                                        <span class="dept-pill dp-draft"><i class="fas fa-hourglass-half"></i> Chưa gửi xác nhận</span>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <c:choose>
+                                            <c:when test="${pd.isEmployeeConfirmed}">
+                                                <span class="dept-pill dp-approved"><i class="fas fa-check-double"></i> Bạn đã xác nhận</span>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span class="dept-pill dp-pending"><i class="fas fa-exclamation-triangle"></i> Bạn chưa xác nhận</span>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </c:otherwise>
+                                </c:choose>
+
+                                <c:if test="${not empty pd.confirmation && pd.confirmation.status != 'DRAFT'}">
+                                    <button class="btn-detail" id="${btnId}" onclick="togglePeriod('${detailId}','${filterId}','${btnId}')">
+                                        <i class="fas fa-table-list"></i>
+                                        <span>Xem chi tiết</span>
+                                        <i class="fas fa-chevron-down chev"></i>
+                                    </button>
                                 </c:if>
-
-                                <button class="btn-detail" id="${btnId}" onclick="togglePeriod('${detailId}','${filterId}','${btnId}')">
-                                    <i class="fas fa-table-list"></i>
-                                    <span>Xem chi tiết</span>
-                                    <i class="fas fa-chevron-down chev"></i>
-                                </button>
                             </div>
                         </div>
 
-                        <!-- ── Filter bar (hidden until open) ── -->
-                        <div class="period-filter" id="${filterId}">
-                            <span class="filter-label"><i class="fas fa-filter me-1"></i>Lọc</span>
+                        <!-- Choose between showing message and showing timesheet details -->
+                        <c:choose>
+                            <c:when test="${empty pd.confirmation || pd.confirmation.status == 'DRAFT'}">
+                                <div class="p-4 text-center text-muted" style="border-top:1px solid var(--border); font-size: 0.9rem; background: #fff;">
+                                    <i class="fas fa-info-circle me-2 text-warning"></i> Bảng công tháng này chưa được gửi để xác nhận.
+                                </div>
+                            </c:when>
+                            <c:otherwise>
+                                <!-- Personal confirmation status bar -->
+                                <div class="px-4 py-3 bg-light border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                    <div>
+                                        <span class="small text-muted fw-bold">Trạng thái phiếu công cá nhân:</span>
+                                        <c:choose>
+                                            <c:when test="${pd.isEmployeeConfirmed}">
+                                                <span class="badge-s b-approved text-success ms-2" style="background:#ecfdf5; padding:4px 10px; font-size:0.75rem;"><i class="fas fa-check-circle"></i> Đã xác nhận</span>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span class="badge-s b-pending text-warning ms-2" style="background:#fffbeb; padding:4px 10px; font-size:0.75rem;"><i class="fas fa-exclamation-triangle"></i> Chưa xác nhận</span>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </div>
+                                    <div>
+                                        <c:if test="${pd.confirmation.status == 'SENT_TO_DEPARTMENT' && !pd.isEmployeeConfirmed}">
+                                            <form action="${pageContext.request.contextPath}/employee/timesheet" method="post" style="display:inline-block; margin:0;" onsubmit="return confirm('Bạn xác nhận phiếu công tháng này là chính xác?')">
+                                                <input type="hidden" name="action" value="confirmTimesheet">
+                                                <input type="hidden" name="month" value="${pd.month}">
+                                                <input type="hidden" name="year" value="${pd.year}">
+                                                <button type="submit" class="btn btn-sm btn-success text-white" style="border-radius:8px; font-weight:600; padding:6px 14px; font-size:0.8rem; background-color: var(--ok); border: none;">
+                                                    <i class="fas fa-check-circle"></i> Xác nhận phiếu công
+                                                </button>
+                                            </form>
+                                        </c:if>
+                                    </div>
+                                </div>
 
-                            <select class="custom-sel" id="${weekId}" onchange="applyFilter('${tbodyId}','${weekId}','${chipGrp}','${cntId}')">
-                                <option value="">Tất cả tuần</option>
-                                <option value="1">Tuần 1 (01–07)</option>
-                                <option value="2">Tuần 2 (08–14)</option>
-                                <option value="3">Tuần 3 (15–21)</option>
-                                <option value="4">Tuần 4 (22–28)</option>
-                                <option value="5">Tuần 5 (29+)</option>
-                            </select>
+                                <!-- ── Filter bar (hidden until open) ── -->
+                                <div class="period-filter" id="${filterId}">
+                                    <span class="filter-label"><i class="fas fa-filter me-1"></i>Lọc</span>
 
-                            <div class="s-chips" id="${chipGrp}">
-                                <div class="schip schip-all active" data-status="all" onclick="selectChip(this,'${chipGrp}','${tbodyId}','${weekId}','${cntId}')">
-                                    <i class="fas fa-border-all"></i> Tất cả
-                                </div>
-                                <div class="schip schip-present" data-status="PRESENT" onclick="selectChip(this,'${chipGrp}','${tbodyId}','${weekId}','${cntId}')">
-                                    <i class="fas fa-circle-check"></i> Có mặt
-                                </div>
-                                <div class="schip schip-late" data-status="LATE" onclick="selectChip(this,'${chipGrp}','${tbodyId}','${weekId}','${cntId}')">
-                                    <i class="fas fa-clock"></i> Đi trễ
-                                </div>
-                                <div class="schip schip-absent" data-status="ABSENT" onclick="selectChip(this,'${chipGrp}','${tbodyId}','${weekId}','${cntId}')">
-                                    <i class="fas fa-circle-xmark"></i> Vắng
-                                </div>
-                            </div>
+                                    <select class="custom-sel" id="${weekId}" onchange="applyFilter('${tbodyId}','${weekId}','${chipGrp}','${cntId}')">
+                                        <option value="">Tất cả tuần</option>
+                                        <option value="1">Tuần 1 (01–07)</option>
+                                        <option value="2">Tuần 2 (08–14)</option>
+                                        <option value="3">Tuần 3 (15–21)</option>
+                                        <option value="4">Tuần 4 (22–28)</option>
+                                        <option value="5">Tuần 5 (29+)</option>
+                                    </select>
 
-                            <span class="row-cnt" id="${cntId}">– ngày</span>
-                        </div>
+                                    <div class="s-chips" id="${chipGrp}">
+                                        <div class="schip schip-all active" data-status="all" onclick="selectChip(this,'${chipGrp}','${tbodyId}','${weekId}','${cntId}')">
+                                            <i class="fas fa-border-all"></i> Tất cả
+                                        </div>
+                                        <div class="schip schip-present" data-status="PRESENT" onclick="selectChip(this,'${chipGrp}','${tbodyId}','${weekId}','${cntId}')">
+                                            <i class="fas fa-circle-check"></i> Có mặt
+                                        </div>
+                                        <div class="schip schip-late" data-status="LATE" onclick="selectChip(this,'${chipGrp}','${tbodyId}','${weekId}','${cntId}')">
+                                            <i class="fas fa-clock"></i> Đi trễ
+                                        </div>
+                                        <div class="schip schip-absent" data-status="ABSENT" onclick="selectChip(this,'${chipGrp}','${tbodyId}','${weekId}','${cntId}')">
+                                            <i class="fas fa-circle-xmark"></i> Vắng
+                                        </div>
+                                    </div>
 
-                        <!-- ── Detail table ── -->
-                        <div class="period-detail" id="${detailId}">
-                            <div class="detail-inner">
-                                <div class="table-responsive">
-                                    <table class="ts-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Ngày</th>
-                                                <th>Ca Làm Việc</th>
-                                                <th>Giờ Vào</th>
-                                                <th>Giờ Ra</th>
-                                                <th>Trạng Thái</th>
-                                                <th>Tăng Ca</th>
-                                                <th>Ghi Chú</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="${tbodyId}">
-                                            <c:forEach var="a" items="${pd.attendanceList}">
-                                                <c:set var="isNoData" value="${a.status == 'NO_DATA'}" />
-                                                <tr class="${isNoData ? 'row-nodata' : ''}"
-                                                    data-status="${a.status}"
-                                                    data-day="<fmt:formatDate value='${a.workDate}' pattern='d'/>">
-                                                    <td>
-                                                        <div class="day-num"><fmt:formatDate value="${a.workDate}" pattern="dd/MM"/></div>
-                                                        <div class="day-name"><fmt:formatDate value="${a.workDate}" pattern="EEEE"/></div>
-                                                    </td>
-                                                    <td style="${isNoData ? 'color:#cbd5e1' : ''}">${a.shiftName != null ? a.shiftName : '—'}</td>
-                                                    <td>
-                                                        <c:choose>
-                                                            <c:when test="${a.checkIn != null}"><strong><fmt:formatDate value="${a.checkIn}" pattern="HH:mm"/></strong></c:when>
-                                                            <c:otherwise><span style="color:#cbd5e1;">—</span></c:otherwise>
-                                                        </c:choose>
-                                                    </td>
-                                                    <td>
-                                                        <c:choose>
-                                                            <c:when test="${a.checkOut != null}"><fmt:formatDate value="${a.checkOut}" pattern="HH:mm"/></c:when>
-                                                            <c:otherwise><span style="color:#cbd5e1;">—</span></c:otherwise>
-                                                        </c:choose>
-                                                    </td>
-                                                    <td>
-                                                        <c:choose>
-                                                            <c:when test="${a.status == 'PRESENT'}"><span class="bs bs-present"><i class="fas fa-circle-check"></i> Có mặt</span></c:when>
-                                                            <c:when test="${a.status == 'ABSENT'}"><span class="bs bs-absent"><i class="fas fa-circle-xmark"></i> Vắng</span></c:when>
-                                                            <c:when test="${a.status == 'LATE'}"><span class="bs bs-late"><i class="fas fa-clock"></i> Đi trễ</span></c:when>
-                                                            <c:when test="${a.status == 'HALFDAY'}"><span class="bs bs-halfday"><i class="fas fa-circle-half-stroke"></i> Nửa ngày</span></c:when>
-                                                            <c:when test="${a.status == 'NO_DATA'}"><span class="bs bs-nodata">—</span></c:when>
-                                                            <c:otherwise><span class="bs bs-nodata">${a.status}</span></c:otherwise>
-                                                        </c:choose>
-                                                    </td>
-                                                    <td>
-                                                        <c:choose>
-                                                            <c:when test="${a.overtimeHrs > 0}"><span class="ot-badge">+${a.overtimeHrs}h</span></c:when>
-                                                            <c:otherwise><span style="color:#cbd5e1;">—</span></c:otherwise>
-                                                        </c:choose>
-                                                    </td>
-                                                    <td style="font-size:.78rem;color:var(--muted);">${a.otReason != null ? a.otReason : '—'}</td>
-                                                </tr>
-                                            </c:forEach>
-                                        </tbody>
-                                    </table>
+                                    <span class="row-cnt" id="${cntId}">– ngày</span>
                                 </div>
-                            </div>
-                        </div>
+
+                                <!-- ── Detail table ── -->
+                                <div class="period-detail" id="${detailId}">
+                                    <div class="detail-inner">
+                                        <div class="table-responsive">
+                                            <table class="ts-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Ngày</th>
+                                                        <th>Ca Làm Việc</th>
+                                                        <th>Giờ Vào</th>
+                                                        <th>Giờ Ra</th>
+                                                        <th>Trạng Thái</th>
+                                                        <th>Tăng Ca</th>
+                                                        <th>Ghi Chú</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="${tbodyId}">
+                                                    <c:forEach var="a" items="${pd.attendanceList}">
+                                                        <c:set var="isNoData" value="${a.status == 'NO_DATA'}" />
+                                                        <tr class="${isNoData ? 'row-nodata' : ''}"
+                                                            data-status="${a.status}"
+                                                            data-day="<fmt:formatDate value='${a.workDate}' pattern='d'/>">
+                                                            <td>
+                                                                <div class="day-num"><fmt:formatDate value="${a.workDate}" pattern="dd/MM"/></div>
+                                                                <div class="day-name"><fmt:formatDate value="${a.workDate}" pattern="EEEE"/></div>
+                                                            </td>
+                                                            <td style="${isNoData ? 'color:#cbd5e1' : ''}">${a.shiftName != null ? a.shiftName : '—'}</td>
+                                                            <td>
+                                                                <c:choose>
+                                                                    <c:when test="${a.checkIn != null}"><strong><fmt:formatDate value="${a.checkIn}" pattern="HH:mm"/></strong></c:when>
+                                                                    <c:otherwise><span style="color:#cbd5e1;">—</span></c:otherwise>
+                                                                </c:choose>
+                                                            </td>
+                                                            <td>
+                                                                <c:choose>
+                                                                    <c:when test="${a.checkOut != null}"><fmt:formatDate value="${a.checkOut}" pattern="HH:mm"/></c:when>
+                                                                    <c:otherwise><span style="color:#cbd5e1;">—</span></c:otherwise>
+                                                                </c:choose>
+                                                            </td>
+                                                            <td>
+                                                                <c:choose>
+                                                                    <c:when test="${a.status == 'PRESENT'}"><span class="bs bs-present"><i class="fas fa-circle-check"></i> Có mặt</span></c:when>
+                                                                    <c:when test="${a.status == 'ABSENT'}"><span class="bs bs-absent"><i class="fas fa-circle-xmark"></i> Vắng</span></c:when>
+                                                                    <c:when test="${a.status == 'LATE'}"><span class="bs bs-late"><i class="fas fa-clock"></i> Đi trễ</span></c:when>
+                                                                    <c:when test="${a.status == 'HALFDAY'}"><span class="bs bs-halfday"><i class="fas fa-circle-half-stroke"></i> Nửa ngày</span></c:when>
+                                                                    <c:when test="${a.status == 'NO_DATA'}"><span class="bs bs-nodata">—</span></c:when>
+                                                                    <c:otherwise><span class="bs bs-nodata">${a.status}</span></c:otherwise>
+                                                                </c:choose>
+                                                            </td>
+                                                            <td>
+                                                                <c:choose>
+                                                                    <c:when test="${a.overtimeHrs > 0}"><span class="ot-badge">+${a.overtimeHrs}h</span></c:when>
+                                                                    <c:otherwise><span style="color:#cbd5e1;">—</span></c:otherwise>
+                                                                </c:choose>
+                                                            </td>
+                                                            <td style="font-size:.78rem;color:var(--muted);">${a.otReason != null ? a.otReason : '—'}</td>
+                                                        </tr>
+                                                    </c:forEach>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
 
                     </div><%-- /period-card --%>
                 </c:forEach>

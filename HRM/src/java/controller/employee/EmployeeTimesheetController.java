@@ -74,6 +74,8 @@ public class EmployeeTimesheetController extends HttpServlet {
             // Dept confirmation status
             TimesheetConfirmation tc = tcDAO.getConfirmationByPeriodAndDept(month, year, deptId);
 
+            boolean isEmployeeConfirmed = tcDAO.isEmployeeConfirmed(userId, month, year);
+
             Map<String, Object> periodData = new LinkedHashMap<>();
             periodData.put("month", month);
             periodData.put("year", year);
@@ -83,10 +85,53 @@ public class EmployeeTimesheetController extends HttpServlet {
             periodData.put("absent", summary[2]);
             periodData.put("ot", summary[3]);
             periodData.put("confirmation", tc);
+            periodData.put("isEmployeeConfirmed", isEmployeeConfirmed);
             periodDataList.add(periodData);
         }
 
         request.setAttribute("periodDataList", periodDataList);
         request.getRequestDispatcher("/employee/timesheet.jsp").forward(request, response);
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("currentUser") == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        User user = (User) session.getAttribute("currentUser");
+        int userId = user.getUserId();
+        int deptId = user.getDepartmentId();
+
+        String action = request.getParameter("action");
+        String monthStr = request.getParameter("month");
+        String yearStr = request.getParameter("year");
+
+        if ("confirmTimesheet".equals(action) && monthStr != null && yearStr != null) {
+            try {
+                int month = Integer.parseInt(monthStr);
+                int year = Integer.parseInt(yearStr);
+
+                // Verify department status is SENT_TO_DEPARTMENT
+                TimesheetConfirmation tc = tcDAO.getConfirmationByPeriodAndDept(month, year, deptId);
+                if (tc != null && "SENT_TO_DEPARTMENT".equals(tc.getStatus())) {
+                    boolean success = tcDAO.confirmEmployeeTimesheet(userId, month, year, deptId);
+                    if (success) {
+                        session.setAttribute("successMessage", "Xác nhận phiếu công thành công.");
+                    } else {
+                        session.setAttribute("errorMessage", "Xác nhận phiếu công thất bại.");
+                    }
+                } else {
+                    session.setAttribute("errorMessage", "Không thể xác nhận phiếu công vào lúc này.");
+                }
+            } catch (NumberFormatException e) {
+                session.setAttribute("errorMessage", "Tham số không hợp lệ.");
+            }
+        }
+
+        response.sendRedirect(request.getContextPath() + "/employee/timesheet");
     }
 }

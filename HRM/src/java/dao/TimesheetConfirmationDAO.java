@@ -139,7 +139,7 @@ public class TimesheetConfirmationDAO {
                      "  ON tc.month = ? " +
                      " AND tc.year = ? " +
                      " AND tc.department_id = dept_att.department_id " +
-                     " AND tc.status = 'HR_MANAGER_APPROVED' " +
+                     " AND (tc.status = 'HR_MANAGER_APPROVED' OR tc.status = 'LOCKED') " +
                      "WHERE tc.id IS NULL";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -156,6 +156,99 @@ public class TimesheetConfirmationDAO {
             e.printStackTrace();
         }
         return list;
+    }
+
+    public boolean isEmployeeConfirmed(int userId, int month, int year) {
+        String sql = "SELECT 1 FROM timesheet_employee_confirmations WHERE user_id = ? AND month = ? AND year = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean confirmEmployeeTimesheet(int userId, int month, int year, int deptId) {
+        String sql = "INSERT INTO timesheet_employee_confirmations (user_id, month, year, department_id, status, confirmed_at) " +
+                     "VALUES (?, ?, ?, ?, 'CONFIRMED', NOW()) " +
+                     "ON DUPLICATE KEY UPDATE status = 'CONFIRMED', confirmed_at = NOW()";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            ps.setInt(4, deptId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean haveAllEmployeesConfirmed(int month, int year, int deptId) {
+        String sqlTotal = "SELECT COUNT(DISTINCT u.user_id) FROM users u " +
+                          "JOIN attendance a ON u.user_id = a.user_id " +
+                          "WHERE u.department_id = ? AND MONTH(a.work_date) = ? AND YEAR(a.work_date) = ?";
+        String sqlConfirmed = "SELECT COUNT(DISTINCT user_id) FROM timesheet_employee_confirmations " +
+                              "WHERE department_id = ? AND month = ? AND year = ?";
+        int total = 0;
+        int confirmed = 0;
+        try (Connection conn = DBContext.getConnection()) {
+            try (PreparedStatement ps = conn.prepareStatement(sqlTotal)) {
+                ps.setInt(1, deptId);
+                ps.setInt(2, month);
+                ps.setInt(3, year);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        total = rs.getInt(1);
+                    }
+                }
+            }
+            try (PreparedStatement ps = conn.prepareStatement(sqlConfirmed)) {
+                ps.setInt(1, deptId);
+                ps.setInt(2, month);
+                ps.setInt(3, year);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        confirmed = rs.getInt(1);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return total == 0 || confirmed >= total;
+    }
+
+    public boolean areAllActiveDepartmentsConfirmed(int month, int year) {
+        String sql = "SELECT COUNT(*) FROM (" +
+                     "    SELECT DISTINCT u.department_id FROM attendance a " +
+                     "    JOIN users u ON a.user_id = u.user_id " +
+                     "    WHERE MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? AND u.department_id IS NOT NULL" +
+                     ") dept_att " +
+                     "LEFT JOIN timesheet_confirmations tc ON tc.month = ? AND tc.year = ? AND tc.department_id = dept_att.department_id " +
+                     "WHERE tc.id IS NULL OR tc.status IN ('DRAFT', 'SENT_TO_DEPARTMENT', 'DEPARTMENT_REJECTED', 'HR_MANAGER_REJECTED')";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            ps.setInt(3, month);
+            ps.setInt(4, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) == 0;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     public List<Department> getDepartmentsWithAttendance(int month, int year) {
@@ -285,6 +378,7 @@ public class TimesheetConfirmationDAO {
         private double totalWorkDays;
         private double totalLeaveDays;
         private double totalOTHours;
+        private boolean confirmed;
 
         public int getUserId() { return userId; }
         public void setUserId(int userId) { this.userId = userId; }
@@ -306,6 +400,9 @@ public class TimesheetConfirmationDAO {
 
         public double getTotalOTHours() { return totalOTHours; }
         public void setTotalOTHours(double totalOTHours) { this.totalOTHours = totalOTHours; }
+
+        public boolean isConfirmed() { return confirmed; }
+        public void setConfirmed(boolean confirmed) { this.confirmed = confirmed; }
     }
 
     public List<EmployeeTimesheetSummary> getDepartmentEmployeeSummary(int month, int year, int departmentId) {
@@ -317,11 +414,13 @@ public class TimesheetConfirmationDAO {
                      "  COALESCE(p.position_name, '-') AS position_name, " +
                      "  COALESCE(SUM(CASE WHEN a.status = 'PRESENT' OR a.status = 'LATE' THEN 1 WHEN a.status = 'HALFDAY' THEN 0.5 ELSE 0 END), 0) AS total_work_days, " +
                      "  COALESCE(SUM(CASE WHEN a.status = 'ABSENT' THEN 1 WHEN a.status = 'HALFDAY' THEN 0.5 ELSE 0 END), 0) AS total_leave_days, " +
-                     "  COALESCE(SUM(a.overtime_hrs), 0) AS total_ot_hours " +
+                     "  COALESCE(SUM(a.overtime_hrs), 0) AS total_ot_hours, " +
+                     "  MAX(CASE WHEN tec.id IS NOT NULL THEN 1 ELSE 0 END) AS is_confirmed " +
                      "FROM users u " +
                      "JOIN departments d ON u.department_id = d.department_id " +
                      "LEFT JOIN positions p ON u.position_id = p.position_id " +
                      "LEFT JOIN attendance a ON u.user_id = a.user_id AND MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? " +
+                     "LEFT JOIN timesheet_employee_confirmations tec ON u.user_id = tec.user_id AND tec.month = ? AND tec.year = ? " +
                      "WHERE u.department_id = ? " +
                      "GROUP BY u.user_id, u.full_name, d.department_name, p.position_name " +
                      "ORDER BY u.full_name";
@@ -329,7 +428,9 @@ public class TimesheetConfirmationDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, month);
             ps.setInt(2, year);
-            ps.setInt(3, departmentId);
+            ps.setInt(3, month);
+            ps.setInt(4, year);
+            ps.setInt(5, departmentId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     EmployeeTimesheetSummary s = new EmployeeTimesheetSummary();
@@ -340,6 +441,7 @@ public class TimesheetConfirmationDAO {
                     s.setTotalWorkDays(rs.getDouble("total_work_days"));
                     s.setTotalLeaveDays(rs.getDouble("total_leave_days"));
                     s.setTotalOTHours(rs.getDouble("total_ot_hours"));
+                    s.setConfirmed(rs.getInt("is_confirmed") == 1);
                     list.add(s);
                 }
             }
