@@ -2,7 +2,6 @@ package controller.hr;
 
 import dao.TimesheetConfirmationDAO;
 import dao.AuditLogDAO;
-import dao.AttendanceDAO;
 import model.TimesheetConfirmation;
 import model.User;
 
@@ -23,7 +22,6 @@ public class TimesheetApprovalController extends HttpServlet {
 
     private final TimesheetConfirmationDAO tcDAO = new TimesheetConfirmationDAO();
     private final AuditLogDAO auditDAO = new AuditLogDAO();
-    private final AttendanceDAO attendanceDAO = new AttendanceDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -53,11 +51,6 @@ public class TimesheetApprovalController extends HttpServlet {
 
         request.setAttribute("selectedMonth", month);
         request.setAttribute("selectedYear", year);
-
-        boolean isMonthLocked = attendanceDAO.isMonthLocked(month, year);
-        int recordCount = attendanceDAO.countAttendanceInMonth(month, year);
-        request.setAttribute("isMonthLocked", isMonthLocked);
-        request.setAttribute("recordCount", recordCount);
 
         List<TimesheetConfirmation> allConfirmations = tcDAO.getConfirmationsByPeriod(month, year);
         List<TimesheetConfirmation> pendingConfirmations = new ArrayList<>();
@@ -100,47 +93,21 @@ public class TimesheetApprovalController extends HttpServlet {
         int year = (yearStr != null && !yearStr.isEmpty()) ? Integer.parseInt(yearStr) : LocalDate.now().getYear();
 
         String idStr = request.getParameter("id");
+        if (idStr == null || idStr.isEmpty()) {
+            session.setAttribute("errorMessage", "Thiếu ID bảng công.");
+            response.sendRedirect(request.getContextPath() + "/hr/timesheet-approval?month=" + month + "&year=" + year);
+            return;
+        }
 
-        if ("lockMonth".equals(action)) {
-            if (roleId != 2) {
-                session.setAttribute("errorMessage", "Chỉ HR Manager mới có quyền khóa bảng công.");
-            } else {
-                String note = request.getParameter("note");
-                int recordCount = attendanceDAO.countAttendanceInMonth(month, year);
-                if (recordCount == 0) {
-                    session.setAttribute("errorMessage", "Không có dữ liệu chấm công cho tháng " + month + "/" + year + ". Không thể khóa.");
-                } else {
-                    if (attendanceDAO.lockMonth(month, year, currentUser.getUserId(), note)) {
-                        session.setAttribute("successMessage", "Đã KHÓA (DUYỆT CUỐI) dữ liệu chấm công tháng " + month + "/" + year + ".");
-                    } else {
-                        session.setAttribute("errorMessage", "Khóa thất bại.");
-                    }
-                }
-            }
-        } else if ("unlockMonth".equals(action)) {
-            if (roleId != 2) {
-                session.setAttribute("errorMessage", "Chỉ HR Manager mới có quyền mở khóa bảng công.");
-            } else {
-                if (attendanceDAO.unlockMonth(month, year)) {
-                    session.setAttribute("successMessage", "Đã MỞ KHÓA bảng công tháng " + month + "/" + year + ".");
-                } else {
-                    session.setAttribute("errorMessage", "Mở khóa thất bại.");
-                }
-            }
-        } else if ("hrManagerApprove".equals(action)) {
-            if (idStr == null || idStr.isEmpty()) {
-                session.setAttribute("errorMessage", "Thiếu ID bảng công.");
-                response.sendRedirect(request.getContextPath() + "/hr/timesheet-approval?month=" + month + "&year=" + year);
-                return;
-            }
-            int id = Integer.parseInt(idStr);
-            TimesheetConfirmation tc = tcDAO.getConfirmationById(id);
-            if (tc == null) {
-                session.setAttribute("errorMessage", "Bảng công không tồn tại.");
-                response.sendRedirect(request.getContextPath() + "/hr/timesheet-approval?month=" + month + "&year=" + year);
-                return;
-            }
+        int id = Integer.parseInt(idStr);
+        TimesheetConfirmation tc = tcDAO.getConfirmationById(id);
+        if (tc == null) {
+            session.setAttribute("errorMessage", "Bảng công không tồn tại.");
+            response.sendRedirect(request.getContextPath() + "/hr/timesheet-approval?month=" + month + "&year=" + year);
+            return;
+        }
 
+        if ("hrManagerApprove".equals(action)) {
             if (roleId != 1 && roleId != 2) {
                 session.setAttribute("errorMessage", "Chỉ Trưởng phòng Nhân sự (HR Manager) mới có quyền duyệt.");
             } else if (!"SENT_TO_HR_MANAGER".equals(tc.getStatus()) && !"DEPARTMENT_CONFIRMED".equals(tc.getStatus())) {
@@ -158,19 +125,6 @@ public class TimesheetApprovalController extends HttpServlet {
             }
         } 
         else if ("hrManagerReject".equals(action)) {
-            if (idStr == null || idStr.isEmpty()) {
-                session.setAttribute("errorMessage", "Thiếu ID bảng công.");
-                response.sendRedirect(request.getContextPath() + "/hr/timesheet-approval?month=" + month + "&year=" + year);
-                return;
-            }
-            int id = Integer.parseInt(idStr);
-            TimesheetConfirmation tc = tcDAO.getConfirmationById(id);
-            if (tc == null) {
-                session.setAttribute("errorMessage", "Bảng công không tồn tại.");
-                response.sendRedirect(request.getContextPath() + "/hr/timesheet-approval?month=" + month + "&year=" + year);
-                return;
-            }
-
             String reason = request.getParameter("reason");
             if (reason == null || reason.trim().isEmpty()) {
                 session.setAttribute("errorMessage", "Vui lòng nhập lý do từ chối.");
