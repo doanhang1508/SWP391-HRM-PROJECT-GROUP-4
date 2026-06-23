@@ -36,8 +36,8 @@ public class TimesheetApprovalController extends HttpServlet {
         User currentUser = (User) session.getAttribute("currentUser");
         int roleId = currentUser.getRoleId();
 
-        // Allow Admin (1), HR Manager (2)
-        if (roleId != 1 && roleId != 2) {
+        // Allow HR Manager (2)
+        if (roleId != 2) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền truy cập chức năng này.");
             return;
         }
@@ -83,6 +83,10 @@ public class TimesheetApprovalController extends HttpServlet {
 
         User currentUser = (User) session.getAttribute("currentUser");
         int roleId = currentUser.getRoleId();
+        if (roleId == 1) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền truy cập chức năng này.");
+            return;
+        }
         String ipAddress = request.getRemoteAddr();
 
         String action = request.getParameter("action");

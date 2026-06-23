@@ -142,7 +142,7 @@
 
         <div class="alert alert-warn">
             <i class="fas fa-exclamation-triangle"></i>
-            <span>Sau khi khóa, dữ liệu chấm công sẽ <strong>không thể import hoặc chỉnh sửa</strong>. Chỉ Admin mới có thể mở khóa.</span>
+            <span>Sau khi khóa, dữ liệu chấm công sẽ <strong>không thể import hoặc chỉnh sửa</strong>. Chỉ HR Manager mới có thể mở khóa.</span>
         </div>
 
         <!-- Lock form -->
@@ -150,7 +150,7 @@
         <div class="panel">
             <div class="panel-title"><i class="fas fa-calendar-check"></i> Khóa Tháng Mới</div>
             <form method="post" action="${pageContext.request.contextPath}/hr/timesheet-lock"
-                  onsubmit="return confirm('Bạn chắc chắn muốn khóa tháng này? Hành động này không thể hoàn tác (chỉ Admin mở được).')">
+                  onsubmit="return confirm('Bạn chắc chắn muốn khóa tháng này? Hành động này không thể hoàn tác (chỉ HR Manager mở được).')">
                 <input type="hidden" name="action" value="lock">
                 <div class="form-row">
                     <div class="form-group">
@@ -197,7 +197,7 @@
                             <tr>
                                 <th>Tháng/Năm</th><th>Trạng thái</th><th>Khóa bởi</th>
                                 <th>Thời gian khóa</th><th>Ghi chú</th>
-                                <c:if test="${sessionScope.currentUser.roleId == 1}"><th>Thao tác</th></c:if>
+                                <c:if test="${sessionScope.currentUser.roleId == 2}"><th>Thao tác</th></c:if>
                             </tr>
                         </thead>
                         <tbody>
@@ -221,7 +221,7 @@
                                     <fmt:formatDate value="${lk.lockedAt}" pattern="dd/MM/yyyy HH:mm"/>
                                 </td>
                                 <td style="font-size:.82rem;color:var(--muted)">${lk.note}</td>
-                                <c:if test="${sessionScope.currentUser.roleId == 1}">
+                                <c:if test="${sessionScope.currentUser.roleId == 2}">
                                     <td>
                                         <c:if test="${lk.status == 'LOCKED'}">
                                             <form method="post" action="${pageContext.request.contextPath}/hr/timesheet-lock"

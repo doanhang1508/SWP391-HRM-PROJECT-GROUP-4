@@ -32,6 +32,10 @@ public class EmployeeTimesheetController extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("currentUser");
+        if (user.getRoleId() == 1) {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
+            return;
+        }
         int userId = user.getUserId();
         int deptId = user.getDepartmentId();
 
@@ -103,6 +107,10 @@ public class EmployeeTimesheetController extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("currentUser");
+        if (user.getRoleId() == 1) {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
+            return;
+        }
         int userId = user.getUserId();
         int deptId = user.getDepartmentId();
 
