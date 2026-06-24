@@ -633,6 +633,12 @@
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/tax-config"
+                                                                        class="sidebar-link ${param.activeMenu eq 'tax-config' ? 'active' : ''}">
+                                                                        <i class="fas fa-money-check-alt"></i> Thuế
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/manual-reward-discipline"
                                                                         class="sidebar-link ${param.activeMenu eq 'manual-reward' ? 'active' : ''}">
                                                                         <i class="fas fa-award"></i> Khen thưởng/Kỷ luật
