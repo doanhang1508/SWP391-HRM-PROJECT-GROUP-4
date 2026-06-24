@@ -47,6 +47,25 @@ public class EmployeeLeaveController extends HttpServlet {
             service = new LeaveRequestDAOImpl();
         }
 
+        String action = request.getParameter("action");
+        if ("calculateDays".equals(action)) {
+            String startDateStr = request.getParameter("startDate");
+            String endDateStr = request.getParameter("endDate");
+            try {
+                java.time.LocalDate startDate = java.time.LocalDate.parse(startDateStr);
+                java.time.LocalDate endDate = java.time.LocalDate.parse(endDateStr);
+                double days = service.calculateTotalLeaveDays(user.getUserId(), startDate, endDate);
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                response.getWriter().write("{\"days\": " + days + "}");
+                return;
+            } catch (Exception e) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                response.getWriter().write("{\"error\": \"" + e.getMessage() + "\"}");
+                return;
+            }
+        }
+
         List<LeaveType> leaveTypes = service.getAllLeaveTypes();
         java.util.Map<Integer, Double> balances = new java.util.HashMap<>();
         

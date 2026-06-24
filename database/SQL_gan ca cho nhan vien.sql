@@ -40,4 +40,4 @@ END //
 DELIMITER ;
 
 -- Thực thi việc gán ca hành chính từ 01/06/2026 đến 30/06/2026
-CALL AssignAdminShiftToAll('2026-06-01', '2026-06-30');
+CALL AssignAdminShiftToAll('2026-06-01', '2027-12-31');

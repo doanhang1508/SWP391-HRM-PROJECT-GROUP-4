@@ -464,23 +464,26 @@
 
                             function calcDays() {
                                 if (startDate && endDate && startDate.value && endDate.value) {
-                                    const s = new Date(startDate.value);
-                                    const e = new Date(endDate.value);
+                                    const startVal = startDate.value;
+                                    const endVal = endDate.value;
+                                    
+                                    if (endDate) endDate.setAttribute('min', startVal);
+                                    
+                                    const s = new Date(startVal);
+                                    const e = new Date(endVal);
                                     if (e >= s) {
-                                        let current = new Date(s);
-                                        let diffDays = 0;
-                                        while (current <= e) {
-                                            const day = current.getDay();
-                                            // 0 is Sunday, 6 is Saturday
-                                            if (day !== 0 && day !== 6) {
-                                                diffDays++;
-                                            }
-                                            current.setDate(current.getDate() + 1);
-                                        }
-                                        if (totalDays) totalDays.value = diffDays;
+                                        if (totalDays) totalDays.value = ""; // loading or clear
+                                        fetch("${pageContext.request.contextPath}/employee/leave?action=calculateDays&startDate=" + startVal + "&endDate=" + endVal)
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                if (data && typeof data.days === 'number') {
+                                                    if (totalDays) totalDays.value = data.days;
+                                                }
+                                            })
+                                            .catch(err => {
+                                                console.error("Error fetching calculated days:", err);
+                                            });
                                     }
-                                    // Also enforce endDate >= startDate
-                                    if (endDate) endDate.setAttribute('min', startDate.value);
                                 }
                             }
 
