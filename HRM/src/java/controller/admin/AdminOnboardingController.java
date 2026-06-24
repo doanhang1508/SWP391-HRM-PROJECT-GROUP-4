@@ -144,9 +144,10 @@ public class AdminOnboardingController extends HttpServlet {
                     "/hr/employee/list");
             }
 
-            new notificationDAO().create(admin.getUserId(), "system", "Phê duyệt ứng viên", 
-                notifBody, 
-                "/admin/onboarding/detail?id=" + requestId);
+            // Báo cho HR biết yêu cầu đã được duyệt thành công
+            new notificationDAO().create(onbReq.getCreatedBy(), "system", "Phê duyệt ứng viên", 
+                "Yêu cầu tiếp nhận ứng viên " + onbReq.getFullName() + " đã được Admin phê duyệt. Tài khoản đã được tạo thành công.", 
+                "/hr/employees");
             
             String redirectUrl = req.getContextPath() + "/admin/onboarding/list?msg=approved&name="
                               + java.net.URLEncoder.encode(onbReq.getFullName(), "UTF-8");
@@ -177,12 +178,13 @@ public class AdminOnboardingController extends HttpServlet {
             return;
         }
 
+        OnboardingRequest onbReq = dao.getById(requestId);
         boolean ok = dao.rejectRequest(requestId, admin.getUserId(), reason.trim());
         if (ok) {
-            // Lưu log vào notifications
-            new notificationDAO().create(admin.getUserId(), "system", "Từ chối ứng viên", 
-                "Bạn đã từ chối yêu cầu tuyển dụng (ID: " + requestId + ").", 
-                "/admin/onboarding/detail?id=" + requestId);
+            // Báo cho HR biết yêu cầu đã bị từ chối thay vì báo cho Admin
+            new notificationDAO().create(onbReq.getCreatedBy(), "system", "Yêu cầu bị từ chối", 
+                "Yêu cầu tiếp nhận ứng viên " + onbReq.getFullName() + " đã bị Admin từ chối. Lý do: " + reason.trim(), 
+                "/hr/onboarding/edit?id=" + requestId);
 
             resp.sendRedirect(req.getContextPath() + "/admin/onboarding/list?msg=rejected");
         } else {
