@@ -76,8 +76,6 @@
     .btn-view:hover { background: #d1fae5; }
     .btn-edit   { color: var(--blue); }
     .btn-edit:hover { background: #eff6ff; }
-    .btn-delete { color: #e11d48; }
-    .btn-delete:hover { background: #ffe4e6; }
 
     /* ADD BUTTON */
     .btn-primary { background: var(--blue); color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: .875rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background .2s, transform .2s; font-family: 'Inter', sans-serif; }
@@ -269,13 +267,6 @@
                                                 <input type="hidden" name="id" value="${dept.departmentId}">
                                                 <button type="submit" class="action-btn" style="color:${dept.status ? '#f59e0b' : '#1e293b'};" title="${dept.status ? 'Vô hiệu hóa' : 'Kích hoạt'}">
                                                     <i class="fas ${dept.status ? 'fa-lock' : 'fa-unlock'}"></i>
-                                                </button>
-                                            </form>
-                                            <form action="${pageContext.request.contextPath}/hr/department" method="POST" style="display:inline;" onsubmit="return confirm('Xóa phòng ban \'${dept.departmentName}\'?');">
-                                                <input type="hidden" name="action" value="delete">
-                                                <input type="hidden" name="id" value="${dept.departmentId}">
-                                                <button type="submit" class="action-btn btn-delete" title="Xóa">
-                                                    <i class="fas fa-trash-alt"></i>
                                                 </button>
                                             </form>
                                         </td>

@@ -55,16 +55,6 @@ public class PositionDAO {
         }
     }
 
-    public void delete(int id) {
-        String sql = "DELETE FROM positions WHERE position_id=?";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            ps.executeUpdate();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     public List<Position> getAllIncludingInactive() {
         List<Position> list = new ArrayList<>();

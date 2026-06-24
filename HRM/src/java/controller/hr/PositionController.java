@@ -60,9 +60,7 @@ public class PositionController extends HttpServlet {
         String desc   = request.getParameter("description");
         String idStr  = request.getParameter("id");
 
-        if ("delete".equals(action) && idStr != null) {
-            dao.delete(Integer.parseInt(idStr));
-        } else if ("toggleStatus".equals(action) && idStr != null) {
+        if ("toggleStatus".equals(action) && idStr != null) {
             dao.toggleStatus(Integer.parseInt(idStr));
         } else if ("add".equals(action)) {
             dao.insert(new Position(0, name, desc, true));

@@ -55,16 +55,6 @@ public class DepartmentDAO {
         }
     }
 
-    public void delete(int id) {
-        String sql = "DELETE FROM departments WHERE department_id=?";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            ps.executeUpdate();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     public List<Department> getAllIncludingInactive() {
         List<Department> list = new ArrayList<>();
