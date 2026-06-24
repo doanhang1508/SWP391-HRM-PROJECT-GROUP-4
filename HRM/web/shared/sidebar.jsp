@@ -718,7 +718,7 @@
                                                                         </a>
                                                                     </li>
                                                                     <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/employee/payroll"
+                                                                        <a href="${pageContext.request.contextPath}/manager/payslip"
                                                                             class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
                                                                             <i class="fas fa-file-invoice-dollar"></i> Phiếu lương
                                                                         </a>
@@ -747,6 +747,15 @@
                                                                             <a href="${pageContext.request.contextPath}/employee/timesheet"
                                                                                 class="sidebar-link ${param.activeMenu eq 'personal-timesheet' ? 'active' : ''}">
                                                                                 <i class="fas fa-fingerprint"></i> Bảng công cá nhân
+                                                                            </a>
+                                                                        </li>
+                                                                    </c:if>
+                                                                    <%-- Phiếu lương cá nhân: hiển thị cho mọi role có lương (trừ Admin và Employee - Employee đã có ở section riêng) --%>
+                                                                    <c:if test="${sessionScope.currentUser.roleId != 1 && sessionScope.currentUser.roleId != 7}">
+                                                                        <li class="sidebar-item">
+                                                                            <a href="${pageContext.request.contextPath}/manager/payslip"
+                                                                                class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
+                                                                                <i class="fas fa-file-invoice-dollar"></i> Phiếu lương
                                                                             </a>
                                                                         </li>
                                                                     </c:if>

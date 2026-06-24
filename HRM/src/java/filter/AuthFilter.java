@@ -155,7 +155,7 @@ public class AuthFilter implements Filter {
         }
 
         // ── 4b. /manager/* → role 1-6 (quản lý), không cho Employee (7) ──
-        if (path.startsWith("/manager/") && isEmployee(roleId)) {
+        if (path.startsWith("/manager/") && !path.equals("/manager/payslip") && isEmployee(roleId)) {
             redirectToAppropriate(req, resp, roleId);
             return;
         }

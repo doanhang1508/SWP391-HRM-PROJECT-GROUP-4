@@ -345,17 +345,31 @@
                                         </c:choose>
                                     </td>
                                     <td class="text-end">
+                                        <!-- Toggle details button -->
+                                        <button type="button" id="btnToggleDeptDetails" class="btn-a" style="background:#0d9488;color:#fff;height:36px;font-size:.85rem;padding:6px 16px;margin-right: 8px;" onclick="toggleDeptDetails()">
+                                            <i class="fas fa-eye"></i> Xem chi tiết
+                                        </button>
                                         <!-- Global lock/unlock action -->
                                         <c:choose>
                                             <c:when test="${isLocked}">
-                                                <form action="${pageContext.request.contextPath}/hr/timesheet-approval" method="post" style="display:inline-block; margin-right: 8px;">
-                                                    <input type="hidden" name="action" value="unlockMonth">
-                                                    <input type="hidden" name="month" value="${selectedMonth}">
-                                                    <input type="hidden" name="year" value="${selectedYear}">
-                                                    <button type="submit" class="btn-a" style="background:#059669;color:#fff;height:36px;font-size:.85rem;padding:6px 16px;" onclick="return confirm('Bạn chắc chắn muốn MỞ KHÓA bảng công tháng này?')">
-                                                        <i class="fas fa-lock-open"></i> Mở khóa công
-                                                    </button>
-                                                </form>
+                                                <c:choose>
+                                                    <c:when test="${hasPayrollDraft}">
+                                                        <%-- Đã gen payroll draft → không cho mở khóa --%>
+                                                        <span class="badge-s" style="background:#fef3c7;color:#92400e;padding:6px 14px;font-size:.82rem;border-radius:8px;display:inline-flex;align-items:center;gap:6px;">
+                                                            <i class="fas fa-file-invoice-dollar"></i> Đã tạo bảng lương nháp
+                                                        </span>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <form action="${pageContext.request.contextPath}/hr/timesheet-approval" method="post" style="display:inline-block; margin-right: 8px;">
+                                                            <input type="hidden" name="action" value="unlockMonth">
+                                                            <input type="hidden" name="month" value="${selectedMonth}">
+                                                            <input type="hidden" name="year" value="${selectedYear}">
+                                                            <button type="submit" class="btn-a" style="background:#059669;color:#fff;height:36px;font-size:.85rem;padding:6px 16px;" onclick="return confirm('Bạn chắc chắn muốn MỞ KHÓA bảng công tháng này?')">
+                                                                <i class="fas fa-lock-open"></i> Mở khóa công
+                                                            </button>
+                                                        </form>
+                                                    </c:otherwise>
+                                                </c:choose>
                                             </c:when>
                                             <c:otherwise>
                                                 <c:choose>
@@ -384,7 +398,7 @@
                     </div>
 
                     <!-- Collapsible Department details list -->
-                    <div class="table-responsive" id="deptTableContainer" style="display: block; border-top: 1px dashed #cbd5e1; padding-top: 20px; margin-top: 15px;">
+                    <div class="table-responsive" id="deptTableContainer" style="display: none; border-top: 1px dashed #cbd5e1; padding-top: 20px; margin-top: 15px;">
                         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                             <h5 class="fw-bold mb-0 text-muted" style="font-size: 0.95rem;"><i class="fas fa-list me-1"></i> Chi tiết trạng thái các phòng ban</h5>
                             <div style="width: 250px;">
@@ -594,6 +608,18 @@
                         function filterDepts() {
                             currentPage = 1;
                             updatePagination();
+                        }
+
+                        function toggleDeptDetails() {
+                            const container = document.getElementById('deptTableContainer');
+                            const btn = document.getElementById('btnToggleDeptDetails');
+                            if (container.style.display === 'none') {
+                                container.style.display = 'block';
+                                btn.innerHTML = '<i class="fas fa-eye-slash"></i> Ẩn chi tiết';
+                            } else {
+                                container.style.display = 'none';
+                                btn.innerHTML = '<i class="fas fa-eye"></i> Xem chi tiết';
+                            }
                         }
 
                         document.addEventListener("DOMContentLoaded", function() {

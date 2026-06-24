@@ -53,8 +53,22 @@ public class TimesheetConfirmationController extends HttpServlet {
         request.setAttribute("selectedMonth", month);
         request.setAttribute("selectedYear", year);
 
-        if (roleId == 6 || roleId == 3 || roleId == 2) { // Department Manager, Factory Manager, HR Manager (as dept manager)
-            int deptId = currentUser.getDepartmentId();
+        String deptIdParam = request.getParameter("deptId");
+        int deptId = 0;
+        if (deptIdParam != null && !deptIdParam.isEmpty()) {
+            try {
+                deptId = Integer.parseInt(deptIdParam);
+            } catch (NumberFormatException ignored) {}
+        }
+
+        boolean showDetail = (deptId > 0 && (roleId == 1 || roleId == 2 || roleId == 3 || roleId == 5 || (roleId == 6 && deptId == currentUser.getDepartmentId())));
+        
+        if (!showDetail && (roleId == 6 || roleId == 3 || roleId == 2)) {
+            deptId = currentUser.getDepartmentId();
+            showDetail = true;
+        }
+
+        if (showDetail) {
             TimesheetConfirmation confirmation = tcDAO.getConfirmationByPeriodAndDept(month, year, deptId);
             if (confirmation == null) {
                 List<Department> activeDepts = tcDAO.getDepartmentsWithAttendance(month, year);
@@ -85,18 +99,21 @@ public class TimesheetConfirmationController extends HttpServlet {
             request.setAttribute("empSummaryList", empSummaryList);
             request.setAttribute("allEmployeesConfirmed", allEmployeesConfirmed);
             request.getRequestDispatcher("/manager/timesheet-confirm.jsp").forward(request, response);
-        } else { // Admin, HR Staff
+        } else { // Admin, HR Staff, HR Manager (list view)
             List<Department> activeDepts = tcDAO.getDepartmentsWithAttendance(month, year);
-            for (Department dept : activeDepts) {
-                TimesheetConfirmation existing = tcDAO.getConfirmationByPeriodAndDept(month, year, dept.getDepartmentId());
-                if (existing == null) {
-                    TimesheetConfirmation tc = new TimesheetConfirmation();
-                    tc.setMonth(month);
-                    tc.setYear(year);
-                    tc.setDepartmentId(dept.getDepartmentId());
-                    tc.setStatus("DRAFT");
-                    tc.setCreatedBy(currentUser.getUserId());
-                    tcDAO.insert(tc);
+            // Chỉ HR Staff (5) hoặc Admin (1) mới tự động tạo DRAFT records
+            if (roleId == 1 || roleId == 5) {
+                for (Department dept : activeDepts) {
+                    TimesheetConfirmation existing = tcDAO.getConfirmationByPeriodAndDept(month, year, dept.getDepartmentId());
+                    if (existing == null) {
+                        TimesheetConfirmation tc = new TimesheetConfirmation();
+                        tc.setMonth(month);
+                        tc.setYear(year);
+                        tc.setDepartmentId(dept.getDepartmentId());
+                        tc.setStatus("DRAFT");
+                        tc.setCreatedBy(currentUser.getUserId());
+                        tcDAO.insert(tc);
+                    }
                 }
             }
             List<TimesheetConfirmation> confirmations = tcDAO.getConfirmationsByPeriod(month, year);

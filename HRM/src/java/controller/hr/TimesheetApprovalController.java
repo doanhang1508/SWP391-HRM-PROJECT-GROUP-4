@@ -2,6 +2,8 @@ package controller.hr;
 
 import dao.TimesheetConfirmationDAO;
 import dao.AuditLogDAO;
+import dao.AttendanceDAO;
+import dao.PayrollDAO;
 import model.TimesheetConfirmation;
 import model.User;
 
@@ -22,6 +24,7 @@ public class TimesheetApprovalController extends HttpServlet {
 
     private final TimesheetConfirmationDAO tcDAO = new TimesheetConfirmationDAO();
     private final AuditLogDAO auditDAO = new AuditLogDAO();
+    private final AttendanceDAO attendanceDAO = new AttendanceDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -51,6 +54,13 @@ public class TimesheetApprovalController extends HttpServlet {
 
         request.setAttribute("selectedMonth", month);
         request.setAttribute("selectedYear", year);
+
+        boolean isLocked = attendanceDAO.isMonthLocked(month, year);
+        boolean allDeptsConfirmed = tcDAO.areAllActiveDepartmentsConfirmed(month, year);
+        boolean hasPayrollDraft = new PayrollDAO().hasPayrollGenerated(month, year);
+        request.setAttribute("isLocked", isLocked);
+        request.setAttribute("allDeptsConfirmed", allDeptsConfirmed);
+        request.setAttribute("hasPayrollDraft", hasPayrollDraft);
 
         List<TimesheetConfirmation> allConfirmations = tcDAO.getConfirmationsByPeriod(month, year);
         List<TimesheetConfirmation> pendingConfirmations = new ArrayList<>();
@@ -128,7 +138,7 @@ public class TimesheetApprovalController extends HttpServlet {
             } else {
                 if (tcDAO.updateStatus(id, "HR_MANAGER_APPROVED", currentUser.getUserId(), null)) {
                     auditDAO.logWithValues("timesheet_confirmations", id, "HR_MANAGER_APPROVE", currentUser.getUserId(),
-                            tc.getStatus(), "HR_MANAGER_APPROVED", "HR Manager duyệt bảng công", ipAddress);
+                             tc.getStatus(), "HR_MANAGER_APPROVED", "HR Manager duyệt bảng công", ipAddress);
                     session.setAttribute("successMessage",
                             "Đã duyệt bảng công của phòng ban " + tc.getDepartmentName() + ".");
                 } else {
@@ -151,6 +161,33 @@ public class TimesheetApprovalController extends HttpServlet {
                     session.setAttribute("successMessage", "Đã từ chối duyệt bảng công.");
                 } else {
                     session.setAttribute("errorMessage", "Từ chối thất bại.");
+                }
+            }
+        } else if ("lockMonth".equals(action)) {
+            if (roleId != 2) {
+                session.setAttribute("errorMessage", "Chỉ Trưởng phòng Nhân sự (HR Manager) mới có quyền khóa.");
+            } else {
+                int recordCount = attendanceDAO.countAttendanceInMonth(month, year);
+                if (recordCount == 0) {
+                    session.setAttribute("errorMessage", "Không có dữ liệu chấm công cho tháng " + month + "/" + year + ". Không thể khóa.");
+                } else {
+                    if (attendanceDAO.lockMonth(month, year, currentUser.getUserId(), "Khóa từ màn hình duyệt công")) {
+                        session.setAttribute("successMessage", "Đã khóa bảng công tháng " + month + "/" + year + " thành công.");
+                    } else {
+                        session.setAttribute("errorMessage", "Khóa thất bại.");
+                    }
+                }
+            }
+        } else if ("unlockMonth".equals(action)) {
+            if (roleId != 2) {
+                session.setAttribute("errorMessage", "Chỉ Trưởng phòng Nhân sự (HR Manager) mới có quyền mở khóa.");
+            } else if (new PayrollDAO().hasPayrollGenerated(month, year)) {
+                session.setAttribute("errorMessage", "Không thể mở khóa bảng công tháng " + month + "/" + year + ": Đã tồn tại bảng lương nháp cho kỳ này. Vui lòng xóa bảng lương nháp trước.");
+            } else {
+                if (attendanceDAO.unlockMonth(month, year)) {
+                    session.setAttribute("successMessage", "Đã mở khóa bảng công tháng " + month + "/" + year + " thành công.");
+                } else {
+                    session.setAttribute("errorMessage", "Mở khóa thất bại.");
                 }
             }
         }

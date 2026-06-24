@@ -143,6 +143,28 @@ public class PayrollDAO {
         return null;
     }
 
+    /**
+     * Kiểm tra xem đã có bảng lương nháp (Draft/Pending/Approved/Paid) cho tháng/năm chưa.
+     * Dùng để chặn mở khóa bảng công khi đã gen payroll draft.
+     */
+    public boolean hasPayrollGenerated(int month, int year) {
+        String sql = "SELECT COUNT(*) FROM payroll WHERE month = ? AND year = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     // Insert hoặc update đầy đủ tất cả cột
     public boolean insertOrUpdatePayroll(Payroll p) {
         String sql = "INSERT INTO payroll " +

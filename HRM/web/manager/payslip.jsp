@@ -296,7 +296,7 @@
                                             data-status="${p.status}">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <a href="${pageContext.request.contextPath}/employee/payroll?action=print&month=${p.month}&year=${p.year}" 
+                                    <a href="${pageContext.request.contextPath}/manager/payslip?action=print&month=${p.month}&year=${p.year}" 
                                        target="_blank" 
                                        class="btn-action btn-pdf ms-1" 
                                        title="Xuất file PDF">

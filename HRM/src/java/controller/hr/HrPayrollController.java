@@ -220,6 +220,13 @@ public class HrPayrollController extends HttpServlet {
             return;
         }
 
+        dao.AttendanceDAO attDAO = new dao.AttendanceDAO();
+        if (!attDAO.isMonthLocked(month, year)) {
+            request.getSession().setAttribute("errorMessage", "Bảng công tháng " + month + "/" + year + " chưa được khóa. Vui lòng khóa bảng công trước khi tạo bảng lương nháp.");
+            response.sendRedirect(request.getContextPath() + "/hr/payroll");
+            return;
+        }
+
         dao.TimesheetConfirmationDAO tcDAO = new dao.TimesheetConfirmationDAO();
         java.util.List<String> unapprovedDepts = tcDAO.getUnapprovedDepartments(month, year);
         if (!unapprovedDepts.isEmpty()) {
