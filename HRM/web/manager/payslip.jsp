@@ -210,7 +210,7 @@
 <div class="emp-layout">
     <!-- Sidebar -->
     <jsp:include page="../shared/sidebar.jsp">
-        <jsp:param name="activeMenu" value="payroll" />
+        <jsp:param name="activeMenu" value="personal-payslip" />
     </jsp:include>
 
     <!-- Main Content -->
