@@ -451,35 +451,6 @@
                                                                 </button>
                                                             </c:otherwise>
                                                         </c:choose>
-                                                        <button class="btn-a btn-edit" style="background:var(--ng); height:26px; font-size:.78rem; padding: 2px 10px;" data-bs-toggle="modal" data-bs-target="#rejectModal${c.id}">
-                                                            <i class="fas fa-times"></i> Từ chối
-                                                        </button>
-                                                    </div>
-
-                                                    <!-- Reject Modal -->
-                                                    <div class="modal fade" id="rejectModal${c.id}" tabindex="-1" aria-hidden="true">
-                                                        <div class="modal-dialog modal-dialog-centered">
-                                                            <div class="modal-content">
-                                                                <div class="modal-header bg-danger text-white">
-                                                                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Từ Chối Bảng Công</h5>
-                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                                </div>
-                                                                <form action="${pageContext.request.contextPath}/hr/timesheet-approval" method="post">
-                                                                    <input type="hidden" name="action" value="hrManagerReject">
-                                                                    <input type="hidden" name="id" value="${c.id}">
-                                                                    <input type="hidden" name="month" value="${selectedMonth}">
-                                                                    <input type="hidden" name="year" value="${selectedYear}">
-                                                                    <div class="modal-body text-start">
-                                                                        <p>Nhập lý do từ chối bảng công của phòng ban <strong>${c.departmentName}</strong>:</p>
-                                                                        <textarea name="reason" class="form-control" rows="3" required placeholder="Nhập lý do..."></textarea>
-                                                                    </div>
-                                                                    <div class="modal-footer">
-                                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                                                                        <button type="submit" class="btn btn-danger">Xác nhận Từ Chối</button>
-                                                                    </div>
-                                                                </form>
-                                                            </div>
-                                                        </div>
                                                     </div>
                                                 </c:if>
                                             </div>
