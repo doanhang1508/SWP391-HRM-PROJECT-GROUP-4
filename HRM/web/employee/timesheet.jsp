@@ -289,7 +289,7 @@ body { background: var(--bg); font-family: 'Inter', sans-serif; color: var(--txt
                     <div class="period-card" id="${cardId}">
 
                         <!-- ── Card Header ── -->
-                        <div class="period-head" <c:if test="${not empty pd.confirmation && pd.confirmation.status != 'DRAFT'}">onclick="togglePeriod('${detailId}','${filterId}','${btnId}')"</c:if>>
+                        <div class="period-head" <c:if test="${not empty pd.confirmation && pd.confirmation.status != 'DRAFT'}">onclick="togglePeriod('${detailId}','${filterId}','${btnId}','${tbodyId}')"</c:if>>
 
                             <!-- Left: Period label + mini stats -->
                             <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
@@ -332,7 +332,7 @@ body { background: var(--bg); font-family: 'Inter', sans-serif; color: var(--txt
                                 </c:choose>
 
                                 <c:if test="${not empty pd.confirmation && pd.confirmation.status != 'DRAFT'}">
-                                    <button class="btn-detail" id="${btnId}" onclick="togglePeriod('${detailId}','${filterId}','${btnId}')">
+                                     <button class="btn-detail" id="${btnId}" onclick="togglePeriod('${detailId}','${filterId}','${btnId}','${tbodyId}')">
                                         <i class="fas fa-table-list"></i>
                                         <span>Xem chi tiết</span>
                                         <i class="fas fa-chevron-down chev"></i>
@@ -468,6 +468,15 @@ body { background: var(--bg); font-family: 'Inter', sans-serif; color: var(--txt
                                                 </tbody>
                                             </table>
                                         </div>
+                                        <!-- Front-end Pagination Controls -->
+                                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:20px;border-top:1px solid #f1f5f9;flex-wrap:wrap;gap:8px;">
+                                            <div class="text-muted small fw-semibold" id="info_${pd.year}_${pd.month}">
+                                                Hiển thị 0 - 0 trong số 0 ngày.
+                                            </div>
+                                            <div id="controls_${pd.year}_${pd.month}" style="display:flex;gap:8px;">
+                                                <!-- Dynamically rendered buttons -->
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </c:otherwise>
@@ -475,6 +484,16 @@ body { background: var(--bg); font-family: 'Inter', sans-serif; color: var(--txt
 
                     </div><%-- /period-card --%>
                 </c:forEach>
+                
+                <!-- Card list pagination controls -->
+                <div id="cardPaginationContainer" style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:20px;border-top:1px solid #e8ecf4;flex-wrap:wrap;gap:8px;">
+                    <div class="text-muted small fw-semibold" id="cardPaginationInfo">
+                        Hiển thị 0 - 0 trong số 0 kỳ công.
+                    </div>
+                    <div id="cardPaginationControls" style="display:flex;gap:8px;">
+                        <!-- Dynamically rendered buttons -->
+                    </div>
+                </div>
             </c:otherwise>
         </c:choose>
 
@@ -483,7 +502,7 @@ body { background: var(--bg); font-family: 'Inter', sans-serif; color: var(--txt
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-function togglePeriod(detailId, filterId, btnId) {
+function togglePeriod(detailId, filterId, btnId, tbodyId) {
     var detail = document.getElementById(detailId);
     var filter = document.getElementById(filterId);
     var btn    = document.getElementById(btnId);
@@ -500,12 +519,13 @@ function togglePeriod(detailId, filterId, btnId) {
         btn.classList.add('is-open');
         btn.querySelector('span').textContent = 'Ẩn chi tiết';
         // Init count on first open
-        var tbody = detail.querySelector('tbody');
+        var tbody = document.getElementById(tbodyId);
         var cntEl = document.getElementById(filterId.replace('filter_', 'cnt_'));
         if (tbody && cntEl) {
             var rows = tbody.querySelectorAll('tr[data-status]');
             cntEl.textContent = rows.length + ' ngày';
         }
+        initPagination(tbodyId);
     }
 }
 
@@ -547,7 +567,159 @@ function applyFilter(tbodyId, weekId, chipGrpId, cntId) {
 
     var cntEl = document.getElementById(cntId);
     if (cntEl) cntEl.textContent = visible + ' ngày';
+
+    // Reset current page to 1 for this card and update pagination!
+    pageState[tbodyId] = 1;
+    updatePagination(tbodyId);
 }
+
+const pageState = {};
+const rowsPerPage = 10;
+
+function initPagination(tbodyId) {
+    pageState[tbodyId] = 1;
+    updatePagination(tbodyId);
+}
+
+function updatePagination(tbodyId) {
+    if (!pageState[tbodyId]) {
+        pageState[tbodyId] = 1;
+    }
+    
+    // Find all rows that are NOT filtered out (i.e. do not have row-hidden class)
+    const rows = Array.from(document.querySelectorAll('#' + tbodyId + ' tr[data-status]'));
+    const visibleRows = rows.filter(row => !row.classList.contains('row-hidden'));
+    
+    const totalRecords = visibleRows.length;
+    const totalPages = Math.ceil(totalRecords / rowsPerPage) || 1;
+    
+    let currentPage = pageState[tbodyId];
+    if (currentPage > totalPages) {
+        currentPage = totalPages;
+        pageState[tbodyId] = totalPages;
+    }
+    if (currentPage < 1) {
+        currentPage = 1;
+        pageState[tbodyId] = 1;
+    }
+    
+    const startIdx = totalRecords === 0 ? 0 : (currentPage - 1) * rowsPerPage;
+    const endIdx = Math.min(currentPage * rowsPerPage, totalRecords);
+    
+    // Hide all rows first
+    rows.forEach(row => {
+        row.style.display = 'none';
+    });
+    
+    // Only display visible (filtered) rows on the current page
+    visibleRows.slice(startIdx, endIdx).forEach(row => {
+        row.style.display = '';
+    });
+    
+    // Update pagination information label
+    const infoId = tbodyId.replace('tbody_', 'info_');
+    const infoEl = document.getElementById(infoId);
+    if (infoEl) {
+        if (totalRecords === 0) {
+            infoEl.innerText = "Không tìm thấy kết quả.";
+        } else {
+            infoEl.innerText = "Hiển thị " + (startIdx + 1) + " - " + endIdx + " trong số " + totalRecords + " ngày.";
+        }
+    }
+    
+    // Render pagination controls
+    const controlsId = tbodyId.replace('tbody_', 'controls_');
+    const controlsEl = document.getElementById(controlsId);
+    if (!controlsEl) return;
+    
+    let html = '';
+    
+    // Previous button
+    if (currentPage === 1) {
+        html += '<button disabled style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:#cbd5e1;cursor:not-allowed;opacity:0.6;"><i class="fas fa-chevron-left"></i></button>';
+    } else {
+        html += '<button type="button" onclick="changePage(\'' + tbodyId + '\', ' + (currentPage - 1) + ')" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--muted);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor=\'var(--pri)\';this.style.color=\'var(--pri)\';" onmouseout="this.style.borderColor=\'#e2e8f0\';this.style.color=\'var(--muted)\';"><i class="fas fa-chevron-left"></i></button>';
+    }
+    
+    // Next button
+    if (currentPage === totalPages || totalRecords === 0) {
+        html += '<button disabled style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:#cbd5e1;cursor:not-allowed;opacity:0.6;"><i class="fas fa-chevron-right"></i></button>';
+    } else {
+        html += '<button type="button" onclick="changePage(\'' + tbodyId + '\', ' + (currentPage + 1) + ')" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--muted);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor=\'var(--pri)\';this.style.color=\'var(--pri)\';" onmouseout="this.style.borderColor=\'#e2e8f0\';this.style.color=\'var(--muted)\';"><i class="fas fa-chevron-right"></i></button>';
+    }
+    
+    controlsEl.innerHTML = html;
+}
+
+function changePage(tbodyId, page) {
+    pageState[tbodyId] = page;
+    updatePagination(tbodyId);
+}
+
+const cardsPerPage = 5;
+let currentCardPage = 1;
+
+function initCardPagination() {
+    currentCardPage = 1;
+    updateCardPagination();
+}
+
+function updateCardPagination() {
+    const cards = Array.from(document.querySelectorAll('.period-card'));
+    const totalCards = cards.length;
+    const totalPages = Math.ceil(totalCards / cardsPerPage) || 1;
+
+    if (currentCardPage > totalPages) {
+        currentCardPage = totalPages;
+    }
+    if (currentCardPage < 1) {
+        currentCardPage = 1;
+    }
+
+    const startIdx = totalCards === 0 ? 0 : (currentCardPage - 1) * cardsPerPage;
+    const endIdx = Math.min(currentCardPage * cardsPerPage, totalCards);
+
+    cards.forEach((card, idx) => {
+        if (idx >= startIdx && idx < endIdx) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    const infoEl = document.getElementById('cardPaginationInfo');
+    if (infoEl) {
+        if (totalCards === 0) {
+            infoEl.innerText = "Không tìm thấy kết quả.";
+        } else {
+            infoEl.innerText = "Hiển thị " + (startIdx + 1) + " - " + endIdx + " trong số " + totalCards + " kỳ công.";
+        }
+    }
+
+    const controlsEl = document.getElementById('cardPaginationControls');
+    if (!controlsEl) return;
+
+    let html = '';
+    // Previous button
+    if (currentCardPage === 1) {
+        html += '<button disabled style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:#cbd5e1;cursor:not-allowed;opacity:0.6;"><i class="fas fa-chevron-left"></i></button>';
+    } else {
+        html += '<button type="button" onclick="changeCardPage(' + (currentCardPage - 1) + ')" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--muted);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor=\'var(--pri)\';this.style.color=\'var(--pri)\';" onmouseout="this.style.borderColor=\'#e2e8f0\';this.style.color=\'var(--muted)\';"><i class="fas fa-chevron-left"></i></button>';
+    }
+
+    // Next button
+    if (currentCardPage === totalPages || totalCards === 0) {
+        html += '<button disabled style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:#cbd5e1;cursor:not-allowed;opacity:0.6;"><i class="fas fa-chevron-right"></i></button>';
+    } else {
+        html += '<button type="button" onclick="changeCardPage(' + (currentCardPage + 1) + ')" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--muted);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor=\'var(--pri)\';this.style.color=\'var(--pri)\';" onmouseout="this.style.borderColor=\'#e2e8f0\';this.style.color=\'var(--muted)\';"><i class="fas fa-chevron-right"></i></button>';
+    }
+
+    controlsEl.innerHTML = html;
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    initCardPagination();
+});
 </script>
 </body>
 </html>

@@ -736,7 +736,7 @@
 
                                                                 <%-- ══════ TÀI KHOẢN (chung) ══════ --%>
                                                                     <li class="sidebar-menu-category">Tài khoản</li>
-                                                                    <c:if test="${sessionScope.currentUser.roleId != 7}">
+                                                                    <c:if test="${sessionScope.currentUser.roleId != 7 && sessionScope.currentUser.roleId != 1}">
                                                                         <li class="sidebar-item">
                                                                             <a href="${pageContext.request.contextPath}/employee/timesheet"
                                                                                 class="sidebar-link ${param.activeMenu eq 'personal-timesheet' ? 'active' : ''}">

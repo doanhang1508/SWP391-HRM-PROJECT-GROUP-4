@@ -44,7 +44,7 @@ public class ImportAttendanceController extends HttpServlet {
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("currentUser");
 
-        if (user == null || (user.getRoleId() != 1 && user.getRoleId() != 2 && user.getRoleId() != 5)) {
+        if (user == null || (user.getRoleId() != 2 && user.getRoleId() != 5)) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
@@ -61,7 +61,7 @@ public class ImportAttendanceController extends HttpServlet {
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("currentUser");
 
-        if (user == null || (user.getRoleId() != 1 && user.getRoleId() != 2 && user.getRoleId() != 5)) {
+        if (user == null || (user.getRoleId() != 2 && user.getRoleId() != 5)) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }

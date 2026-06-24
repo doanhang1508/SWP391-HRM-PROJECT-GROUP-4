@@ -76,8 +76,25 @@ public class HrAttendanceController extends HttpServlet {
 
     private void viewSummary(HttpServletRequest request, HttpServletResponse response, int month, int year)
             throws ServletException, IOException {
-        List<AttendanceSummary> summaryList = attendanceDAO.getAttendanceSummaryAllUsers(month, year);
+        int page = 1;
+        int pageSize = 15;
+        String pageStr = request.getParameter("page");
+        if (pageStr != null && !pageStr.trim().isEmpty()) {
+            try { page = Integer.parseInt(pageStr); } catch (Exception e) {}
+        }
+        
+        int totalRecords = attendanceDAO.countAttendanceSummaryAllUsers(month, year);
+        int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
+        if (page > totalPages && totalPages > 0) page = totalPages;
+        int offset = (page - 1) * pageSize;
+        if (offset < 0) offset = 0;
+
+        List<AttendanceSummary> summaryList = attendanceDAO.getAttendanceSummaryAllUsersPaginated(month, year, offset, pageSize);
+        
         request.setAttribute("summaryList", summaryList);
+        request.setAttribute("currentPage", page);
+        request.setAttribute("totalPages", totalPages);
+        
         request.getRequestDispatcher("/hr/attendance-summary.jsp").forward(request, response);
     }
 
@@ -99,8 +116,24 @@ public class HrAttendanceController extends HttpServlet {
         request.setAttribute("selectedUserName", userName);
         request.setAttribute("selectedWorkDate", workDateStr);
 
-        List<Attendance> detailList = attendanceDAO.getAllAttendance(month, year, userName, workDate);
+        int page = 1;
+        int pageSize = 15;
+        String pageStr = request.getParameter("page");
+        if (pageStr != null && !pageStr.trim().isEmpty()) {
+            try { page = Integer.parseInt(pageStr); } catch (Exception e) {}
+        }
+        
+        int totalRecords = attendanceDAO.countAllAttendance(month, year, userName, workDate);
+        int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
+        if (page > totalPages && totalPages > 0) page = totalPages;
+        int offset = (page - 1) * pageSize;
+        if (offset < 0) offset = 0;
+
+        List<Attendance> detailList = attendanceDAO.getAllAttendancePaginated(month, year, userName, workDate, offset, pageSize);
+        
         request.setAttribute("detailList", detailList);
+        request.setAttribute("currentPage", page);
+        request.setAttribute("totalPages", totalPages);
         
         request.getRequestDispatcher("/hr/attendance-detail.jsp").forward(request, response);
     }

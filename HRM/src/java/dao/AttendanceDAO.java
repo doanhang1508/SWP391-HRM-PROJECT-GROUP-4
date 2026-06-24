@@ -83,25 +83,7 @@ public class AttendanceDAO {
     }
 
     public boolean isUserMonthLocked(int userId, int month, int year) {
-        if (isMonthLocked(month, year)) {
-            return true;
-        }
-        String sql = "SELECT 1 FROM timesheet_confirmations tc " +
-                     "JOIN users u ON tc.department_id = u.department_id " +
-                     "WHERE u.user_id = ? AND tc.month = ? AND tc.year = ? AND tc.status = 'HR_MANAGER_APPROVED'";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            ps.setInt(2, month);
-            ps.setInt(3, year);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
+        return isMonthLocked(month, year);
     }
 
     public boolean isAttendanceLocked(int attendanceId) {
@@ -114,20 +96,6 @@ public class AttendanceDAO {
             ps.setInt(1, attendanceId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return true;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        String sql2 = "SELECT 1 FROM attendance a " +
-                      "JOIN users u ON a.user_id = u.user_id " +
-                      "JOIN timesheet_confirmations tc ON u.department_id = tc.department_id " +
-                      "WHERE a.attendance_id = ? AND tc.month = MONTH(a.work_date) AND tc.year = YEAR(a.work_date) AND tc.status = 'HR_MANAGER_APPROVED'";
-        try (Connection conn = dbContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql2)) {
-            ps.setInt(1, attendanceId);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next();
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -775,6 +743,92 @@ public class AttendanceDAO {
         return list;
     }
 
+    public int countAllAttendance(int month, int year, String userName, java.sql.Date workDate) {
+        StringBuilder sql = new StringBuilder(
+            "SELECT COUNT(*) FROM attendance a " +
+            "JOIN users u ON a.user_id = u.user_id " +
+            "WHERE MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? "
+        );
+        
+        if (userName != null && !userName.trim().isEmpty()) {
+            sql.append(" AND u.full_name LIKE ? ");
+        }
+        if (workDate != null) {
+            sql.append(" AND a.work_date = ? ");
+        }
+        
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            
+            int paramIndex = 3;
+            if (userName != null && !userName.trim().isEmpty()) {
+                ps.setString(paramIndex++, "%" + userName.trim() + "%");
+            }
+            if (workDate != null) {
+                ps.setDate(paramIndex++, workDate);
+            }
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public List<Attendance> getAllAttendancePaginated(int month, int year, String userName, java.sql.Date workDate, int offset, int limit) {
+        List<Attendance> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            "SELECT a.*, u.full_name AS user_name, s.shift_name " +
+            "FROM attendance a " +
+            "JOIN users u ON a.user_id = u.user_id " +
+            "JOIN shifts s ON a.shift_id = s.shift_id " +
+            "WHERE MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? "
+        );
+        
+        if (userName != null && !userName.trim().isEmpty()) {
+            sql.append(" AND u.full_name LIKE ? ");
+        }
+        if (workDate != null) {
+            sql.append(" AND a.work_date = ? ");
+        }
+        
+        sql.append("ORDER BY a.work_date DESC, u.full_name LIMIT ? OFFSET ?");
+        
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            
+            int paramIndex = 3;
+            if (userName != null && !userName.trim().isEmpty()) {
+                ps.setString(paramIndex++, "%" + userName.trim() + "%");
+            }
+            if (workDate != null) {
+                ps.setDate(paramIndex++, workDate);
+            }
+            
+            ps.setInt(paramIndex++, limit);
+            ps.setInt(paramIndex++, offset);
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapAttendanceRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
 
     public List<Attendance> getAttendanceByDepartment(int month, int year, int departmentId) {
         List<Attendance> list = new ArrayList<>();
@@ -817,5 +871,64 @@ public class AttendanceDAO {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public int countAttendanceSummaryAllUsers(int month, int year) {
+        String sql = "SELECT COUNT(DISTINCT u.user_id) " +
+                     "FROM users u " +
+                     "JOIN attendance a ON u.user_id = a.user_id AND MONTH(a.work_date)=? AND YEAR(a.work_date)=?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public List<model.AttendanceSummary> getAttendanceSummaryAllUsersPaginated(int month, int year, int offset, int limit) {
+        List<model.AttendanceSummary> list = new ArrayList<>();
+        String sql = "SELECT u.user_id, u.full_name AS user_name, d.department_name, " +
+                     "SUM(CASE WHEN a.status='PRESENT' THEN 1 ELSE 0 END) AS present_cnt, " +
+                     "SUM(CASE WHEN a.status='LATE' THEN 1 ELSE 0 END) AS late_cnt, " +
+                     "SUM(CASE WHEN a.status='ABSENT' THEN 1 ELSE 0 END) AS absent_cnt, " +
+                     "SUM(CASE WHEN a.overtime_hrs > 0 THEN 1 ELSE 0 END) AS ot_cnt, " +
+                     "SUM(IFNULL(a.overtime_hrs, 0)) AS total_ot_hrs " +
+                     "FROM users u " +
+                     "LEFT JOIN employee_profiles ep ON u.user_id = ep.user_id " +
+                     "LEFT JOIN departments d ON ep.department_id = d.department_id " +
+                     "JOIN attendance a ON u.user_id = a.user_id AND MONTH(a.work_date)=? AND YEAR(a.work_date)=? " +
+                     "GROUP BY u.user_id, u.full_name, d.department_name " +
+                     "ORDER BY u.full_name LIMIT ? OFFSET ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            ps.setInt(3, limit);
+            ps.setInt(4, offset);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    model.AttendanceSummary s = new model.AttendanceSummary();
+                    s.setUserId(rs.getInt("user_id"));
+                    s.setUserName(rs.getString("user_name"));
+                    s.setDepartment(rs.getString("department_name"));
+                    s.setPresentCount(rs.getInt("present_cnt"));
+                    s.setLateCount(rs.getInt("late_cnt"));
+                    s.setAbsentCount(rs.getInt("absent_cnt"));
+                    s.setOvertimeCount(rs.getInt("ot_cnt"));
+                    s.setTotalOvertimeHrs(rs.getDouble("total_ot_hrs"));
+                    list.add(s);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 }

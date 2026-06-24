@@ -36,8 +36,8 @@ public class TimesheetApprovalController extends HttpServlet {
         User currentUser = (User) session.getAttribute("currentUser");
         int roleId = currentUser.getRoleId();
 
-        // Allow Admin (1), HR Manager (2)
-        if (roleId != 1 && roleId != 2) {
+        // Allow HR Manager (2)
+        if (roleId != 2) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền truy cập chức năng này.");
             return;
         }
@@ -82,6 +82,10 @@ public class TimesheetApprovalController extends HttpServlet {
 
         User currentUser = (User) session.getAttribute("currentUser");
         int roleId = currentUser.getRoleId();
+        if (roleId == 1) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền truy cập chức năng này.");
+            return;
+        }
         String ipAddress = request.getRemoteAddr();
 
         String action = request.getParameter("action");
@@ -92,19 +96,28 @@ public class TimesheetApprovalController extends HttpServlet {
                 : LocalDate.now().getMonthValue();
         int year = (yearStr != null && !yearStr.isEmpty()) ? Integer.parseInt(yearStr) : LocalDate.now().getYear();
 
-        String idStr = request.getParameter("id");
-        if (idStr == null || idStr.isEmpty()) {
-            session.setAttribute("errorMessage", "Thiếu ID bảng công.");
-            response.sendRedirect(request.getContextPath() + "/hr/timesheet-approval?month=" + month + "&year=" + year);
-            return;
-        }
-
-        int id = Integer.parseInt(idStr);
-        TimesheetConfirmation tc = tcDAO.getConfirmationById(id);
-        if (tc == null) {
-            session.setAttribute("errorMessage", "Bảng công không tồn tại.");
-            response.sendRedirect(request.getContextPath() + "/hr/timesheet-approval?month=" + month + "&year=" + year);
-            return;
+        int id = 0;
+        TimesheetConfirmation tc = null;
+        if ("hrManagerApprove".equals(action) || "hrManagerReject".equals(action)) {
+            String idStr = request.getParameter("id");
+            if (idStr == null || idStr.isEmpty()) {
+                session.setAttribute("errorMessage", "Thiếu ID bảng công.");
+                response.sendRedirect(request.getContextPath() + "/hr/timesheet-approval?month=" + month + "&year=" + year);
+                return;
+            }
+            try {
+                id = Integer.parseInt(idStr);
+                tc = tcDAO.getConfirmationById(id);
+                if (tc == null) {
+                    session.setAttribute("errorMessage", "Bảng công không tồn tại.");
+                    response.sendRedirect(request.getContextPath() + "/hr/timesheet-approval?month=" + month + "&year=" + year);
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                session.setAttribute("errorMessage", "ID bảng công không hợp lệ.");
+                response.sendRedirect(request.getContextPath() + "/hr/timesheet-approval?month=" + month + "&year=" + year);
+                return;
+            }
         }
 
         if ("hrManagerApprove".equals(action)) {

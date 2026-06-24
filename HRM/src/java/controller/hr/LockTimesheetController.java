@@ -30,7 +30,7 @@ public class LockTimesheetController extends HttpServlet {
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("currentUser");
 
-        if (user == null || (user.getRoleId() != 1 && user.getRoleId() != 2 && user.getRoleId() != 5)) {
+        if (user == null || (user.getRoleId() != 2 && user.getRoleId() != 5)) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
@@ -58,7 +58,7 @@ public class LockTimesheetController extends HttpServlet {
         HttpSession session = request.getSession();
         User user = (User) session.getAttribute("currentUser");
 
-        if (user == null || (user.getRoleId() != 1 && user.getRoleId() != 2 && user.getRoleId() != 5)) {
+        if (user == null || (user.getRoleId() != 2 && user.getRoleId() != 5)) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
         }
@@ -93,8 +93,8 @@ public class LockTimesheetController extends HttpServlet {
 
         } else if ("unlock".equals(action)) {
             // Only admin can unlock
-            if (user.getRoleId() != 1) {
-                session.setAttribute("errorMessage", "Chỉ Admin mới có thể mở khóa tháng đã khóa.");
+            if (user.getRoleId() != 2) {
+                session.setAttribute("errorMessage", "Chỉ HR Manager mới có thể mở khóa tháng đã khóa.");
                 response.sendRedirect(request.getContextPath() + "/hr/timesheet-lock");
                 return;
             }

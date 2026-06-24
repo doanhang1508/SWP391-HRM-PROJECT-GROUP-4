@@ -301,7 +301,99 @@
                     </div>
                 </c:when>
                 <c:otherwise>
-                    <div class="table-responsive">
+                    <c:set var="totalCount" value="0" />
+                    <c:set var="approvedCount" value="0" />
+                    <c:forEach var="c" items="${confirmations}">
+                        <c:set var="totalCount" value="${totalCount + 1}" />
+                        <c:if test="${c.status == 'HR_MANAGER_APPROVED'}">
+                            <c:set var="approvedCount" value="${approvedCount + 1}" />
+                        </c:if>
+                    </c:forEach>
+
+                    <!-- Summary Table (1 Row for the month) -->
+                    <div id="summaryTableContainer" class="table-responsive mb-4">
+                        <table class="tbl" style="border: 1px solid #e2e8f0;">
+                            <thead>
+                                <tr>
+                                    <th>Kỳ Công</th>
+                                    <th>Tổng Số Phòng Ban</th>
+                                    <th>Trạng Thái</th>
+                                    <th class="text-end">Hành Động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Bảng công Tháng ${selectedMonth} / ${selectedYear}</strong></td>
+                                    <td>${totalCount} phòng ban</td>
+                                    <td>
+                                        <c:choose>
+                                            <c:when test="${isLocked}">
+                                                <span class="badge-s b-approved" style="background:#fee2e2;color:#991b1b;">
+                                                    <i class="fas fa-lock"></i> Đã khóa công
+                                                </span>
+                                            </c:when>
+                                            <c:when test="${approvedCount == totalCount}">
+                                                <span class="badge-s b-approved" style="background:#ecfdf5;color:#047857;">
+                                                    <i class="fas fa-check-double"></i> Đã duyệt cuối tất cả (${approvedCount}/${totalCount})
+                                                </span>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span class="badge-s b-pending">
+                                                    <i class="fas fa-clock"></i> Đang thực hiện (${approvedCount}/${totalCount} đã duyệt)
+                                                </span>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                    <td class="text-end">
+                                        <!-- Global lock/unlock action -->
+                                        <c:choose>
+                                            <c:when test="${isLocked}">
+                                                <form action="${pageContext.request.contextPath}/hr/timesheet-approval" method="post" style="display:inline-block; margin-right: 8px;">
+                                                    <input type="hidden" name="action" value="unlockMonth">
+                                                    <input type="hidden" name="month" value="${selectedMonth}">
+                                                    <input type="hidden" name="year" value="${selectedYear}">
+                                                    <button type="submit" class="btn-a" style="background:#059669;color:#fff;height:36px;font-size:.85rem;padding:6px 16px;" onclick="return confirm('Bạn chắc chắn muốn MỞ KHÓA bảng công tháng này?')">
+                                                        <i class="fas fa-lock-open"></i> Mở khóa công
+                                                    </button>
+                                                </form>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <c:choose>
+                                                    <c:when test="${approvedCount == totalCount}">
+                                                        <form action="${pageContext.request.contextPath}/hr/timesheet-approval" method="post" style="display:inline-block; margin-right: 8px;">
+                                                            <input type="hidden" name="action" value="lockMonth">
+                                                            <input type="hidden" name="month" value="${selectedMonth}">
+                                                            <input type="hidden" name="year" value="${selectedYear}">
+                                                            <button type="submit" class="btn-a" style="background:#b91c1c;color:#fff;height:36px;font-size:.85rem;padding:6px 16px;" onclick="return confirm('Bạn chắc chắn muốn KHÓA bảng công tháng này? Mọi người sẽ không thể chỉnh sửa nữa.')">
+                                                                <i class="fas fa-lock"></i> Khóa công
+                                                            </button>
+                                                        </form>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <button type="button" class="btn-a" style="background:#b91c1c;color:#fff;height:36px;font-size:.85rem;padding:6px 16px;opacity:0.5;cursor:not-allowed;margin-right: 8px;" disabled title="Chưa thể khóa do còn phòng ban chưa được duyệt cuối.">
+                                                            <i class="fas fa-lock"></i> Khóa công
+                                                        </button>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Collapsible Department details list -->
+                    <div class="table-responsive" id="deptTableContainer" style="display: block; border-top: 1px dashed #cbd5e1; padding-top: 20px; margin-top: 15px;">
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <h5 class="fw-bold mb-0 text-muted" style="font-size: 0.95rem;"><i class="fas fa-list me-1"></i> Chi tiết trạng thái các phòng ban</h5>
+                            <div style="width: 250px;">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0 text-muted" style="border-color:#e2e8f0; border-top-left-radius:8px; border-bottom-left-radius:8px;"><i class="fas fa-search"></i></span>
+                                    <input type="text" id="searchDept" onkeyup="filterDepts()" class="form-control border-start-0" placeholder="Tìm phòng ban..." style="border-color:#e2e8f0; border-top-right-radius:8px; border-bottom-right-radius:8px; font-size:0.875rem; padding: 8px 12px; outline:none; box-shadow:none;">
+                                </div>
+                            </div>
+                        </div>
                         <table class="tbl">
                             <thead>
                                 <tr>
@@ -309,114 +401,205 @@
                                     <th>Kỳ Công</th>
                                     <th>Trạng Thái</th>
                                     <th>Xác Nhận Bởi</th>
-                                    <th>Lý Do Phản Hồi</th>
-                                    <th class="text-end">Hành Động</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="deptTableBody">
                                 <c:forEach var="c" items="${confirmations}">
-                                    <tr>
+                                    <tr data-name="${c.departmentName}">
                                         <td><strong>${c.departmentName}</strong></td>
                                         <td>Tháng ${c.month}/${c.year}</td>
                                         <td>
-                                            <c:choose>
-                                                <c:when test="${c.status == 'DEPARTMENT_CONFIRMED'}"><span class="badge-s b-pending"><i class="fas fa-check"></i> Trưởng phòng xác nhận</span></c:when>
-                                                <c:when test="${c.status == 'SENT_TO_HR_MANAGER'}"><span class="badge-s b-info"><i class="fas fa-user-tie"></i> Chờ duyệt cuối</span></c:when>
-                                                <c:when test="${c.status == 'HR_MANAGER_APPROVED'}"><span class="badge-s b-approved" style="background:#ecfdf5;color:#047857;"><i class="fas fa-check-double"></i> Đã duyệt cuối (Khóa)</span></c:when>
-                                                <c:when test="${c.status == 'HR_MANAGER_REJECTED'}"><span class="badge-s b-rejected"><i class="fas fa-times"></i> Đã từ chối duyệt</span></c:when>
-                                            </c:choose>
+                                            <div class="d-flex align-items-center flex-wrap gap-3">
+                                                <c:choose>
+                                                    <c:when test="${c.status == 'DEPARTMENT_CONFIRMED'}"><span class="badge-s b-pending"><i class="fas fa-check"></i> Trưởng phòng xác nhận</span></c:when>
+                                                    <c:when test="${c.status == 'SENT_TO_HR_MANAGER'}"><span class="badge-s b-info"><i class="fas fa-user-tie"></i> Chờ duyệt cuối</span></c:when>
+                                                    <c:when test="${c.status == 'HR_MANAGER_APPROVED'}"><span class="badge-s b-approved" style="background:#ecfdf5;color:#047857;"><i class="fas fa-check-double"></i> Đã duyệt cuối</span></c:when>
+                                                    <c:when test="${c.status == 'HR_MANAGER_REJECTED'}"><span class="badge-s b-rejected"><i class="fas fa-times"></i> Đã từ chối duyệt</span></c:when>
+                                                </c:choose>
+
+                                                <c:if test="${c.status == 'SENT_TO_HR_MANAGER' || c.status == 'DEPARTMENT_CONFIRMED'}">
+                                                    <div class="d-flex gap-2">
+                                                        <c:choose>
+                                                            <c:when test="${allDeptsConfirmed}">
+                                                                <form action="${pageContext.request.contextPath}/hr/timesheet-approval" method="post" style="display:inline-block; margin:0;">
+                                                                    <input type="hidden" name="action" value="hrManagerApprove">
+                                                                    <input type="hidden" name="id" value="${c.id}">
+                                                                    <input type="hidden" name="month" value="${selectedMonth}">
+                                                                    <input type="hidden" name="year" value="${selectedYear}">
+                                                                    <button type="submit" class="btn-a btn-submit" style="height:26px; font-size:.78rem; padding: 2px 10px;" onclick="return confirm('Bạn chắc chắn muốn DUYỆT CUỐI bảng công phòng ban này?')">
+                                                                        <i class="fas fa-check"></i> Duyệt
+                                                                    </button>
+                                                                </form>
+                                                            </c:when>
+                                                            <c:otherwise>
+                                                                <button type="button" class="btn-a btn-submit" style="height:26px; font-size:.78rem; padding: 2px 10px; opacity: 0.5; cursor: not-allowed;" disabled title="Còn phòng ban chưa hoàn thành xác nhận bảng công.">
+                                                                    <i class="fas fa-ban"></i> Duyệt
+                                                                </button>
+                                                            </c:otherwise>
+                                                        </c:choose>
+                                                        <button class="btn-a btn-edit" style="background:var(--ng); height:26px; font-size:.78rem; padding: 2px 10px;" data-bs-toggle="modal" data-bs-target="#rejectModal${c.id}">
+                                                            <i class="fas fa-times"></i> Từ chối
+                                                        </button>
+                                                    </div>
+
+                                                    <!-- Reject Modal -->
+                                                    <div class="modal fade" id="rejectModal${c.id}" tabindex="-1" aria-hidden="true">
+                                                        <div class="modal-dialog modal-dialog-centered">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header bg-danger text-white">
+                                                                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Từ Chối Bảng Công</h5>
+                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                                </div>
+                                                                <form action="${pageContext.request.contextPath}/hr/timesheet-approval" method="post">
+                                                                    <input type="hidden" name="action" value="hrManagerReject">
+                                                                    <input type="hidden" name="id" value="${c.id}">
+                                                                    <input type="hidden" name="month" value="${selectedMonth}">
+                                                                    <input type="hidden" name="year" value="${selectedYear}">
+                                                                    <div class="modal-body text-start">
+                                                                        <p>Nhập lý do từ chối bảng công của phòng ban <strong>${c.departmentName}</strong>:</p>
+                                                                        <textarea name="reason" class="form-control" rows="3" required placeholder="Nhập lý do..."></textarea>
+                                                                    </div>
+                                                                    <div class="modal-footer">
+                                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                                                        <button type="submit" class="btn btn-danger">Xác nhận Từ Chối</button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </c:if>
+                                            </div>
+
+                                            <c:if test="${not empty c.rejectReason}">
+                                                <div class="text-danger small mt-1" style="max-width:350px">
+                                                    <strong>Lý do phản hồi:</strong> ${c.rejectReason}
+                                                </div>
+                                            </c:if>
                                         </td>
                                         <td>
-                                            <div style="font-size:0.85rem">${c.updatedByName != null ? c.updatedByName : '-'}</div>
+                                            <div style="font-size:0.85rem; font-weight:600;">${c.updatedByName != null ? c.updatedByName : '-'}</div>
                                             <div style="font-size:0.75rem" class="text-muted">
                                                 <c:if test="${c.updatedAt != null}">
                                                     <fmt:formatDate value="${c.updatedAt}" pattern="dd/MM/yyyy HH:mm"/>
                                                 </c:if>
                                             </div>
                                         </td>
-                                        <td class="text-danger small" style="max-width:200px">${c.rejectReason != null ? c.rejectReason : '-'}</td>
-                                        <td class="text-end">
-                                            <c:if test="${c.status == 'SENT_TO_HR_MANAGER' || c.status == 'DEPARTMENT_CONFIRMED'}">
-                                                <c:choose>
-                                                    <c:when test="${allDeptsConfirmed}">
-                                                        <form action="${pageContext.request.contextPath}/hr/timesheet-approval" method="post" style="display:inline-block">
-                                                            <input type="hidden" name="action" value="hrManagerApprove">
-                                                            <input type="hidden" name="id" value="${c.id}">
-                                                            <input type="hidden" name="month" value="${selectedMonth}">
-                                                            <input type="hidden" name="year" value="${selectedYear}">
-                                                            <button type="submit" class="btn-a btn-submit" onclick="return confirm('Bạn chắc chắn muốn DUYỆT CUỐI bảng công phòng ban này?')">
-                                                                <i class="fas fa-check"></i> Duyệt
-                                                            </button>
-                                                        </form>
-                                                    </c:when>
-                                                    <c:otherwise>
-                                                        <button type="button" class="btn-a btn-submit" style="opacity: 0.5; cursor: not-allowed;" disabled title="Còn phòng ban chưa hoàn thành xác nhận bảng công.">
-                                                            <i class="fas fa-ban"></i> Duyệt
-                                                        </button>
-                                                    </c:otherwise>
-                                                </c:choose>
-                                                <button class="btn-a btn-edit" style="background:var(--ng);" data-bs-toggle="modal" data-bs-target="#rejectModal${c.id}">
-                                                    <i class="fas fa-times"></i> Từ chối
-                                                </button>
-
-                                                <!-- Reject Modal -->
-                                                <div class="modal fade" id="rejectModal${c.id}" tabindex="-1" aria-hidden="true">
-                                                    <div class="modal-dialog modal-dialog-centered">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header bg-danger text-white">
-                                                                <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Từ Chối Bảng Công</h5>
-                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                            </div>
-                                                            <form action="${pageContext.request.contextPath}/hr/timesheet-approval" method="post">
-                                                                <input type="hidden" name="action" value="hrManagerReject">
-                                                                <input type="hidden" name="id" value="${c.id}">
-                                                                <input type="hidden" name="month" value="${selectedMonth}">
-                                                                <input type="hidden" name="year" value="${selectedYear}">
-                                                                <div class="modal-body text-start">
-                                                                    <p>Nhập lý do từ chối bảng công của phòng ban <strong>${c.departmentName}</strong>:</p>
-                                                                    <textarea name="reason" class="form-control" rows="3" required placeholder="Nhập lý do..."></textarea>
-                                                                </div>
-                                                                <div class="modal-footer">
-                                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                                                                    <button type="submit" class="btn btn-danger">Xác nhận Từ Chối</button>
-                                                                </div>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </c:if>
-
-                                            <!-- Nút khóa/mở khóa khi đã duyệt cuối -->
-                                            <c:if test="${c.status == 'HR_MANAGER_APPROVED'}">
-                                                <c:choose>
-                                                    <c:when test="${!isLocked}">
-                                                        <form action="${pageContext.request.contextPath}/hr/timesheet-approval" method="post" style="display:inline-block">
-                                                            <input type="hidden" name="action" value="lockMonth">
-                                                            <input type="hidden" name="month" value="${selectedMonth}">
-                                                            <input type="hidden" name="year" value="${selectedYear}">
-                                                            <button type="submit" class="btn-a" style="background:#b91c1c;color:#fff" onclick="return confirm('Bạn chắc chắn muốn KHÓA bảng công tháng này? Mọi người sẽ không thể chỉnh sửa nữa.')">
-                                                                <i class="fas fa-lock"></i> Khóa công
-                                                            </button>
-                                                        </form>
-                                                    </c:when>
-                                                    <c:otherwise>
-                                                        <form action="${pageContext.request.contextPath}/hr/timesheet-approval" method="post" style="display:inline-block">
-                                                            <input type="hidden" name="action" value="unlockMonth">
-                                                            <input type="hidden" name="month" value="${selectedMonth}">
-                                                            <input type="hidden" name="year" value="${selectedYear}">
-                                                            <button type="submit" class="btn-a" style="background:#059669;color:#fff" onclick="return confirm('Bạn chắc chắn muốn MỞ KHÓA bảng công tháng này?')">
-                                                                <i class="fas fa-lock-open"></i> Mở khóa
-                                                            </button>
-                                                        </form>
-                                                    </c:otherwise>
-                                                </c:choose>
-                                            </c:if>
-                                        </td>
                                     </tr>
                                 </c:forEach>
                             </tbody>
                         </table>
+                        <!-- Front-end Pagination Controls -->
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:20px;border-top:1px solid #f1f5f9;flex-wrap:wrap;gap:8px;">
+                            <div class="text-muted small fw-semibold" id="paginationInfo">
+                                Hiển thị 0 - 0 trong số 0 phòng ban.
+                            </div>
+                            <div id="paginationControls" style="display:flex;gap:8px;">
+                                <!-- Dynamically rendered buttons -->
+                            </div>
+                        </div>
                     </div>
+
+                    <script>
+                        const rowsPerPage = 10;
+                        let currentPage = 1;
+
+                        function initPagination() {
+                            currentPage = 1;
+                            updatePagination();
+                        }
+
+                        function updatePagination() {
+                            const searchInput = document.getElementById('searchDept');
+                            const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+                            const rows = Array.from(document.querySelectorAll('#deptTableBody tr'));
+                            
+                            if (rows.length === 0) {
+                                const paginationInfo = document.getElementById('paginationInfo');
+                                if (paginationInfo) paginationInfo.innerText = "Không có dữ liệu phòng ban.";
+                                const paginationControls = document.getElementById('paginationControls');
+                                if (paginationControls) paginationControls.innerHTML = "";
+                                return;
+                            }
+
+                            // Filter rows based on query
+                            const filteredRows = rows.filter(row => {
+                                const deptName = (row.getAttribute('data-name') || '').toLowerCase();
+                                return deptName.includes(query);
+                            });
+
+                            const totalRecords = filteredRows.length;
+                            const totalPages = Math.ceil(totalRecords / rowsPerPage);
+
+                            if (currentPage > totalPages) {
+                                currentPage = totalPages;
+                            }
+                            if (currentPage < 1) {
+                                currentPage = 1;
+                            }
+
+                            const startIdx = totalRecords === 0 ? 0 : (currentPage - 1) * rowsPerPage;
+                            const endIdx = Math.min(currentPage * rowsPerPage, totalRecords);
+
+                            // Toggle visibility of rows
+                            rows.forEach(row => {
+                                row.style.display = 'none';
+                            });
+
+                            if (totalRecords === 0) {
+                                const paginationInfo = document.getElementById('paginationInfo');
+                                if (paginationInfo) paginationInfo.innerText = "Không tìm thấy kết quả.";
+                                const paginationControls = document.getElementById('paginationControls');
+                                if (paginationControls) paginationControls.innerHTML = "";
+                                return;
+                            }
+
+                            filteredRows.slice(startIdx, endIdx).forEach(row => {
+                                row.style.display = '';
+                            });
+
+                            // Update pagination information label
+                            const paginationInfo = document.getElementById('paginationInfo');
+                            if (paginationInfo) {
+                                paginationInfo.innerText = "Hiển thị " + (startIdx + 1) + " - " + endIdx + " trong số " + totalRecords + " phòng ban.";
+                            }
+
+                            // Render pagination controls
+                            const paginationControls = document.getElementById('paginationControls');
+                            if (!paginationControls) return;
+                            
+                            let html = '';
+
+                            // Previous button
+                            if (currentPage === 1) {
+                                html += '<button disabled style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:#cbd5e1;cursor:not-allowed;opacity:0.6;"><i class="fas fa-chevron-left"></i></button>';
+                            } else {
+                                html += '<button type="button" onclick="changePage(' + (currentPage - 1) + ')" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--muted);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor=\'var(--pri)\';this.style.color=\'var(--pri)\';" onmouseout="this.style.borderColor=\'#e2e8f0\';this.style.color=\'var(--muted)\';"><i class="fas fa-chevron-left"></i></button>';
+                            }
+
+                            // Next button
+                            if (currentPage === totalPages || totalRecords === 0) {
+                                html += '<button disabled style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:#cbd5e1;cursor:not-allowed;opacity:0.6;"><i class="fas fa-chevron-right"></i></button>';
+                            } else {
+                                html += '<button type="button" onclick="changePage(' + (currentPage + 1) + ')" style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--muted);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor=\'var(--pri)\';this.style.color=\'var(--pri)\';" onmouseout="this.style.borderColor=\'#e2e8f0\';this.style.color=\'var(--muted)\';"><i class="fas fa-chevron-right"></i></button>';
+                            }
+
+                            paginationControls.innerHTML = html;
+                        }
+
+                        function changePage(page) {
+                            currentPage = page;
+                            updatePagination();
+                        }
+
+                        function filterDepts() {
+                            currentPage = 1;
+                            updatePagination();
+                        }
+
+                        document.addEventListener("DOMContentLoaded", function() {
+                            initPagination();
+                        });
+                    </script>
                 </c:otherwise>
             </c:choose>
         </div>

@@ -195,8 +195,9 @@ public class TimesheetConfirmationDAO {
         String sqlTotal = "SELECT COUNT(DISTINCT u.user_id) FROM users u " +
                           "JOIN attendance a ON u.user_id = a.user_id " +
                           "WHERE u.department_id = ? AND MONTH(a.work_date) = ? AND YEAR(a.work_date) = ?";
-        String sqlConfirmed = "SELECT COUNT(DISTINCT user_id) FROM timesheet_employee_confirmations " +
-                              "WHERE department_id = ? AND month = ? AND year = ?";
+        String sqlConfirmed = "SELECT COUNT(DISTINCT tec.user_id) FROM timesheet_employee_confirmations tec " +
+                              "JOIN attendance a ON tec.user_id = a.user_id AND MONTH(a.work_date) = tec.month AND YEAR(a.work_date) = tec.year " +
+                              "WHERE tec.department_id = ? AND tec.month = ? AND tec.year = ?";
         int total = 0;
         int confirmed = 0;
         try (Connection conn = DBContext.getConnection()) {
