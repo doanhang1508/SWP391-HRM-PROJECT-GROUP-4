@@ -2,6 +2,7 @@ package controller.hr;
 
 import dao.TimesheetConfirmationDAO;
 import dao.AuditLogDAO;
+import dao.AttendanceDAO;
 import model.Attendance;
 import model.TimesheetConfirmation;
 import model.Department;
@@ -23,6 +24,7 @@ public class TimesheetConfirmationController extends HttpServlet {
 
     private final TimesheetConfirmationDAO tcDAO = new TimesheetConfirmationDAO();
     private final AuditLogDAO auditDAO = new AuditLogDAO();
+    private final AttendanceDAO attendanceDAO = new AttendanceDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -50,6 +52,8 @@ public class TimesheetConfirmationController extends HttpServlet {
         int month = (monthStr != null && !monthStr.isEmpty()) ? Integer.parseInt(monthStr) : now.getMonthValue();
         int year = (yearStr != null && !yearStr.isEmpty()) ? Integer.parseInt(yearStr) : now.getYear();
 
+        boolean isLocked = attendanceDAO.isMonthLocked(month, year);
+        request.setAttribute("isLocked", isLocked);
         request.setAttribute("selectedMonth", month);
         request.setAttribute("selectedYear", year);
 

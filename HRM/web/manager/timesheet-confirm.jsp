@@ -357,6 +357,11 @@
                                                 <td>${confirmations.size()} phòng ban</td>
                                                 <td>
                                                     <c:choose>
+                                                        <c:when test="${isLocked}">
+                                                            <span class="badge-s b-approved" style="background:#fee2e2;color:#991b1b;">
+                                                                <i class="fas fa-lock"></i> Đã khóa công
+                                                            </span>
+                                                        </c:when>
                                                         <c:when test="${approvedCount == confirmations.size()}">
                                                             <span class="badge-s b-approved"
                                                                 style="background:#ecfdf5;color:#047857;">
@@ -373,32 +378,38 @@
                                                     </c:choose>
                                                 </td>
                                                 <td class="text-end">
-                                                    <c:if
-                                                        test="${sessionScope.currentUser.roleId == 1 || sessionScope.currentUser.roleId == 5}">
-                                                        <c:set var="hasDrafts" value="false" />
-                                                        <c:forEach var="c" items="${confirmations}">
-                                                            <c:if
-                                                                test="${c.status == 'DRAFT' || c.status == 'DEPARTMENT_REJECTED' || c.status == 'HR_MANAGER_REJECTED'}">
-                                                                <c:set var="hasDrafts" value="true" />
+                                                    <!-- Toggle details button -->
+                                                    <button type="button" id="btnToggleDeptDetails" class="btn-a" style="background:#0d9488;color:#fff;height:36px;font-size:.85rem;padding:6px 16px;margin-right: 8px;" onclick="toggleDeptDetails()">
+                                                        <i class="fas fa-eye"></i> Xem chi tiết
+                                                    </button>
+                                                    <c:if test="${!isLocked}">
+                                                        <c:if
+                                                            test="${sessionScope.currentUser.roleId == 1 || sessionScope.currentUser.roleId == 5}">
+                                                            <c:set var="hasDrafts" value="false" />
+                                                            <c:forEach var="c" items="${confirmations}">
+                                                                <c:if
+                                                                    test="${c.status == 'DRAFT' || c.status == 'DEPARTMENT_REJECTED' || c.status == 'HR_MANAGER_REJECTED'}">
+                                                                    <c:set var="hasDrafts" value="true" />
+                                                                </c:if>
+                                                            </c:forEach>
+                                                            <c:if test="${hasDrafts}">
+                                                                <form
+                                                                    action="${pageContext.request.contextPath}/manager/timesheet-confirm"
+                                                                    method="post"
+                                                                    style="display:inline-block; margin-right: 8px;">
+                                                                    <input type="hidden" name="action"
+                                                                        value="sendAllToDepartments">
+                                                                    <input type="hidden" name="month"
+                                                                        value="${selectedMonth}">
+                                                                    <input type="hidden" name="year"
+                                                                        value="${selectedYear}">
+                                                                    <button type="submit" class="btn-a btn-submit"
+                                                                        style="height:36px; font-size:.85rem; padding: 6px 16px; background-color: var(--pri);">
+                                                                        <i class="fas fa-paper-plane"></i> Gửi tất cả phòng
+                                                                        ban
+                                                                    </button>
+                                                                </form>
                                                             </c:if>
-                                                        </c:forEach>
-                                                        <c:if test="${hasDrafts}">
-                                                            <form
-                                                                action="${pageContext.request.contextPath}/manager/timesheet-confirm"
-                                                                method="post"
-                                                                style="display:inline-block; margin-right: 8px;">
-                                                                <input type="hidden" name="action"
-                                                                    value="sendAllToDepartments">
-                                                                <input type="hidden" name="month"
-                                                                    value="${selectedMonth}">
-                                                                <input type="hidden" name="year"
-                                                                    value="${selectedYear}">
-                                                                <button type="submit" class="btn-a btn-submit"
-                                                                    style="height:36px; font-size:.85rem; padding: 6px 16px; background-color: var(--pri);">
-                                                                    <i class="fas fa-paper-plane"></i> Gửi tất cả phòng
-                                                                    ban
-                                                                </button>
-                                                            </form>
                                                         </c:if>
                                                     </c:if>
                                                 </td>
@@ -420,7 +431,7 @@
                             <!-- Collapsible Department list -->
                             <c:if test="${not empty confirmations}">
                                 <div class="table-responsive" id="deptTableContainer"
-                                    style="display: block; border-top: 1px dashed #cbd5e1; padding-top: 20px; margin-top: 15px;">
+                                    style="display: none; border-top: 1px dashed #cbd5e1; padding-top: 20px; margin-top: 15px;">
                                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                                         <h5 class="fw-bold mb-0 text-muted" style="font-size: 0.95rem;"><i
                                                 class="fas fa-list me-1"></i> Chi tiết trạng thái các phòng ban</h5>
@@ -439,17 +450,16 @@
                                         <thead>
                                             <tr>
                                                 <th>Phòng Ban</th>
+                                                <th>Kỳ Công</th>
                                                 <th>Trạng Thái</th>
-                                                <th>Khởi Tạo</th>
-                                                <th>Cập Nhật Cuối</th>
-                                                <th>Lý Do Từ Chối</th>
-                                                <th class="text-end">Hành Động</th>
+                                                <th>Xác Nhận Bởi</th>
                                             </tr>
                                         </thead>
                                         <tbody id="tbodyDepts">
                                             <c:forEach var="c" items="${confirmations}">
                                                 <tr data-dept-name="${c.departmentName}">
                                                     <td><strong>${c.departmentName}</strong></td>
+                                                    <td>Tháng ${c.month}/${c.year}</td>
                                                     <td>
                                                         <c:choose>
                                                             <c:when test="${c.status == 'DRAFT'}"><span
@@ -484,141 +494,14 @@
                                                         </c:choose>
                                                     </td>
                                                     <td>
-                                                        <div style="font-size:0.85rem">${c.createdByName != null ?
-                                                            c.createdByName : '-'}</div>
-                                                        <div style="font-size:0.75rem" class="text-muted">
-                                                            <c:if test="${c.createdAt != null}">
-                                                                <fmt:formatDate value="${c.createdAt}"
-                                                                    pattern="dd/MM/yyyy HH:mm" />
-                                                            </c:if>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <div style="font-size:0.85rem">${c.updatedByName != null ?
+                                                        <div style="font-size:0.85rem; font-weight:600;">${c.updatedByName != null ?
                                                             c.updatedByName : '-'}</div>
                                                         <div style="font-size:0.75rem" class="text-muted">
                                                             <c:if test="${c.updatedAt != null}">
                                                                 <fmt:formatDate value="${c.updatedAt}"
                                                                     pattern="dd/MM/yyyy HH:mm" />
                                                             </c:if>
-                                                            <c:if test="${c.updatedAt == null}">-</c:if>
                                                         </div>
-                                                    </td>
-                                                    <td class="text-danger small" style="max-width:200px">
-                                                        ${c.rejectReason != null ? c.rejectReason : '-'}</td>
-                                                    <td class="text-end">
-                                                        <!-- HR Staff actions -->
-                                                        <c:if
-                                                            test="${sessionScope.currentUser.roleId == 1 || sessionScope.currentUser.roleId == 5}">
-                                                            <c:if
-                                                                test="${c.status == 'DRAFT' || c.status == 'DEPARTMENT_REJECTED' || c.status == 'HR_MANAGER_REJECTED'}">
-                                                                <form
-                                                                    action="${pageContext.request.contextPath}/manager/timesheet-confirm"
-                                                                    method="post" style="display:inline-block">
-                                                                    <input type="hidden" name="action"
-                                                                        value="sendToDepartment">
-                                                                    <input type="hidden" name="id" value="${c.id}">
-                                                                    <input type="hidden" name="month"
-                                                                        id="postMonth_${c.id}" value="${selectedMonth}">
-                                                                    <input type="hidden" name="year"
-                                                                        id="postYear_${c.id}" value="${selectedYear}">
-                                                                    <button type="submit" class="btn-a btn-view"><i
-                                                                            class="fas fa-paper-plane"></i> Gửi Phòng
-                                                                        Ban</button>
-                                                                </form>
-                                                            </c:if>
-                                                            <c:if test="${c.status == 'DEPARTMENT_CONFIRMED'}">
-                                                                <form
-                                                                    action="${pageContext.request.contextPath}/manager/timesheet-confirm"
-                                                                    method="post" style="display:inline-block">
-                                                                    <input type="hidden" name="action"
-                                                                        value="sendToHRManager">
-                                                                    <input type="hidden" name="id" value="${c.id}">
-                                                                    <input type="hidden" name="month"
-                                                                        id="postMonth_${c.id}" value="${selectedMonth}">
-                                                                    <input type="hidden" name="year"
-                                                                        id="postYear_${c.id}" value="${selectedYear}">
-                                                                    <button type="submit" class="btn-a btn-submit"><i
-                                                                            class="fas fa-share-square"></i> Gửi Trưởng
-                                                                        Phòng NS</button>
-                                                                </form>
-                                                            </c:if>
-                                                        </c:if>
-
-                                                        <!-- HR Manager actions -->
-                                                        <c:if
-                                                            test="${sessionScope.currentUser.roleId == 1 || sessionScope.currentUser.roleId == 2}">
-                                                            <c:if test="${c.status == 'SENT_TO_HR_MANAGER'}">
-                                                                <form
-                                                                    action="${pageContext.request.contextPath}/manager/timesheet-confirm"
-                                                                    method="post" style="display:inline-block">
-                                                                    <input type="hidden" name="action"
-                                                                        value="hrManagerApprove">
-                                                                    <input type="hidden" name="id" value="${c.id}">
-                                                                    <input type="hidden" name="month"
-                                                                        id="postMonth_${c.id}" value="${selectedMonth}">
-                                                                    <input type="hidden" name="year"
-                                                                        id="postYear_${c.id}" value="${selectedYear}">
-                                                                    <button type="submit" class="btn-a btn-submit"><i
-                                                                            class="fas fa-check"></i> Duyệt</button>
-                                                                </form>
-                                                                <button class="btn-a btn-edit"
-                                                                    style="background:var(--ng);" data-bs-toggle="modal"
-                                                                    data-bs-target="#rejectModal${c.id}">
-                                                                    <i class="fas fa-times"></i> Từ chối
-                                                                </button>
-
-                                                                <!-- Reject Modal -->
-                                                                <div class="modal fade" id="rejectModal${c.id}"
-                                                                    tabindex="-1" aria-hidden="true">
-                                                                    <div class="modal-dialog modal-dialog-centered">
-                                                                        <div class="modal-content">
-                                                                            <div
-                                                                                class="modal-header bg-danger text-white">
-                                                                                <h5 class="modal-title"><i
-                                                                                        class="fas fa-exclamation-triangle"></i>
-                                                                                    Từ Chối Bảng Công</h5>
-                                                                                <button type="button"
-                                                                                    class="btn-close btn-close-white"
-                                                                                    data-bs-dismiss="modal"></button>
-                                                                            </div>
-                                                                            <form
-                                                                                action="${pageContext.request.contextPath}/manager/timesheet-confirm"
-                                                                                method="post">
-                                                                                <input type="hidden" name="action"
-                                                                                    value="hrManagerReject">
-                                                                                <input type="hidden" name="id"
-                                                                                    value="${c.id}">
-                                                                                <input type="hidden" name="month"
-                                                                                    id="postRejectMonth_${c.id}"
-                                                                                    value="${selectedMonth}">
-                                                                                <input type="hidden" name="year"
-                                                                                    id="postRejectYear_${c.id}"
-                                                                                    value="${selectedYear}">
-                                                                                <div class="modal-body text-start">
-                                                                                    <p>Vui lòng nhập lý do từ chối bảng
-                                                                                        công của phòng ban
-                                                                                        <strong>${c.departmentName}</strong>:
-                                                                                    </p>
-                                                                                    <textarea name="reason"
-                                                                                        class="form-control" rows="3"
-                                                                                        required
-                                                                                        placeholder="Nhập lý do..."></textarea>
-                                                                                </div>
-                                                                                <div class="modal-footer">
-                                                                                    <button type="button"
-                                                                                        class="btn btn-secondary"
-                                                                                        data-bs-dismiss="modal">Hủy</button>
-                                                                                    <button type="submit"
-                                                                                        class="btn btn-danger">Xác nhận
-                                                                                        Từ Chối</button>
-                                                                                </div>
-                                                                            </form>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </c:if>
-                                                        </c:if>
                                                     </td>
                                                 </tr>
                                             </c:forEach>
@@ -732,6 +615,18 @@
                                 function filterDepts() {
                                     currentDeptPage = 1;
                                     updateDeptPagination();
+                                }
+
+                                function toggleDeptDetails() {
+                                    const container = document.getElementById('deptTableContainer');
+                                    const btn = document.getElementById('btnToggleDeptDetails');
+                                    if (container.style.display === 'none') {
+                                        container.style.display = 'block';
+                                        btn.innerHTML = '<i class="fas fa-eye-slash"></i> Ẩn chi tiết';
+                                    } else {
+                                        container.style.display = 'none';
+                                        btn.innerHTML = '<i class="fas fa-eye"></i> Xem chi tiết';
+                                    }
                                 }
 
                                 document.addEventListener("DOMContentLoaded", function () {
