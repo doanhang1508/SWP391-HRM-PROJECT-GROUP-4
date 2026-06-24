@@ -150,6 +150,19 @@
             </button>
         </div>
 
+        <!-- JSTL Tính toán Summary Cards -->
+        <c:set var="totalEmp" value="0"/>
+        <c:set var="maxEmp" value="0"/>
+        <c:set var="biggestDeptName" value="—"/>
+        <c:forEach items="${departmentList}" var="dept">
+            <c:set var="empCnt" value="${empCountMap[dept.departmentId] != null ? empCountMap[dept.departmentId] : 0}"/>
+            <c:set var="totalEmp" value="${totalEmp + empCnt}"/>
+            <c:if test="${empCnt > maxEmp}">
+                <c:set var="maxEmp" value="${empCnt}"/>
+                <c:set var="biggestDeptName" value="${dept.departmentName}"/>
+            </c:if>
+        </c:forEach>
+
         <!-- SUMMARY CARDS -->
         <div class="summary-grid">
             <div class="summary-card">
@@ -164,7 +177,7 @@
                 <div class="s-icon s-green"><i class="fas fa-users"></i></div>
                 <div>
                     <div class="s-label">Tổng nhân viên</div>
-                    <div class="s-value" id="totalEmpCount">—</div>
+                    <div class="s-value">${totalEmp}</div>
                     <div class="s-sub">Tất cả phòng ban</div>
                 </div>
             </div>
@@ -172,8 +185,8 @@
                 <div class="s-icon s-purple"><i class="fas fa-crown"></i></div>
                 <div>
                     <div class="s-label">Phòng đông nhất</div>
-                    <div class="s-value" style="font-size:1.15rem;" id="biggestDept">—</div>
-                    <div class="s-sub" id="biggestDeptCount"></div>
+                    <div class="s-value" style="font-size:1.15rem;">${biggestDeptName}</div>
+                    <div class="s-sub"><c:if test="${maxEmp > 0}">${maxEmp} nhân viên</c:if></div>
                 </div>
             </div>
         </div>
@@ -233,12 +246,9 @@
                                         </td>
                                         <td><span class="dept-desc">${empty dept.description ? '—' : dept.description}</span></td>
                                         <td style="text-align:center;">
-                                            <span class="badge-count"
-                                                  data-emp-count="${empCountMap[dept.departmentId]}"
-                                                  data-dept-name="${dept.departmentName}"
-                                                  title="Tổng số nhân viên">
+                                            <span class="badge-count" title="Tổng số nhân viên">
                                                 <i class="fas fa-user" style="font-size:.6rem;"></i>
-                                                <span class="emp-count">...</span>
+                                                <span class="emp-count">${empCountMap[dept.departmentId] != null ? empCountMap[dept.departmentId] : 0}</span>
                                             </span>
                                         </td>
                                         <td style="text-align:center;" data-status="${dept.status ? 'active' : 'inactive'}">
@@ -460,22 +470,7 @@
         updatePagination();
     }
 
-    // Load employee counts & init pagination
     document.addEventListener('DOMContentLoaded', function() {
-        const badges = document.querySelectorAll('.badge-count');
-        let total = 0;
-        let biggest = { name: '—', count: 0 };
-        badges.forEach(function(badge) {
-            const count = parseInt(badge.getAttribute('data-emp-count') || '0');
-            badge.querySelector('.emp-count').textContent = count;
-            total += count;
-            const name = badge.getAttribute('data-dept-name');
-            if (count > biggest.count) { biggest = { name: name, count: count }; }
-        });
-        document.getElementById('totalEmpCount').textContent = total || '—';
-        document.getElementById('biggestDept').textContent = biggest.name;
-        document.getElementById('biggestDeptCount').textContent = biggest.count > 0 ? biggest.count + ' nhân viên' : '';
-        
         initPagination();
     });
 </script>

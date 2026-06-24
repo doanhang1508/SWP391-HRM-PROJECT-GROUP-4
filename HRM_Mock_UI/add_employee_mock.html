@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock UI - Thêm Nhân Viên Mới</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --success-bg: #d1fae5;
+            --success-text: #065f46;
+            --error-bg: #fee2e2;
+            --error-text: #991b1b;
+            --input-bg: #f9fafb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease-in-out;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        /* Header Styles */
+        .page-header {
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            color: #111827;
+            font-weight: 700;
+        }
+
+        .page-header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Form Styles */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .required {
+            color: #ef4444;
+            margin-left: 0.2rem;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="date"],
+        select {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.6rem 0.75rem;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            background-color: #ffffff;
+        }
+
+        /* Button Styles */
+        .actions {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: flex-end;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.5rem;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.6rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        /* Result Box */
+        .result-box {
+            padding: 1rem;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            text-align: center;
+            margin-top: 1.5rem;
+            display: none;
+        }
+
+        .result-box.show {
+            display: block;
+        }
+
+        .result-box.success {
+            background-color: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid #a7f3d0;
+        }
+
+        .result-box.error {
+            background-color: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid #fecaca;
+        }
+
+        /* Table Styles */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background-color: #f9fafb;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #4b5563;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        td {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            color: #1f2937;
+        }
+
+        tr:hover td {
+            background-color: #f9fafb;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background-color: #e0e7ff;
+            color: #4338ca;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="page-header">
+        <h1>Quản Lý Nhân Sự</h1>
+        <p>Phân hệ Thêm mới nhân viên (Onboarding Module)</p>
+    </div>
+
+    <!-- Form Section -->
+    <div class="card">
+        <div class="card-header">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+            Thông tin nhân viên mới
+        </div>
+        
+        <form id="employeeForm" novalidate>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="fullname">Họ và Tên <span class="required">*</span></label>
+                    <input type="text" id="fullname" placeholder="Nhập họ tên đầy đủ" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email Công Ty <span class="required">*</span></label>
+                    <input type="email" id="email" placeholder="email@company.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Số Điện Thoại <span class="required">*</span></label>
+                    <input type="text" id="phone" placeholder="09xxxxxxxx" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="dob">Ngày Sinh <span class="required">*</span></label>
+                    <input type="date" id="dob" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="gender">Giới Tính <span class="required">*</span></label>
+                    <select id="gender" required>
+                        <option value="">-- Chọn giới tính --</option>
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="department">Phòng Ban <span class="required">*</span></label>
+                    <select id="department" required>
+                        <option value="">-- Chọn phòng ban --</option>
+                        <option value="IT">IT</option>
+                        <option value="Nhân sự">Nhân sự</option>
+                    </select>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="address">Địa Chỉ Thường Trú</label>
+                    <input type="text" id="address" placeholder="Nhập địa chỉ">
+                </div>
+            </div>
+
+            <div class="actions">
+                <button type="submit" id="btnSubmit">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                    Lưu Nhân Viên
+                </button>
+            </div>
+        </form>
+
+        <div id="result-box" class="result-box"></div>
+    </div>
+
+    <!-- Data Table Section -->
+    <div class="card">
+        <div class="card-header">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+            Danh sách nhân viên (Database Mock)
+        </div>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Họ Tên</th>
+                        <th>Email</th>
+                        <th>SĐT</th>
+                        <th>Ngày Sinh</th>
+                        <th>Giới Tính</th>
+                        <th>Phòng Ban</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Data will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Mock Database using LocalStorage
+    const getDB = () => JSON.parse(localStorage.getItem('mock_employees')) || [];
+    const saveDB = (data) => localStorage.setItem('mock_employees', JSON.stringify(data));
+
+    // Initialize mock data if empty
+    if (getDB().length === 0) {
+        saveDB([
+            { fullname: 'Admin System', email: 'admin@company.com', phone: '0900000000', dob: '1990-01-01', gender: 'Nam', department: 'IT', address: 'Hà Nội' }
+        ]);
+    }
+
+    const renderTable = () => {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        getDB().forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight: 500;">${item.fullname}</td>
+                <td style="color: #4b5563;">${item.email}</td>
+                <td>${item.phone}</td>
+                <td>${item.dob}</td>
+                <td>${item.gender}</td>
+                <td><span class="badge">${item.department}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    };
+
+    document.getElementById('employeeForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const data = {
+            fullname: document.getElementById('fullname').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            dob: document.getElementById('dob').value,
+            gender: document.getElementById('gender').value,
+            department: document.getElementById('department').value,
+            address: document.getElementById('address').value.trim()
+        };
+
+        const box = document.getElementById('result-box');
+        
+        /* 
+        ========================================================
+        CỐ TÌNH TẠO BUG (LỖI PHẦN MỀM) ĐỂ DEMO AUTOMATION TEST
+        Mở comment 2 khối code dưới đây sẽ làm web không bắt lỗi nữa.
+        Khi đó Actual Result sẽ luôn là "Thành công", 
+        ngược lại hoàn toàn với Expected Result (Lỗi) trong Excel.
+        Kết quả: Automation Test sẽ đánh dấu là FAIL (Bắt được Bug!)
+        ========================================================
+        */
+        
+        // 1. Validate Required Fields (CỐ TÌNH TẮT ĐỂ TẠO BUG)
+        /*
+        if(!data.fullname || !data.email || !data.phone || !data.dob || !data.gender || !data.department) {
+            box.className = 'result-box show error';
+            box.innerText = 'Lỗi: Vui lòng điền đủ các trường bắt buộc!';
+            return;
+        }
+        */
+
+        // 2. Validate Duplicate Email (CỐ TÌNH TẮT ĐỂ TẠO BUG)
+        /*
+        const db = getDB();
+        if(db.some(x => x.email.toLowerCase() === data.email.toLowerCase())) {
+            box.className = 'result-box show error';
+            box.innerText = 'Lỗi: Email đã tồn tại trong hệ thống!';
+            return;
+        }
+        */
+
+        const db = getDB(); // Khai báo lại db ở đây vì bên trên đã bị comment
+
+        // 3. Success Insert
+        db.push(data);
+        saveDB(db);
+        renderTable();
+        
+        box.className = 'result-box show success';
+        box.innerText = 'Thêm nhân viên thành công!';
+        e.target.reset();
+    });
+
+    // Initial render
+    window.onload = renderTable;
+</script>
+
+</body>
+</html>

@@ -45,43 +45,7 @@ public class HrEmployeeController extends HttpServlet {
         DepartmentDAO deptDAO = new DepartmentDAO();
         PositionDAO posDAO = new PositionDAO();
 
-        String keyword = request.getParameter("keyword");
-        String deptFilter = request.getParameter("departmentId");
-        String posFilter = request.getParameter("positionId");
-
-        if (keyword == null) keyword = "";
-
-        List<User> users;
-
-        if (deptFilter != null && !deptFilter.isEmpty()) {
-            try {
-                int departmentId = Integer.parseInt(deptFilter);
-                users = userDAO.getByDepartment(departmentId);
-                for (Department d : deptDAO.getAll()) {
-                    if (d.getDepartmentId() == departmentId) {
-                        request.setAttribute("filterName", "Phòng " + d.getDepartmentName());
-                        break;
-                    }
-                }
-            } catch (NumberFormatException e) {
-                users = userDAO.getAllUsers();
-            }
-        } else if (posFilter != null && !posFilter.isEmpty()) {
-            try {
-                int positionId = Integer.parseInt(posFilter);
-                users = userDAO.getByPosition(positionId);
-                for (Position p : posDAO.getAll()) {
-                    if (p.getPositionId() == positionId) {
-                        request.setAttribute("filterName", "Chức vụ " + p.getPositionName());
-                        break;
-                    }
-                }
-            } catch (NumberFormatException e) {
-                users = userDAO.getAllUsers();
-            }
-        } else {
-            users = userDAO.searchUsersByName(keyword.trim());
-        }
+        List<User> users = userDAO.getAllUsers();
 
         List<Department> departments = deptDAO.getAll();
         List<Position> positions = posDAO.getAll();
@@ -94,9 +58,6 @@ public class HrEmployeeController extends HttpServlet {
         request.setAttribute("users", filteredUsers);
         request.setAttribute("departments", departments);
         request.setAttribute("positions", positions);
-        request.setAttribute("keyword", keyword);
-        request.setAttribute("selectedDept", deptFilter);
-        request.setAttribute("selectedPos", posFilter);
 
         request.getRequestDispatcher("/hr/employee-list.jsp").forward(request, response);
     }
