@@ -146,12 +146,13 @@ public class ImportAttendanceController extends HttpServlet {
             if (sheet == null) {
                 // Thử tìm sheet có chứa chữ CHAM_CONG hoặc lấy sheet cuối cùng
                 for (int i = 0; i < wb.getNumberOfSheets(); i++) {
-                    if (wb.getSheetName(i).toUpperCase().contains("CHAM_CONG")) {
+                    String sName = wb.getSheetName(i).toUpperCase();
+                    if (sName.contains("CHAM_CONG") || sName.contains("CHẤM CÔNG")) {
                         sheet = wb.getSheetAt(i);
                         break;
                     }
                 }
-                if (sheet == null) sheet = wb.getSheetAt(0); // Fallback về sheet 0 nếu không tìm thấy
+                if (sheet == null) sheet = wb.getSheetAt(1); // Fallback về sheet 1 thay vì 0, vì sheet 1 thường là Chi Tiết Chấm Công
             }
             for (Row row : sheet) {
                 if (row.getRowNum() < 3) continue; // Bỏ qua 3 dòng đầu (headers)
@@ -217,7 +218,16 @@ public class ImportAttendanceController extends HttpServlet {
         } else {
             String dateStr = getStringCell(row, 5);
             if (dateStr == null || dateStr.trim().isEmpty()) throw new Exception("Thiếu Ngày làm việc");
-            a.setWorkDate(Date.valueOf(LocalDate.parse(dateStr.trim(), DATE_FMT)));
+            dateStr = dateStr.trim();
+            try {
+                if (dateStr.contains("/")) {
+                    a.setWorkDate(Date.valueOf(LocalDate.parse(dateStr, java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))));
+                } else {
+                    a.setWorkDate(Date.valueOf(LocalDate.parse(dateStr, DATE_FMT)));
+                }
+            } catch (Exception e) {
+                throw new Exception("Sai định dạng ngày làm việc (" + dateStr + "). Cần định dạng dd/MM/yyyy hoặc yyyy-MM-dd");
+            }
         }
 
         String shiftName = getStringCell(row, 7);
@@ -225,6 +235,9 @@ public class ImportAttendanceController extends HttpServlet {
             throw new Exception("Thiếu Ca làm việc");
         }
         shiftName = shiftName.trim();
+        if (shiftName.contains("(")) {
+            shiftName = shiftName.substring(0, shiftName.indexOf("(")).trim();
+        }
         int shiftId = -1;
         for (Shift s : allShifts) {
             if (s.getShiftName().equalsIgnoreCase(shiftName)) {
@@ -237,7 +250,7 @@ public class ImportAttendanceController extends HttpServlet {
         }
         a.setShiftId(shiftId);
 
-        String checkIn = getStringCell(row, 10);
+        String checkIn = getStringCell(row, 8);
         if (checkIn != null && !checkIn.trim().isEmpty() && !checkIn.equalsIgnoreCase("BLANK")) {
             if (checkIn.length() == 5) checkIn += ":00";
             a.setCheckIn(Time.valueOf(checkIn.trim()));
@@ -245,7 +258,7 @@ public class ImportAttendanceController extends HttpServlet {
             a.setCheckIn(null);
         }
 
-        String checkOut = getStringCell(row, 11);
+        String checkOut = getStringCell(row, 9);
         if (checkOut != null && !checkOut.trim().isEmpty() && !checkOut.equalsIgnoreCase("BLANK")) {
             if (checkOut.length() == 5) checkOut += ":00";
             a.setCheckOut(Time.valueOf(checkOut.trim()));
@@ -253,7 +266,7 @@ public class ImportAttendanceController extends HttpServlet {
             a.setCheckOut(null);
         }
 
-        String status = getStringCell(row, 20);
+        String status = getStringCell(row, 10);
         if (status == null || status.trim().isEmpty() || status.equalsIgnoreCase("BLANK")) {
              status = "A"; // default absent
         }
@@ -266,11 +279,11 @@ public class ImportAttendanceController extends HttpServlet {
             default: a.setStatus("PRESENT"); break; // Fallback
         }
 
-        Cell otCell = row.getCell(16);
+        Cell otCell = row.getCell(11);
         if (otCell != null && otCell.getCellType() == CellType.NUMERIC) {
             a.setOvertimeHrs(otCell.getNumericCellValue());
         } else {
-            String otStr = getStringCell(row, 16);
+            String otStr = getStringCell(row, 11);
             if (otStr != null && !otStr.trim().isEmpty() && !otStr.equalsIgnoreCase("BLANK")) {
                 try {
                     a.setOvertimeHrs(Double.parseDouble(otStr.trim()));
@@ -282,7 +295,7 @@ public class ImportAttendanceController extends HttpServlet {
             }
         }
 
-        String otReason = getStringCell(row, 17);
+        String otReason = getStringCell(row, 12);
         a.setOtReason(otReason != null && !otReason.equalsIgnoreCase("BLANK") ? otReason.trim() : "");
         
         return a;

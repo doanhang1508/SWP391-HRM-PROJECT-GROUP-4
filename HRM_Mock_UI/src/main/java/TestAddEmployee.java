@@ -34,9 +34,10 @@ public class TestAddEmployee {
         // ==============================================================
         // BƯỚC 2: Đường dẫn file HTML và Excel
         // ==============================================================
-        String htmlPath  = "file:///f:/GitHub/SWP391-HRM-PROJECT-GROUP-4/HRM_Mock_UI/add_employee_mock.html";
-        String dataPath  = "f:\\GitHub\\SWP391-HRM-PROJECT-GROUP-4\\HRM_Mock_UI\\testdata\\Data_Employee-v2.xlsx";
-        String resultPath= "f:\\GitHub\\SWP391-HRM-PROJECT-GROUP-4\\HRM_Mock_UI\\testdata\\TestResult_Employee.xlsx";
+        String baseDir = System.getProperty("user.dir");
+        String htmlPath  = "file:///" + baseDir.replace("\\", "/") + "/add_employee_mock.html";
+        String dataPath  = baseDir + "\\testdata\\Data_Employee-v2.xlsx";
+        String resultPath= baseDir + "\\testdata\\TestResult_Employee.xlsx";
 
         // ==============================================================
         // BƯỚC 3: Đọc file Excel data
