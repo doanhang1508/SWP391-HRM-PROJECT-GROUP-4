@@ -56,20 +56,6 @@
 
     <div class="main-content">
 
-        <%-- Banner lọc theo phòng ban / chức vụ --%>
-        <c:if test="${not empty filterName}">
-            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:12px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <i class="fas fa-filter" style="color:#2b6cb0;"></i>
-                    <span style="font-weight:600;color:#1e40af;">Đang lọc: <strong>${filterName}</strong></span>
-                    <span style="color:#64748b;font-size:.85rem;">— ${fn:length(users)} nhân viên</span>
-                </div>
-                <a href="${pageContext.request.contextPath}/hr/employees"
-                   style="font-size:.82rem;color:#2b6cb0;text-decoration:none;border:1px solid #bfdbfe;border-radius:6px;padding:4px 12px;background:#fff;">
-                    <i class="fas fa-times" style="font-size:.7rem;"></i> Xem tất cả
-                </a>
-            </div>
-        </c:if>
 
         <div class="admin-panel" id="users">
             <div class="panel-header">
@@ -79,46 +65,43 @@
                 </h2>
             </div>
 
-            <!-- Search + Filter -->
-            <form action="${pageContext.request.contextPath}/hr/employees" method="get" class="row g-3 align-items-center mb-4">
+            <!-- Search + Filter (JavaScript Version) -->
+            <div class="row g-3 align-items-center mb-4">
                 <!-- Search -->
-                <div class="col-md-4">
+                <div class="col-md-5">
                     <div class="input-group">
                         <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                        <input type="text" name="keyword" class="form-control border-start-0" placeholder="Tìm tên nhân viên..." value="${keyword}">
+                        <input type="text" id="searchInput" class="form-control border-start-0" placeholder="Tìm tên nhân viên..." oninput="filterTable()">
                     </div>
                 </div>
 
                 <!-- Filter Department -->
                 <div class="col-md-3">
-                    <select name="departmentId" class="form-select">
-                        <option value="">Tất cả phòng ban</option>
+                    <select id="departmentFilter" class="form-select" onchange="filterTable()">
+                        <option value="all">Tất cả phòng ban</option>
                         <c:forEach items="${departments}" var="d">
-                            <option value="${d.departmentId}" ${selectedDept == d.departmentId.toString() ? 'selected' : ''}>${d.departmentName}</option>
+                            <option value="${d.departmentId}" ${param.departmentId == d.departmentId.toString() ? 'selected' : ''}>${d.departmentName}</option>
                         </c:forEach>
                     </select>
                 </div>
 
                 <!-- Filter Position -->
                 <div class="col-md-3">
-                    <select name="positionId" class="form-select">
-                        <option value="">Tất cả chức vụ</option>
+                    <select id="positionFilter" class="form-select" onchange="filterTable()">
+                        <option value="all">Tất cả chức vụ</option>
                         <c:forEach items="${positions}" var="p">
-                            <option value="${p.positionId}" ${selectedPos == p.positionId.toString() ? 'selected' : ''}>${p.positionName}</option>
+                            <option value="${p.positionId}" ${param.positionId == p.positionId.toString() ? 'selected' : ''}>${p.positionName}</option>
                         </c:forEach>
                     </select>
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary flex-grow-1" style="background:#3b82f6;border:none;">
-                        <i class="fas fa-filter"></i> Lọc
-                    </button>
-                    <a href="${pageContext.request.contextPath}/hr/employees" class="btn btn-light border" title="Reset">
+                <div class="col-md-1 d-flex gap-2">
+                    <a href="${pageContext.request.contextPath}/hr/employees" class="btn btn-light border flex-grow-1" title="Làm mới tải lại">
                         <i class="fas fa-rotate-left"></i>
                     </a>
                 </div>
-            </form>
+            </div>
 
             <div class="table-responsive">
                 <table class="table-custom">
@@ -142,7 +125,7 @@
                             </c:when>
                             <c:otherwise>
                                 <c:forEach items="${users}" var="u">
-                                    <tr>
+                                    <tr class="employee-row" data-name="${fn:toLowerCase(u.fullName)}" data-dept="${u.departmentId}" data-pos="${u.positionId}">
                                         <td>
                                             <div class="user-info">
                                                 <div class="avatar-sm">${u.fullName.substring(0,1)}</div>
@@ -207,6 +190,8 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         initPagination();
+        // Gọi filterTable ngay lúc load để áp dụng các bộ lọc có sẵn từ URL (như khi click từ trang Phòng Ban sang)
+        filterTable();
     });
 
     function initPagination() {
@@ -278,6 +263,29 @@
             currentPage++;
             updatePagination();
         }
+    }
+
+    function filterTable() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const deptVal = document.getElementById('departmentFilter').value;
+        const posVal = document.getElementById('positionFilter').value;
+        
+        const allRows = Array.from(document.querySelectorAll('.table-custom tbody tr:not(.empty-state-row)'));
+        
+        filteredRows = allRows.filter(row => {
+            const name = row.getAttribute('data-name') || '';
+            const deptId = row.getAttribute('data-dept') || '';
+            const posId = row.getAttribute('data-pos') || '';
+            
+            const matchName = name.includes(query);
+            const matchDept = (deptVal === 'all') || (deptId === deptVal);
+            const matchPos = (posVal === 'all') || (posId === posVal);
+            
+            return matchName && matchDept && matchPos;
+        });
+        
+        currentPage = 1;
+        updatePagination();
     }
 </script>
 <jsp:include page="../footer.jsp" />

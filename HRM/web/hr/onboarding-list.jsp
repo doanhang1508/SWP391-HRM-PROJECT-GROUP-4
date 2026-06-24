@@ -112,6 +112,16 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);}
       <div class="alert alert-success"><i class="fas fa-check-circle"></i> <c:out value="${param.msg}"/></div>
     </c:if>
 
+    <!-- JSTL Tính toán Summary Cards -->
+    <c:set var="cntPending" value="0"/>
+    <c:set var="cntApproved" value="0"/>
+    <c:set var="cntRejected" value="0"/>
+    <c:forEach var="r" items="${requests}">
+        <c:if test="${r.status=='PENDING'}"><c:set var="cntPending" value="${cntPending+1}"/></c:if>
+        <c:if test="${r.status=='APPROVED'}"><c:set var="cntApproved" value="${cntApproved+1}"/></c:if>
+        <c:if test="${r.status=='REJECTED'}"><c:set var="cntRejected" value="${cntRejected+1}"/></c:if>
+    </c:forEach>
+
     <!-- SUMMARY -->
     <div class="summary-row">
       <div class="sum-card">
@@ -121,33 +131,21 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);}
       <div class="sum-card">
         <div class="sum-icon si-blue"><i class="fas fa-hourglass-half"></i></div>
         <div>
-          <div class="sum-val">
-            <c:set var="cntPending" value="0"/>
-            <c:forEach var="r" items="${requests}"><c:if test="${r.status=='PENDING'}"><c:set var="cntPending" value="${cntPending+1}"/></c:if></c:forEach>
-            ${cntPending}
-          </div>
+          <div class="sum-val">${cntPending}</div>
           <div class="sum-label">Chờ duyệt</div>
         </div>
       </div>
       <div class="sum-card">
         <div class="sum-icon si-green"><i class="fas fa-check-circle"></i></div>
         <div>
-          <div class="sum-val">
-            <c:set var="cntApproved" value="0"/>
-            <c:forEach var="r" items="${requests}"><c:if test="${r.status=='APPROVED'}"><c:set var="cntApproved" value="${cntApproved+1}"/></c:if></c:forEach>
-            ${cntApproved}
-          </div>
+          <div class="sum-val">${cntApproved}</div>
           <div class="sum-label">Đã duyệt</div>
         </div>
       </div>
       <div class="sum-card">
         <div class="sum-icon si-red"><i class="fas fa-times-circle"></i></div>
         <div>
-          <div class="sum-val">
-            <c:set var="cntRejected" value="0"/>
-            <c:forEach var="r" items="${requests}"><c:if test="${r.status=='REJECTED'}"><c:set var="cntRejected" value="${cntRejected+1}"/></c:if></c:forEach>
-            ${cntRejected}
-          </div>
+          <div class="sum-val">${cntRejected}</div>
           <div class="sum-label">Bị từ chối</div>
         </div>
       </div>

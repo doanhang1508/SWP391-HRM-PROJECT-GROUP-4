@@ -131,6 +131,19 @@
             </button>
         </div>
 
+        <!-- JSTL Tính toán Summary Cards -->
+        <c:set var="totalEmp" value="0"/>
+        <c:set var="maxEmp" value="0"/>
+        <c:set var="biggestContractName" value="—"/>
+        <c:forEach items="${contractTypeList}" var="ct">
+            <c:set var="empCnt" value="${empCountMap[ct.contractTypeId] != null ? empCountMap[ct.contractTypeId] : 0}"/>
+            <c:set var="totalEmp" value="${totalEmp + empCnt}"/>
+            <c:if test="${empCnt > maxEmp}">
+                <c:set var="maxEmp" value="${empCnt}"/>
+                <c:set var="biggestContractName" value="${ct.typeName}"/>
+            </c:if>
+        </c:forEach>
+
         <div class="summary-grid">
             <div class="summary-card">
                 <div class="s-icon s-blue"><i class="fas fa-file-contract"></i></div>
@@ -144,7 +157,7 @@
                 <div class="s-icon s-green"><i class="fas fa-users"></i></div>
                 <div>
                     <div class="s-label">Nhân viên có hợp đồng</div>
-                    <div class="s-value" id="totalEmpCount">—</div>
+                    <div class="s-value">${totalEmp}</div>
                     <div class="s-sub">Đã phân loại hợp đồng</div>
                 </div>
             </div>
@@ -152,8 +165,8 @@
                 <div class="s-icon s-amber"><i class="fas fa-crown"></i></div>
                 <div>
                     <div class="s-label">Loại phổ biến nhất</div>
-                    <div class="s-value" style="font-size:1.1rem;" id="topType">—</div>
-                    <div class="s-sub" id="topTypeCount"></div>
+                    <div class="s-value" style="font-size:1.1rem;">${biggestContractName}</div>
+                    <div class="s-sub"><c:if test="${maxEmp > 0}">${maxEmp} nhân viên</c:if></div>
                 </div>
             </div>
         </div>
@@ -222,13 +235,10 @@
                                             </c:choose>
                                         </td>
                                         <td style="text-align:center;">
-                                            <span class="badge-count" 
-      data-emp-count="${empCountMap[ct.contractTypeId]}" 
-      data-id="${ct.contractTypeId}" 
-      data-name="${ct.typeName}">
-    <i class="fas fa-user" style="font-size:.6rem;"></i>
-    <span class="emp-count">...</span>
-</span>
+                                            <span class="badge-count" title="Tổng số nhân viên">
+                                                <i class="fas fa-user" style="font-size:.6rem;"></i>
+                                                <span class="emp-count">${empCountMap[ct.contractTypeId] != null ? empCountMap[ct.contractTypeId] : 0}</span>
+                                            </span>
                                         </td>
                                         <td style="text-align:center;">
                                             <c:choose>
@@ -603,19 +613,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        const badges = document.querySelectorAll('.badge-count');
-        let total = 0, top = { name: '—', count: -1 };
-        
-        badges.forEach(function(b) {
-            const c = parseInt(b.getAttribute('data-emp-count') || '0');
-            b.querySelector('.emp-count').textContent = c;
-            total += c;
-            if (c > top.count) top = { name: b.getAttribute('data-name'), count: c };
-        });
-        document.getElementById('totalEmpCount').textContent = total || '—';
-        document.getElementById('topType').textContent = top.name;
-        document.getElementById('topTypeCount').textContent = top.count >= 0 ? top.count + ' nhân viên' : '';
-        
         // Initial setup for pagination & sorting
         initPagination();
     });
