@@ -625,7 +625,7 @@
                                         btn.innerHTML = '<i class="fas fa-eye-slash"></i> Ẩn chi tiết';
                                     } else {
                                         container.style.display = 'none';
-                                        btn.innerHTML = '<i class="fas fa-eye"></i> Xem chi tiết';
+                                        btn.innerHTML = '<i class="fas fa-eye"></i> Xem';
                                     }
                                 }
 
@@ -801,7 +801,7 @@
                                                                     <td class="text-end">
                                                                         <button type="button" class="btn-a btn-view"
                                                                             onclick="showDetails(${emp.userId}, '${emp.fullName}')">
-                                                                            <i class="fas fa-eye"></i> Xem chi tiết
+                                                                            <i class="fas fa-eye"></i> Xem
                                                                         </button>
                                                                     </td>
                                                                 </tr>
