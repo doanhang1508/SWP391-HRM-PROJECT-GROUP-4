@@ -216,6 +216,15 @@
             align-items: flex-start;
         }
     }
+
+    /* Hide horizontal scrollbar for table-responsive container */
+    .table-responsive::-webkit-scrollbar {
+        display: none;
+    }
+    .table-responsive {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
 </style>
 
 <div class="dashboard-wrapper">
