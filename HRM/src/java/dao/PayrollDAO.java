@@ -1185,8 +1185,8 @@ public class PayrollDAO {
     }
 
     public static class TaxProfileInfo {
-        public BigDecimal personalDeduction = new BigDecimal("11000000");
-        public BigDecimal dependentDeduction = new BigDecimal("4400000");
+        public BigDecimal personalDeduction = null;
+        public BigDecimal dependentDeduction = null;
         public int dependentCount = 0;
     }
 
@@ -1220,7 +1220,33 @@ public class PayrollDAO {
         }
         // Fallback: get dependent count from dependents table
         info.dependentCount = countActiveDependents(userId);
+        
+        if (info.personalDeduction == null) {
+            BigDecimal pd = getGlobalDeductionAmount("PERSONAL");
+            info.personalDeduction = pd != null ? pd : new BigDecimal("11000000");
+        }
+        if (info.dependentDeduction == null) {
+            BigDecimal dd = getGlobalDeductionAmount("DEPENDENT");
+            info.dependentDeduction = dd != null ? dd : new BigDecimal("4400000");
+        }
         return info;
+    }
+
+    private BigDecimal getGlobalDeductionAmount(String type) {
+        String sql = "SELECT amount FROM tax_deductions WHERE deduction_type = ? AND status = 1 ORDER BY effective_from DESC LIMIT 1";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, type);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getBigDecimal("amount");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public List<TaxBracket> getActiveTaxBrackets() {

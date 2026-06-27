@@ -259,6 +259,7 @@ public class TimesheetConfirmationDAO {
                      "JOIN users u ON a.user_id = u.user_id " +
                      "JOIN departments d ON u.department_id = d.department_id " +
                      "WHERE MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? " +
+                     "AND u.department_id IS NOT NULL AND u.role_id NOT IN (1, 4) " +
                      "ORDER BY d.department_name";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {

@@ -1,4 +1,4 @@
-package dao;
+ package dao;
 
 import model.Attendance;
 import model.AttendanceClaim;
@@ -747,7 +747,8 @@ public class AttendanceDAO {
         StringBuilder sql = new StringBuilder(
             "SELECT COUNT(*) FROM attendance a " +
             "JOIN users u ON a.user_id = u.user_id " +
-            "WHERE MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? "
+            "WHERE MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? " +
+            "AND u.role_id NOT IN (1, 4) AND u.department_id IS NOT NULL "
         );
         
         if (userName != null && !userName.trim().isEmpty()) {
@@ -788,7 +789,8 @@ public class AttendanceDAO {
             "FROM attendance a " +
             "JOIN users u ON a.user_id = u.user_id " +
             "JOIN shifts s ON a.shift_id = s.shift_id " +
-            "WHERE MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? "
+            "WHERE MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? " +
+            "AND u.role_id NOT IN (1, 4) AND u.department_id IS NOT NULL "
         );
         
         if (userName != null && !userName.trim().isEmpty()) {
@@ -876,7 +878,8 @@ public class AttendanceDAO {
     public int countAttendanceSummaryAllUsers(int month, int year) {
         String sql = "SELECT COUNT(DISTINCT u.user_id) " +
                      "FROM users u " +
-                     "JOIN attendance a ON u.user_id = a.user_id AND MONTH(a.work_date)=? AND YEAR(a.work_date)=?";
+                     "JOIN attendance a ON u.user_id = a.user_id AND MONTH(a.work_date)=? AND YEAR(a.work_date)=? " +
+                     "WHERE u.role_id NOT IN (1, 4) AND u.department_id IS NOT NULL";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -903,6 +906,7 @@ public class AttendanceDAO {
                      "LEFT JOIN employee_profiles ep ON u.user_id = ep.user_id " +
                      "LEFT JOIN departments d ON ep.department_id = d.department_id " +
                      "JOIN attendance a ON u.user_id = a.user_id AND MONTH(a.work_date)=? AND YEAR(a.work_date)=? " +
+                     "WHERE u.role_id NOT IN (1, 4) AND u.department_id IS NOT NULL " +
                      "GROUP BY u.user_id, u.full_name, d.department_name " +
                      "ORDER BY u.full_name LIMIT ? OFFSET ?";
         DBContext dbContext = new DBContext();

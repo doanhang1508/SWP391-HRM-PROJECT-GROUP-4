@@ -5,9 +5,13 @@ import java.io.FileInputStream;
 public class ReadExcelTemp {
     public static void main(String[] args) {
         try {
-            FileInputStream file = new FileInputStream(new File("Bang_Cham_Cong_HRM_Thang06_2026.xlsx"));
+            FileInputStream file = new FileInputStream(new File("Bang_Cham_Cong_Thang_6_2026.xlsx"));
             Workbook workbook = WorkbookFactory.create(file);
-            Sheet sheet = workbook.getSheet("CHI_TIET_CHAM_CONG");
+            System.out.println("Available sheets:");
+            for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+                System.out.println(" - " + workbook.getSheetName(i));
+            }
+            Sheet sheet = workbook.getSheetAt(0);
             Row row3 = sheet.getRow(3);
             if (row3 != null) {
                 for (int j = 0; j < 25; j++) {
