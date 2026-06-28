@@ -1307,3 +1307,133 @@ CREATE TABLE IF NOT EXISTS `timesheet_employee_confirmations` (
     CONSTRAINT `fk_tec_dept` FOREIGN KEY (`department_id`) REFERENCES `departments` (`department_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- =============================================================
+-- PERFORMANCE KPI EVALUATION SCHEMA
+-- =============================================================
+
+CREATE TABLE IF NOT EXISTS kpi_templates (
+    template_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    status TINYINT DEFAULT 1, -- 1: Active, 0: Inactive
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by INT,
+    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS kpi_template_items (
+    item_id INT AUTO_INCREMENT PRIMARY KEY,
+    template_id INT NOT NULL,
+    criterion_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    weight DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+    FOREIGN KEY (template_id) REFERENCES kpi_templates(template_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS kpi_cycles (
+    cycle_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    deadline DATE NOT NULL,
+    template_id INT NOT NULL,
+    status VARCHAR(20) DEFAULT 'DRAFT', -- 'DRAFT', 'ACTIVE', 'SUBMITTED', 'APPROVED', 'LOCKED'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by INT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (template_id) REFERENCES kpi_templates(template_id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS kpi_evaluations (
+    evaluation_id INT AUTO_INCREMENT PRIMARY KEY,
+    cycle_id INT NOT NULL,
+    employee_id INT NOT NULL,
+    manager_id INT NOT NULL,
+    score DECIMAL(5,2) DEFAULT 0.00,
+    weighted_score DECIMAL(5,2) DEFAULT 0.00,
+    status VARCHAR(20) DEFAULT 'DRAFT', -- 'DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED'
+    comment TEXT,
+    submitted_at TIMESTAMP NULL,
+    approved_at TIMESTAMP NULL,
+    locked_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_by INT NULL,
+    updated_by INT NULL,
+    UNIQUE KEY uq_cycle_employee (cycle_id, employee_id),
+    FOREIGN KEY (cycle_id) REFERENCES kpi_cycles(cycle_id) ON DELETE CASCADE,
+    FOREIGN KEY (employee_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (manager_id) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS kpi_evaluation_items (
+    evaluation_item_id INT AUTO_INCREMENT PRIMARY KEY,
+    evaluation_id INT NOT NULL,
+    template_item_id INT NOT NULL,
+    score DECIMAL(5,2) DEFAULT 0.00,
+    comment TEXT,
+    FOREIGN KEY (evaluation_id) REFERENCES kpi_evaluations(evaluation_id) ON DELETE CASCADE,
+    FOREIGN KEY (template_item_id) REFERENCES kpi_template_items(item_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS kpi_comments (
+    comment_id INT AUTO_INCREMENT PRIMARY KEY,
+    evaluation_id INT NOT NULL,
+    user_id INT NOT NULL,
+    comment_text TEXT NOT NULL,
+    type VARCHAR(20) NOT NULL, -- 'MANAGER', 'EMPLOYEE', 'REVIEWER'
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (evaluation_id) REFERENCES kpi_evaluations(evaluation_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS kpi_status_history (
+    history_id INT AUTO_INCREMENT PRIMARY KEY,
+    evaluation_id INT NOT NULL,
+    from_status VARCHAR(20) NOT NULL,
+    to_status VARCHAR(20) NOT NULL,
+    changed_by INT NOT NULL,
+    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    note TEXT,
+    FOREIGN KEY (evaluation_id) REFERENCES kpi_evaluations(evaluation_id) ON DELETE CASCADE,
+    FOREIGN KEY (changed_by) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS kpi_audit_logs (
+    audit_id INT AUTO_INCREMENT PRIMARY KEY,
+    evaluation_id INT NOT NULL,
+    changed_by INT NOT NULL,
+    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    action VARCHAR(100) NOT NULL,
+    old_value TEXT,
+    new_value TEXT,
+    FOREIGN KEY (evaluation_id) REFERENCES kpi_evaluations(evaluation_id) ON DELETE CASCADE,
+    FOREIGN KEY (changed_by) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Seed default criteria and template
+INSERT INTO kpi_templates (name, description, status, created_by) 
+VALUES ('Mẫu đánh giá KPI Văn Phòng', 'Tiêu chuẩn đánh giá KPI khối văn phòng, bộ phận hỗ trợ.', 1, 1);
+
+SET @tpl_id = LAST_INSERT_ID();
+
+INSERT INTO kpi_template_items (template_id, criterion_name, description, weight) VALUES
+(@tpl_id, 'Chất lượng công việc', 'Mức độ hoàn thành công việc theo tiêu chuẩn chất lượng yêu cầu', 25.00),
+(@tpl_id, 'Tiến độ công việc', 'Hoàn thành công việc đúng thời hạn cam kết', 25.00),
+(@tpl_id, 'Ý thức tổ chức kỷ luật', 'Chấp hành nội quy lao động, thời gian làm việc và quy trình', 15.00),
+(@tpl_id, 'Kỹ năng giao tiếp & làm việc nhóm', 'Hợp tác hỗ trợ đồng nghiệp, giao tiếp hiệu quả', 15.00),
+(@tpl_id, 'Sáng kiến & Cải tiến', 'Có đề xuất sáng kiến cải tiến nâng cao năng suất hiệu quả', 20.00);
+
+-- Seed default criteria and template for Factory/Workshop
+INSERT INTO kpi_templates (name, description, status, created_by) 
+VALUES ('Mẫu đánh giá KPI Nhà Xưởng / Khối Sản Xuất', 'Tiêu chuẩn đánh giá sản lượng, an toàn và chuyên cần cho khối sản xuất.', 1, 1);
+
+SET @tpl_factory_id = LAST_INSERT_ID();
+
+INSERT INTO kpi_template_items (template_id, criterion_name, description, weight) VALUES
+(@tpl_factory_id, 'Năng suất sản xuất', 'Tỷ lệ hoàn thành sản lượng được giao', 40.00),
+(@tpl_factory_id, 'Chất lượng sản phẩm', 'Hạn chế lỗi sản phẩm, tuân thủ đúng quy trình công nghệ', 20.00),
+(@tpl_factory_id, 'An toàn lao động & vệ sinh 5S', 'Chấp hành quy tắc an toàn lao động, sắp xếp nơi làm việc gọn gàng', 15.00),
+(@tpl_factory_id, 'Kỷ luật & Chuyên cần', 'Đi làm đầy đủ, đúng giờ, không vi phạm kỷ luật', 15.00),
+(@tpl_factory_id, 'Bảo quản máy móc thiết bị', 'Vận hành đúng quy trình, giữ gìn tài sản chung', 10.00);

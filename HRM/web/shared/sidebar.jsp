@@ -409,6 +409,30 @@
                                                             <i class="fas fa-file-signature"></i> Quản lý Hợp đồng
                                                         </a>
                                                     </li>
+                                                     <li class="sidebar-item">
+                                                         <a href="${pageContext.request.contextPath}/hr/kpi-templates"
+                                                             class="sidebar-link ${param.activeMenu eq 'kpi-templates' || param.activeMenu eq 'kpi-template-edit' ? 'active' : ''}">
+                                                             <i class="fas fa-cubes"></i> Mẫu KPI Tiêu chuẩn
+                                                         </a>
+                                                     </li>
+                                                     <li class="sidebar-item">
+                                                         <a href="${pageContext.request.contextPath}/hr/kpi-cycles"
+                                                             class="sidebar-link ${param.activeMenu eq 'kpi-cycles' ? 'active' : ''}">
+                                                             <i class="fas fa-sync-alt"></i> Chu kỳ Đánh giá
+                                                         </a>
+                                                     </li>
+                                                     <li class="sidebar-item">
+                                                         <a href="${pageContext.request.contextPath}/manager/employee-kpi"
+                                                             class="sidebar-link ${param.activeMenu eq 'employee-kpi' ? 'active' : ''}">
+                                                             <i class="fas fa-star"></i> Đánh giá KPI
+                                                         </a>
+                                                     </li>
+                                                     <li class="sidebar-item">
+                                                         <a href="${pageContext.request.contextPath}/manager/kpi-approvals"
+                                                             class="sidebar-link ${param.activeMenu eq 'kpi-approvals' ? 'active' : ''}">
+                                                             <i class="fas fa-check-circle"></i> Phê duyệt KPI
+                                                         </a>
+                                                     </li>
 
                                                     <li class="sidebar-menu-category">Cấu hình Chính sách</li>
 
@@ -502,6 +526,18 @@
                                                                 <i class="fas fa-users"></i> Nhân viên của tôi
                                                             </a>
                                                         </li>
+                                                         <li class="sidebar-item">
+                                                             <a href="${pageContext.request.contextPath}/manager/employee-kpi"
+                                                                 class="sidebar-link ${param.activeMenu eq 'employee-kpi' ? 'active' : ''}">
+                                                                 <i class="fas fa-star"></i> Đánh giá KPI
+                                                             </a>
+                                                         </li>
+                                                         <li class="sidebar-item">
+                                                             <a href="${pageContext.request.contextPath}/manager/kpi-approvals"
+                                                                 class="sidebar-link ${param.activeMenu eq 'kpi-approvals' ? 'active' : ''}">
+                                                                 <i class="fas fa-check-circle"></i> Phê duyệt KPI
+                                                             </a>
+                                                         </li>
                                                         <li class="sidebar-item">
                                                             <a href="${pageContext.request.contextPath}/manager/shift-schedule"
                                                                 class="sidebar-link ${param.activeMenu eq 'shift-schedule' ? 'active' : ''}">
@@ -572,6 +608,18 @@
                                                                         <i class="fas fa-users"></i> Danh sách nhân viên
                                                                     </a>
                                                                 </li>
+                                                                 <li class="sidebar-item">
+                                                                     <a href="${pageContext.request.contextPath}/hr/kpi-templates"
+                                                                         class="sidebar-link ${param.activeMenu eq 'kpi-templates' || param.activeMenu eq 'kpi-template-edit' ? 'active' : ''}">
+                                                                         <i class="fas fa-cubes"></i> Mẫu KPI Tiêu chuẩn
+                                                                     </a>
+                                                                 </li>
+                                                                 <li class="sidebar-item">
+                                                                     <a href="${pageContext.request.contextPath}/hr/kpi-cycles"
+                                                                         class="sidebar-link ${param.activeMenu eq 'kpi-cycles' ? 'active' : ''}">
+                                                                         <i class="fas fa-sync-alt"></i> Chu kỳ Đánh giá
+                                                                     </a>
+                                                                 </li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/contracts"
                                                                         class="sidebar-link ${param.activeMenu eq 'contract-management' ? 'active' : ''}">
@@ -692,6 +740,18 @@
                                                                             <i class="fas fa-users"></i> Nhân viên của tôi
                                                                         </a>
                                                                     </li>
+                                                                     <li class="sidebar-item">
+                                                                         <a href="${pageContext.request.contextPath}/manager/employee-kpi"
+                                                                             class="sidebar-link ${param.activeMenu eq 'employee-kpi' ? 'active' : ''}">
+                                                                             <i class="fas fa-star"></i> Đánh giá KPI
+                                                                         </a>
+                                                                     </li>
+                                                                     <li class="sidebar-item">
+                                                                         <a href="${pageContext.request.contextPath}/manager/kpi-approvals"
+                                                                             class="sidebar-link ${param.activeMenu eq 'kpi-approvals' ? 'active' : ''}">
+                                                                             <i class="fas fa-check-circle"></i> Phê duyệt KPI
+                                                                         </a>
+                                                                     </li>
                                                                     <li class="sidebar-item">
                                                                         <a href="${pageContext.request.contextPath}/manager/leave"
                                                                             class="sidebar-link ${param.activeMenu eq 'leave' ? 'active' : ''}">
@@ -749,6 +809,12 @@
                                                                             <i class="fas fa-calendar-times"></i> Nghỉ phép
                                                                         </a>
                                                                     </li>
+                                                                     <li class="sidebar-item">
+                                                                         <a href="${pageContext.request.contextPath}/employee/kpi-view"
+                                                                             class="sidebar-link ${param.activeMenu eq 'employee-kpi-view' ? 'active' : ''}">
+                                                                             <i class="fas fa-star"></i> Đánh giá KPI
+                                                                         </a>
+                                                                     </li>
                                                                     <li class="sidebar-item">
                                                                         <a href="${pageContext.request.contextPath}/manager/payslip"
                                                                             class="sidebar-link ${param.activeMenu eq 'personal-payslip' ? 'active' : ''}">

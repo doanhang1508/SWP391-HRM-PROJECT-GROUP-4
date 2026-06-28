@@ -835,6 +835,13 @@ public class PayrollDAO {
         return result;
     }
 
+    /**
+     * TASK 2: Viết lại updatePayrollDraft — tự động tính lại Thuế TNCN và Bảo hiểm
+     * khi HR thay đổi thưởng, phụ cấp hoặc phạt.
+     * 
+     * HR chỉ nhập: workingDays, overtimeAmount, allowanceAmount, bonusAmount, deductionAmount
+     * Hệ thống tự tính: insurance, tax (PIT), gross, net
+     */
     public boolean updatePayrollDraft(Payroll payroll) {
         if (payroll == null) return false;
         Payroll current = getById(payroll.getPayrollId());
@@ -845,14 +852,14 @@ public class PayrollDAO {
             return false;
         }
         
+        // --- Lấy giá trị HR nhập (hoặc giữ nguyên từ bản ghi hiện tại) ---
         BigDecimal baseSalary = current.getBaseSalary() != null ? current.getBaseSalary() : BigDecimal.ZERO;
         BigDecimal overtime = payroll.getOvertimeAmount() != null ? payroll.getOvertimeAmount() : BigDecimal.ZERO;
         BigDecimal allowance = payroll.getAllowanceAmount() != null ? payroll.getAllowanceAmount() : BigDecimal.ZERO;
         BigDecimal bonus = payroll.getBonusAmount() != null ? payroll.getBonusAmount() : BigDecimal.ZERO;
         BigDecimal deduction = payroll.getDeductionAmount() != null ? payroll.getDeductionAmount() : BigDecimal.ZERO;
-        BigDecimal insurance = payroll.getInsuranceAmount() != null ? payroll.getInsuranceAmount() : BigDecimal.ZERO;
-        BigDecimal tax = payroll.getTaxAmount() != null ? payroll.getTaxAmount() : BigDecimal.ZERO;
         
+        // --- Tính lương theo ngày công thực tế ---
         PayrollConfigDAO configDAO = new PayrollConfigDAO();
         BigDecimal standardWorkDays = configDAO.getConfigValue("STANDARD_WORK_DAYS", new BigDecimal("22"));
         
@@ -862,9 +869,38 @@ public class PayrollDAO {
             baseWorkedSalary = baseSalary.multiply(daysRatio).setScale(2, java.math.RoundingMode.HALF_UP);
         }
         
+        // --- Tính Gross Salary ---
         BigDecimal grossSalary = baseWorkedSalary.add(overtime).add(allowance).add(bonus);
-        BigDecimal totalDeductions = deduction.add(insurance).add(tax);
+        
+        // --- Tự động tính Bảo hiểm (BHXH + BHYT + BHTN) dựa trên lương cơ bản ---
+        BigDecimal insuranceAmount = calculateInsurance(baseSalary);
+        
+        // --- Tự động tính Thuế TNCN (PIT) lũy tiến ---
+        TaxProfileInfo taxProfile = getTaxProfile(current.getUserId());
+        BigDecimal totalDeductionForTax = insuranceAmount
+                .add(taxProfile.personalDeduction)
+                .add(taxProfile.dependentDeduction.multiply(new BigDecimal(taxProfile.dependentCount)));
+        
+        BigDecimal taxableIncome = grossSalary.subtract(totalDeductionForTax);
+        if (taxableIncome.compareTo(BigDecimal.ZERO) < 0) {
+            taxableIncome = BigDecimal.ZERO;
+        }
+        BigDecimal taxAmount = calculateDynamicPIT(taxableIncome);
+        
+        // --- Tính Net Salary ---
+        BigDecimal totalDeductions = deduction.add(insuranceAmount).add(taxAmount);
+
         BigDecimal netSalary = grossSalary.subtract(totalDeductions);
+        if (netSalary.compareTo(BigDecimal.ZERO) < 0) {
+            netSalary = BigDecimal.ZERO;
+        }
+        
+        // --- Cập nhật vào payroll object để controller có thể trả về ---
+        payroll.setBaseSalary(baseSalary);
+        payroll.setInsuranceAmount(insuranceAmount);
+        payroll.setTaxAmount(taxAmount);
+        payroll.setGrossSalary(grossSalary);
+        payroll.setNetSalary(netSalary);
         
         String sql = "UPDATE payroll SET " +
                      "working_days = ?, " +
@@ -885,8 +921,8 @@ public class PayrollDAO {
             ps.setBigDecimal(3, allowance);
             ps.setBigDecimal(4, bonus);
             ps.setBigDecimal(5, deduction);
-            ps.setBigDecimal(6, insurance);
-            ps.setBigDecimal(7, tax);
+            ps.setBigDecimal(6, insuranceAmount);
+            ps.setBigDecimal(7, taxAmount);
             ps.setBigDecimal(8, grossSalary);
             ps.setBigDecimal(9, netSalary);
             ps.setInt(10, payroll.getPayrollId());
@@ -895,6 +931,56 @@ public class PayrollDAO {
             e.printStackTrace();
         }
         return false;
+    }
+
+    /**
+     * TASK 2: Tính toán preview khi HR thay đổi giá trị (dùng cho AJAX recalculate)
+     * Trả về Payroll object với các giá trị insurance, tax, gross, net đã tính sẵn.
+     * KHÔNG lưu vào DB.
+     */
+    public Payroll recalculatePayrollPreview(int payrollId, BigDecimal overtimeAmount,
+            BigDecimal allowanceAmount, BigDecimal bonusAmount, BigDecimal deductionAmount) {
+        Payroll current = getById(payrollId);
+        if (current == null) return null;
+        
+        BigDecimal baseSalary = current.getBaseSalary() != null ? current.getBaseSalary() : BigDecimal.ZERO;
+        BigDecimal overtime = overtimeAmount != null ? overtimeAmount : BigDecimal.ZERO;
+        BigDecimal allowance = allowanceAmount != null ? allowanceAmount : BigDecimal.ZERO;
+        BigDecimal bonus = bonusAmount != null ? bonusAmount : BigDecimal.ZERO;
+        BigDecimal deduction = deductionAmount != null ? deductionAmount : BigDecimal.ZERO;
+        
+        BigDecimal grossSalary = baseSalary.add(overtime).add(allowance).add(bonus);
+        BigDecimal insuranceAmount = calculateInsurance(grossSalary);
+        
+        TaxProfileInfo taxProfile = getTaxProfile(current.getUserId());
+        BigDecimal totalDeductionForTax = insuranceAmount
+                .add(taxProfile.personalDeduction)
+                .add(taxProfile.dependentDeduction.multiply(new BigDecimal(taxProfile.dependentCount)));
+        BigDecimal taxableIncome = grossSalary.subtract(totalDeductionForTax);
+        if (taxableIncome.compareTo(BigDecimal.ZERO) < 0) {
+            taxableIncome = BigDecimal.ZERO;
+        }
+        BigDecimal taxAmount = calculateDynamicPIT(taxableIncome);
+        
+        BigDecimal totalDeductions = deduction.add(insuranceAmount).add(taxAmount);
+        BigDecimal netSalary = grossSalary.subtract(totalDeductions);
+        if (netSalary.compareTo(BigDecimal.ZERO) < 0) {
+            netSalary = BigDecimal.ZERO;
+        }
+        
+        Payroll preview = new Payroll();
+        preview.setPayrollId(payrollId);
+        preview.setUserId(current.getUserId());
+        preview.setBaseSalary(baseSalary);
+        preview.setOvertimeAmount(overtime);
+        preview.setAllowanceAmount(allowance);
+        preview.setBonusAmount(bonus);
+        preview.setDeductionAmount(deduction);
+        preview.setInsuranceAmount(insuranceAmount);
+        preview.setTaxAmount(taxAmount);
+        preview.setGrossSalary(grossSalary);
+        preview.setNetSalary(netSalary);
+        return preview;
     }
 
     public boolean submitPayrollForApproval(int payrollId) {

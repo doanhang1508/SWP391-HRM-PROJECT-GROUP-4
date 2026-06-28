@@ -325,7 +325,7 @@
 <script>
     // Pagination Logic
     let currentPage = 1;
-    const itemsPerPage = 6;
+    const itemsPerPage = 10;
     let filteredRows = [];
 
     document.addEventListener('DOMContentLoaded', function() {

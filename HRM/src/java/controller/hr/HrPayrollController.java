@@ -63,6 +63,7 @@ public class HrPayrollController extends HttpServlet {
             case "list" -> showList(request, response);
             case "edit" -> showEditForm(request, response);
             case "exportExcel" -> exportExcel(request, response);
+            case "recalculate" -> recalculatePreview(request, response);
             default -> response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }
@@ -249,6 +250,10 @@ public class HrPayrollController extends HttpServlet {
         }
     }
 
+    /**
+     * TASK 2: HR chỉ nhập overtime, allowance, bonus, deduction.
+     * Insurance và Tax được hệ thống tự động tính lại trong PayrollDAO.updatePayrollDraft().
+     */
     private void updateDraft(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         String idStr = request.getParameter("payrollId");
@@ -278,8 +283,6 @@ public class HrPayrollController extends HttpServlet {
             BigDecimal allowanceAmount = new BigDecimal(request.getParameter("allowanceAmount").replaceAll(",", ""));
             BigDecimal bonusAmount = new BigDecimal(request.getParameter("bonusAmount").replaceAll(",", ""));
             BigDecimal deductionAmount = new BigDecimal(request.getParameter("deductionAmount").replaceAll(",", ""));
-            BigDecimal insuranceAmount = new BigDecimal(request.getParameter("insuranceAmount").replaceAll(",", ""));
-            BigDecimal taxAmount = new BigDecimal(request.getParameter("taxAmount").replaceAll(",", ""));
 
             if (workingDays < 0) {
                 request.getSession().setAttribute("errorMessage", "Số ngày làm việc không được âm.");
@@ -287,8 +290,7 @@ public class HrPayrollController extends HttpServlet {
                 return;
             }
             if (overtimeAmount.compareTo(BigDecimal.ZERO) < 0 || allowanceAmount.compareTo(BigDecimal.ZERO) < 0
-                || bonusAmount.compareTo(BigDecimal.ZERO) < 0 || deductionAmount.compareTo(BigDecimal.ZERO) < 0
-                || insuranceAmount.compareTo(BigDecimal.ZERO) < 0 || taxAmount.compareTo(BigDecimal.ZERO) < 0) {
+                || bonusAmount.compareTo(BigDecimal.ZERO) < 0 || deductionAmount.compareTo(BigDecimal.ZERO) < 0) {
                 request.getSession().setAttribute("errorMessage", "Các số tiền không được là số âm.");
                 response.sendRedirect(request.getContextPath() + "/hr/payroll?action=edit&id=" + payrollId);
                 return;
@@ -301,12 +303,11 @@ public class HrPayrollController extends HttpServlet {
             updateModel.setAllowanceAmount(allowanceAmount);
             updateModel.setBonusAmount(bonusAmount);
             updateModel.setDeductionAmount(deductionAmount);
-            updateModel.setInsuranceAmount(insuranceAmount);
-            updateModel.setTaxAmount(taxAmount);
+            // Insurance và Tax sẽ được tự động tính trong PayrollDAO.updatePayrollDraft()
 
             boolean success = payrollDAO.updatePayrollDraft(updateModel);
             if (success) {
-                request.getSession().setAttribute("successMessage", "Cập nhật bảng lương nháp thành công.");
+                request.getSession().setAttribute("successMessage", "Cập nhật bảng lương nháp thành công. Bảo hiểm và Thuế TNCN đã được tính toán lại tự động.");
             } else {
                 request.getSession().setAttribute("errorMessage", "Cập nhật thất bại. Vui lòng kiểm tra lại dữ liệu.");
             }
@@ -314,6 +315,49 @@ public class HrPayrollController extends HttpServlet {
         } catch (NumberFormatException e) {
             request.getSession().setAttribute("errorMessage", "Dữ liệu nhập vào không đúng định dạng số.");
             response.sendRedirect(request.getContextPath() + "/hr/payroll?action=edit&id=" + idStr);
+        }
+    }
+
+    /**
+     * TASK 2: AJAX endpoint — tính toán preview (insurance, tax, gross, net) khi HR thay đổi giá trị.
+     * Trả về JSON response. KHÔNG lưu vào DB.
+     */
+    private void recalculatePreview(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        
+        try {
+            int payrollId = Integer.parseInt(request.getParameter("payrollId"));
+            BigDecimal overtime = parseBigDecimalSafe(request.getParameter("overtimeAmount"));
+            BigDecimal allowance = parseBigDecimalSafe(request.getParameter("allowanceAmount"));
+            BigDecimal bonus = parseBigDecimalSafe(request.getParameter("bonusAmount"));
+            BigDecimal deduction = parseBigDecimalSafe(request.getParameter("deductionAmount"));
+            
+            Payroll preview = payrollDAO.recalculatePayrollPreview(payrollId, overtime, allowance, bonus, deduction);
+            if (preview == null) {
+                response.getWriter().write("{\"error\":\"Không tìm thấy bảng lương\"}");
+                return;
+            }
+            
+            String json = "{" +
+                "\"insuranceAmount\":" + preview.getInsuranceAmount().toPlainString() + "," +
+                "\"taxAmount\":" + preview.getTaxAmount().toPlainString() + "," +
+                "\"grossSalary\":" + preview.getGrossSalary().toPlainString() + "," +
+                "\"netSalary\":" + preview.getNetSalary().toPlainString() +
+                "}";
+            response.getWriter().write(json);
+        } catch (NumberFormatException e) {
+            response.getWriter().write("{\"error\":\"Dữ liệu không hợp lệ\"}");
+        }
+    }
+
+    private BigDecimal parseBigDecimalSafe(String value) {
+        if (value == null || value.isBlank()) return BigDecimal.ZERO;
+        try {
+            return new BigDecimal(value.replaceAll(",", ""));
+        } catch (NumberFormatException e) {
+            return BigDecimal.ZERO;
         }
     }
 
