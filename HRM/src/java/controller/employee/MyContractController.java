@@ -42,22 +42,11 @@ public class MyContractController extends HttpServlet {
         double totalAllowance = 0;
         List<java.util.Map<String, Object>> allowanceList = new java.util.ArrayList<>();
         if (activeContract != null) {
-            String sql = "SELECT a.allowance_name, ea.amount FROM employee_allowances ea JOIN allowances a ON ea.allowance_id = a.allowance_id WHERE ea.user_id = ? AND (ea.contract_id = ? OR ea.contract_id IS NULL)";
-            try (java.sql.Connection conn = util.DBContext.getConnection();
-                 java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setInt(1, userId);
-                ps.setInt(2, activeContract.getContractId());
-                try (java.sql.ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        java.util.Map<String, Object> map = new java.util.HashMap<>();
-                        map.put("name", rs.getString("allowance_name"));
-                        double amt = rs.getDouble("amount");
-                        map.put("amount", amt);
-                        allowanceList.add(map);
-                        totalAllowance += amt;
-                    }
-                }
-            } catch (Exception e) { e.printStackTrace(); }
+            dao.AllowanceDAO allowanceDAO = new dao.AllowanceDAO();
+            allowanceList = allowanceDAO.getAllowancesByContract(userId, activeContract.getContractId());
+            for (java.util.Map<String, Object> map : allowanceList) {
+                totalAllowance += (Double) map.get("amount");
+            }
         }
         double grossSalary = (activeContract != null) ? activeContract.getBaseSalary().doubleValue() + totalAllowance : 0;
 

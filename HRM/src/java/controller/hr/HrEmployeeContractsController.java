@@ -113,23 +113,11 @@ public class HrEmployeeContractsController extends HttpServlet {
             }
             
             double totalAllowance = 0;
-            List<java.util.Map<String, Object>> allowanceList = new java.util.ArrayList<>();
-            String sqlAllowance = "SELECT a.allowance_name, ea.amount FROM employee_allowances ea JOIN allowances a ON ea.allowance_id = a.allowance_id WHERE ea.user_id = ? AND (ea.contract_id = ? OR ea.contract_id IS NULL)";
-            try (java.sql.Connection conn = util.DBContext.getConnection();
-                 java.sql.PreparedStatement ps = conn.prepareStatement(sqlAllowance)) {
-                ps.setInt(1, userId);
-                ps.setInt(2, currentContractId);
-                try (java.sql.ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        java.util.Map<String, Object> map = new java.util.HashMap<>();
-                        map.put("name", rs.getString("allowance_name"));
-                        double amt = rs.getDouble("amount");
-                        map.put("amount", amt);
-                        allowanceList.add(map);
-                        totalAllowance += amt;
-                    }
-                }
-            } catch (Exception e) { e.printStackTrace(); }
+            dao.AllowanceDAO aDao = new dao.AllowanceDAO();
+            List<java.util.Map<String, Object>> allowanceList = aDao.getAllowancesByContract(userId, currentContractId);
+            for (java.util.Map<String, Object> map : allowanceList) {
+                totalAllowance += (Double) map.get("amount");
+            }
             
             request.setAttribute("contracts", contracts);
             request.setAttribute("contractTypes", contractTypes);
@@ -209,23 +197,8 @@ public class HrEmployeeContractsController extends HttpServlet {
                 // Handle allowance checkboxes
                 String[] allowanceIds = request.getParameterValues("allowanceIds");
                 if (allowanceIds != null && allowanceIds.length > 0 && c.getContractId() > 0) {
-                    try (java.sql.Connection conn = util.DBContext.getConnection()) {
-                        String sqlInsertAlw = "INSERT INTO employee_allowances (user_id, allowance_id, amount, contract_id, effective_date) VALUES (?, ?, (SELECT amount FROM allowances WHERE allowance_id = ?), ?, ?)";
-                        try (java.sql.PreparedStatement psAlw = conn.prepareStatement(sqlInsertAlw)) {
-                            for (String alwIdStr : allowanceIds) {
-                                int alwId = Integer.parseInt(alwIdStr);
-                                psAlw.setInt(1, userId);
-                                psAlw.setInt(2, alwId);
-                                psAlw.setInt(3, alwId);
-                                psAlw.setInt(4, c.getContractId());
-                                psAlw.setDate(5, c.getStartDate());
-                                psAlw.addBatch();
-                            }
-                            psAlw.executeBatch();
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    dao.AllowanceDAO alwDAO = new dao.AllowanceDAO();
+                    alwDAO.insertEmployeeAllowances(userId, c.getContractId(), c.getStartDate(), allowanceIds);
                 }
                 
                 // Đồng thời cập nhật contract_type_id vào bảng employee_profiles
@@ -291,23 +264,8 @@ public class HrEmployeeContractsController extends HttpServlet {
                 if (newlyCreatedAddendum != null) {
                     String[] allowanceIds = request.getParameterValues("allowanceIds");
                     if (allowanceIds != null && allowanceIds.length > 0) {
-                        try (java.sql.Connection conn = util.DBContext.getConnection()) {
-                            String sqlInsertAlw = "INSERT INTO employee_allowances (user_id, allowance_id, amount, contract_id, effective_date) VALUES (?, ?, (SELECT amount FROM allowances WHERE allowance_id = ?), ?, ?)";
-                            try (java.sql.PreparedStatement psAlw = conn.prepareStatement(sqlInsertAlw)) {
-                                for (String alwIdStr : allowanceIds) {
-                                    int alwId = Integer.parseInt(alwIdStr);
-                                    psAlw.setInt(1, userId);
-                                    psAlw.setInt(2, alwId);
-                                    psAlw.setInt(3, alwId);
-                                    psAlw.setInt(4, newlyCreatedAddendum.getContractId());
-                                    psAlw.setDate(5, newlyCreatedAddendum.getStartDate());
-                                    psAlw.addBatch();
-                                }
-                                psAlw.executeBatch();
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                        dao.AllowanceDAO alwDAO = new dao.AllowanceDAO();
+                        alwDAO.insertEmployeeAllowances(userId, newlyCreatedAddendum.getContractId(), newlyCreatedAddendum.getStartDate(), allowanceIds);
                     }
                 }
                 

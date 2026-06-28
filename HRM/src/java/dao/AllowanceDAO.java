@@ -152,7 +152,64 @@ public class AllowanceDAO {
 
     /** Đếm số nhân viên đang hưởng phụ cấp này */
     public int countEmployees(int id) {
-        // Placeholder – kết nối với bảng employee_allowances khi có
+        String sql = "SELECT COUNT(DISTINCT user_id) FROM employee_allowances WHERE allowance_id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
         return 0;
+    }
+
+    /**
+     * Lấy danh sách phụ cấp chi tiết của một nhân viên theo hợp đồng cụ thể
+     */
+    public List<java.util.Map<String, Object>> getAllowancesByContract(int userId, int contractId) {
+        List<java.util.Map<String, Object>> list = new java.util.ArrayList<>();
+        String sql = "SELECT a.allowance_name, ea.amount FROM employee_allowances ea " +
+                     "JOIN allowances a ON ea.allowance_id = a.allowance_id " +
+                     "WHERE ea.user_id = ? AND (ea.contract_id = ? OR ea.contract_id IS NULL)";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, contractId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    java.util.Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("name", rs.getString("allowance_name"));
+                    map.put("amount", rs.getDouble("amount"));
+                    list.add(map);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * Chèn nhiều phụ cấp cho một hợp đồng
+     */
+    public void insertEmployeeAllowances(int userId, int contractId, java.sql.Date effectiveDate, String[] allowanceIds) {
+        if (allowanceIds == null || allowanceIds.length == 0) return;
+        String sql = "INSERT INTO employee_allowances (user_id, allowance_id, amount, contract_id, effective_date) " +
+                     "VALUES (?, ?, (SELECT amount FROM allowances WHERE allowance_id = ?), ?, ?)";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (String alwIdStr : allowanceIds) {
+                int alwId = Integer.parseInt(alwIdStr);
+                ps.setInt(1, userId);
+                ps.setInt(2, alwId);
+                ps.setInt(3, alwId);
+                ps.setInt(4, contractId);
+                ps.setDate(5, effectiveDate);
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
