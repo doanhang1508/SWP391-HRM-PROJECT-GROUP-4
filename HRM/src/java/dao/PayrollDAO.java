@@ -739,9 +739,12 @@ public class PayrollDAO {
                 baseWorkedSalary = baseSalary.multiply(daysRatio).setScale(2, java.math.RoundingMode.HALF_UP);
             }
             
+            // Tính lương 1 giờ dựa trên số giờ làm việc thực tế của tháng (standardWorkDays * 8h)
+            // thay vì chia cứng cho 176 giờ.
             BigDecimal hourlyRate = BigDecimal.ZERO;
-            if (baseSalary.compareTo(BigDecimal.ZERO) > 0) {
-                hourlyRate = baseSalary.divide(new BigDecimal("176"), 2, java.math.RoundingMode.HALF_UP);
+            if (baseSalary.compareTo(BigDecimal.ZERO) > 0 && standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal monthlyWorkingHours = standardWorkDays.multiply(new BigDecimal("8"));
+                hourlyRate = baseSalary.divide(monthlyWorkingHours, 4, java.math.RoundingMode.HALF_UP);
             }
             
             BigDecimal overtimeHours = attendanceDAO.getTotalOvertimeHoursFromAttendance(userId, month, year);
@@ -753,10 +756,10 @@ public class PayrollDAO {
                 userId, activeContractId, totalDays, standardWorkDays.doubleValue(), month, year);
             BigDecimal allowanceAmount = allowanceResult.totalAmount;
 
-            // Nền tính BHXH = Lương cơ bản (từ hợp đồng) + các phụ cấp có is_bhxh_applied = 1
-            BigDecimal bhxhBase = baseSalary.add(allowanceResult.bhxhBase);
+            // Nền tính BHXH = CHỈ lương cơ bản (từ hợp đồng), không cộng thưởng hay OT.
+            // Quy định: bảo hiểm chỉ tính trên lương cơ bản theo hợp đồng lao động.
             BigDecimal totalInsuranceRate = bhxhRate.add(bhytRate).add(bhtnRate);
-            BigDecimal insuranceAmount = bhxhBase.multiply(totalInsuranceRate)
+            BigDecimal insuranceAmount = baseSalary.multiply(totalInsuranceRate)
                 .divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
 
             // Gross = Lương theo công + Phụ cấp + OT + Thưởng

@@ -517,24 +517,49 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
 
     @Override
     public double getPaidLeaveDays(int employeeId, int month, int year) {
-        String sql = "SELECT SUM(total_days) FROM leave_requests lr " +
+        // Fetch all approved paid-leave requests that overlap with the target month.
+        // A request overlaps if: start_date <= lastDayOfMonth AND end_date >= firstDayOfMonth
+        LocalDate firstDayOfMonth = LocalDate.of(year, month, 1);
+        LocalDate lastDayOfMonth  = firstDayOfMonth.withDayOfMonth(firstDayOfMonth.lengthOfMonth());
+
+        String sql = "SELECT lr.start_date, lr.end_date " +
+                     "FROM leave_requests lr " +
                      "JOIN leave_types lt ON lr.leave_type_id = lt.leave_type_id " +
-                     "WHERE lr.user_id = ? AND MONTH(lr.start_date) = ? AND YEAR(lr.start_date) = ? " +
-                     "AND lr.status = 'Approved' AND lt.paid_leave = 1";
+                     "WHERE lr.user_id = ? " +
+                     "  AND lr.status = 'Approved' " +
+                     "  AND lt.paid_leave = 1 " +
+                     "  AND lr.start_date <= ? " +
+                     "  AND lr.end_date   >= ?";
+
+        double totalDays = 0;
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, employeeId);
-            ps.setInt(2, month);
-            ps.setInt(3, year);
+            ps.setDate(2, java.sql.Date.valueOf(lastDayOfMonth));
+            ps.setDate(3, java.sql.Date.valueOf(firstDayOfMonth));
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getDouble(1);
+                while (rs.next()) {
+                    LocalDate leaveStart = rs.getDate("start_date").toLocalDate();
+                    LocalDate leaveEnd   = rs.getDate("end_date").toLocalDate();
+
+                    // Clamp the leave range to the target month
+                    LocalDate effectiveStart = leaveStart.isBefore(firstDayOfMonth) ? firstDayOfMonth : leaveStart;
+                    LocalDate effectiveEnd   = leaveEnd.isAfter(lastDayOfMonth)     ? lastDayOfMonth  : leaveEnd;
+
+                    // Count each day in the clamped range (exclude Sundays — working week is Mon-Sat)
+                    LocalDate current = effectiveStart;
+                    while (!current.isAfter(effectiveEnd)) {
+                        if (current.getDayOfWeek() != DayOfWeek.SUNDAY) {
+                            totalDays += 1;
+                        }
+                        current = current.plusDays(1);
+                    }
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return 0;
+        return totalDays;
     }
 }
 
