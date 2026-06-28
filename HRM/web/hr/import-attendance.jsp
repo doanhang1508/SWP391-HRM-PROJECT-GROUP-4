@@ -76,6 +76,7 @@
     }
     .alert-success { background: var(--ok-l); color: #065f46; border: 1px solid #a7f3d0; }
     .alert-error { background: var(--ng-l); color: #991b1b; border: 1px solid #fecaca; }
+    .alert-warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; flex-direction: column; align-items: flex-start; }
 
     /* CSV format guide */
     .guide-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
@@ -130,6 +131,18 @@
                 <i class="fas fa-exclamation-circle"></i> ${sessionScope.errorMessage}
             </div>
             <c:remove var="errorMessage" scope="session"/>
+        </c:if>
+
+        <c:if test="${not empty sessionScope.fullParseErrors}">
+            <div class="alert alert-warning mt-3">
+                <strong><i class="fas fa-exclamation-triangle" style="margin-right:6px"></i>Chi tiết các dòng lỗi:</strong>
+                <ul class="mb-0 mt-2" style="font-size:0.85rem; padding-left:20px; margin:8px 0 0; width:100%;">
+                    <c:forEach var="err" items="${sessionScope.fullParseErrors}">
+                        <li style="margin-bottom:4px;">${err}</li>
+                    </c:forEach>
+                </ul>
+            </div>
+            <c:remove var="fullParseErrors" scope="session"/>
         </c:if>
 
         <!-- Upload Panel -->

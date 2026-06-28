@@ -76,7 +76,13 @@ public class ImportAttendanceController extends HttpServlet {
                 return;
             }
 
-            String fileName = filePart.getSubmittedFileName().toLowerCase();
+            String submittedFileName = filePart.getSubmittedFileName();
+            if (submittedFileName == null) {
+                session.setAttribute("errorMessage", "Không xác định được tên file.");
+                response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
+                return;
+            }
+            String fileName = submittedFileName.toLowerCase();
             boolean isExcel = fileName.endsWith(".xlsx") || fileName.endsWith(".xls");
 
             if (!isExcel) {
@@ -87,8 +93,18 @@ public class ImportAttendanceController extends HttpServlet {
 
             String monthStr = request.getParameter("importMonth");
             String yearStr = request.getParameter("importYear");
-            int month = monthStr != null ? Integer.parseInt(monthStr) : LocalDate.now().getMonthValue();
-            int year = yearStr != null ? Integer.parseInt(yearStr) : LocalDate.now().getYear();
+            int month, year;
+            try {
+                month = monthStr != null ? Integer.parseInt(monthStr) : LocalDate.now().getMonthValue();
+                year = yearStr != null ? Integer.parseInt(yearStr) : LocalDate.now().getYear();
+                if (month < 1 || month > 12) {
+                    throw new NumberFormatException("Month out of range");
+                }
+            } catch (NumberFormatException e) {
+                session.setAttribute("errorMessage", "Tháng/năm không hợp lệ.");
+                response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
+                return;
+            }
 
             if (attendanceDAO.isMonthLocked(month, year)) {
                 session.setAttribute("errorMessage",
@@ -99,9 +115,10 @@ public class ImportAttendanceController extends HttpServlet {
 
             List<Attendance> records = new ArrayList<>();
             List<String> parseErrors = new ArrayList<>();
+            List<String> skippedRows = new ArrayList<>();
 
             try {
-                parseExcel(filePart.getInputStream(), records, parseErrors, month, year);
+                parseExcel(filePart.getInputStream(), records, parseErrors, skippedRows, month, year);
             } catch (Exception ex) {
                 session.setAttribute("errorMessage",
                         "Lỗi đọc file: " + ex.getMessage() +
@@ -117,6 +134,7 @@ public class ImportAttendanceController extends HttpServlet {
                                         : "Lỗi: " +
                                                 String.join("; ",
                                                         parseErrors.subList(0, Math.min(3, parseErrors.size())))));
+                session.setAttribute("fullParseErrors", parseErrors);
                 response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
                 return;
             }
@@ -124,10 +142,14 @@ public class ImportAttendanceController extends HttpServlet {
             int imported = attendanceDAO.bulkImportAttendance(records);
             
             String msg = "Import thành công " + imported + "/" + records.size() + " bản ghi.";
+            if (!skippedRows.isEmpty()) {
+                msg += " Đã bỏ qua " + skippedRows.size() + " dòng tổng hợp/header (bình thường).";
+            }
             if (!parseErrors.isEmpty()) {
-                msg += " Có " + parseErrors.size() + " dòng lỗi định dạng bị bỏ qua.";
+                msg += " ⚠️ Có " + parseErrors.size() + " dòng lỗi thực sự cần kiểm tra.";
             }
             session.setAttribute("successMessage", msg);
+            session.setAttribute("fullParseErrors", parseErrors);
             response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
 
         } else {
@@ -135,36 +157,52 @@ public class ImportAttendanceController extends HttpServlet {
         }
     }
 
-    private void parseExcel(InputStream is, List<Attendance> records, List<String> errors, int month, int year)
+    private String removeAccents(String s) {
+        if (s == null) return null;
+        String normalized = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD);
+        return normalized.replaceAll("\\p{M}", "").replaceAll("\\s+", "_").toUpperCase();
+    }
+
+    private void parseExcel(InputStream is, List<Attendance> records, List<String> errors,
+                             List<String> skippedRows, int month, int year)
             throws Exception {
         UserDAO userDAO = new UserDAO();
         ShiftDAOImpl shiftDAO = new ShiftDAOImpl();
         List<Shift> allShifts = shiftDAO.getAllShifts();
+        List<User> allUsers = userDAO.getAllUsers();
+        java.util.Map<Integer, User> userMap = new java.util.HashMap<>();
+        java.util.Map<String, User> usernameMap = new java.util.HashMap<>();
+        for (User u : allUsers) {
+            userMap.put(u.getUserId(), u);
+            if (u.getUsername() != null) {
+                usernameMap.put(u.getUsername().toUpperCase(), u);
+            }
+        }
 
         try (Workbook wb = WorkbookFactory.create(is)) {
-            Sheet sheet = wb.getSheet("CHI_TIET_CHAM_CONG");
+            Sheet sheet = wb.getSheet("CHI_TIET_CHAM_CONG");//tim dung File de doc
             if (sheet == null) {
-                // Thử tìm sheet có chứa chữ CHAM_CONG hoặc lấy sheet cuối cùng
+                // Thử tìm sheet có chứa chữ CHAM_CONG hoặc lấy sheet ĐẦU TIÊN
                 for (int i = 0; i < wb.getNumberOfSheets(); i++) {
-                    String sName = wb.getSheetName(i).toUpperCase();
-                    if (sName.contains("CHAM_CONG") || sName.contains("CHẤM CÔNG")) {
+                    String sName = removeAccents(wb.getSheetName(i));
+                    if (sName != null && sName.contains("CHAM_CONG")) {
                         sheet = wb.getSheetAt(i);
                         break;
                     }
                 }
-                if (sheet == null) sheet = wb.getSheetAt(1); // Fallback về sheet 1 thay vì 0, vì sheet 1 thường là Chi Tiết Chấm Công
+                if (sheet == null) sheet = wb.getSheetAt(0); // Fallback về sheet 0
             }
             for (Row row : sheet) {
                 if (row.getRowNum() < 3) continue; // Bỏ qua 3 dòng đầu (headers)
 
                 if (isRowEmpty(row)) continue;
                 try {
-                    Attendance a = rowToAttendance(row, row.getRowNum() + 1, userDAO, allShifts);
+                    Attendance a = rowToAttendance(row, userMap, usernameMap, allShifts);
                     if (a != null) {
-                        if (attendanceDAO.isUserMonthLocked(a.getUserId(), month, year)) {
-                            throw new Exception("Nhân viên " + a.getUserId() + " thuộc phòng ban đã duyệt cuối/khóa bảng công.");
-                        }
                         records.add(a);
+                    } else {
+                        // return null có chủ ý: dòng tổng hợp / header — không phải lỗi
+                        skippedRows.add("Dòng " + (row.getRowNum() + 1) + " bị bỏ qua (dòng tổng hợp/header)");
                     }
                 } catch (Exception e) {
                     errors.add("Dòng " + (row.getRowNum() + 1) + ": " + e.getMessage());
@@ -182,33 +220,55 @@ public class ImportAttendanceController extends HttpServlet {
         return true;
     }
 
-    private Attendance rowToAttendance(Row row, int rowNum, UserDAO userDAO, List<Shift> allShifts) throws Exception {
+    private Attendance rowToAttendance(Row row, java.util.Map<Integer, User> userMap, java.util.Map<String, User> usernameMap, List<Shift> allShifts) throws Exception {
         Attendance a = new Attendance();
 
-        // 1. Mã NV (Cột 1)
-        Cell empCodeCell = row.getCell(1);
-        if (empCodeCell == null || empCodeCell.getCellType() == CellType.BLANK) {
-            throw new Exception("Mã nhân viên trống.");
+        // ── Scan 6 cột đầu vì dòng "Cộng:" có thể nằm ở cột bất kỳ do merged cell ──
+        for (int ci = 0; ci < 6; ci++) {
+            String cellVal = getStringCell(row, ci);
+            if (cellVal == null) continue;
+            String cellNorm = java.text.Normalizer.normalize(cellVal.trim(), java.text.Normalizer.Form.NFD)
+                    .replaceAll("\\p{M}", "").toLowerCase();
+            if (cellNorm.startsWith("cong:") || (cellNorm.contains("p:") && cellNorm.contains("a:"))) {
+                return null; // dòng tổng hợp, bỏ qua
+            }
         }
-        String employeeCode = empCodeCell.getStringCellValue().trim();
+        String secondCell = getStringCell(row, 1);
+        if (secondCell == null || secondCell.trim().isEmpty()) {
+            return null; // dòng trống hoặc không có Mã NV, bỏ qua
+        }
+
+        // Vẫn giữ kiểm tra header / dòng tổng hợp theo nội dung cột Mã NV
+        String col1Upper = secondCell.trim().toUpperCase();
+        if (col1Upper.startsWith("C\u1ed8NG") || col1Upper.startsWith("CONG")
+                || col1Upper.startsWith("T\u1ed4NG") || col1Upper.startsWith("TONG")
+                || col1Upper.equals("M\u00c3 NV") || col1Upper.equals("MA NV")
+                || col1Upper.equals("STT")) {
+            return null; // dòng tổng hợp / header — không phải lỗi
+        }
+
+        // 1. Mã NV (Cột 1)
+        String employeeCode = secondCell;
+        employeeCode = employeeCode.trim();
         
         User user = null;
         if (employeeCode.toUpperCase().startsWith("NV")) {
             try {
                 int userId = Integer.parseInt(employeeCode.substring(2));
-                user = userDAO.getUserById(userId);
+                user = userMap.get(userId);
             } catch (NumberFormatException e) {
                 // Ignore parsing error, try username lookup next
             }
         }
         if (user == null) {
-            user = userDAO.getUserByUsername(employeeCode);
+            user = usernameMap.get(employeeCode.toUpperCase());
         }
         
         if (user == null) {
-            throw new Exception("Không tìm thấy nhân viên: " + employeeCode);
+            throw new Exception("Kh\u00f4ng t\u00ecm th\u1ea5y nh\u00e2n vi\u00ean: " + employeeCode);
         }
         a.setUserId(user.getUserId());
+
 
         Cell dateCell = row.getCell(5);
         if (dateCell == null) throw new Exception("Thiếu Ngày làm việc");
@@ -251,16 +311,18 @@ public class ImportAttendanceController extends HttpServlet {
         a.setShiftId(shiftId);
 
         String checkIn = getStringCell(row, 8);
-        if (checkIn != null && !checkIn.trim().isEmpty() && !checkIn.equalsIgnoreCase("BLANK")) {
-            if (checkIn.length() == 5) checkIn += ":00";
+        if (checkIn != null && !checkIn.trim().isEmpty() 
+                && !checkIn.equalsIgnoreCase("BLANK") && isValidTime(checkIn.trim())) {
+            if (checkIn.trim().length() == 5) checkIn = checkIn.trim() + ":00";
             a.setCheckIn(Time.valueOf(checkIn.trim()));
         } else {
             a.setCheckIn(null);
         }
 
         String checkOut = getStringCell(row, 9);
-        if (checkOut != null && !checkOut.trim().isEmpty() && !checkOut.equalsIgnoreCase("BLANK")) {
-            if (checkOut.length() == 5) checkOut += ":00";
+        if (checkOut != null && !checkOut.trim().isEmpty() 
+                && !checkOut.equalsIgnoreCase("BLANK") && isValidTime(checkOut.trim())) {
+            if (checkOut.trim().length() == 5) checkOut = checkOut.trim() + ":00";
             a.setCheckOut(Time.valueOf(checkOut.trim()));
         } else {
             a.setCheckOut(null);
@@ -270,13 +332,41 @@ public class ImportAttendanceController extends HttpServlet {
         if (status == null || status.trim().isEmpty() || status.equalsIgnoreCase("BLANK")) {
              status = "A"; // default absent
         }
-        status = status.trim().toUpperCase();
-        switch (status) {
-            case "P": a.setStatus("PRESENT"); break;
-            case "A": a.setStatus("ABSENT"); break;
-            case "L": a.setStatus("LATE"); break;
-            case "H": a.setStatus("HALFDAY"); break;
-            default: a.setStatus("PRESENT"); break; // Fallback
+        status = status.trim();
+
+        if (status.contains("P:") || status.contains("A:")) {
+            return null; // Bỏ qua dòng tổng hợp
+        }
+
+        // Chữ "Đ" (U+0110) không tách được bằng NFD nên phải replace thủ công trước
+        String statusPrep = status.replace("Đ", "D").replace("đ", "d");
+        String normStatus = java.text.Normalizer.normalize(statusPrep, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")   // bỏ dấu
+                .toUpperCase()              // uppercase
+                .trim();
+
+        // Loại bỏ text thừa sau dấu phẩy (vd: "DI TRE, BI GHI NHAN" → "DI TRE")
+        if (normStatus.contains(",")) {
+            normStatus = normStatus.substring(0, normStatus.indexOf(",")).trim();
+        }
+
+        switch (normStatus) {
+            case "P":
+            case "CO MAT":
+                a.setStatus("PRESENT"); break;
+            case "A":
+            case "VANG MAT":
+            case "VANG MAT (KP)":
+                a.setStatus("ABSENT"); break;
+            case "L":
+            case "T":
+            case "DI TRE":
+                a.setStatus("LATE"); break;
+            case "H":
+                a.setStatus("HALFDAY"); break;
+            case "NGHI PHEP":
+                a.setStatus("LEAVE"); break;
+            default: throw new Exception("Trạng thái không hợp lệ: " + status);
         }
 
         Cell otCell = row.getCell(11);
@@ -335,5 +425,11 @@ public class ImportAttendanceController extends HttpServlet {
                 }
             default: return null;
         }
+    }
+
+    private boolean isValidTime(String s) {
+        if (s == null) return false;
+        // Chấp nhận định dạng HH:mm hoặc HH:mm:ss, bác bỏ "—", "–", chữ...
+        return s.matches("\\d{1,2}:\\d{2}(:\\d{2})?");
     }
 }

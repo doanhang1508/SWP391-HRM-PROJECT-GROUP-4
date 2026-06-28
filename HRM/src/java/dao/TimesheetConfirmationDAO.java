@@ -259,6 +259,7 @@ public class TimesheetConfirmationDAO {
                      "JOIN users u ON a.user_id = u.user_id " +
                      "JOIN departments d ON u.department_id = d.department_id " +
                      "WHERE MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? " +
+                     "AND u.department_id IS NOT NULL AND u.role_id NOT IN (1, 4) " +
                      "ORDER BY d.department_name";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -378,6 +379,8 @@ public class TimesheetConfirmationDAO {
         private String positionName;
         private double totalWorkDays;
         private double totalLeaveDays;
+        private int lateCount;
+        private int absentCount;
         private double totalOTHours;
         private boolean confirmed;
 
@@ -399,6 +402,12 @@ public class TimesheetConfirmationDAO {
         public double getTotalLeaveDays() { return totalLeaveDays; }
         public void setTotalLeaveDays(double totalLeaveDays) { this.totalLeaveDays = totalLeaveDays; }
 
+        public int getLateCount() { return lateCount; }
+        public void setLateCount(int lateCount) { this.lateCount = lateCount; }
+
+        public int getAbsentCount() { return absentCount; }
+        public void setAbsentCount(int absentCount) { this.absentCount = absentCount; }
+
         public double getTotalOTHours() { return totalOTHours; }
         public void setTotalOTHours(double totalOTHours) { this.totalOTHours = totalOTHours; }
 
@@ -413,8 +422,10 @@ public class TimesheetConfirmationDAO {
                      "  u.full_name, " +
                      "  d.department_name, " +
                      "  COALESCE(p.position_name, '-') AS position_name, " +
-                     "  COALESCE(SUM(CASE WHEN a.status = 'PRESENT' OR a.status = 'LATE' THEN 1 WHEN a.status = 'HALFDAY' THEN 0.5 ELSE 0 END), 0) AS total_work_days, " +
-                     "  COALESCE(SUM(CASE WHEN a.status = 'ABSENT' THEN 1 WHEN a.status = 'HALFDAY' THEN 0.5 ELSE 0 END), 0) AS total_leave_days, " +
+                     "  COALESCE(SUM(CASE WHEN UPPER(a.status) IN ('PRESENT', 'LATE', 'T', 'P') THEN 1 WHEN UPPER(a.status) = 'HALFDAY' THEN 0.5 ELSE 0 END), 0) AS total_work_days, " +
+                     "  COALESCE(SUM(CASE WHEN UPPER(a.status) IN ('ABSENT', 'A') THEN 1 WHEN UPPER(a.status) = 'HALFDAY' THEN 0.5 ELSE 0 END), 0) AS total_leave_days, " +
+                     "  COALESCE(SUM(CASE WHEN UPPER(a.status) IN ('LATE', 'T') THEN 1 ELSE 0 END), 0) AS late_cnt, " +
+                     "  COALESCE(SUM(CASE WHEN UPPER(a.status) IN ('ABSENT', 'A') THEN 1 ELSE 0 END), 0) AS absent_cnt, " +
                      "  COALESCE(SUM(a.overtime_hrs), 0) AS total_ot_hours, " +
                      "  MAX(CASE WHEN tec.id IS NOT NULL THEN 1 ELSE 0 END) AS is_confirmed " +
                      "FROM users u " +
@@ -441,6 +452,8 @@ public class TimesheetConfirmationDAO {
                     s.setPositionName(rs.getString("position_name"));
                     s.setTotalWorkDays(rs.getDouble("total_work_days"));
                     s.setTotalLeaveDays(rs.getDouble("total_leave_days"));
+                    s.setLateCount(rs.getInt("late_cnt"));
+                    s.setAbsentCount(rs.getInt("absent_cnt"));
                     s.setTotalOTHours(rs.getDouble("total_ot_hours"));
                     s.setConfirmed(rs.getInt("is_confirmed") == 1);
                     list.add(s);

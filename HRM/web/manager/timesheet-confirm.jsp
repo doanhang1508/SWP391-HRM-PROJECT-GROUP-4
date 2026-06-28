@@ -768,6 +768,8 @@
                                                         <th>Phòng ban</th>
                                                         <th>Chức vụ</th>
                                                         <th>Tổng ngày làm việc</th>
+                                                        <th>Đi trễ (Lần)</th>
+                                                        <th>Vắng (Lần)</th>
                                                         <th>Tổng ngày nghỉ</th>
                                                         <th>Tổng giờ tăng ca</th>
                                                         <th>Xác nhận cá nhân</th>
@@ -778,7 +780,7 @@
                                                     <c:choose>
                                                         <c:when test="${empty empSummaryList}">
                                                             <tr>
-                                                                <td colspan="9" class="text-center py-4"
+                                                                <td colspan="11" class="text-center py-4"
                                                                     style="color:var(--muted)">Không tìm thấy nhân viên
                                                                     nào.</td>
                                                             </tr>
@@ -791,6 +793,8 @@
                                                                     <td>${emp.departmentName}</td>
                                                                     <td>${emp.positionName}</td>
                                                                     <td>${emp.totalWorkDays}</td>
+                                                                    <td><span class="badge bg-warning text-dark rounded-pill">${emp.lateCount}</span></td>
+                                                                    <td><span class="badge bg-danger rounded-pill">${emp.absentCount}</span></td>
                                                                     <td>${emp.totalLeaveDays}</td>
                                                                     <td>${emp.totalOTHours}</td>
                                                                     <td>

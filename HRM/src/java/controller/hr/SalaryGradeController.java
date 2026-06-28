@@ -108,7 +108,6 @@ public class SalaryGradeController extends HttpServlet {
         // Add / Edit
         String gradeName    = request.getParameter("gradeName");
         String baseSalaryS  = request.getParameter("baseSalary");
-        String coefficientS = request.getParameter("coefficient");
         String description  = request.getParameter("description");
 
         if (gradeName == null || gradeName.isBlank()) {
@@ -118,16 +117,10 @@ public class SalaryGradeController extends HttpServlet {
         }
 
         try {
-            BigDecimal baseSalary  = new BigDecimal(baseSalaryS.replaceAll(",", ""));
-            BigDecimal coefficient = new BigDecimal(coefficientS);
+            BigDecimal baseSalary = new BigDecimal(baseSalaryS.replaceAll(",", ""));
 
             if (baseSalary.compareTo(BigDecimal.ZERO) <= 0) {
-                request.getSession().setAttribute("errorMsg", "Lương cơ bản phải lớn hơn 0.");
-                response.sendRedirect(request.getContextPath() + LIST_URL);
-                return;
-            }
-            if (coefficient.compareTo(BigDecimal.ZERO) <= 0) {
-                request.getSession().setAttribute("errorMsg", "Hệ số lương phải lớn hơn 0.");
+                request.getSession().setAttribute("errorMsg", "Lương ngạch phải lớn hơn 0.");
                 response.sendRedirect(request.getContextPath() + LIST_URL);
                 return;
             }
@@ -137,7 +130,7 @@ public class SalaryGradeController extends HttpServlet {
                     request.getSession().setAttribute("errorMsg",
                         "Tên ngạch lương \"" + gradeName + "\" đã tồn tại.");
                 } else {
-                    dao.insert(new SalaryGrade(0, gradeName.trim(), baseSalary, coefficient, description, true));
+                    dao.insert(new SalaryGrade(0, gradeName.trim(), baseSalary, BigDecimal.ONE, description, true));
                     request.getSession().setAttribute("successMsg", "Thêm ngạch lương thành công.");
                 }
             } else if ("edit".equals(action) && idStr != null) {
@@ -146,7 +139,7 @@ public class SalaryGradeController extends HttpServlet {
                     request.getSession().setAttribute("errorMsg",
                         "Tên ngạch lương \"" + gradeName + "\" đã tồn tại.");
                 } else {
-                    dao.update(new SalaryGrade(id, gradeName.trim(), baseSalary, coefficient, description, true));
+                    dao.update(new SalaryGrade(id, gradeName.trim(), baseSalary, BigDecimal.ONE, description, true));
                     request.getSession().setAttribute("successMsg", "Cập nhật ngạch lương thành công.");
                 }
             }

@@ -1254,8 +1254,9 @@ public class PayrollDAO {
     }
 
     /**
-     * Task 36: Tính thuế Thu nhập cá nhân (PIT) Lũy tiến
-     * Taxable_Income = Gross - Insurance - 11_000_000 - (CountDependents * 4_400_000)
+     * Fallback: Tính thuế TNCN lũy tiến theo Luật 109/2025/QH15 (5 bậc, hiệu lực 01/01/2026)
+     * Taxable_Income = Gross - Insurance - 15_500_000 - (CountDependents * 6_200_000)
+     * Ưu tiên dùng calculateDynamicPIT() đọc từ DB. Hàm này chỉ dùng khi DB không có bậc thuế.
      */
     public static BigDecimal calculatePIT(BigDecimal taxableIncome) {
         if (taxableIncome == null || taxableIncome.compareTo(BigDecimal.ZERO) <= 0) {
@@ -1263,22 +1264,19 @@ public class PayrollDAO {
         }
 
         double income = taxableIncome.doubleValue();
-        double pit = 0;
+        double pit;
 
-        if (income <= 5_000_000) {
+        // Luật 109/2025/QH15 — Biểu thuế 5 bậc, hiệu lực 01/01/2026
+        if (income <= 10_000_000) {
             pit = income * 0.05;
-        } else if (income <= 10_000_000) {
-            pit = (5_000_000 * 0.05) + ((income - 5_000_000) * 0.10);
-        } else if (income <= 18_000_000) {
-            pit = (5_000_000 * 0.05) + (5_000_000 * 0.10) + ((income - 10_000_000) * 0.15);
-        } else if (income <= 32_000_000) {
-            pit = (5_000_000 * 0.05) + (5_000_000 * 0.10) + (8_000_000 * 0.15) + ((income - 18_000_000) * 0.20);
-        } else if (income <= 52_000_000) {
-            pit = (5_000_000 * 0.05) + (5_000_000 * 0.10) + (8_000_000 * 0.15) + (14_000_000 * 0.20) + ((income - 32_000_000) * 0.25);
-        } else if (income <= 80_000_000) {
-            pit = (5_000_000 * 0.05) + (5_000_000 * 0.10) + (8_000_000 * 0.15) + (14_000_000 * 0.20) + (20_000_000 * 0.25) + ((income - 52_000_000) * 0.30);
+        } else if (income <= 30_000_000) {
+            pit = (10_000_000 * 0.05) + ((income - 10_000_000) * 0.10);
+        } else if (income <= 60_000_000) {
+            pit = (10_000_000 * 0.05) + (20_000_000 * 0.10) + ((income - 30_000_000) * 0.20);
+        } else if (income <= 100_000_000) {
+            pit = (10_000_000 * 0.05) + (20_000_000 * 0.10) + (30_000_000 * 0.20) + ((income - 60_000_000) * 0.30);
         } else {
-            pit = (5_000_000 * 0.05) + (5_000_000 * 0.10) + (8_000_000 * 0.15) + (14_000_000 * 0.20) + (20_000_000 * 0.25) + (28_000_000 * 0.30) + ((income - 80_000_000) * 0.35);
+            pit = (10_000_000 * 0.05) + (20_000_000 * 0.10) + (30_000_000 * 0.20) + (40_000_000 * 0.30) + ((income - 100_000_000) * 0.35);
         }
 
         return BigDecimal.valueOf(pit).setScale(2, java.math.RoundingMode.HALF_UP);
@@ -1300,8 +1298,8 @@ public class PayrollDAO {
     }
 
     public static class TaxProfileInfo {
-        public BigDecimal personalDeduction = new BigDecimal("11000000");
-        public BigDecimal dependentDeduction = new BigDecimal("4400000");
+        public BigDecimal personalDeduction = null;
+        public BigDecimal dependentDeduction = null;
         public int dependentCount = 0;
     }
 
@@ -1335,7 +1333,33 @@ public class PayrollDAO {
         }
         // Fallback: get dependent count from dependents table
         info.dependentCount = countActiveDependents(userId);
+        
+        if (info.personalDeduction == null) {
+            BigDecimal pd = getGlobalDeductionAmount("PERSONAL");
+            info.personalDeduction = pd != null ? pd : new BigDecimal("15500000");
+        }
+        if (info.dependentDeduction == null) {
+            BigDecimal dd = getGlobalDeductionAmount("DEPENDENT");
+            info.dependentDeduction = dd != null ? dd : new BigDecimal("6200000");
+        }
         return info;
+    }
+
+    private BigDecimal getGlobalDeductionAmount(String type) {
+        String sql = "SELECT amount FROM tax_deductions WHERE deduction_type = ? AND status = 1 ORDER BY effective_from DESC LIMIT 1";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, type);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getBigDecimal("amount");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public List<TaxBracket> getActiveTaxBrackets() {

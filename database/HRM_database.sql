@@ -42,7 +42,7 @@ CREATE TABLE salary_grades (
     salary_grade_id INT          PRIMARY KEY AUTO_INCREMENT,
     grade_name      VARCHAR(100) NOT NULL UNIQUE,
     base_salary     DECIMAL(15,2) NOT NULL,
-    coefficient     DECIMAL(5,2)  DEFAULT 1.00,
+    coefficient     DECIMAL(5,2)  DEFAULT 1.00 COMMENT 'Không dùng trong tính lương — giữ để tương thích schema',
     description     VARCHAR(255),
     status          TINYINT(1)    DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -517,8 +517,8 @@ INSERT INTO positions (position_id, position_name, description) VALUES
 
 -- ── 4. Salary Grades ──
 INSERT INTO salary_grades (salary_grade_id, grade_name, base_salary, coefficient, description) VALUES
-(1, 'Ngạch Quản lý',   30000000, 1.50, 'Giám đốc, Trưởng phòng'),
-(2, 'Ngạch Chuyên viên',12000000, 1.20, 'Khối văn phòng'),
+(1, 'Ngạch Quản lý',   30000000, 1.00, 'Giám đốc, Trưởng phòng'),
+(2, 'Ngạch Chuyên viên',12000000, 1.00, 'Khối văn phòng'),
 (3, 'Ngạch Kinh doanh', 10000000, 1.00, 'Nhân viên kinh doanh'),
 (4, 'Ngạch Sản xuất',    7000000, 1.00, 'Công nhân sản xuất');
 
@@ -1047,8 +1047,8 @@ CREATE TABLE IF NOT EXISTS employee_tax_profiles (
     tax_code            VARCHAR(50)     NULL COMMENT 'Mã số thuế cá nhân',
     tax_registration    TINYINT(1)      NOT NULL DEFAULT 1 COMMENT '1=Đã đăng ký, 0=Chưa',
     dependent_count     INT             NOT NULL DEFAULT 0 COMMENT 'Số người phụ thuộc đã đăng ký',
-    personal_deduction  DECIMAL(15,2)   NOT NULL DEFAULT 11000000 COMMENT 'Giảm trừ bản thân',
-    dependent_deduction DECIMAL(15,2)   NOT NULL DEFAULT 4400000  COMMENT 'Giảm trừ mỗi NPT',
+    personal_deduction  DECIMAL(15,2)   NOT NULL DEFAULT 15500000 COMMENT 'Giảm trừ bản thân',
+    dependent_deduction DECIMAL(15,2)   NOT NULL DEFAULT 6200000  COMMENT 'Giảm trừ mỗi NPT',
     status              TINYINT(1)      NOT NULL DEFAULT 1,
     notes               VARCHAR(500)    NULL,
     created_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1171,25 +1171,40 @@ CREATE TABLE IF NOT EXISTS payslips (
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ══════════════════════════════════════════════════════
--- SEED DATA: Biểu thuế TNCN lũy tiến 7 bậc (Việt Nam)
+-- SEED DATA: Biểu thuế TNCN — Đóng 7 bậc cũ (2020) + 5 bậc mới Luật 109/2025/QH15
 -- ══════════════════════════════════════════════════════
 
+-- Đóng 7 bậc cũ (hiệu lực 2020-01-01 → 2025-12-31)
+INSERT INTO tax_brackets (bracket_no, income_from, income_to, rate, effective_from, effective_to, rounding_rule, status, created_by) VALUES
+(1,         0,  5000000,  5.00, '2020-01-01', '2025-12-31', 'HALF_UP', 0, 1),
+(2,   5000000, 10000000, 10.00, '2020-01-01', '2025-12-31', 'HALF_UP', 0, 1),
+(3,  10000000, 18000000, 15.00, '2020-01-01', '2025-12-31', 'HALF_UP', 0, 1),
+(4,  18000000, 32000000, 20.00, '2020-01-01', '2025-12-31', 'HALF_UP', 0, 1),
+(5,  32000000, 52000000, 25.00, '2020-01-01', '2025-12-31', 'HALF_UP', 0, 1),
+(6,  52000000, 80000000, 30.00, '2020-01-01', '2025-12-31', 'HALF_UP', 0, 1),
+(7,  80000000,     NULL, 35.00, '2020-01-01', '2025-12-31', 'HALF_UP', 0, 1);
+
+-- 5 bậc mới Luật 109/2025/QH15 (hiệu lực từ 01/01/2026)
 INSERT INTO tax_brackets (bracket_no, income_from, income_to, rate, effective_from, rounding_rule, status, created_by) VALUES
-(1,         0,  5000000,  5.00, '2020-01-01', 'HALF_UP', 1, 1),
-(2,   5000000, 10000000, 10.00, '2020-01-01', 'HALF_UP', 1, 1),
-(3,  10000000, 18000000, 15.00, '2020-01-01', 'HALF_UP', 1, 1),
-(4,  18000000, 32000000, 20.00, '2020-01-01', 'HALF_UP', 1, 1),
-(5,  32000000, 52000000, 25.00, '2020-01-01', 'HALF_UP', 1, 1),
-(6,  52000000, 80000000, 30.00, '2020-01-01', 'HALF_UP', 1, 1),
-(7,  80000000,     NULL, 35.00, '2020-01-01', 'HALF_UP', 1, 1);
+(1,          0,  10000000,  5.00, '2026-01-01', 'HALF_UP', 1, 1),
+(2,  10000000,  30000000, 10.00, '2026-01-01', 'HALF_UP', 1, 1),
+(3,  30000000,  60000000, 20.00, '2026-01-01', 'HALF_UP', 1, 1),
+(4,  60000000, 100000000, 30.00, '2026-01-01', 'HALF_UP', 1, 1),
+(5, 100000000,      NULL, 35.00, '2026-01-01', 'HALF_UP', 1, 1);
 
 -- ══════════════════════════════════════════════════════
--- SEED DATA: Giảm trừ thuế (theo Luật thuế TNCN VN)
+-- SEED DATA: Giảm trừ thuế — Đóng mức cũ (2020) + Mức mới Luật 109/2025/QH15
 -- ══════════════════════════════════════════════════════
 
+-- Đóng mức cũ (2020)
+INSERT INTO tax_deductions (deduction_type, deduction_name, amount, effective_from, effective_to, status, created_by) VALUES
+('PERSONAL',  'Giảm trừ bản thân',        11000000, '2020-07-01', '2025-12-31', 0, 1),
+('DEPENDENT', 'Giảm trừ người phụ thuộc',  4400000, '2020-07-01', '2025-12-31', 0, 1);
+
+-- Mức mới 2026 (Luật 109/2025/QH15)
 INSERT INTO tax_deductions (deduction_type, deduction_name, amount, effective_from, status, created_by) VALUES
-('PERSONAL',  'Giảm trừ bản thân',        11000000, '2020-07-01', 1, 1),
-('DEPENDENT', 'Giảm trừ người phụ thuộc',   4400000, '2020-07-01', 1, 1);
+('PERSONAL',  'Giảm trừ bản thân (Luật 109/2025)',         15500000, '2026-01-01', 1, 1),
+('DEPENDENT', 'Giảm trừ người phụ thuộc (Luật 109/2025)',   6200000, '2026-01-01', 1, 1);
 
 -- ══════════════════════════════════════════════════════
 -- SEED DATA: employee_tax_profiles (auto-sync từ dependents)
@@ -1201,12 +1216,14 @@ SELECT
     ep.tax_code,
     1,
     COALESCE((SELECT COUNT(*) FROM dependents d WHERE d.user_id = ep.user_id AND d.status = 1), 0),
-    11000000,
-    4400000
+    15500000,
+    6200000
 FROM employee_profiles ep
 WHERE ep.user_id IN (SELECT user_id FROM users WHERE status = 1)
 ON DUPLICATE KEY UPDATE 
-    dependent_count = COALESCE((SELECT COUNT(*) FROM dependents d WHERE d.user_id = ep.user_id AND d.status = 1), 0);
+    dependent_count = COALESCE((SELECT COUNT(*) FROM dependents d WHERE d.user_id = ep.user_id AND d.status = 1), 0),
+    personal_deduction  = 15500000,
+    dependent_deduction = 6200000;
 
 -- ══════════════════════════════════════════════════════
 -- SEED DATA: Kỳ lương mẫu

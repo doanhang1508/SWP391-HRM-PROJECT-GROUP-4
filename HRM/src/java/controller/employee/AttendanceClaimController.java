@@ -38,11 +38,9 @@ public class AttendanceClaimController extends HttpServlet {
         List<AttendanceClaim> myClaims = attendanceDAO.getClaimsByUser(user.getUserId());
         request.setAttribute("myClaims", myClaims);
 
-        // Pre-fill form nếu click từ trang attendance
-        String attendanceIdParam = request.getParameter("attendanceId");
+        // Pre-fill ngày làm việc nếu click từ trang attendance
         String workDateParam = request.getParameter("workDate");
-        if (attendanceIdParam != null) {
-            request.setAttribute("prefillAttendanceId", attendanceIdParam);
+        if (workDateParam != null) {
             request.setAttribute("prefillWorkDate", workDateParam);
         }
 
@@ -64,7 +62,6 @@ public class AttendanceClaimController extends HttpServlet {
 
         if ("submit".equals(action)) {
             try {
-                int attendanceId = Integer.parseInt(request.getParameter("attendanceId"));
                 String workDateStr = request.getParameter("workDate");
                 String claimType = request.getParameter("claimType");
                 String description = request.getParameter("description");
@@ -81,6 +78,18 @@ public class AttendanceClaimController extends HttpServlet {
                     return;
                 }
 
+                // Tra cứu attendance_id từ userId (session) + ngày làm việc
+                Date workDate = Date.valueOf(workDateStr);
+                int attendanceId = attendanceDAO.getAttendanceIdByUserIdAndDate(user.getUserId(), workDate);
+                if (attendanceId == -1) {
+                    String empCode = String.format("NV%04d", user.getUserId());
+                    session.setAttribute("errorMessage",
+                        "Không tìm thấy bản ghi chấm công cho mã nhân viên " + empCode +
+                        " vào ngày " + workDateStr + ". Vui lòng kiểm tra lại ngày làm việc.");
+                    response.sendRedirect(request.getContextPath() + "/employee/attendance-claim");
+                    return;
+                }
+
                 // Check duplicate pending claim
                 if (attendanceDAO.hasPendingClaim(attendanceId)) {
                     session.setAttribute("errorMessage",
@@ -93,7 +102,7 @@ public class AttendanceClaimController extends HttpServlet {
                 AttendanceClaim claim = new AttendanceClaim();
                 claim.setAttendanceId(attendanceId);
                 claim.setUserId(user.getUserId());
-                claim.setWorkDate(Date.valueOf(workDateStr));
+                claim.setWorkDate(workDate);
                 claim.setClaimType(claimType);
                 claim.setDescription(description.trim());
 
