@@ -113,6 +113,16 @@ public class loginController extends HttpServlet {
             request.getRequestDispatcher("login.jsp").forward(request, response);
             return;
         }
+        
+        if (user.getRoleId() != 1) { // Không phải Admin
+            dao.EmployeeProfileDAO epDAO = new dao.EmployeeProfileDAO();
+            model.EmployeeProfile profile = epDAO.getByUserId(user.getUserId());
+            if (profile != null && profile.getEmploymentStatusId() == 4) { // 4 = Đã nghỉ việc
+                request.setAttribute("errorMsg", "Tài khoản của bạn đã bị vô hiệu hóa do đã nghỉ việc hoặc hết hạn hợp đồng.");
+                request.getRequestDispatcher("login.jsp").forward(request, response);
+                return;
+            }
+        }
 
         // --- Tạo session ---
         HttpSession session = request.getSession(true);

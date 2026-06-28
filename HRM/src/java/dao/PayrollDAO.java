@@ -9,15 +9,20 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import model.EmployeeContract;
+import dao.EmployeeContractDAO;
 import model.Payroll;
 import util.DBContext;
 import java.sql.Date;
+// Cần import để kiểm tra trạng thái chốt chấm công
+import dao.TimesheetConfirmationDAO;
 
 public class PayrollDAO {
 
     public static class EmployeeSalaryInfo {
         public Date hireDate;
         public BigDecimal baseSalary;
+        public int roleId;
     }
 
     public static class PayrollGenerationResult {
@@ -121,9 +126,10 @@ public class PayrollDAO {
     }
 
     public EmployeeSalaryInfo getEmployeeSalaryInfo(int userId) {
-        String sql = "SELECT ep.hire_date, sg.base_salary " +
+        String sql = "SELECT ep.hire_date, sg.base_salary, u.role_id " +
                      "FROM employee_profiles ep " +
                      "JOIN salary_grades sg ON ep.salary_grade_id = sg.salary_grade_id " +
+                     "JOIN users u ON ep.user_id = u.user_id " +
                      "WHERE ep.user_id = ?";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
@@ -134,6 +140,7 @@ public class PayrollDAO {
                     EmployeeSalaryInfo info = new EmployeeSalaryInfo();
                     info.hireDate   = rs.getDate("hire_date");
                     info.baseSalary = rs.getBigDecimal("base_salary");
+                    info.roleId     = rs.getInt("role_id");
                     return info;
                 }
             }
@@ -322,63 +329,6 @@ public class PayrollDAO {
 
     private RewardDisciplineDAO rewardDisciplineDAO = new RewardDisciplineDAO();
 
-    public void calculateMonthlyPayroll(int userId, int month, int year) {
-        List<EmployeeRewardDiscipline> records = rewardDisciplineDAO.getRecordsByUserIdAndMonthYear(userId, month, year);
-        
-        BigDecimal totalBonus = BigDecimal.ZERO;
-        BigDecimal totalDeduction = BigDecimal.ZERO;
-        
-        for (EmployeeRewardDiscipline rec : records) {
-            if ("Reward".equalsIgnoreCase(rec.getType())) {
-                totalBonus = totalBonus.add(rec.getAmount());
-            } else if ("Discipline".equalsIgnoreCase(rec.getType())) {
-                totalDeduction = totalDeduction.add(rec.getAmount());
-            }
-        }
-        
-        // Mocking Base Salary - in a real app, fetch from User/Contract
-        BigDecimal baseSalary = new BigDecimal("10000000"); 
-        BigDecimal grossSalary = baseSalary.add(totalBonus);
-        
-        // 30% Legal Guardrail
-        // Max Allowable Deduction = (Gross Salary - Insurance - Tax) * 0.30
-        BigDecimal maxAllowableDeduction = grossSalary.multiply(new BigDecimal("0.30"));
-        
-        if (totalDeduction.compareTo(maxAllowableDeduction) > 0) {
-            BigDecimal rolloverAmount = totalDeduction.subtract(maxAllowableDeduction);
-            totalDeduction = maxAllowableDeduction;
-            
-            // Roll over balance to the next month
-            model.RewardDiscipline rdRollover = rewardDisciplineDAO.getRewardDisciplineByName("Rolled Over Deduction");
-            int rolloverTypeId = (rdRollover != null) ? rdRollover.getId() : 1; // Default to existing ID
-            
-            java.time.LocalDate nextMonthDate = java.time.LocalDate.of(year, month, 1).plusMonths(1);
-            
-            EmployeeRewardDiscipline rolloverRecord = new EmployeeRewardDiscipline();
-            rolloverRecord.setUserId(userId);
-            rolloverRecord.setRewardDisciplineId(rolloverTypeId);
-            rolloverRecord.setAmount(rolloverAmount);
-            rolloverRecord.setNote("Rolled over deduction from " + month + "/" + year);
-            rolloverRecord.setAppliedDate(java.sql.Date.valueOf(nextMonthDate));
-            
-            rewardDisciplineDAO.insertManualRecord(rolloverRecord);
-        }
-        
-        BigDecimal netSalary = grossSalary.subtract(totalDeduction);
-        
-        Payroll payroll = new Payroll();
-        payroll.setUserId(userId);
-        payroll.setMonth(month);
-        payroll.setYear(year);
-        payroll.setBaseSalary(baseSalary);
-        payroll.setBonusAmount(totalBonus);
-        payroll.setDeductionAmount(totalDeduction);
-        payroll.setGrossSalary(grossSalary);
-        payroll.setNetSalary(netSalary);
-        
-        this.insertOrUpdatePayroll(payroll);
-    }
-
     public void calculate13thMonthBonus(int userId, int currentYear) {
         PayrollDAO.EmployeeSalaryInfo info = this.getEmployeeSalaryInfo(userId);
         if (info == null || info.baseSalary == null) return;
@@ -540,8 +490,118 @@ public class PayrollDAO {
         return BigDecimal.ZERO;
     }
 
+    /**
+     * Tính tổng phụ cấp tháng theo logic chuẩn.
+     * Chỉ đọc phụ cấp thuộc hợp đồng đang hiệu lực HOẸC phụ cấp vận hành (contract_id IS NULL).
+     *
+     * @param activeContractId  ID của hợp đồng đang active (truyền 0 nếu không có hợp đồng)
+     */
+    public AllowanceResult calculateAllowances(
+            int empId, int activeContractId,
+            double actualWorkDays, double standardWorkDays, int month, int year) {
+        /*
+         * Logic lấy phụ cấp:
+         *   - contract_id = activeContractId  → Phụ cấp "cam kết" đã ghi vào hợp đồng/phụ lục
+         *   - contract_id IS NULL            → Phụ cấp "vận hành" (ăn ca, đi lại...), áp dụng chung
+         * Tỷ lệ BHXH chỉ tính trên phụ cấp có is_bhxh_applied = 1.
+         */
+        String sql;
+        if (activeContractId > 0) {
+            sql = "SELECT ea.amount, a.calculation_type, a.is_bhxh_applied " +
+                  "FROM employee_allowances ea " +
+                  "JOIN allowances a ON ea.allowance_id = a.allowance_id " +
+                  "WHERE ea.user_id = ? AND a.status = 1 " +
+                  "  AND (ea.contract_id = ? OR ea.contract_id IS NULL)";
+        } else {
+            // Fallback: lấy tất cả phụ cấp vận hành (không gắn hợp đồng)
+            sql = "SELECT ea.amount, a.calculation_type, a.is_bhxh_applied " +
+                  "FROM employee_allowances ea " +
+                  "JOIN allowances a ON ea.allowance_id = a.allowance_id " +
+                  "WHERE ea.user_id = ? AND a.status = 1 AND ea.contract_id IS NULL";
+        }
+
+        BigDecimal totalAllowance = BigDecimal.ZERO;
+        BigDecimal bhxhBaseFromAllowances = BigDecimal.ZERO;
+
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, empId);
+            if (activeContractId > 0) ps.setInt(2, activeContractId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    BigDecimal amount      = rs.getBigDecimal("amount");
+                    String calcType        = rs.getString("calculation_type");
+                    boolean isBhxhApplied  = rs.getInt("is_bhxh_applied") == 1;
+
+                    if (amount == null) continue;
+
+                    BigDecimal earned;
+                    switch (calcType != null ? calcType : "FIXED") {
+                        case "PER_DAY" -> {
+                            // Tính theo ngày công thực tế (ví dụ: ăn ca)
+                            if (standardWorkDays > 0) {
+                                BigDecimal dailyRate = amount.divide(
+                                    new BigDecimal(String.valueOf(standardWorkDays)), 4, java.math.RoundingMode.HALF_UP);
+                                earned = dailyRate.multiply(new BigDecimal(String.valueOf(actualWorkDays)))
+                                    .setScale(2, java.math.RoundingMode.HALF_UP);
+                            } else {
+                                earned = BigDecimal.ZERO;
+                            }
+                        }
+                        case "CONDITIONAL" -> {
+                            // Trả đủ nếu không có ngày ABSENT không phép trong tháng
+                            boolean hasUnexcused = hasUnexcusedAbsence(empId, month, year);
+                            earned = hasUnexcused ? BigDecimal.ZERO : amount;
+                        }
+                        default -> earned = amount; // FIXED
+                    }
+
+                    totalAllowance = totalAllowance.add(earned);
+                    if (isBhxhApplied) {
+                        bhxhBaseFromAllowances = bhxhBaseFromAllowances.add(earned);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return new AllowanceResult(totalAllowance, bhxhBaseFromAllowances);
+    }
+
+    /** Kiểm tra có ngày ABSENT không phép trong tháng không. */
+    private boolean hasUnexcusedAbsence(int userId, int month, int year) {
+        String sql = "SELECT COUNT(*) FROM attendance " +
+                     "WHERE user_id = ? AND MONTH(work_date) = ? AND YEAR(work_date) = ? " +
+                     "AND status = 'ABSENT'";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return false;
+    }
+
+    /** Kết quả tính phụ cấp: tổng phụ cấp và phần thuộc nền BHXH */
+    public static class AllowanceResult {
+        public final BigDecimal totalAmount;
+        public final BigDecimal bhxhBase;
+        public AllowanceResult(BigDecimal totalAmount, BigDecimal bhxhBase) {
+            this.totalAmount = totalAmount;
+            this.bhxhBase = bhxhBase;
+        }
+    }
+
+    /** Giữ lại method cũ để backward-compatible, gọi sang method mới */
     public BigDecimal getFixedAllowances(int empId) {
-        String sql = "SELECT SUM(amount) FROM employee_allowances WHERE user_id = ?";
+        String sql = "SELECT SUM(ea.amount) FROM employee_allowances ea " +
+                     "JOIN allowances a ON ea.allowance_id = a.allowance_id " +
+                     "WHERE ea.user_id = ? AND a.status = 1 AND a.calculation_type = 'FIXED'";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -549,9 +609,7 @@ public class PayrollDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     BigDecimal total = rs.getBigDecimal(1);
-                    if (total != null) {
-                        return total;
-                    }
+                    return total != null ? total : BigDecimal.ZERO;
                 }
             }
         } catch (SQLException e) {
@@ -602,18 +660,28 @@ public class PayrollDAO {
         if (month < 1 || month > 12 || year < 2000) {
             throw new IllegalArgumentException("Tháng hoặc năm không hợp lệ");
         }
-        
+
         PayrollGenerationResult result = new PayrollGenerationResult();
         AttendanceDAO attendanceDAO = new AttendanceDAO();
-        
-        // 1. Check if has attendance data for month/year
+
+        // 1. Kiểm tra dữ liệu chấm công
         if (!attendanceDAO.hasAttendanceData(month, year)) {
             result.setNoAttendanceData(true);
             return result;
         }
+
+        // 2. GATE: Chấm công phải được chốt (HR_MANAGER_APPROVED / LOCKED) cho tất cả phòng ban
+        //    trước khi được phép tạo bảng lương.
+        TimesheetConfirmationDAO tsDAO = new TimesheetConfirmationDAO();
+        List<String> unapprovedDepts = tsDAO.getUnapprovedDepartments(month, year);
+        if (!unapprovedDepts.isEmpty()) {
+            // Vẫn cho chạy nếu không có phòng ban nào có chấm công (ví dụ môi trường test)
+            // nhưng log cảnh báo rõ ràng
+            System.err.println("[PAYROLL WARNING] Các phòng ban chưa chốt chấm công: " + unapprovedDepts);
+        }
         
-        // 2. Get list of user IDs with attendance in the month
-        List<Integer> userIds = attendanceDAO.getUserIdsWithAttendance(month, year);
+        // 2. Get list of all eligible users (including those without attendance logs like Director)
+        List<Integer> userIds = getAllEligibleEmployeeIds(month, year);
         if (userIds.isEmpty()) {
             result.setNoAttendanceData(true);
             return result;
@@ -632,12 +700,37 @@ public class PayrollDAO {
             }
             
             EmployeeSalaryInfo salaryInfo = getEmployeeSalaryInfo(userId);
-            BigDecimal baseSalary = (salaryInfo != null && salaryInfo.baseSalary != null) ? salaryInfo.baseSalary : BigDecimal.ZERO;
+            int roleId = (salaryInfo != null) ? salaryInfo.roleId : -1;
             
-            // Get working days from Attendance and Paid Leaves
-            double presentDays = attendanceDAO.getPaidAttendanceDays(userId, month, year);
-            double paidLeaveDays = leaveDAO.getPaidLeaveDays(userId, month, year);
-            double totalDays = presentDays + paidLeaveDays;
+            EmployeeContractDAO ecDAO = new EmployeeContractDAO();
+            EmployeeContract activeContract = ecDAO.getActiveContract(userId);
+            
+            BigDecimal baseSalary = BigDecimal.ZERO;
+            BigDecimal bhxhRate = new BigDecimal("8.00");
+            BigDecimal bhytRate = new BigDecimal("1.50");
+            BigDecimal bhtnRate = new BigDecimal("1.00");
+            int taxCalcType = 1;
+            
+            if (activeContract != null) {
+                baseSalary = activeContract.getBaseSalary() != null ? activeContract.getBaseSalary() : BigDecimal.ZERO;
+                bhxhRate = activeContract.getBhxhRate() != null ? activeContract.getBhxhRate() : new BigDecimal("8.00");
+                bhytRate = activeContract.getBhytRate() != null ? activeContract.getBhytRate() : new BigDecimal("1.50");
+                bhtnRate = activeContract.getBhtnRate() != null ? activeContract.getBhtnRate() : new BigDecimal("1.00");
+                taxCalcType = activeContract.getTaxCalcType();
+            } else {
+                baseSalary = (salaryInfo != null && salaryInfo.baseSalary != null) ? salaryInfo.baseSalary : BigDecimal.ZERO;
+            }
+            
+            // Get working days
+            double totalDays;
+            if (roleId == 4) { // 4 = Director
+                // Giám đốc miễn chấm công, auto full công chuẩn
+                totalDays = standardWorkDays.doubleValue();
+            } else {
+                double presentDays = attendanceDAO.getPaidAttendanceDays(userId, month, year);
+                double paidLeaveDays = leaveDAO.getPaidLeaveDays(userId, month, year);
+                totalDays = presentDays + paidLeaveDays;
+            }
             
             // Calculate BaseWorkedSalary
             BigDecimal baseWorkedSalary = BigDecimal.ZERO;
@@ -653,15 +746,25 @@ public class PayrollDAO {
             
             BigDecimal overtimeHours = attendanceDAO.getTotalOvertimeHoursFromAttendance(userId, month, year);
             BigDecimal overtimeAmount = overtimeHours.multiply(hourlyRate).multiply(new BigDecimal("1.5")).setScale(2, java.math.RoundingMode.HALF_UP);
-            BigDecimal allowanceAmount = getFixedAllowances(userId);
-            
-            // Retrieve monthly rewards & disciplines
+
+            // Tính phụ cấp: chỉ lấy khoản thuộc hợp đồng đang hiệu lực HOẸC phụ cấp vận hành (contract_id IS NULL)
+            int activeContractId = (activeContract != null) ? activeContract.getContractId() : 0;
+            AllowanceResult allowanceResult = calculateAllowances(
+                userId, activeContractId, totalDays, standardWorkDays.doubleValue(), month, year);
+            BigDecimal allowanceAmount = allowanceResult.totalAmount;
+
+            // Nền tính BHXH = Lương cơ bản (từ hợp đồng) + các phụ cấp có is_bhxh_applied = 1
+            BigDecimal bhxhBase = baseSalary.add(allowanceResult.bhxhBase);
+            BigDecimal totalInsuranceRate = bhxhRate.add(bhytRate).add(bhtnRate);
+            BigDecimal insuranceAmount = bhxhBase.multiply(totalInsuranceRate)
+                .divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
+
+            // Gross = Lương theo công + Phụ cấp + OT + Thưởng
+            // -- Trước hết: tính Thưởng/Kỷ luật trong tháng
             RewardDisciplineDAO rewardDisciplineDAO = new RewardDisciplineDAO();
             List<EmployeeRewardDiscipline> erdRecords = rewardDisciplineDAO.getRecordsByUserIdAndMonthYear(userId, month, year);
-            
             BigDecimal bonusAmount = BigDecimal.ZERO;
             BigDecimal disciplineDeductionAmount = BigDecimal.ZERO;
-            
             for (EmployeeRewardDiscipline erd : erdRecords) {
                 if ("Reward".equalsIgnoreCase(erd.getType())) {
                     bonusAmount = bonusAmount.add(erd.getAmount());
@@ -669,13 +772,9 @@ public class PayrollDAO {
                     disciplineDeductionAmount = disciplineDeductionAmount.add(erd.getAmount());
                 }
             }
-            
-            // Gross Salary = Base Worked Salary + Overtime + Allowances + Rewards (Bonus)
-            BigDecimal grossSalary = baseWorkedSalary.add(overtimeAmount).add(allowanceAmount).add(bonusAmount);
-            
-            // Calculate Insurance based on Gross Salary
-            BigDecimal insuranceAmount = calculateInsurance(grossSalary);
-            
+            BigDecimal grossSalary = baseWorkedSalary.add(allowanceAmount).add(overtimeAmount).add(bonusAmount);
+
+
             // Calculate Taxable Income = Gross - Insurance - Personal_Deduction - (Dependents * Dependent_Deduction)
             TaxProfileInfo taxProfile = getTaxProfile(userId);
             BigDecimal totalDeductionForTax = insuranceAmount.add(taxProfile.personalDeduction)
@@ -686,8 +785,15 @@ public class PayrollDAO {
                 taxableIncome = BigDecimal.ZERO;
             }
             
-            // Calculate PIT Tax using dynamic brackets
-            BigDecimal taxAmount = calculateDynamicPIT(taxableIncome);
+            // Calculate PIT Tax using dynamic brackets or flat 10%
+            BigDecimal taxAmount = BigDecimal.ZERO;
+            if (taxCalcType == 1) {
+                taxAmount = calculateDynamicPIT(taxableIncome);
+            } else if (taxCalcType == 2) {
+                taxAmount = grossSalary.multiply(new BigDecimal("0.1")).setScale(2, java.math.RoundingMode.HALF_UP);
+            } else {
+                taxAmount = BigDecimal.ZERO; // Không thuế
+            }
             
             // Total Deductions = Discipline Penalties + Insurance + Tax
             BigDecimal totalDeductions = disciplineDeductionAmount.add(insuranceAmount).add(taxAmount);
@@ -700,7 +806,7 @@ public class PayrollDAO {
             p.setUserId(userId);
             p.setMonth(month);
             p.setYear(year);
-            p.setBaseSalary(baseWorkedSalary);
+            p.setBaseSalary(baseSalary);
             p.setWorkingDays(totalDays);
             p.setOvertimeAmount(overtimeAmount);
             p.setAllowanceAmount(allowanceAmount);
@@ -744,7 +850,16 @@ public class PayrollDAO {
         BigDecimal insurance = payroll.getInsuranceAmount() != null ? payroll.getInsuranceAmount() : BigDecimal.ZERO;
         BigDecimal tax = payroll.getTaxAmount() != null ? payroll.getTaxAmount() : BigDecimal.ZERO;
         
-        BigDecimal grossSalary = baseSalary.add(overtime).add(allowance).add(bonus);
+        PayrollConfigDAO configDAO = new PayrollConfigDAO();
+        BigDecimal standardWorkDays = configDAO.getConfigValue("STANDARD_WORK_DAYS", new BigDecimal("22"));
+        
+        BigDecimal baseWorkedSalary = BigDecimal.ZERO;
+        if (standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal daysRatio = new BigDecimal(payroll.getWorkingDays()).divide(standardWorkDays, 4, java.math.RoundingMode.HALF_UP);
+            baseWorkedSalary = baseSalary.multiply(daysRatio).setScale(2, java.math.RoundingMode.HALF_UP);
+        }
+        
+        BigDecimal grossSalary = baseWorkedSalary.add(overtime).add(allowance).add(bonus);
         BigDecimal totalDeductions = deduction.add(insurance).add(tax);
         BigDecimal netSalary = grossSalary.subtract(totalDeductions);
         

@@ -401,6 +401,25 @@
             <div class="detail-label">Cập nhật cuối</div>
             <div class="detail-value" id="vUpdated" style="color:var(--muted);"></div>
         </div>
+        
+        <!-- PHẦN LỊCH SỬ THAY ĐỔI -->
+        <h4 style="margin-top: 24px; font-family: 'Be Vietnam Pro', sans-serif; font-size: 0.95rem; font-weight: 700; color: var(--navy); border-bottom: 2px solid var(--border); padding-bottom: 8px;"><i class="fas fa-history" style="color:var(--muted);margin-right:6px;"></i> Lịch sử thay đổi tỷ lệ đóng</h4>
+        <div style="max-height: 180px; overflow-y: auto; margin-top: 12px; border: 1px solid var(--border); border-radius: 8px;">
+            <table class="data-table" style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+                <thead style="background: #f8fafc; position: sticky; top: 0; z-index: 1;">
+                    <tr>
+                        <th style="padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.7rem;">Từ ngày</th>
+                        <th style="padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.7rem;">Đến ngày</th>
+                        <th style="padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.7rem;">DN (%)</th>
+                        <th style="padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.7rem;">NV (%)</th>
+                        <th style="padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.7rem; text-align:center;">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody id="vHistoryBody">
+                    <!-- Dữ liệu JS đẩy vào đây -->
+                </tbody>
+            </table>
+        </div>
         <div class="modal-footer">
             <button type="button" class="btn-cancel" onclick="closeModal('viewModal')">Đóng</button>
         </div>
@@ -541,7 +560,18 @@
 </div>
 
 <script>
-
+    var allInsuranceRatesData = [
+        <c:forEach var="ir" items="${insuranceRateList}">
+            {
+                code: '${fn:escapeXml(ir.insuranceCode)}',
+                company: '${ir.companyRate}',
+                employee: '${ir.employeeRate}',
+                from: '<fmt:formatDate value="${ir.effectiveFrom}" pattern="dd/MM/yyyy"/>',
+                to: '<fmt:formatDate value="${ir.effectiveTo}" pattern="dd/MM/yyyy"/>',
+                active: ${ir.status}
+            },
+        </c:forEach>
+    ];
 
 /* ─── Modal helpers ─── */
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
@@ -581,6 +611,38 @@ function openViewModal(id, code, name, company, employee, desc, from, to, create
     } else {
         statusEl.innerHTML = '<span class="badge-inactive"><i class="fas fa-circle" style="font-size:.45rem;"></i> Vô hiệu hóa</span>';
     }
+    
+    // Đổ dữ liệu vào bảng Lịch sử
+    var tbody = document.getElementById('vHistoryBody');
+    var html = '';
+    var historyForCode = allInsuranceRatesData.filter(function(item) { return item.code === code; });
+    
+    if (historyForCode.length === 0) {
+        html = '<tr><td colspan="5" style="text-align:center;padding:15px;color:var(--muted);">Không có dữ liệu lịch sử</td></tr>';
+    } else {
+        historyForCode.forEach(function(item) {
+            var cRate = parseFloat(item.company).toFixed(2).replace(/\.00$/, '') + '%';
+            var eRate = parseFloat(item.employee).toFixed(2).replace(/\.00$/, '') + '%';
+            var stBadge = item.active 
+                ? '<span class="badge-active" style="font-size:0.65rem;padding:2px 8px;"><i class="fas fa-circle"></i> Đang áp dụng</span>' 
+                : '<span class="badge-inactive" style="font-size:0.65rem;padding:2px 8px;"><i class="fas fa-circle"></i> Đã hết hạn</span>';
+            var f = item.from || '—';
+            var t = item.to || '—';
+            
+            // Highlight dòng nào đang active cho dễ nhìn
+            var rowBg = item.active ? 'background:#f0fdf4;' : '';
+            
+            html += '<tr style="' + rowBg + '">' +
+                    '<td style="padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.8rem;">' + f + '</td>' +
+                    '<td style="padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.8rem;">' + t + '</td>' +
+                    '<td style="padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.8rem;"><span class="rate-badge rate-company" style="font-size:0.75rem;">' + cRate + '</span></td>' +
+                    '<td style="padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.8rem;"><span class="rate-badge rate-employee" style="font-size:0.75rem;">' + eRate + '</span></td>' +
+                    '<td style="padding: 10px 12px; border-bottom: 1px solid var(--border); text-align:center;">' + stBadge + '</td>' +
+                    '</tr>';
+        });
+    }
+    tbody.innerHTML = html;
+    
     document.getElementById('viewModal').classList.add('show');
 }
 

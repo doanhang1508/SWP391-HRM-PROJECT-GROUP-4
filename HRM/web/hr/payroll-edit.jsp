@@ -218,14 +218,14 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label">Số ngày công thực tế <span class="text-danger">*</span></label>
-                        <input type="number" step="any" name="workingDays" class="form-control" value="${payroll.workingDays}" required min="0" max="31">
-                        <small class="text-muted d-block mt-1"><i class="fas fa-magic"></i> Giá trị khởi tạo được tổng hợp tự động từ hệ thống chấm công và nghỉ phép có lương.</small>
+                        <input type="number" step="any" name="workingDays" class="form-control bg-light" value="${payroll.workingDays}" readonly>
+                        <small class="text-muted d-block mt-1"><i class="fas fa-lock"></i> Chỉ có thể sửa từ nguồn (Chấm công).</small>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Tiền làm thêm giờ (Tăng ca) <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="text" name="overtimeAmount" class="form-control text-end" value="<fmt:formatNumber value="${payroll.overtimeAmount}" type="number" maxFractionDigits="0"/>" required>
-                            <span class="input-group-text">₫</span>
+                            <input type="text" name="overtimeAmount" class="form-control text-end bg-light" value="<fmt:formatNumber value="${payroll.overtimeAmount}" type="number" maxFractionDigits="0"/>" readonly>
+                            <span class="input-group-text bg-light">₫</span>
                         </div>
                     </div>
                 </div>
@@ -234,15 +234,15 @@
                     <div class="col-md-6">
                         <label class="form-label">Phụ cấp <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="text" name="allowanceAmount" class="form-control text-end" value="<fmt:formatNumber value="${payroll.allowanceAmount}" type="number" maxFractionDigits="0"/>" required>
-                            <span class="input-group-text">₫</span>
+                            <input type="text" name="allowanceAmount" class="form-control text-end bg-light" value="<fmt:formatNumber value="${payroll.allowanceAmount}" type="number" maxFractionDigits="0"/>" readonly>
+                            <span class="input-group-text bg-light">₫</span>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Tiền thưởng khác <span class="text-danger">*</span></label>
+                        <label class="form-label">Tiền thưởng/Kỷ luật khác <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="text" name="bonusAmount" class="form-control text-end" value="<fmt:formatNumber value="${payroll.bonusAmount}" type="number" maxFractionDigits="0"/>" required>
-                            <span class="input-group-text">₫</span>
+                            <input type="text" name="bonusAmount" class="form-control text-end bg-light" value="<fmt:formatNumber value="${payroll.bonusAmount}" type="number" maxFractionDigits="0"/>" readonly>
+                            <span class="input-group-text bg-light">₫</span>
                         </div>
                     </div>
                 </div>
@@ -251,29 +251,29 @@
                     <div class="col-md-4">
                         <label class="form-label">Khấu trừ <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="text" name="deductionAmount" class="form-control text-end" value="<fmt:formatNumber value="${payroll.deductionAmount}" type="number" maxFractionDigits="0"/>" required>
-                            <span class="input-group-text">₫</span>
+                            <input type="text" name="deductionAmount" class="form-control text-end bg-light" value="<fmt:formatNumber value="${payroll.deductionAmount}" type="number" maxFractionDigits="0"/>" readonly>
+                            <span class="input-group-text bg-light">₫</span>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Bảo hiểm (nhân viên đóng) <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="text" name="insuranceAmount" class="form-control text-end" value="<fmt:formatNumber value="${payroll.insuranceAmount}" type="number" maxFractionDigits="0"/>" required>
-                            <span class="input-group-text">₫</span>
+                            <input type="text" name="insuranceAmount" class="form-control text-end bg-light" value="<fmt:formatNumber value="${payroll.insuranceAmount}" type="number" maxFractionDigits="0"/>" readonly>
+                            <span class="input-group-text bg-light">₫</span>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Thuế TNCN <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="text" name="taxAmount" class="form-control text-end" value="<fmt:formatNumber value="${payroll.taxAmount}" type="number" maxFractionDigits="0"/>" required>
-                            <span class="input-group-text">₫</span>
+                            <input type="text" name="taxAmount" class="form-control text-end bg-light" value="<fmt:formatNumber value="${payroll.taxAmount}" type="number" maxFractionDigits="0"/>" readonly>
+                            <span class="input-group-text bg-light">₫</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="note-box">
-                    <i class="fas fa-info-circle me-1"></i>
-                    <strong>Ghi chú:</strong> Lương Gross (`Lương cơ bản` + `Tăng ca` + `Phụ cấp` + `Thưởng`) và lương Net (`Gross` - `Khấu trừ` - `Bảo hiểm` - `Thuế`) sẽ được hệ thống tự động tính toán lại sau khi lưu thành công.
+                    <i class="fas fa-lock me-1"></i>
+                    <strong>Ghi chú bảo mật:</strong> Dữ liệu đã bị khóa để đảm bảo "Source of Truth". Nếu có sai sót, vui lòng sửa dữ liệu gốc (Hợp đồng, Cấu hình, Chấm công) và tạo lại bảng lương nháp.
                 </div>
 
                 <div class="d-flex gap-2">

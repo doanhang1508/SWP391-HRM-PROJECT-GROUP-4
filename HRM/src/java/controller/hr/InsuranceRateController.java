@@ -215,7 +215,7 @@ public class InsuranceRateController extends HttpServlet {
                     InsuranceRate ir = new InsuranceRate(
                         editId, insuranceCode, insuranceName, companyRate, employeeRate,
                         description, effectiveFrom, effectiveTo, null, null, true);
-                    dao.update(ir);
+                    dao.updateWithHistory(ir, editId);
                     request.getSession().setAttribute("successMsg", "Cập nhật mức bảo hiểm thành công.");
                 }
             }

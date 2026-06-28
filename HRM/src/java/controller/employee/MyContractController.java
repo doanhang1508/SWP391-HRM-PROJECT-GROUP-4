@@ -1,0 +1,121 @@
+package controller.employee;
+
+import dao.EmployeeContractDAO;
+import dao.EmployeeProfileDAO;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import java.io.IOException;
+import java.util.List;
+import model.EmployeeContract;
+import model.EmployeeProfile;
+import model.User;
+
+@WebServlet(name = "MyContractController", urlPatterns = {"/employee/my-contract"})
+public class MyContractController extends HttpServlet {
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("currentUser") == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        User currentUser = (User) session.getAttribute("currentUser");
+        int userId = currentUser.getUserId();
+
+        EmployeeContractDAO ecDAO = new EmployeeContractDAO();
+
+        // Lịch sử hợp đồng
+        List<EmployeeContract> contracts = ecDAO.getByUserId(userId);
+
+        // Hợp đồng đang hiệu lực
+        EmployeeContract activeContract = ecDAO.getActiveContract(userId);
+
+        // Tính tổng phụ cấp và lương Gross dự kiến cho hợp đồng hiện tại
+        double totalAllowance = 0;
+        List<java.util.Map<String, Object>> allowanceList = new java.util.ArrayList<>();
+        if (activeContract != null) {
+            String sql = "SELECT a.allowance_name, ea.amount FROM employee_allowances ea JOIN allowances a ON ea.allowance_id = a.allowance_id WHERE ea.user_id = ? AND (ea.contract_id = ? OR ea.contract_id IS NULL)";
+            try (java.sql.Connection conn = util.DBContext.getConnection();
+                 java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, userId);
+                ps.setInt(2, activeContract.getContractId());
+                try (java.sql.ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        java.util.Map<String, Object> map = new java.util.HashMap<>();
+                        map.put("name", rs.getString("allowance_name"));
+                        double amt = rs.getDouble("amount");
+                        map.put("amount", amt);
+                        allowanceList.add(map);
+                        totalAllowance += amt;
+                    }
+                }
+            } catch (Exception e) { e.printStackTrace(); }
+        }
+        double grossSalary = (activeContract != null) ? activeContract.getBaseSalary().doubleValue() + totalAllowance : 0;
+
+        // Phụ lục đang chờ ký (nếu có) — hiển thị banner
+        EmployeeContract pendingAddendum = ecDAO.getPendingAddendum(userId);
+
+        // Hồ sơ nhân viên
+        EmployeeProfileDAO epDAO = new EmployeeProfileDAO();
+        EmployeeProfile empProfile = epDAO.getByUserId(userId);
+
+        request.setAttribute("contracts", contracts);
+        request.setAttribute("activeContract", activeContract);
+        request.setAttribute("totalAllowance", totalAllowance);
+        request.setAttribute("allowanceList", allowanceList);
+        request.setAttribute("grossSalary", grossSalary);
+        request.setAttribute("pendingAddendum", pendingAddendum);
+        request.setAttribute("empProfile", empProfile);
+
+        // Thông báo kết quả sau khi ký/từ chối
+        String msg = request.getParameter("msg");
+        if (msg != null) request.setAttribute("msg", msg);
+
+        request.getRequestDispatcher("/employee/my-contract.jsp").forward(request, response);
+    }
+
+    /**
+     * Xử lý nhân viên Xác nhận (SIGNED) hoặc Từ chối (REJECTED) phụ lục.
+     */
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("currentUser") == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
+        User currentUser = (User) session.getAttribute("currentUser");
+        int userId = currentUser.getUserId();
+
+        String action       = request.getParameter("action");       // "SIGNED" | "REJECTED"
+        String contractIdStr = request.getParameter("contractId");
+        String rejectReason = request.getParameter("rejectReason"); // chỉ khi REJECTED
+
+        if (action == null || contractIdStr == null) {
+            response.sendRedirect(request.getContextPath() + "/employee/my-contract?msg=error");
+            return;
+        }
+
+        try {
+            int contractId = Integer.parseInt(contractIdStr);
+            EmployeeContractDAO ecDAO = new EmployeeContractDAO();
+            boolean ok = ecDAO.updateSignStatus(contractId, userId, action, rejectReason);
+            String msg = ok ? (action.equals("SIGNED") ? "signed" : "rejected") : "error";
+            response.sendRedirect(request.getContextPath() + "/employee/my-contract?msg=" + msg);
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/employee/my-contract?msg=error");
+        }
+    }
+}

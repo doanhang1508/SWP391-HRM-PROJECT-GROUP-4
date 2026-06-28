@@ -105,7 +105,7 @@ public class EmployeeProfileDAO {
         return false;
     }
 
-    private boolean update(EmployeeProfile ep) {
+    public boolean update(EmployeeProfile ep) {
         String sql = """
             UPDATE employee_profiles SET
                 id_card = ?, dob = ?, gender = ?, address = ?,

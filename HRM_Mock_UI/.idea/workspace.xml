@@ -22,29 +22,44 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Application.TestAddEmployee.executor": "Run",
-    "JavaScript Debug.add_employee_mock.html.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "main",
-    "junie.onboarding.icon.badge.shown": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "F:/GitHub/SWP391-HRM-PROJECT-GROUP-4/HRM_Mock_UI",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "to.speed.mode.migration.done": "true",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Application.AddEmployeeTest.executor&quot;: &quot;Run&quot;,
+    &quot;Application.TestAddEmployee.executor&quot;: &quot;Run&quot;,
+    &quot;JavaScript Debug.add_employee_mock.html.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;F:/GitHub/SWP391-HRM-PROJECT-GROUP-4/HRM_Mock_UI&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
-  <component name="RunManager" selected="Application.TestAddEmployee">
+}</component>
+  <component name="RunManager" selected="Application.AddEmployeeTest">
+    <configuration name="AddEmployeeTest" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="tests.AddEmployeeTest" />
+      <module name="HRM_Mock_UI" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="tests.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="TestAddEmployee" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="TestAddEmployee" />
       <module name="HRM_Mock_UI" />
@@ -57,6 +72,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.AddEmployeeTest" />
         <item itemvalue="Application.TestAddEmployee" />
         <item itemvalue="JavaScript Debug.add_employee_mock.html" />
       </list>
@@ -80,6 +96,17 @@
       <workItem from="1782309767749" duration="112000" />
       <workItem from="1782309894320" duration="165000" />
       <workItem from="1782310072619" duration="1635000" />
+      <workItem from="1782396676094" duration="20000" />
+      <workItem from="1782398539872" duration="203000" />
+      <workItem from="1782398867827" duration="115000" />
+      <workItem from="1782399683860" duration="635000" />
+      <workItem from="1782400340646" duration="407000" />
+      <workItem from="1782400759656" duration="33000" />
+      <workItem from="1782400808967" duration="3585000" />
+      <workItem from="1782405572827" duration="138000" />
+      <workItem from="1782405732367" duration="231000" />
+      <workItem from="1782405981433" duration="1972000" />
+      <workItem from="1782434334477" duration="1685000" />
     </task>
     <servers />
   </component>

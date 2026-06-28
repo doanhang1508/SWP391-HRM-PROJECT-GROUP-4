@@ -89,7 +89,7 @@ public class InsuranceRateDAO {
     }
 
     public boolean isDuplicate(String insuranceName, int excludeId) {
-        String sql = "SELECT COUNT(*) FROM insurance_rates WHERE insurance_name = ? AND insurance_rate_id != ?";
+        String sql = "SELECT COUNT(*) FROM insurance_rates WHERE insurance_name = ? AND insurance_rate_id != ? AND status = 1";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, insuranceName);
@@ -104,7 +104,7 @@ public class InsuranceRateDAO {
     }
 
     public boolean isCodeDuplicate(String code, int excludeId) {
-        String sql = "SELECT COUNT(*) FROM insurance_rates WHERE insurance_code = ? AND insurance_rate_id != ?";
+        String sql = "SELECT COUNT(*) FROM insurance_rates WHERE insurance_code = ? AND insurance_rate_id != ? AND status = 1";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, code);
@@ -132,6 +132,38 @@ public class InsuranceRateDAO {
             ps.setDate(6, ir.getEffectiveFrom());
             ps.setDate(7, ir.getEffectiveTo());
             ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateWithHistory(InsuranceRate ir, int oldId) {
+        String sqlClose = "UPDATE insurance_rates SET status = 0, effective_to = CURRENT_DATE WHERE insurance_rate_id = ?";
+        String sqlInsert = "INSERT INTO insurance_rates " +
+                           "(insurance_code, insurance_name, company_rate, employee_rate, description, effective_from, effective_to, status) " +
+                           "VALUES (?, ?, ?, ?, ?, ?, ?, 1)";
+        try (Connection conn = DBContext.getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement psClose = conn.prepareStatement(sqlClose);
+                 PreparedStatement psInsert = conn.prepareStatement(sqlInsert)) {
+                 
+                psClose.setInt(1, oldId);
+                psClose.executeUpdate();
+                
+                psInsert.setString(1, ir.getInsuranceCode());
+                psInsert.setString(2, ir.getInsuranceName());
+                psInsert.setBigDecimal(3, ir.getCompanyRate());
+                psInsert.setBigDecimal(4, ir.getEmployeeRate());
+                psInsert.setString(5, ir.getDescription());
+                psInsert.setDate(6, ir.getEffectiveFrom());
+                psInsert.setDate(7, ir.getEffectiveTo());
+                psInsert.executeUpdate();
+                
+                conn.commit();
+            } catch (Exception e) {
+                conn.rollback();
+                e.printStackTrace();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -403,6 +403,12 @@
                                                             <i class="fas fa-users"></i> Danh sách nhân viên
                                                         </a>
                                                     </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/contracts"
+                                                            class="sidebar-link ${param.activeMenu eq 'contract-management' ? 'active' : ''}">
+                                                            <i class="fas fa-file-signature"></i> Quản lý Hợp đồng
+                                                        </a>
+                                                    </li>
 
                                                     <li class="sidebar-menu-category">Cấu hình Chính sách</li>
 
@@ -550,6 +556,12 @@
                                                                     <a href="${pageContext.request.contextPath}/hr/employees"
                                                                         class="sidebar-link ${param.activeMenu eq 'employees' ? 'active' : ''}">
                                                                         <i class="fas fa-users"></i> Danh sách nhân viên
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/contracts"
+                                                                        class="sidebar-link ${param.activeMenu eq 'contract-management' ? 'active' : ''}">
+                                                                        <i class="fas fa-file-signature"></i> Quản lý Hợp đồng
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
@@ -723,6 +735,12 @@
                                                                             <i class="fas fa-file-invoice-dollar"></i> Phiếu lương
                                                                         </a>
                                                                     </li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/employee/my-contract"
+                                                                            class="sidebar-link ${param.activeMenu eq 'my-contract' ? 'active' : ''}">
+                                                                            <i class="fas fa-file-signature"></i> Hợp đồng của tôi
+                                                                        </a>
+                                                                    </li>
 
                                                                 </c:if>
 
@@ -756,6 +774,12 @@
                                                                             <a href="${pageContext.request.contextPath}/manager/payslip"
                                                                                 class="sidebar-link ${param.activeMenu eq 'personal-payslip' ? 'active' : ''}">
                                                                                 <i class="fas fa-file-invoice-dollar"></i> Phiếu lương
+                                                                            </a>
+                                                                        </li>
+                                                                        <li class="sidebar-item">
+                                                                            <a href="${pageContext.request.contextPath}/employee/my-contract"
+                                                                                class="sidebar-link ${param.activeMenu eq 'my-contract' ? 'active' : ''}">
+                                                                                <i class="fas fa-file-signature"></i> Hợp đồng của tôi
                                                                             </a>
                                                                         </li>
                                                                     </c:if>
