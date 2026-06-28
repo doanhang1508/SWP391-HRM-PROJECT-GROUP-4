@@ -452,6 +452,61 @@ public class UserDAO {
         }
     }
 
+    /**
+     * Approve đơn xin nghỉ việc của nhân viên (self-resignation).
+     * Transaction gồm 2 bước:
+     *   1. UPDATE users SET status = 0
+     *   2. UPDATE employee_profiles SET employment_status_id = 4 (Đã nghỉ việc)
+     * KHÔNG insert vào employee_rewards_disciplines (khác với terminateEmployee).
+     * Rollback toàn bộ nếu bất kỳ bước nào lỗi.
+     *
+     * @param userId user_id của nhân viên xin nghỉ
+     * @return true nếu transaction thành công
+     */
+    public boolean approveResignation(int userId) {
+        DBContext dbContext = new DBContext();
+        Connection conn = null;
+        try {
+            conn = dbContext.getConnection();
+            conn.setAutoCommit(false); // Start Transaction
+
+            // 1. Vô hiệu hóa tài khoản
+            String updateUserSql = "UPDATE users SET status = 0 WHERE user_id = ?";
+            try (PreparedStatement ps1 = conn.prepareStatement(updateUserSql)) {
+                ps1.setInt(1, userId);
+                if (ps1.executeUpdate() == 0) {
+                    throw new SQLException("approveResignation: Failed to update user status for userId=" + userId);
+                }
+            }
+
+            // 2. Cập nhật trạng thái nhân sự = 4 (Đã nghỉ việc)
+            String updateProfileSql = "UPDATE employee_profiles SET employment_status_id = 4 WHERE user_id = ?";
+            try (PreparedStatement ps2 = conn.prepareStatement(updateProfileSql)) {
+                ps2.setInt(1, userId);
+                // Nếu employee_profiles không tồn tại (edge case admin), vẫn cho phép
+                ps2.executeUpdate();
+            }
+
+            conn.commit(); // Commit Transaction
+            return true;
+
+        } catch (Exception e) {
+            System.err.println("approveResignation error: " + e.getMessage());
+            e.printStackTrace();
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+            return false;
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+        }
+    }
+
     // ── Cập nhật đầy đủ thông tin nhân viên từ form chỉnh sửa ──
     public boolean updateUserFull(int userId, String fullName, String email, String phone,
                                   int departmentId, int positionId, int roleId, int status) {

@@ -473,8 +473,22 @@
                                                         </a>
                                                     </li>
 
+                                                    <li class="sidebar-menu-category">Nhân sự</li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/terminate-employee"
+                                                            class="sidebar-link ${param.activeMenu eq 'termination' ? 'active' : ''}">
+                                                            <i class="fas fa-user-minus"></i> Quản lý nghỉ việc
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/resignation-approval"
+                                                            class="sidebar-link ${param.activeMenu eq 'resignation-approval' ? 'active' : ''}">
+                                                            <i class="fas fa-door-open"></i> Duyệt đơn nghỉ việc
+                                                        </a>
+                                                    </li>
 
                                                 </c:if>
+
 
                                                 <%-- ══════ FACTORY MANAGER / SUPERVISOR (roleId=3) ══════
                                                      Quyền: xếp ca + phân tăng ca cho công nhân xưởng,
@@ -592,6 +606,12 @@
                                                                     <a href="${pageContext.request.contextPath}/hr/terminate-employee"
                                                                         class="sidebar-link ${param.activeMenu eq 'termination' ? 'active' : ''}">
                                                                         <i class="fas fa-user-minus"></i> Quản lý nghỉ việc
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/resignation-approval"
+                                                                        class="sidebar-link ${param.activeMenu eq 'resignation-approval' ? 'active' : ''}">
+                                                                        <i class="fas fa-door-open"></i> Duyệt đơn nghỉ việc
                                                                     </a>
                                                                 </li>
 
@@ -739,6 +759,12 @@
                                                                         <a href="${pageContext.request.contextPath}/employee/my-contract"
                                                                             class="sidebar-link ${param.activeMenu eq 'my-contract' ? 'active' : ''}">
                                                                             <i class="fas fa-file-signature"></i> Hợp đồng của tôi
+                                                                        </a>
+                                                                    </li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/employee/resignation"
+                                                                            class="sidebar-link ${param.activeMenu eq 'resignation' ? 'active' : ''}">
+                                                                            <i class="fas fa-door-open"></i> Xin nghỉ việc
                                                                         </a>
                                                                     </li>
 
