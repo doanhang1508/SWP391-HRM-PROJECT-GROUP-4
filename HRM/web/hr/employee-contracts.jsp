@@ -135,7 +135,12 @@
 
         <c:if test="${not empty currentContract}">
             <div class="content-card" style="margin-bottom: 24px;">
-                <h3 class="section-title"><i class="fas fa-file-signature" style="color:#2563eb;"></i> Chi tiết Hợp đồng Hiện tại</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 class="section-title" style="margin: 0;"><i class="fas fa-file-signature" style="color:#2563eb;"></i> Chi tiết Hợp đồng Hiện tại</h3>
+                    <c:if test="${sessionScope.currentUser.roleId == 1 || sessionScope.currentUser.roleId == 2 || (sessionScope.currentUser.roleId == 5 && sessionScope.currentUser.userId != employee.userId)}">
+                        <button type="button" onclick="openAddendumModal()" style="padding: 6px 12px; background: #d97706; color: white; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; font-size: 0.85rem;"><i class="fas fa-file-contract"></i> Tạo Phụ lục</button>
+                    </c:if>
+                </div>
                 
                 <div style="display: grid; grid-template-columns: 200px 1fr; row-gap: 16px; font-size: 0.95rem; margin-top: 16px;">
                     <div style="color: #6b7280; font-weight: 500;">Loại hợp đồng</div>
@@ -380,6 +385,7 @@
             </div>
 
             </div>
+            </div>
             <div style="padding: 16px 24px; border-top: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: flex-end; gap: 12px; flex-shrink: 0;">
                 <button type="button" onclick="closeAddContractModal()" style="padding: 10px 20px; border: 1px solid #cbd5e1; background: #fff; border-radius: 8px; font-weight: 600; color: #475569; cursor: pointer;">Hủy bỏ</button>
                 <button type="submit" style="padding: 10px 24px; border: none; background: #2563eb; color: #fff; border-radius: 8px; font-weight: 600; cursor: pointer;">Lưu Hợp đồng</button>
@@ -388,7 +394,82 @@
     </div>
 </div>
 
+<!-- Modal Thêm Phụ Lục -->
+<c:if test="${not empty currentContract}">
+<div id="addAddendumModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; padding: 20px;">
+    <div style="background: #fff; width: 100%; max-width: 700px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); display: flex; flex-direction: column; max-height: 90vh;">
+        <div style="padding: 16px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border-radius: 12px 12px 0 0; flex-shrink: 0;">
+            <h3 style="margin: 0; font-size: 1.2rem; color: #1e293b;"><i class="fas fa-file-contract" style="color: #d97706; margin-right: 8px;"></i>Tạo Phụ lục Hợp đồng</h3>
+            <button type="button" onclick="closeAddendumModal()" style="background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer;">&times;</button>
+        </div>
+        
+        <form action="${pageContext.request.contextPath}/hr/employee-contracts" method="POST" style="margin: 0; display: flex; flex-direction: column; overflow: hidden;">
+            <div style="padding: 24px; overflow-y: auto;">
+                <input type="hidden" name="action" value="createAddendum">
+                <input type="hidden" name="userId" value="${employee.userId}">
+                
+                <!-- Kế thừa từ Hợp đồng gốc -->
+                <input type="hidden" name="parentContractId" value="${currentContract.contractId}">
+                <input type="hidden" name="contractTypeId" value="${currentContract.contractTypeId}">
+                <c:if test="${not empty currentContract.endDate}">
+                    <input type="hidden" name="endDate" value="${currentContract.endDate}">
+                </c:if>
+                <input type="hidden" name="bhxhRate" value="${currentContract.bhxhRate}">
+                <input type="hidden" name="bhytRate" value="${currentContract.bhytRate}">
+                <input type="hidden" name="bhtnRate" value="${currentContract.bhtnRate}">
+                <input type="hidden" name="taxCalcType" value="${currentContract.taxCalcType}">
+            
+            <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 20px;">
+                <div class="form-group">
+                    <label class="form-label" style="display: block; margin-bottom: 8px;">Lý do tạo Phụ lục <span style="color:red">*</span></label>
+                    <input type="text" name="addendumReason" required placeholder="VD: Tăng lương định kỳ năm 2026" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px;">
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <div class="form-group">
+                    <label class="form-label" style="display: block; margin-bottom: 8px;">Mức Lương cơ bản mới (VNĐ) <span style="color:red">*</span></label>
+                    <input type="text" name="baseSalary" required placeholder="VD: 15,000,000" value="<fmt:formatNumber value="${currentContract.baseSalary}" pattern="0"/>" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px;">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="display: block; margin-bottom: 8px;">Ngày bắt đầu hiệu lực <span style="color:red">*</span></label>
+                    <input type="date" name="startDate" required style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px;">
+                </div>
+            </div>
+
+            <div style="background: #f1f5f9; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                <h4 style="margin: 0 0 16px; font-size: 0.95rem; font-weight: 700; color: #334155;">Phụ cấp áp dụng cho Phụ lục mới</h4>
+                <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+                    <c:forEach var="a" items="${availableAllowances}">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #475569; cursor: pointer;">
+                            <input type="checkbox" name="allowanceIds" value="${a.allowanceId}" 
+                                   <c:forEach var="ca" items="${allowanceList}">
+                                       <c:if test="${ca.allowanceName == a.allowanceName}">checked</c:if>
+                                   </c:forEach>
+                                   style="width: 16px; height: 16px; cursor: pointer;">
+                            ${a.allowanceName} (<fmt:formatNumber value="${a.amount}" type="number" groupingUsed="true"/> đ)
+                        </label>
+                    </c:forEach>
+                </div>
+            </div>
+
+            </div>
+            <div style="padding: 16px 24px; border-top: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: flex-end; gap: 12px; flex-shrink: 0;">
+                <button type="button" onclick="closeAddendumModal()" style="padding: 10px 20px; border: 1px solid #cbd5e1; background: #fff; border-radius: 8px; font-weight: 600; color: #475569; cursor: pointer;">Hủy bỏ</button>
+                <button type="submit" style="padding: 10px 24px; border: none; background: #d97706; color: #fff; border-radius: 8px; font-weight: 600; cursor: pointer;">Lưu Phụ lục</button>
+            </div>
+        </form>
+    </div>
+</div>
+</c:if>
+
 <script>
+    function openAddendumModal() {
+        document.getElementById('addAddendumModal').style.display = 'flex';
+    }
+    function closeAddendumModal() {
+        document.getElementById('addAddendumModal').style.display = 'none';
+    }
+
     function openAddContractModal() {
         document.getElementById('addContractModal').style.display = 'flex';
     }

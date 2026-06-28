@@ -244,6 +244,80 @@ public class HrEmployeeContractsController extends HttpServlet {
                 session.setAttribute("errorMsg", "Lỗi xử lý dữ liệu hợp đồng!");
                 response.sendRedirect(request.getContextPath() + "/hr/employee-contracts?userId=" + request.getParameter("userId"));
             }
+        } else if ("createAddendum".equals(action)) {
+            try {
+                int userId = Integer.parseInt(request.getParameter("userId"));
+                
+                if (currentRoleId == 5 && currentUser.getUserId() == userId) {
+                    session.setAttribute("errorMsg", "Lỗi: HR Staff không được tự tạo phụ lục cho chính mình.");
+                    response.sendRedirect(request.getContextPath() + "/hr/employee-contracts?userId=" + userId);
+                    return;
+                }
+
+                int parentContractId = Integer.parseInt(request.getParameter("parentContractId"));
+                String addendumReason = request.getParameter("addendumReason");
+                java.sql.Date startDate = java.sql.Date.valueOf(request.getParameter("startDate"));
+                java.math.BigDecimal baseSalary = new java.math.BigDecimal(request.getParameter("baseSalary").replaceAll(",", ""));
+                
+                // Fields inherited from the parent contract (passed as hidden inputs)
+                int contractTypeId = Integer.parseInt(request.getParameter("contractTypeId"));
+                String endStr = request.getParameter("endDate");
+                java.sql.Date endDate = (endStr != null && !endStr.trim().isEmpty()) ? java.sql.Date.valueOf(endStr) : null;
+                java.math.BigDecimal bhxhRate = new java.math.BigDecimal(request.getParameter("bhxhRate"));
+                java.math.BigDecimal bhytRate = new java.math.BigDecimal(request.getParameter("bhytRate"));
+                java.math.BigDecimal bhtnRate = new java.math.BigDecimal(request.getParameter("bhtnRate"));
+                int taxCalcType = Integer.parseInt(request.getParameter("taxCalcType"));
+
+                EmployeeContract addendum = new EmployeeContract();
+                addendum.setUserId(userId);
+                addendum.setContractTypeId(contractTypeId);
+                addendum.setStartDate(startDate);
+                addendum.setEndDate(endDate);
+                addendum.setBaseSalary(baseSalary);
+                addendum.setBhxhRate(bhxhRate);
+                addendum.setBhytRate(bhytRate);
+                addendum.setBhtnRate(bhtnRate);
+                addendum.setTaxCalcType(taxCalcType);
+                addendum.setParentContractId(parentContractId);
+                addendum.setAddendumReason(addendumReason);
+                addendum.setDocType("ADDENDUM");
+                addendum.setSignStatus("PENDING");
+
+                EmployeeContractDAO ecDAO = new EmployeeContractDAO();
+                ecDAO.insertAddendum(addendum);
+                
+                // Get the generated contractId for the addendum to insert allowances
+                EmployeeContract newlyCreatedAddendum = ecDAO.getPendingAddendum(userId);
+                if (newlyCreatedAddendum != null) {
+                    String[] allowanceIds = request.getParameterValues("allowanceIds");
+                    if (allowanceIds != null && allowanceIds.length > 0) {
+                        try (java.sql.Connection conn = util.DBContext.getConnection()) {
+                            String sqlInsertAlw = "INSERT INTO employee_allowances (user_id, allowance_id, amount, contract_id, effective_date) VALUES (?, ?, (SELECT amount FROM allowances WHERE allowance_id = ?), ?, ?)";
+                            try (java.sql.PreparedStatement psAlw = conn.prepareStatement(sqlInsertAlw)) {
+                                for (String alwIdStr : allowanceIds) {
+                                    int alwId = Integer.parseInt(alwIdStr);
+                                    psAlw.setInt(1, userId);
+                                    psAlw.setInt(2, alwId);
+                                    psAlw.setInt(3, alwId);
+                                    psAlw.setInt(4, newlyCreatedAddendum.getContractId());
+                                    psAlw.setDate(5, newlyCreatedAddendum.getStartDate());
+                                    psAlw.addBatch();
+                                }
+                                psAlw.executeBatch();
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                
+                session.setAttribute("successMsg", "Đã tạo phụ lục Hợp đồng. Vui lòng chờ nhân viên xác nhận!");
+                response.sendRedirect(request.getContextPath() + "/hr/employee-contracts?userId=" + userId);
+            } catch (Exception e) {
+                e.printStackTrace();
+                session.setAttribute("errorMsg", "Lỗi khi xử lý dữ liệu tạo Phụ lục!");
+                response.sendRedirect(request.getContextPath() + "/hr/employee-contracts?userId=" + request.getParameter("userId"));
+            }
         } else if ("approve".equals(action)) {
             try {
                 if (currentRoleId != 2 && currentRoleId != 1 && currentRoleId != 4) {

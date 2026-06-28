@@ -290,7 +290,7 @@
                     <tr>
                         <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Loại Hợp đồng</th>
                         <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Thời hạn</th>
-                        <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Lương Net</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Lương Gross</th>
                         <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Trạng thái</th>
                     </tr>
                 </thead>
@@ -303,7 +303,7 @@
                                 <c:choose><c:when test="${not empty c.endDate}"><fmt:formatDate value="${c.endDate}" pattern="dd/MM/yyyy"/></c:when><c:otherwise>Không giới hạn</c:otherwise></c:choose>
                             </td>
                             <td style="padding: 16px; font-size: 0.875rem; color: #1a1a1a; font-weight: 600; border-bottom: 1px solid #f3f4f6;">
-                                <fmt:formatNumber value="${c.baseSalary}" type="number" groupingUsed="true"/> đ
+                                <fmt:formatNumber value="${c.baseSalary + totalAllowance}" type="number" groupingUsed="true"/> đ
                             </td>
                             <td style="padding: 16px; font-size: 0.875rem; border-bottom: 1px solid #f3f4f6;">
                                 <c:choose>
