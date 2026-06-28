@@ -142,9 +142,9 @@ public class AttendanceDAO {
     public int[] getAttendanceSummary(int userId, int month, int year) {
         // returns [present, late, absent, overtime_days]
         String sql = "SELECT " +
-                     "SUM(CASE WHEN status='PRESENT' THEN 1 ELSE 0 END) AS present_cnt, " +
-                     "SUM(CASE WHEN status='LATE' THEN 1 ELSE 0 END) AS late_cnt, " +
-                     "SUM(CASE WHEN status='ABSENT' THEN 1 ELSE 0 END) AS absent_cnt, " +
+                     "SUM(CASE WHEN UPPER(status) IN ('PRESENT', 'P') THEN 1 ELSE 0 END) AS present_cnt, " +
+                     "SUM(CASE WHEN UPPER(status) IN ('LATE', 'T') THEN 1 ELSE 0 END) AS late_cnt, " +
+                     "SUM(CASE WHEN UPPER(status) IN ('ABSENT', 'A') THEN 1 ELSE 0 END) AS absent_cnt, " +
                      "SUM(CASE WHEN overtime_hrs > 0 THEN 1 ELSE 0 END) AS ot_cnt " +
                      "FROM attendance WHERE user_id=? AND MONTH(work_date)=? AND YEAR(work_date)=?";
         DBContext dbContext = new DBContext();
@@ -174,9 +174,52 @@ public class AttendanceDAO {
     // ═══════════════════════════════════════════════════
 
     /**
+     * Tra cứu attendance_id từ mã nhân viên (username) và ngày làm việc.
+     * Trả về -1 nếu không tìm thấy.
+     */
+    public int getAttendanceIdByUsernameAndDate(String username, Date workDate) {
+        String sql = "SELECT a.attendance_id FROM attendance a " +
+                     "JOIN users u ON a.user_id = u.user_id " +
+                     "WHERE u.username = ? AND a.work_date = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, username);
+            ps.setDate(2, workDate);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("attendance_id");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    /**
+     * Tra cứu attendance_id từ userId và ngày làm việc (dùng cho user đã đăng nhập).
+     * Trả về -1 nếu không tìm thấy.
+     */
+    public int getAttendanceIdByUserIdAndDate(int userId, Date workDate) {
+        String sql = "SELECT attendance_id FROM attendance WHERE user_id = ? AND work_date = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setDate(2, workDate);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("attendance_id");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    /**
      * Nhân viên nộp đơn khiếu nại chấm công.
      */
     public boolean submitClaim(AttendanceClaim claim) {
+
         String sql = "INSERT INTO attendance_claims " +
                      "(attendance_id, user_id, work_date, claim_type, description, status, created_at) " +
                      "VALUES (?, ?, ?, ?, ?, 'PENDING', NOW())";
@@ -514,7 +557,7 @@ public class AttendanceDAO {
     }
 
     public int getPresentDays(int employeeId, int month, int year) {
-        String sql = "SELECT COUNT(*) FROM attendance WHERE user_id=? AND MONTH(work_date)=? AND YEAR(work_date)=? AND status IN ('Present', 'Late')";
+        String sql = "SELECT COUNT(*) FROM attendance WHERE user_id=? AND MONTH(work_date)=? AND YEAR(work_date)=? AND status IN ('Present', 'Late', 'PRESENT', 'LATE', 'T', 'P')";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -602,7 +645,7 @@ public class AttendanceDAO {
     }
 
     public double getPaidAttendanceDays(int userId, int month, int year) {
-        String sql = "SELECT COALESCE(SUM(CASE WHEN status IN ('PRESENT','LATE') THEN 1 WHEN status='HALFDAY' THEN 0.5 ELSE 0 END), 0) " +
+        String sql = "SELECT COALESCE(SUM(CASE WHEN UPPER(status) IN ('PRESENT', 'LATE', 'P', 'T') THEN 1 WHEN UPPER(status)='HALFDAY' THEN 0.5 ELSE 0 END), 0) " +
                      "FROM attendance WHERE user_id=? AND MONTH(work_date)=? AND YEAR(work_date)=?";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
@@ -662,15 +705,15 @@ public class AttendanceDAO {
     public List<model.AttendanceSummary> getAttendanceSummaryAllUsers(int month, int year) {
         List<model.AttendanceSummary> list = new ArrayList<>();
         String sql = "SELECT u.user_id, u.full_name AS user_name, d.department_name, " +
-                     "SUM(CASE WHEN a.status='PRESENT' THEN 1 ELSE 0 END) AS present_cnt, " +
-                     "SUM(CASE WHEN a.status='LATE' THEN 1 ELSE 0 END) AS late_cnt, " +
-                     "SUM(CASE WHEN a.status='ABSENT' THEN 1 ELSE 0 END) AS absent_cnt, " +
+                     "SUM(CASE WHEN UPPER(a.status) IN ('PRESENT', 'P') THEN 1 ELSE 0 END) AS present_cnt, " +
+                     "SUM(CASE WHEN UPPER(a.status) IN ('LATE', 'T') THEN 1 ELSE 0 END) AS late_cnt, " +
+                     "SUM(CASE WHEN UPPER(a.status) IN ('ABSENT', 'A', 'LEAVE') THEN 1 ELSE 0 END) AS absent_cnt, " +
                      "SUM(CASE WHEN a.overtime_hrs > 0 THEN 1 ELSE 0 END) AS ot_cnt, " +
                      "SUM(IFNULL(a.overtime_hrs, 0)) AS total_ot_hrs " +
                      "FROM users u " +
                      "LEFT JOIN employee_profiles ep ON u.user_id = ep.user_id " +
                      "LEFT JOIN departments d ON ep.department_id = d.department_id " +
-                     "JOIN attendance a ON u.user_id = a.user_id AND MONTH(a.work_date)=? AND YEAR(a.work_date)=? " +
+                     "LEFT JOIN attendance a ON u.user_id = a.user_id AND MONTH(a.work_date)=? AND YEAR(a.work_date)=? " +
                      "GROUP BY u.user_id, u.full_name, d.department_name " +
                      "ORDER BY u.full_name";
         DBContext dbContext = new DBContext();
@@ -897,16 +940,16 @@ public class AttendanceDAO {
     public List<model.AttendanceSummary> getAttendanceSummaryAllUsersPaginated(int month, int year, int offset, int limit) {
         List<model.AttendanceSummary> list = new ArrayList<>();
         String sql = "SELECT u.user_id, u.full_name AS user_name, d.department_name, " +
-                     "SUM(CASE WHEN a.status='PRESENT' THEN 1 ELSE 0 END) AS present_cnt, " +
-                     "SUM(CASE WHEN a.status='LATE' THEN 1 ELSE 0 END) AS late_cnt, " +
-                     "SUM(CASE WHEN a.status='ABSENT' THEN 1 ELSE 0 END) AS absent_cnt, " +
+                     "SUM(CASE WHEN UPPER(a.status) IN ('PRESENT', 'P') THEN 1 ELSE 0 END) AS present_cnt, " +
+                     "SUM(CASE WHEN UPPER(a.status) IN ('LATE', 'T') THEN 1 ELSE 0 END) AS late_cnt, " +
+                     "SUM(CASE WHEN UPPER(a.status) IN ('ABSENT', 'A', 'LEAVE') THEN 1 ELSE 0 END) AS absent_cnt, " +
                      "SUM(CASE WHEN a.overtime_hrs > 0 THEN 1 ELSE 0 END) AS ot_cnt, " +
                      "SUM(IFNULL(a.overtime_hrs, 0)) AS total_ot_hrs " +
                      "FROM users u " +
                      "LEFT JOIN employee_profiles ep ON u.user_id = ep.user_id " +
                      "LEFT JOIN departments d ON ep.department_id = d.department_id " +
-                     "JOIN attendance a ON u.user_id = a.user_id AND MONTH(a.work_date)=? AND YEAR(a.work_date)=? " +
-                     "WHERE u.role_id NOT IN (1, 4) AND u.department_id IS NOT NULL " +
+                     "LEFT JOIN attendance a ON u.user_id = a.user_id AND MONTH(a.work_date)=? AND YEAR(a.work_date)=? " +
+                     "WHERE u.role_id NOT IN (1, 4) " +
                      "GROUP BY u.user_id, u.full_name, d.department_name " +
                      "ORDER BY u.full_name LIMIT ? OFFSET ?";
         DBContext dbContext = new DBContext();

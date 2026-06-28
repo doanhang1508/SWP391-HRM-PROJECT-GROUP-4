@@ -76,7 +76,7 @@
     .badge-inactive { display: inline-flex; align-items: center; gap: 5px; background: #f1f5f9; color: #64748b; font-size: .73rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; }
 
     .money-cell  { font-family: 'Be Vietnam Pro', sans-serif; font-weight: 700; color: var(--navy); white-space: nowrap; }
-    .coeff-pill  { display: inline-block; background: #eff6ff; color: var(--blue); font-size: .8rem; font-weight: 700; padding: 3px 10px; border-radius: 6px; }
+
 
     .action-btn  { background: none; border: none; cursor: pointer; padding: 6px 9px; border-radius: 6px; font-size: .88rem; transition: background .2s; }
     .btn-detail  { color: #7c3aed; }
@@ -270,9 +270,7 @@
                                 <tr>
                                     <th>#</th>
                                     <th>Tên Ngạch Lương</th>
-                                    <th>Lương Cơ Bản</th>
-                                    <th>Hệ Số</th>
-                                    <th>Lương Thực Tế</th>
+                                    <th>Lương Ngạch (₫/tháng)</th>
                                     <th>Mô Tả</th>
                                     <th>Trạng Thái</th>
                                     <th style="text-align:center;">Thao Tác</th>
@@ -294,12 +292,6 @@
                                         </td>
                                         <td class="money-cell">
                                             <fmt:formatNumber value="${sg.baseSalary}" type="number" groupingUsed="true"/> ₫
-                                        </td>
-                                        <td>
-                                            <span class="coeff-pill">× <fmt:formatNumber value="${sg.coefficient}" maxFractionDigits="2"/></span>
-                                        </td>
-                                        <td class="money-cell" style="color:#16a34a;">
-                                            <fmt:formatNumber value="${sg.baseSalary * sg.coefficient}" type="number" groupingUsed="true"/> ₫
                                         </td>
                                         <td>
                                             <div class="item-desc" title="${fn:escapeXml(sg.description)}">
@@ -326,7 +318,6 @@
                                                         ${sg.salaryGradeId},
                                                         '${fn:escapeXml(sg.gradeName)}',
                                                         '${sg.baseSalary}',
-                                                        '${sg.coefficient}',
                                                         '${fn:escapeXml(sg.description)}',
                                                         '${sg.status}')">
                                                 <i class="fas fa-eye"></i>
@@ -336,7 +327,6 @@
                                                     onclick="openEditModal(${sg.salaryGradeId},
                                                                           '${fn:escapeXml(sg.gradeName)}',
                                                                           '${sg.baseSalary}',
-                                                                          '${sg.coefficient}',
                                                                           '${fn:escapeXml(sg.description)}')"
                                                     title="Chỉnh sửa" ${sg.status ? '' : 'disabled style="opacity:.4;cursor:not-allowed;"'}>
                                                 <i class="fas fa-pen"></i>
@@ -391,40 +381,23 @@
             <button class="modal-close" onclick="closeModal('detailModal')" style="color:rgba(255,255,255,.8);">&times;</button>
         </div>
 
-        <%-- Lương thực tế highlight --%>
+        <%-- Lương ngạch highlight --%>
         <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin-bottom:22px;display:flex;align-items:center;gap:14px;">
             <div style="width:44px;height:44px;background:#16a34a;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#fff;flex-shrink:0;">
                 <i class="fas fa-money-bill-wave"></i>
             </div>
             <div>
-                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#16a34a;margin-bottom:2px;">Lương thực tế</div>
-                <div id="detailNetSalary" style="font-family:'Be Vietnam Pro',sans-serif;font-size:1.6rem;font-weight:800;color:#15803d;line-height:1;"></div>
+                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#16a34a;margin-bottom:2px;">Lương Ngạch</div>
+                <div id="detailBaseSalary" style="font-family:'Be Vietnam Pro',sans-serif;font-size:1.6rem;font-weight:800;color:#15803d;line-height:1;"></div>
             </div>
         </div>
 
         <%-- Grid thông tin --%>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+        <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:20px;">
             <div style="background:#f8fafc;border-radius:10px;padding:14px 16px;">
-                <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px;"><i class="fas fa-coins" style="margin-right:4px;"></i>Lương cơ bản</div>
-                <div id="detailBaseSalary" style="font-family:'Be Vietnam Pro',sans-serif;font-weight:700;color:var(--navy);font-size:.95rem;"></div>
-            </div>
-            <div style="background:#f8fafc;border-radius:10px;padding:14px 16px;">
-                <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px;"><i class="fas fa-times" style="margin-right:4px;"></i>Hệ số lương</div>
-                <div id="detailCoefficient" style="font-family:'Be Vietnam Pro',sans-serif;font-weight:700;color:var(--blue);font-size:.95rem;"></div>
-            </div>
-            <div style="background:#f8fafc;border-radius:10px;padding:14px 16px;grid-column:1/-1;">
                 <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:5px;"><i class="fas fa-align-left" style="margin-right:4px;"></i>Mô tả</div>
                 <div id="detailDesc" style="font-size:.875rem;color:var(--navy);line-height:1.6;"></div>
             </div>
-        </div>
-
-        <%-- Công thức tính --%>
-        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;">
-            <span id="detailFormulaBase" style="font-family:'Be Vietnam Pro',sans-serif;font-weight:700;color:var(--navy);"></span>
-            <span style="color:var(--muted);">×</span>
-            <span id="detailFormulaCoeff" style="font-family:'Be Vietnam Pro',sans-serif;font-weight:700;color:var(--blue);"></span>
-            <span style="color:var(--muted);">=</span>
-            <span id="detailFormulaNet" style="font-family:'Be Vietnam Pro',sans-serif;font-weight:800;color:#16a34a;font-size:1.05rem;"></span>
         </div>
 
         <div class="modal-footer" style="margin-top:0;">
@@ -450,21 +423,10 @@
                 <label class="form-label">Tên Ngạch Lương <span>*</span></label>
                 <input type="text" name="gradeName" class="form-control" placeholder="Ví dụ: Ngạch chuyên viên" required maxlength="100">
             </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">Lương Cơ Bản (₫) <span>*</span></label>
-                    <input type="number" name="baseSalary" class="form-control" placeholder="Ví dụ: 2000000" required min="1" step="1000">
-                    <div class="input-hint">Mức lương tối thiểu theo quy định</div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Hệ Số Lương <span>*</span></label>
-                    <input type="number" name="coefficient" class="form-control" placeholder="Ví dụ: 2.34" required min="0.01" step="0.01">
-                    <div class="input-hint">Hệ số nhân với lương cơ bản</div>
-                </div>
-            </div>
-            <div class="form-group" style="background:#f8fafc;border-radius:8px;padding:12px;border:1px solid var(--border);">
-                <div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px;">Lương Thực Tế (Xem trước)</div>
-                <div id="addPreview" style="font-family:'Be Vietnam Pro',sans-serif;font-size:1.3rem;font-weight:800;color:#16a34a;">— ₫</div>
+            <div class="form-group">
+                <label class="form-label">Lương Ngạch (₫/tháng) <span>*</span></label>
+                <input type="number" name="baseSalary" class="form-control" placeholder="Ví dụ: 12000000" required min="1" step="1000">
+                <div class="input-hint">Lương thực nhận theo ngạch, tính theo ngày công thực tế</div>
             </div>
             <div class="form-group">
                 <label class="form-label">Mô Tả</label>
@@ -492,19 +454,10 @@
                 <label class="form-label">Tên Ngạch Lương <span>*</span></label>
                 <input type="text" name="gradeName" id="editGradeName" class="form-control" required maxlength="100">
             </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">Lương Cơ Bản (₫) <span>*</span></label>
-                    <input type="number" name="baseSalary" id="editBaseSalary" class="form-control" required min="1" step="1000">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Hệ Số Lương <span>*</span></label>
-                    <input type="number" name="coefficient" id="editCoefficient" class="form-control" required min="0.01" step="0.01">
-                </div>
-            </div>
-            <div class="form-group" style="background:#f8fafc;border-radius:8px;padding:12px;border:1px solid var(--border);">
-                <div style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px;">Lương Thực Tế (Xem trước)</div>
-                <div id="editPreview" style="font-family:'Be Vietnam Pro',sans-serif;font-size:1.3rem;font-weight:800;color:#16a34a;">— ₫</div>
+            <div class="form-group">
+                <label class="form-label">Lương Ngạch (₫/tháng) <span>*</span></label>
+                <input type="number" name="baseSalary" id="editBaseSalary" class="form-control" required min="1" step="1000">
+                <div class="input-hint">Lương thực nhận theo ngạch, tính theo ngày công thực tế</div>
             </div>
             <div class="form-group">
                 <label class="form-label">Mô Tả</label>
@@ -564,22 +517,16 @@
 <script>
     // ── Detail Modal ─────────────────────────────────────────────────────
     var _detailData = {};
-    function openDetailModal(id, gradeName, baseSalary, coefficient, desc, status) {
-        _detailData = { id: id, gradeName: gradeName, baseSalary: parseFloat(baseSalary), coefficient: parseFloat(coefficient), desc: desc, status: status === 'true' };
+    function openDetailModal(id, gradeName, baseSalary, desc, status) {
+        _detailData = { id: id, gradeName: gradeName, baseSalary: parseFloat(baseSalary), desc: desc, status: status === 'true' };
         var fmt = function(n){ return new Intl.NumberFormat('vi-VN').format(Math.round(n)) + ' ₫'; };
-        var net = _detailData.baseSalary * _detailData.coefficient;
 
         document.getElementById('detailName').textContent       = gradeName;
         document.getElementById('detailIdBadge').textContent    = '# ID: ' + id;
         document.getElementById('detailBaseSalary').textContent = fmt(_detailData.baseSalary);
-        document.getElementById('detailCoefficient').textContent= '× ' + coefficient;
-        document.getElementById('detailNetSalary').textContent  = fmt(net);
         document.getElementById('detailDesc').textContent       = desc || 'Chưa có mô tả';
         document.getElementById('detailDesc').style.fontStyle   = desc ? 'normal' : 'italic';
         document.getElementById('detailDesc').style.color       = desc ? 'var(--navy)' : '#94a3b8';
-        document.getElementById('detailFormulaBase').textContent  = fmt(_detailData.baseSalary);
-        document.getElementById('detailFormulaCoeff').textContent = coefficient;
-        document.getElementById('detailFormulaNet').textContent   = fmt(net);
 
         var badge = document.getElementById('detailStatusBadge');
         if (_detailData.status) {
@@ -598,20 +545,18 @@
         document.getElementById('detailModal').classList.add('show');
     }
     function openEditFromDetail() {
-        openEditModal(_detailData.id, _detailData.gradeName, _detailData.baseSalary, _detailData.coefficient, _detailData.desc);
+        openEditModal(_detailData.id, _detailData.gradeName, _detailData.baseSalary, _detailData.desc);
     }
 
     // ── Modal helpers ────────────────────────────────────────────────────
     function openAddModal() {
         document.getElementById('addModal').classList.add('show');
     }
-    function openEditModal(id, gradeName, baseSalary, coefficient, desc) {
+    function openEditModal(id, gradeName, baseSalary, desc) {
         document.getElementById('editId').value          = id;
         document.getElementById('editGradeName').value   = gradeName;
         document.getElementById('editBaseSalary').value  = baseSalary;
-        document.getElementById('editCoefficient').value = coefficient;
         document.getElementById('editDesc').value        = desc;
-        updatePreview('edit');
         document.getElementById('editModal').classList.add('show');
     }
     function openDeactivateModal(id, name) {
@@ -635,22 +580,6 @@
             if (e.target === el) el.classList.remove('show');
         });
     });
-
-    // ── Salary preview calculator ────────────────────────────────────────
-    function updatePreview(prefix) {
-        var base  = parseFloat(document.getElementById(prefix + 'BaseSalary').value)  || 0;
-        var coeff = parseFloat(document.getElementById(prefix + 'Coefficient').value) || 0;
-        var total = base * coeff;
-        var el = document.getElementById(prefix + 'Preview');
-        el.textContent = total > 0
-            ? new Intl.NumberFormat('vi-VN').format(Math.round(total)) + ' ₫'
-            : '— ₫';
-    }
-
-    document.getElementById('addForm').querySelector('[name="baseSalary"]').addEventListener('input', function(){ updatePreview('add'); });
-    document.getElementById('addForm').querySelector('[name="coefficient"]').addEventListener('input', function(){ updatePreview('add'); });
-    document.getElementById('editBaseSalary').addEventListener('input',  function(){ updatePreview('edit'); });
-    document.getElementById('editCoefficient').addEventListener('input', function(){ updatePreview('edit'); });
 
     // Live filter nhanh trên client (thêm vào kết quả đã lọc server-side)
     function liveFilter() {

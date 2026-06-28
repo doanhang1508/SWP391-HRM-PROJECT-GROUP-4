@@ -45,7 +45,7 @@ public class TaxDAO {
 
     public List<TaxBracket> getAllTaxBrackets() {
         List<TaxBracket> list = new ArrayList<>();
-        String sql = "SELECT * FROM tax_brackets ORDER BY bracket_no";
+        String sql = "SELECT * FROM tax_brackets WHERE status = 1 ORDER BY effective_from DESC, bracket_no ASC";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -112,7 +112,7 @@ public class TaxDAO {
 
     public List<TaxDeduction> getAllTaxDeductions() {
         List<TaxDeduction> list = new ArrayList<>();
-        String sql = "SELECT * FROM tax_deductions ORDER BY deduction_id";
+        String sql = "SELECT * FROM tax_deductions WHERE status = 1 ORDER BY effective_from DESC, deduction_id ASC";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {

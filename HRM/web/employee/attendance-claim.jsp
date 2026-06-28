@@ -106,11 +106,12 @@
 
             <form method="post" action="${pageContext.request.contextPath}/employee/attendance-claim">
                 <input type="hidden" name="action" value="submit">
+                <input type="hidden" name="userId" value="${sessionScope.currentUser.userId}">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Mã bản ghi chấm công (Attendance ID) *</label>
-                        <input type="number" name="attendanceId" required min="1"
-                               value="${prefillAttendanceId}" placeholder="Nhập ID từ bảng chấm công">
+                        <label>Mã nhân viên</label>
+                        <input type="text" value="NV<fmt:formatNumber value="${sessionScope.currentUser.userId}" minIntegerDigits="4" groupingUsed="false"/>" readonly
+                               style="background:#f8fafc;color:var(--muted);cursor:not-allowed;font-weight:600;">
                     </div>
                     <div class="form-group">
                         <label>Ngày làm việc *</label>
