@@ -539,10 +539,10 @@ INSERT INTO allowances (allowance_id, allowance_name, description, amount, apply
 (2, 'Đi lại',      'Phụ cấp xăng xe',                  500000,  'Nhân viên không ở ký túc xá',                   'FIXED',       0, 0),
 -- Trách nhiệm: thuộc nền BHXH + chịu thuế TNCN, cố định
 (3, 'Trách nhiệm', 'Phụ cấp chức vụ cho quản lý',      1000000, 'Quản đốc, Tổ trưởng, Trưởng phòng',             'FIXED',       1, 1),
--- Chuyên cần: theo điều kiện (đi đủ tháng), không thuộc nền BHXH, miễn thuế
-(4, 'Chuyên cần',  'Thưởng chuyên cần đi làm đầy đủ',  500000,  'Không nghỉ phép, không đi muộn trong tháng',    'CONDITIONAL', 0, 0),
 -- Thâm niên: thuộc nền BHXH + chịu thuế, cố định theo hệ số năm làm việc
-(5, 'Thâm niên',   'Phụ cấp thâm niên theo năm làm việc', 300000, 'Áp dụng sau 3 năm công tác',                 'FIXED',       1, 1);
+(4, 'Thâm niên',   'Phụ cấp thâm niên theo năm làm việc', 300000, 'Áp dụng sau 3 năm công tác',                 'FIXED',       1, 1),
+-- Điện thoại: miễn thuế, cố định
+(5, 'Điện thoại',  'Phụ cấp cước viễn thông',          500000,  'Nhân viên kinh doanh, quản lý',                 'FIXED',       0, 0);
 
 -- ── 7. Insurance Rates (BHXH / BHYT / BHTN) ──
 INSERT INTO insurance_rates (insurance_rate_id, insurance_code, insurance_name, company_rate, employee_rate, description, effective_from) VALUES
@@ -846,18 +846,33 @@ INSERT INTO work_history (user_id, position_title, company_name, location, start
 -- Kế toán (user 33)
 (33, 'Kế toán viên', 'Công ty TNHH Group4', 'Hà Nội', '2025-03-01', NULL, 'Thanh toán nội bộ', 1);
 
-INSERT INTO employee_allowances (user_id, allowance_id, amount) VALUES
--- Phụ cấp Ăn trưa (allowance_id = 1): 800,000đ - Áp dụng tất cả nhân viên chính thức
-(2,  1, 800000), (3,  1, 800000), (4,  1, 800000), (5,  1, 800000), (6,  1, 800000),
-(10, 1, 800000), (14, 1, 800000), (19, 1, 800000), (20, 1, 800000), (33, 1, 800000),
+-- Phụ cấp Ăn trưa (allowance_id = 1) & Đi lại (allowance_id = 2):
+-- Áp dụng toàn bộ nhân viên, amount lấy từ bảng allowances để luôn đồng bộ cấu hình
+INSERT INTO employee_allowances (user_id, allowance_id, amount)
+SELECT u.user_id, a.allowance_id, a.amount
+FROM (SELECT 2 AS user_id UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6
+      UNION SELECT 10 UNION SELECT 14 UNION SELECT 19 UNION SELECT 20 UNION SELECT 33) u
+CROSS JOIN allowances a
+WHERE a.allowance_id IN (1, 2);
 
--- Phụ cấp Đi lại (allowance_id = 2): 500,000đ - Nhân viên không ở ký túc xá
-(2,  2, 500000), (3,  2, 500000), (4,  2, 500000), (5,  2, 500000), (6,  2, 500000),
-(10, 2, 500000), (14, 2, 500000), (19, 2, 500000), (20, 2, 500000), (33, 2, 500000),
-
--- Phụ cấp Trách nhiệm (allowance_id = 3): 1,000,000đ - Quản lý
-(2,  3, 5000000), (3,  3, 3000000), (4,  3, 2000000), (6,  3, 2000000), 
-(14, 3, 3000000), (19, 3, 3000000);
+-- Phụ cấp Trách nhiệm (allowance_id = 3): Chỉ áp dụng cho quản lý/trưởng phòng
+-- Amount theo bậc chức vụ (position_id):
+--   1 = Giám đốc       → 5,000,000đ
+--   2 = Trưởng phòng   → 3,000,000đ
+--   6 = Kế toán trưởng → 3,000,000đ (tương đương Trưởng phòng)
+--   4 = Quản đốc       → 2,000,000đ
+INSERT INTO employee_allowances (user_id, allowance_id, amount)
+SELECT u.user_id,
+       3,
+       CASE u.position_id
+           WHEN 1 THEN 5000000   -- Giám đốc
+           WHEN 2 THEN 3000000   -- Trưởng phòng
+           WHEN 6 THEN 3000000   -- Kế toán trưởng (tương đương Trưởng phòng)
+           WHEN 4 THEN 2000000   -- Quản đốc
+           ELSE        1000000   -- Các chức vụ quản lý khác (dự phòng)
+       END
+FROM users u
+WHERE u.user_id IN (2, 3, 4, 6, 14, 19);
 
 /* ================================================================
    MIGRATION V2: Shift & Overtime Management Module

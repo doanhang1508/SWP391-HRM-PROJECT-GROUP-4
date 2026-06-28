@@ -102,12 +102,23 @@ public class HrEmployeeContractsController extends HttpServlet {
             InsuranceRateDAO irDAO = new InsuranceRateDAO();
             List<InsuranceRate> activeRates = irDAO.search(null, "active");
             
+            int currentContractId = -1;
+            if (contracts != null) {
+                for (EmployeeContract c : contracts) {
+                    if ("Active".equals(c.getStatus()) || "Pending".equals(c.getStatus())) {
+                        currentContractId = c.getContractId();
+                        break;
+                    }
+                }
+            }
+            
             double totalAllowance = 0;
             List<java.util.Map<String, Object>> allowanceList = new java.util.ArrayList<>();
-            String sqlAllowance = "SELECT a.allowance_name, ea.amount FROM employee_allowances ea JOIN allowances a ON ea.allowance_id = a.allowance_id WHERE ea.user_id = ?";
+            String sqlAllowance = "SELECT a.allowance_name, ea.amount FROM employee_allowances ea JOIN allowances a ON ea.allowance_id = a.allowance_id WHERE ea.user_id = ? AND (ea.contract_id = ? OR ea.contract_id IS NULL)";
             try (java.sql.Connection conn = util.DBContext.getConnection();
                  java.sql.PreparedStatement ps = conn.prepareStatement(sqlAllowance)) {
                 ps.setInt(1, userId);
+                ps.setInt(2, currentContractId);
                 try (java.sql.ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
                         java.util.Map<String, Object> map = new java.util.HashMap<>();
