@@ -337,7 +337,8 @@
                                         <c:when test="${sessionScope.currentUser.roleId == 3}">Quản đốc xưởng</c:when>
                                         <c:when test="${sessionScope.currentUser.roleId == 4}">Giám đốc</c:when>
                                         <c:when test="${sessionScope.currentUser.roleId == 5}">Nhân viên HR</c:when>
-                                        <c:when test="${sessionScope.currentUser.roleId == 6}">Quản lý phòng ban</c:when>
+                                        <c:when test="${sessionScope.currentUser.roleId == 6}">Quản lý phòng ban
+                                        </c:when>
                                         <c:when test="${sessionScope.currentUser.roleId == 7}">Nhân viên</c:when>
                                         <c:when test="${sessionScope.currentUser.roleId == 8}">Kế Toán</c:when>
                                         <c:otherwise>Nhân viên</c:otherwise>
@@ -351,15 +352,15 @@
                                 <ul class="sidebar-menu">
 
                                     <%-- ══════ MENU CHUNG cho mọi role ══════ --%>
-                                    <c:if test="${sessionScope.currentUser.roleId != 4}">
-                                        <li class="sidebar-menu-category">Tổng quan</li>
-                                        <li class="sidebar-item">
-                                            <a href="${pageContext.request.contextPath}/dashboard"
-                                                class="sidebar-link ${param.activeMenu eq 'dashboard' ? 'active' : ''}">
-                                                <i class="fas fa-chart-line"></i> Bảng điều khiển
-                                            </a>
-                                        </li>
-                                    </c:if>
+                                        <c:if test="${sessionScope.currentUser.roleId != 4}">
+                                            <li class="sidebar-menu-category">Tổng quan</li>
+                                            <li class="sidebar-item">
+                                                <a href="${pageContext.request.contextPath}/dashboard"
+                                                    class="sidebar-link ${param.activeMenu eq 'dashboard' ? 'active' : ''}">
+                                                    <i class="fas fa-chart-line"></i> Bảng điều khiển
+                                                </a>
+                                            </li>
+                                        </c:if>
 
                                         <%-- ══════ ADMIN (roleId=1): CHỈ quản trị hệ thống ══════ --%>
                                             <c:if test="${sessionScope.currentUser.roleId == 1}">
@@ -409,30 +410,6 @@
                                                             <i class="fas fa-file-signature"></i> Quản lý Hợp đồng
                                                         </a>
                                                     </li>
-                                                     <li class="sidebar-item">
-                                                         <a href="${pageContext.request.contextPath}/hr/kpi-templates"
-                                                             class="sidebar-link ${param.activeMenu eq 'kpi-templates' || param.activeMenu eq 'kpi-template-edit' ? 'active' : ''}">
-                                                             <i class="fas fa-cubes"></i> Mẫu KPI Tiêu chuẩn
-                                                         </a>
-                                                     </li>
-                                                     <li class="sidebar-item">
-                                                         <a href="${pageContext.request.contextPath}/hr/kpi-cycles"
-                                                             class="sidebar-link ${param.activeMenu eq 'kpi-cycles' ? 'active' : ''}">
-                                                             <i class="fas fa-sync-alt"></i> Chu kỳ Đánh giá
-                                                         </a>
-                                                     </li>
-                                                     <li class="sidebar-item">
-                                                         <a href="${pageContext.request.contextPath}/manager/employee-kpi"
-                                                             class="sidebar-link ${param.activeMenu eq 'employee-kpi' ? 'active' : ''}">
-                                                             <i class="fas fa-star"></i> Đánh giá KPI
-                                                         </a>
-                                                     </li>
-                                                     <li class="sidebar-item">
-                                                         <a href="${pageContext.request.contextPath}/manager/kpi-approvals"
-                                                             class="sidebar-link ${param.activeMenu eq 'kpi-approvals' ? 'active' : ''}">
-                                                             <i class="fas fa-check-circle"></i> Phê duyệt KPI
-                                                         </a>
-                                                     </li>
 
                                                     <li class="sidebar-menu-category">Cấu hình Chính sách</li>
 
@@ -514,10 +491,9 @@
                                                 </c:if>
 
 
-                                                <%-- ══════ FACTORY MANAGER / SUPERVISOR (roleId=3) ══════
-                                                     Quyền: xếp ca + phân tăng ca cho công nhân xưởng,
-                                                     duyệt nghỉ phép xưởng, xem/duyệt yêu cầu điều chỉnh CC.
-                                                --%>
+                                                <%-- ══════ FACTORY MANAGER / SUPERVISOR (roleId=3) ══════ Quyền: xếp ca
+                                                    + phân tăng ca cho công nhân xưởng, duyệt nghỉ phép xưởng, xem/duyệt
+                                                    yêu cầu điều chỉnh CC. --%>
                                                     <c:if test="${sessionScope.currentUser.roleId == 3}">
                                                         <li class="sidebar-menu-category">Quản lý xưởng</li>
                                                         <li class="sidebar-item">
@@ -526,18 +502,18 @@
                                                                 <i class="fas fa-users"></i> Nhân viên của tôi
                                                             </a>
                                                         </li>
-                                                         <li class="sidebar-item">
-                                                             <a href="${pageContext.request.contextPath}/manager/employee-kpi"
-                                                                 class="sidebar-link ${param.activeMenu eq 'employee-kpi' ? 'active' : ''}">
-                                                                 <i class="fas fa-star"></i> Đánh giá KPI
-                                                             </a>
-                                                         </li>
-                                                         <li class="sidebar-item">
-                                                             <a href="${pageContext.request.contextPath}/manager/kpi-approvals"
-                                                                 class="sidebar-link ${param.activeMenu eq 'kpi-approvals' ? 'active' : ''}">
-                                                                 <i class="fas fa-check-circle"></i> Phê duyệt KPI
-                                                             </a>
-                                                         </li>
+                                                        <li class="sidebar-item">
+                                                            <a href="${pageContext.request.contextPath}/manager/employee-kpi"
+                                                                class="sidebar-link ${param.activeMenu eq 'employee-kpi' ? 'active' : ''}">
+                                                                <i class="fas fa-star"></i> Đánh giá KPI
+                                                            </a>
+                                                        </li>
+                                                        <li class="sidebar-item">
+                                                            <a href="${pageContext.request.contextPath}/manager/kpi-approvals"
+                                                                class="sidebar-link ${param.activeMenu eq 'kpi-approvals' ? 'active' : ''}">
+                                                                <i class="fas fa-check-circle"></i> Phê duyệt KPI
+                                                            </a>
+                                                        </li>
                                                         <li class="sidebar-item">
                                                             <a href="${pageContext.request.contextPath}/manager/shift-schedule"
                                                                 class="sidebar-link ${param.activeMenu eq 'shift-schedule' ? 'active' : ''}">
@@ -554,24 +530,22 @@
                                                         <li class="sidebar-item">
                                                             <a href="${pageContext.request.contextPath}/manager/attendance-claims"
                                                                 class="sidebar-link ${param.activeMenu eq 'attendance-claims' ? 'active' : ''}">
-                                                                <i class="fas fa-balance-scale"></i> Giải quyết khiếu nại công
+                                                                <i class="fas fa-balance-scale"></i> Giải quyết khiếu
+                                                                nại công
                                                             </a>
                                                         </li>
-                                                         <li class="sidebar-item">
-                                                             <a href="${pageContext.request.contextPath}/manager/timesheet-confirm"
-                                                                 class="sidebar-link ${param.activeMenu eq 'timesheet-confirm' ? 'active' : ''}">
-                                                                 <i class="fas fa-check-double"></i> Xác nhận bảng công
-                                                             </a>
-                                                         </li>
+                                                        <li class="sidebar-item">
+                                                            <a href="${pageContext.request.contextPath}/manager/timesheet-confirm"
+                                                                class="sidebar-link ${param.activeMenu eq 'timesheet-confirm' ? 'active' : ''}">
+                                                                <i class="fas fa-check-double"></i> Xác nhận bảng công
+                                                            </a>
+                                                        </li>
 
                                                     </c:if>
 
-                                                    <%-- ══════ DIRECTOR (roleId=4) ══════
-                                                         Quyền: xem tổng quan nhân sự,
-                                                         duyệt chốt bảng lương,
-                                                         xem báo cáo tổng hợp.
-                                                         KHÔNG có quyền vận hành (phòng ban CRUD, etc.)
-                                                    --%>
+                                                    <%-- ══════ DIRECTOR (roleId=4) ══════ Quyền: xem tổng quan nhân sự,
+                                                        duyệt chốt bảng lương, xem báo cáo tổng hợp. KHÔNG có quyền vận
+                                                        hành (phòng ban CRUD, etc.) --%>
                                                         <c:if test="${sessionScope.currentUser.roleId == 4}">
                                                             <li class="sidebar-menu-category">Bảng điều hành</li>
                                                             <li class="sidebar-item">
@@ -584,22 +558,22 @@
                                                             <li class="sidebar-item">
                                                                 <a href="${pageContext.request.contextPath}/director/payroll"
                                                                     class="sidebar-link ${param.activeMenu eq 'director-payroll' ? 'active' : ''}">
-                                                                    <i class="fas fa-file-invoice-dollar"></i> Duyệt bảng lương
+                                                                    <i class="fas fa-file-invoice-dollar"></i> Duyệt
+                                                                    bảng lương
                                                                 </a>
                                                             </li>
                                                             <li class="sidebar-menu-category">Báo cáo</li>
                                                             <li class="sidebar-item">
-                                                                <a href="${pageContext.request.contextPath}/director/reports" class="sidebar-link ${param.activeMenu eq 'director-reports' ? 'active' : ''}">
+                                                                <a href="${pageContext.request.contextPath}/director/reports"
+                                                                    class="sidebar-link ${param.activeMenu eq 'director-reports' ? 'active' : ''}">
                                                                     <i class="fas fa-chart-line"></i> Báo cáo tổng hợp
                                                                 </a>
                                                             </li>
                                                         </c:if>
 
-                                                        <%-- ══════ HR STAFF (roleId=5) ══════
-                                                             Quyền: xem danh sách NV, upload/xem chấm công,
-                                                             quản lý hợp đồng, xuất payroll.
-                                                             KHÔNG duyệt nghỉ phép (Supervisor/DeptMgr duyệt).
-                                                        --%>
+                                                        <%-- ══════ HR STAFF (roleId=5) ══════ Quyền: xem danh sách NV,
+                                                            upload/xem chấm công, quản lý hợp đồng, xuất payroll. KHÔNG
+                                                            duyệt nghỉ phép (Supervisor/DeptMgr duyệt). --%>
                                                             <c:if test="${sessionScope.currentUser.roleId == 5}">
                                                                 <li class="sidebar-menu-category">Quản lý nhân sự</li>
                                                                 <li class="sidebar-item">
@@ -608,22 +582,23 @@
                                                                         <i class="fas fa-users"></i> Danh sách nhân viên
                                                                     </a>
                                                                 </li>
-                                                                 <li class="sidebar-item">
-                                                                     <a href="${pageContext.request.contextPath}/hr/kpi-templates"
-                                                                         class="sidebar-link ${param.activeMenu eq 'kpi-templates' || param.activeMenu eq 'kpi-template-edit' ? 'active' : ''}">
-                                                                         <i class="fas fa-cubes"></i> Mẫu KPI Tiêu chuẩn
-                                                                     </a>
-                                                                 </li>
-                                                                 <li class="sidebar-item">
-                                                                     <a href="${pageContext.request.contextPath}/hr/kpi-cycles"
-                                                                         class="sidebar-link ${param.activeMenu eq 'kpi-cycles' ? 'active' : ''}">
-                                                                         <i class="fas fa-sync-alt"></i> Chu kỳ Đánh giá
-                                                                     </a>
-                                                                 </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/kpi-templates"
+                                                                        class="sidebar-link ${param.activeMenu eq 'kpi-templates' || param.activeMenu eq 'kpi-template-edit' ? 'active' : ''}">
+                                                                        <i class="fas fa-cubes"></i> Mẫu KPI Tiêu chuẩn
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/kpi-cycles"
+                                                                        class="sidebar-link ${param.activeMenu eq 'kpi-cycles' ? 'active' : ''}">
+                                                                        <i class="fas fa-sync-alt"></i> Chu kỳ Đánh giá
+                                                                    </a>
+                                                                </li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/contracts"
                                                                         class="sidebar-link ${param.activeMenu eq 'contract-management' ? 'active' : ''}">
-                                                                        <i class="fas fa-file-signature"></i> Quản lý Hợp đồng
+                                                                        <i class="fas fa-file-signature"></i> Quản lý
+                                                                        Hợp đồng
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
@@ -641,29 +616,34 @@
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/contract-type"
                                                                         class="sidebar-link ${param.activeMenu eq 'contract-type' ? 'active' : ''}">
-                                                                        <i class="fas fa-file-contract"></i> Loại hợp đồng
+                                                                        <i class="fas fa-file-contract"></i> Loại hợp
+                                                                        đồng
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/onboarding/list"
                                                                         class="sidebar-link ${param.activeMenu eq 'onboarding' ? 'active' : ''}">
-                                                                        <i class="fas fa-user-clock"></i> Tiếp nhận nhân viên
+                                                                        <i class="fas fa-user-clock"></i> Tiếp nhận nhân
+                                                                        viên
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/terminate-employee"
                                                                         class="sidebar-link ${param.activeMenu eq 'termination' ? 'active' : ''}">
-                                                                        <i class="fas fa-user-minus"></i> Quản lý nghỉ việc
+                                                                        <i class="fas fa-user-minus"></i> Quản lý nghỉ
+                                                                        việc
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/resignation-approval"
                                                                         class="sidebar-link ${param.activeMenu eq 'resignation-approval' ? 'active' : ''}">
-                                                                        <i class="fas fa-door-open"></i> Duyệt đơn nghỉ việc
+                                                                        <i class="fas fa-door-open"></i> Duyệt đơn nghỉ
+                                                                        việc
                                                                     </a>
                                                                 </li>
 
-                                                                <li class="sidebar-menu-category">Cấu hình Chính sách</li>
+                                                                <li class="sidebar-menu-category">Cấu hình Chính sách
+                                                                </li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/shifts"
                                                                         class="sidebar-link ${param.activeMenu eq 'shifts' ? 'active' : ''}">
@@ -675,23 +655,27 @@
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/import-attendance"
                                                                         class="sidebar-link ${param.activeMenu eq 'import-attendance' ? 'active' : ''}">
-                                                                        <i class="fas fa-file-import"></i> Import chấm công
+                                                                        <i class="fas fa-file-import"></i> Import chấm
+                                                                        công
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/manager/timesheet-confirm"
                                                                         class="sidebar-link ${param.activeMenu eq 'timesheet-confirm' ? 'active' : ''}">
-                                                                        <i class="fas fa-check-double"></i> Xác nhận bảng công
+                                                                        <i class="fas fa-check-double"></i> Xác nhận
+                                                                        bảng công
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/attendance-management?action=summary"
                                                                         class="sidebar-link ${param.activeMenu eq 'attendance-summary' || param.activeMenu eq 'attendance-detail' ? 'active' : ''}">
-                                                                        <i class="fas fa-clipboard-check"></i> Quản lý bảng công
+                                                                        <i class="fas fa-clipboard-check"></i> Quản lý
+                                                                        bảng công
                                                                     </a>
                                                                 </li>
 
-                                                                <li class="sidebar-menu-category">Lương &amp; Phúc lợi</li>
+                                                                <li class="sidebar-menu-category">Lương &amp; Phúc lợi
+                                                                </li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/allowance"
                                                                         class="sidebar-link ${param.activeMenu eq 'allowance' ? 'active' : ''}">
@@ -701,7 +685,8 @@
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/payroll"
                                                                         class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
-                                                                        <i class="fas fa-file-invoice-dollar"></i> Bảng lương
+                                                                        <i class="fas fa-file-invoice-dollar"></i> Bảng
+                                                                        lương
                                                                     </a>
                                                                 </li>
 
@@ -726,167 +711,200 @@
                                                                 </li>
                                                             </c:if>
 
-                                                            <%-- ══════ DEPARTMENT MANAGER (roleId=6) ══════
-                                                             Quyền: duyệt nghỉ phép nhân viên văn phòng,
-                                                             duyệt yêu cầu điều chỉnh chấm công phòng ban.
-                                                             KHÔNG xếp ca (văn phòng chỉ giờ hành chính).
-                                                             KHÔNG có OT (văn phòng không tăng ca).
-                                                        --%>
+                                                            <%-- ══════ DEPARTMENT MANAGER (roleId=6) ══════ Quyền:
+                                                                duyệt nghỉ phép nhân viên văn phòng, duyệt yêu cầu điều
+                                                                chỉnh chấm công phòng ban. KHÔNG xếp ca (văn phòng chỉ
+                                                                giờ hành chính). KHÔNG có OT (văn phòng không tăng ca).
+                                                                --%>
                                                                 <c:if test="${sessionScope.currentUser.roleId == 6}">
-                                                                    <li class="sidebar-menu-category">Quản lý phòng ban</li>
+                                                                    <li class="sidebar-menu-category">Quản lý phòng ban
+                                                                    </li>
                                                                     <li class="sidebar-item">
                                                                         <a href="${pageContext.request.contextPath}/manager/employees"
                                                                             class="sidebar-link ${param.activeMenu eq 'my-employees' ? 'active' : ''}">
-                                                                            <i class="fas fa-users"></i> Nhân viên của tôi
+                                                                            <i class="fas fa-users"></i> Nhân viên của
+                                                                            tôi
                                                                         </a>
                                                                     </li>
-                                                                     <li class="sidebar-item">
-                                                                         <a href="${pageContext.request.contextPath}/manager/employee-kpi"
-                                                                             class="sidebar-link ${param.activeMenu eq 'employee-kpi' ? 'active' : ''}">
-                                                                             <i class="fas fa-star"></i> Đánh giá KPI
-                                                                         </a>
-                                                                     </li>
-                                                                     <li class="sidebar-item">
-                                                                         <a href="${pageContext.request.contextPath}/manager/kpi-approvals"
-                                                                             class="sidebar-link ${param.activeMenu eq 'kpi-approvals' ? 'active' : ''}">
-                                                                             <i class="fas fa-check-circle"></i> Phê duyệt KPI
-                                                                         </a>
-                                                                     </li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/manager/employee-kpi"
+                                                                            class="sidebar-link ${param.activeMenu eq 'employee-kpi' ? 'active' : ''}">
+                                                                            <i class="fas fa-star"></i> Đánh giá KPI
+                                                                        </a>
+                                                                    </li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/manager/kpi-approvals"
+                                                                            class="sidebar-link ${param.activeMenu eq 'kpi-approvals' ? 'active' : ''}">
+                                                                            <i class="fas fa-check-circle"></i> Phê
+                                                                            duyệt KPI
+                                                                        </a>
+                                                                    </li>
                                                                     <li class="sidebar-item">
                                                                         <a href="${pageContext.request.contextPath}/manager/leave"
                                                                             class="sidebar-link ${param.activeMenu eq 'leave' ? 'active' : ''}">
-                                                                            <i class="fas fa-calendar-check"></i> Duyệt nghỉ phép
+                                                                            <i class="fas fa-calendar-check"></i> Duyệt
+                                                                            nghỉ phép
                                                                         </a>
                                                                     </li>
                                                                     <li class="sidebar-menu-category">Chấm công</li>
                                                                     <li class="sidebar-item">
                                                                         <a href="${pageContext.request.contextPath}/manager/attendance-claims"
                                                                             class="sidebar-link ${param.activeMenu eq 'attendance-claims' ? 'active' : ''}">
-                                                                            <i class="fas fa-balance-scale"></i> Giải quyết khiếu nại công
+                                                                            <i class="fas fa-balance-scale"></i> Giải
+                                                                            quyết khiếu nại công
                                                                         </a>
                                                                     </li>
                                                                     <li class="sidebar-item">
                                                                         <a href="${pageContext.request.contextPath}/manager/timesheet-confirm"
                                                                             class="sidebar-link ${param.activeMenu eq 'timesheet-confirm' ? 'active' : ''}">
-                                                                            <i class="fas fa-check-double"></i> Xác nhận bảng công
+                                                                            <i class="fas fa-check-double"></i> Xác nhận
+                                                                            bảng công
                                                                         </a>
                                                                     </li>
 
                                                                 </c:if>
 
                                                                 <%-- ══════ EMPLOYEE (roleId=7) ══════ --%>
-                                                                <c:if test="${sessionScope.currentUser.roleId == 7}">
-                                                                    <li class="sidebar-menu-category">Ca làm & Chấm công</li>
-                                                                    <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/employee/schedule"
-                                                                            class="sidebar-link ${param.activeMenu eq 'schedule' ? 'active' : ''}">
-                                                                            <i class="fas fa-calendar-alt"></i> Lịch phân ca
-                                                                        </a>
-                                                                    </li>
-                                                                    <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/employee/timesheet"
-                                                                            class="sidebar-link ${param.activeMenu eq 'personal-timesheet' ? 'active' : ''}">
-                                                                            <i class="fas fa-fingerprint"></i> Bảng công cá nhân
-                                                                        </a>
-                                                                    </li>
-                                                                    <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/employee/attendance-claim"
-                                                                            class="sidebar-link ${param.activeMenu eq 'attendance-claim' ? 'active' : ''}">
-                                                                            <i class="fas fa-paper-plane"></i> Yêu cầu chấm lại công
-                                                                        </a>
-                                                                    </li>
-                                                                    <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/employee/work-history"
-                                                                            class="sidebar-link ${param.activeMenu eq 'work-history' ? 'active' : ''}">
-                                                                            <i class="fas fa-history"></i> Lịch sử làm việc
-                                                                        </a>
-                                                                    </li>
-
-                                                                    <li class="sidebar-menu-category">Phúc lợi & Nghỉ phép</li>
-                                                                    <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/employee/leave"
-                                                                            class="sidebar-link ${param.activeMenu eq 'leave' ? 'active' : ''}">
-                                                                            <i class="fas fa-calendar-times"></i> Nghỉ phép
-                                                                        </a>
-                                                                    </li>
-                                                                     <li class="sidebar-item">
-                                                                         <a href="${pageContext.request.contextPath}/employee/kpi-view"
-                                                                             class="sidebar-link ${param.activeMenu eq 'employee-kpi-view' ? 'active' : ''}">
-                                                                             <i class="fas fa-star"></i> Đánh giá KPI
-                                                                         </a>
-                                                                     </li>
-                                                                    <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/manager/payslip"
-                                                                            class="sidebar-link ${param.activeMenu eq 'personal-payslip' ? 'active' : ''}">
-                                                                            <i class="fas fa-file-invoice-dollar"></i> Phiếu lương
-                                                                        </a>
-                                                                    </li>
-                                                                    <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/employee/my-contract"
-                                                                            class="sidebar-link ${param.activeMenu eq 'my-contract' ? 'active' : ''}">
-                                                                            <i class="fas fa-file-signature"></i> Hợp đồng của tôi
-                                                                        </a>
-                                                                    </li>
-                                                                    <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/employee/resignation"
-                                                                            class="sidebar-link ${param.activeMenu eq 'resignation' ? 'active' : ''}">
-                                                                            <i class="fas fa-door-open"></i> Xin nghỉ việc
-                                                                        </a>
-                                                                    </li>
-
-                                                                </c:if>
-
-                                                                <%-- ══════ ACCOUNTANT (roleId=8) ══════
-                                                                     Quyền: xem bảng lương, xác nhận chuyển khoản
-                                                                --%>
-                                                                <c:if test="${sessionScope.currentUser.roleId == 8}">
-                                                                    <li class="sidebar-menu-category">Kế Toán</li>
-                                                                    <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/accountant/payroll"
-                                                                            class="sidebar-link ${param.activeMenu eq 'accountant-payroll' ? 'active' : ''}">
-                                                                            <i class="fas fa-file-invoice-dollar"></i> Bảng Lương
-                                                                        </a>
-                                                                    </li>
-
-                                                                </c:if>
-
-                                                                <%-- ══════ TÀI KHOẢN (chung) ══════ --%>
-                                                                    <li class="sidebar-menu-category">Tài khoản</li>
-                                                                    <c:if test="${sessionScope.currentUser.roleId != 7 && sessionScope.currentUser.roleId != 1}">
+                                                                    <c:if
+                                                                        test="${sessionScope.currentUser.roleId == 7}">
+                                                                        <li class="sidebar-menu-category">Ca làm & Chấm
+                                                                            công</li>
+                                                                        <li class="sidebar-item">
+                                                                            <a href="${pageContext.request.contextPath}/employee/schedule"
+                                                                                class="sidebar-link ${param.activeMenu eq 'schedule' ? 'active' : ''}">
+                                                                                <i class="fas fa-calendar-alt"></i> Lịch
+                                                                                phân ca
+                                                                            </a>
+                                                                        </li>
                                                                         <li class="sidebar-item">
                                                                             <a href="${pageContext.request.contextPath}/employee/timesheet"
                                                                                 class="sidebar-link ${param.activeMenu eq 'personal-timesheet' ? 'active' : ''}">
-                                                                                <i class="fas fa-fingerprint"></i> Bảng công cá nhân
+                                                                                <i class="fas fa-fingerprint"></i> Bảng
+                                                                                công cá nhân
                                                                             </a>
                                                                         </li>
-                                                                    </c:if>
-                                                                    <%-- Phiếu lương cá nhân: hiển thị cho mọi role có lương (trừ Admin và Employee - Employee đã có ở section riêng) --%>
-                                                                    <c:if test="${sessionScope.currentUser.roleId != 1 && sessionScope.currentUser.roleId != 7}">
+                                                                        <li class="sidebar-item">
+                                                                            <a href="${pageContext.request.contextPath}/employee/attendance-claim"
+                                                                                class="sidebar-link ${param.activeMenu eq 'attendance-claim' ? 'active' : ''}">
+                                                                                <i class="fas fa-paper-plane"></i> Yêu
+                                                                                cầu chấm lại công
+                                                                            </a>
+                                                                        </li>
+                                                                        <li class="sidebar-item">
+                                                                            <a href="${pageContext.request.contextPath}/employee/work-history"
+                                                                                class="sidebar-link ${param.activeMenu eq 'work-history' ? 'active' : ''}">
+                                                                                <i class="fas fa-history"></i> Lịch sử
+                                                                                làm việc
+                                                                            </a>
+                                                                        </li>
+
+                                                                        <li class="sidebar-menu-category">Phúc lợi &
+                                                                            Nghỉ phép</li>
+                                                                        <li class="sidebar-item">
+                                                                            <a href="${pageContext.request.contextPath}/employee/leave"
+                                                                                class="sidebar-link ${param.activeMenu eq 'leave' ? 'active' : ''}">
+                                                                                <i class="fas fa-calendar-times"></i>
+                                                                                Nghỉ phép
+                                                                            </a>
+                                                                        </li>
+                                                                        <li class="sidebar-item">
+                                                                            <a href="${pageContext.request.contextPath}/employee/kpi-view"
+                                                                                class="sidebar-link ${param.activeMenu eq 'employee-kpi-view' ? 'active' : ''}">
+                                                                                <i class="fas fa-star"></i> Đánh giá KPI
+                                                                            </a>
+                                                                        </li>
                                                                         <li class="sidebar-item">
                                                                             <a href="${pageContext.request.contextPath}/manager/payslip"
                                                                                 class="sidebar-link ${param.activeMenu eq 'personal-payslip' ? 'active' : ''}">
-                                                                                <i class="fas fa-file-invoice-dollar"></i> Phiếu lương
+                                                                                <i
+                                                                                    class="fas fa-file-invoice-dollar"></i>
+                                                                                Phiếu lương
                                                                             </a>
                                                                         </li>
                                                                         <li class="sidebar-item">
                                                                             <a href="${pageContext.request.contextPath}/employee/my-contract"
                                                                                 class="sidebar-link ${param.activeMenu eq 'my-contract' ? 'active' : ''}">
-                                                                                <i class="fas fa-file-signature"></i> Hợp đồng của tôi
+                                                                                <i class="fas fa-file-signature"></i>
+                                                                                Hợp đồng của tôi
                                                                             </a>
                                                                         </li>
+                                                                        <li class="sidebar-item">
+                                                                            <a href="${pageContext.request.contextPath}/employee/resignation"
+                                                                                class="sidebar-link ${param.activeMenu eq 'resignation' ? 'active' : ''}">
+                                                                                <i class="fas fa-door-open"></i> Xin
+                                                                                nghỉ việc
+                                                                            </a>
+                                                                        </li>
+
                                                                     </c:if>
-                                                                    <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/profile"
-                                                                            class="sidebar-link ${param.activeMenu eq 'profile' ? 'active' : ''}">
-                                                                            <i class="fas fa-id-badge"></i> Thông tin cá nhân
-                                                                        </a>
-                                                                    </li>
-                                                                    <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/settings"
-                                                                            class="sidebar-link ${param.activeMenu eq 'settings' ? 'active' : ''}">
-                                                                            <i class="fas fa-cog"></i> Cài đặt
-                                                                        </a>
-                                                                    </li>
+
+                                                                    <%-- ══════ ACCOUNTANT (roleId=8) ══════ Quyền: xem
+                                                                        bảng lương, xác nhận chuyển khoản --%>
+                                                                        <c:if
+                                                                            test="${sessionScope.currentUser.roleId == 8}">
+                                                                            <li class="sidebar-menu-category">Kế Toán
+                                                                            </li>
+                                                                            <li class="sidebar-item">
+                                                                                <a href="${pageContext.request.contextPath}/accountant/payroll"
+                                                                                    class="sidebar-link ${param.activeMenu eq 'accountant-payroll' ? 'active' : ''}">
+                                                                                    <i
+                                                                                        class="fas fa-file-invoice-dollar"></i>
+                                                                                    Bảng Lương
+                                                                                </a>
+                                                                            </li>
+
+                                                                        </c:if>
+
+                                                                        <%-- ══════ TÀI KHOẢN (chung) ══════ --%>
+                                                                            <li class="sidebar-menu-category">Tài khoản
+                                                                            </li>
+                                                                            <c:if
+                                                                                test="${sessionScope.currentUser.roleId != 7 && sessionScope.currentUser.roleId != 1}">
+                                                                                <li class="sidebar-item">
+                                                                                    <a href="${pageContext.request.contextPath}/employee/timesheet"
+                                                                                        class="sidebar-link ${param.activeMenu eq 'personal-timesheet' ? 'active' : ''}">
+                                                                                        <i
+                                                                                            class="fas fa-fingerprint"></i>
+                                                                                        Bảng công cá nhân
+                                                                                    </a>
+                                                                                </li>
+                                                                            </c:if>
+                                                                            <%-- Phiếu lương cá nhân: hiển thị cho mọi
+                                                                                role có lương (trừ Admin và Employee -
+                                                                                Employee đã có ở section riêng) --%>
+                                                                                <c:if
+                                                                                    test="${sessionScope.currentUser.roleId != 1 && sessionScope.currentUser.roleId != 7}">
+                                                                                    <li class="sidebar-item">
+                                                                                        <a href="${pageContext.request.contextPath}/manager/payslip"
+                                                                                            class="sidebar-link ${param.activeMenu eq 'personal-payslip' ? 'active' : ''}">
+                                                                                            <i
+                                                                                                class="fas fa-file-invoice-dollar"></i>
+                                                                                            Phiếu lương
+                                                                                        </a>
+                                                                                    </li>
+                                                                                    <li class="sidebar-item">
+                                                                                        <a href="${pageContext.request.contextPath}/employee/my-contract"
+                                                                                            class="sidebar-link ${param.activeMenu eq 'my-contract' ? 'active' : ''}">
+                                                                                            <i
+                                                                                                class="fas fa-file-signature"></i>
+                                                                                            Hợp đồng của tôi
+                                                                                        </a>
+                                                                                    </li>
+                                                                                </c:if>
+                                                                                <li class="sidebar-item">
+                                                                                    <a href="${pageContext.request.contextPath}/profile"
+                                                                                        class="sidebar-link ${param.activeMenu eq 'profile' ? 'active' : ''}">
+                                                                                        <i class="fas fa-id-badge"></i>
+                                                                                        Thông tin cá nhân
+                                                                                    </a>
+                                                                                </li>
+                                                                                <li class="sidebar-item">
+                                                                                    <a href="${pageContext.request.contextPath}/settings"
+                                                                                        class="sidebar-link ${param.activeMenu eq 'settings' ? 'active' : ''}">
+                                                                                        <i class="fas fa-cog"></i> Cài
+                                                                                        đặt
+                                                                                    </a>
+                                                                                </li>
 
                                 </ul>
                             </nav>

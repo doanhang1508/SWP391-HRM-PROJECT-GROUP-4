@@ -137,12 +137,14 @@ public class KpiDAO {
 
     public List<KpiCycle> getAllCycles() {
         List<KpiCycle> list = new ArrayList<>();
-        String sql = "SELECT * FROM kpi_cycles ORDER BY cycle_id DESC";
+        String sql = "SELECT c.*, t.name AS template_name FROM kpi_cycles c "
+                   + "LEFT JOIN kpi_templates t ON c.template_id = t.template_id "
+                   + "ORDER BY c.cycle_id DESC";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                list.add(mapCycle(rs));
+                list.add(mapCycleWithTemplate(rs));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -152,12 +154,14 @@ public class KpiDAO {
 
     public List<KpiCycle> getActiveCycles() {
         List<KpiCycle> list = new ArrayList<>();
-        String sql = "SELECT * FROM kpi_cycles WHERE status = 'ACTIVE' ORDER BY cycle_id DESC";
+        String sql = "SELECT c.*, t.name AS template_name FROM kpi_cycles c "
+                   + "LEFT JOIN kpi_templates t ON c.template_id = t.template_id "
+                   + "WHERE c.status = 'ACTIVE' ORDER BY c.cycle_id DESC";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                list.add(mapCycle(rs));
+                list.add(mapCycleWithTemplate(rs));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -166,13 +170,15 @@ public class KpiDAO {
     }
 
     public KpiCycle getCycleById(int cycleId) {
-        String sql = "SELECT * FROM kpi_cycles WHERE cycle_id = ?";
+        String sql = "SELECT c.*, t.name AS template_name FROM kpi_cycles c "
+                   + "LEFT JOIN kpi_templates t ON c.template_id = t.template_id "
+                   + "WHERE c.cycle_id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, cycleId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return mapCycle(rs);
+                    return mapCycleWithTemplate(rs);
                 }
             }
         } catch (SQLException e) {
@@ -748,6 +754,14 @@ public class KpiDAO {
             rs.getInt("created_by"),
             rs.getTimestamp("updated_at")
         );
+    }
+
+    private KpiCycle mapCycleWithTemplate(ResultSet rs) throws SQLException {
+        KpiCycle cycle = mapCycle(rs);
+        try {
+            cycle.setTemplateName(rs.getString("template_name"));
+        } catch (SQLException ignored) {}
+        return cycle;
     }
 
     private KpiEvaluation mapEvaluationWithHelpers(ResultSet rs) throws SQLException {
