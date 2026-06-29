@@ -393,12 +393,12 @@
                         </table>
                     </div>
                     
-                    <div class="pagination-bar">
-                        <div class="page-info">1-${contracts.size()} / ${counts['all']} hợp đồng</div>
+                    <div class="pagination-bar" id="paginationBar" style="display: none;">
+                        <div class="page-info">Hiển thị <span id="pageStart">0</span> - <span id="pageEnd">0</span> trong tổng số <span id="totalItems">0</span> hợp đồng</div>
                         <div class="page-controls">
-                            <a href="#" class="page-btn" style="color: #d1d5db; pointer-events: none;"><i class="fas fa-chevron-left"></i></a>
-                            <a href="#" class="page-btn active">1</a>
-                            <a href="#" class="page-btn" style="color: #d1d5db; pointer-events: none;"><i class="fas fa-chevron-right"></i></a>
+                            <button type="button" class="page-btn" id="btnPrevPage" onclick="prevPage()"><i class="fas fa-chevron-left"></i></button>
+                            <div id="pageNumbers" style="display: flex; gap: 4px;"></div>
+                            <button type="button" class="page-btn" id="btnNextPage" onclick="nextPage()"><i class="fas fa-chevron-right"></i></button>
                         </div>
                     </div>
                 </div>
@@ -412,6 +412,92 @@
         document.getElementById('statusInput').value = status;
         document.getElementById('filterForm').submit();
     }
+
+    // Pagination
+    let currentPage = 1;
+    const itemsPerPage = 8;
+    let filteredRows = [];
+
+    function initPagination() {
+        const rows = document.querySelectorAll('.saas-table tbody tr');
+        // Lọc bỏ dòng thông báo trống nếu có
+        filteredRows = Array.from(rows).filter(row => !row.querySelector('td[colspan]'));
+        
+        if (filteredRows.length > 0) {
+            document.getElementById('paginationBar').style.display = 'flex';
+            updatePagination();
+        }
+    }
+
+    function updatePagination() {
+        if(filteredRows.length === 0) return;
+
+        const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, filteredRows.length);
+
+        // Ẩn tất cả
+        filteredRows.forEach(row => row.style.display = 'none');
+        
+        // Hiện các dòng thuộc trang hiện tại
+        for (let i = startIndex; i < endIndex; i++) {
+            filteredRows[i].style.display = '';
+        }
+
+        document.getElementById('pageStart').textContent = startIndex + 1;
+        document.getElementById('pageEnd').textContent = endIndex;
+        document.getElementById('totalItems').textContent = filteredRows.length;
+
+        // Tạo số trang
+        let pageHtml = '';
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === currentPage) {
+                pageHtml += '<button type="button" class="page-btn active">' + i + '</button>';
+            } else {
+                pageHtml += '<button type="button" class="page-btn" onclick="goToPage(' + i + ')">' + i + '</button>';
+            }
+        }
+        document.getElementById('pageNumbers').innerHTML = pageHtml;
+
+        // Cập nhật trạng thái nút Next/Prev
+        const prevBtn = document.getElementById('btnPrevPage');
+        const nextBtn = document.getElementById('btnNextPage');
+        
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.style.color = currentPage === 1 ? '#d1d5db' : '';
+        prevBtn.style.pointerEvents = currentPage === 1 ? 'none' : 'auto';
+
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.style.color = currentPage === totalPages ? '#d1d5db' : '';
+        nextBtn.style.pointerEvents = currentPage === totalPages ? 'none' : 'auto';
+    }
+
+    function goToPage(page) {
+        currentPage = page;
+        updatePagination();
+    }
+    
+    function prevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            updatePagination();
+        }
+    }
+    
+    function nextPage() {
+        const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            updatePagination();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initPagination();
+    });
 </script>
 
 <jsp:include page="../footer.jsp" />
