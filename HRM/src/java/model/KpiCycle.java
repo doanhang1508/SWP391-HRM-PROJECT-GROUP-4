@@ -15,6 +15,9 @@ public class KpiCycle {
     private int createdBy;
     private Timestamp updatedAt;
 
+    // Helper field populated via JOIN — not a DB column
+    private String templateName;
+
     public KpiCycle() {}
 
     public KpiCycle(int cycleId, String name, Date startDate, Date endDate, Date deadline, int templateId, String status, Timestamp createdAt, int createdBy, Timestamp updatedAt) {
@@ -59,4 +62,11 @@ public class KpiCycle {
 
     public Timestamp getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Timestamp updatedAt) { this.updatedAt = updatedAt; }
+
+    public String getTemplateName() { return templateName; }
+    public void setTemplateName(String templateName) { this.templateName = templateName; }
+
+    /** Alias for {@link #getDeadline()} — used by kpi-cycles.jsp via EL ${cycle.evaluationDeadline} */
+    public java.sql.Date getEvaluationDeadline() { return deadline; }
+    public void setEvaluationDeadline(java.sql.Date evaluationDeadline) { this.deadline = evaluationDeadline; }
 }

@@ -1437,3 +1437,39 @@ INSERT INTO kpi_template_items (template_id, criterion_name, description, weight
 (@tpl_factory_id, 'An toàn lao động & vệ sinh 5S', 'Chấp hành quy tắc an toàn lao động, sắp xếp nơi làm việc gọn gàng', 15.00),
 (@tpl_factory_id, 'Kỷ luật & Chuyên cần', 'Đi làm đầy đủ, đúng giờ, không vi phạm kỷ luật', 15.00),
 (@tpl_factory_id, 'Bảo quản máy móc thiết bị', 'Vận hành đúng quy trình, giữ gìn tài sản chung', 10.00);
+
+CREATE TABLE payroll_configs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    config_key VARCHAR(100) NOT NULL UNIQUE COMMENT 'Mã Tham số (Key)',
+    description NVARCHAR(255) NOT NULL COMMENT 'Mô tả chi tiết',
+    config_value DECIMAL(15, 2) NOT NULL COMMENT 'Giá trị thiết lập',
+    unit NVARCHAR(20) NULL COMMENT 'Đơn vị tính (%, VNĐ, Tháng...)',
+    status TINYINT(1) DEFAULT 1 COMMENT 'Trạng thái: 1-Hoạt động, 0-Vô hiệu hóa',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Thời gian tạo',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Thời gian cập nhật'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bảng cấu hình tham số tính lương';
+
+INSERT INTO payroll_configs (config_key, description, config_value, unit) VALUES
+-- 1. Nhóm tỷ lệ trích nộp Bảo hiểm (Phần Người lao động đóng)
+('BHXH_EMP_RATE', 'Tỷ lệ đóng BHXH (Người lao động)', 8.00, '%'),
+('BHYT_EMP_RATE', 'Tỷ lệ đóng BHYT (Người lao động)', 1.50, '%'),
+('BHTN_EMP_RATE', 'Tỷ lệ đóng BHTN (Người lao động)', 1.00, '%'),
+
+-- 2. Nhóm tỷ lệ trích nộp Bảo hiểm (Phần Doanh nghiệp đóng)
+('BHXH_COMP_RATE', 'Tỷ lệ đóng BHXH (Doanh nghiệp)', 17.50, '%'),
+('BHYT_COMP_RATE', 'Tỷ lệ đóng BHYT (Doanh nghiệp)', 3.00, '%'),
+('BHTN_COMP_RATE', 'Tỷ lệ đóng BHTN (Doanh nghiệp)', 1.00, '%'),
+
+-- 3. Nhóm giảm trừ Thuế Thu nhập cá nhân (TNCN)
+('TAX_PERSONAL_DEDUCTION', 'Mức giảm trừ gia cảnh bản thân', 11000000.00, 'VNĐ'),
+('TAX_DEPENDENT_DEDUCTION', 'Mức giảm trừ người phụ thuộc (1 người)', 4400000.00, 'VNĐ'),
+
+-- 4. Các mức lương cơ sở & tối thiểu vùng (Lưu ý: Mức lương cơ sở 2.34tr áp dụng từ 01/07/2024)
+('BASE_SALARY', 'Mức lương cơ sở (Tính trần BHXH, BHYT)', 2340000.00, 'VNĐ'),
+('MIN_REGIONAL_WAGE_1', 'Lương tối thiểu Vùng I (Tính trần BHTN)', 4960000.00, 'VNĐ'),
+('MIN_REGIONAL_WAGE_2', 'Lương tối thiểu Vùng II', 4410000.00, 'VNĐ'),
+('MIN_REGIONAL_WAGE_3', 'Lương tối thiểu Vùng III', 3860000.00, 'VNĐ'),
+('MIN_REGIONAL_WAGE_4', 'Lương tối thiểu Vùng IV', 3450000.00, 'VNĐ'),
+
+-- 5. Số ngày công chuẩn trong tháng (Tùy công ty, thường là 22, 24 hoặc 26)
+('STANDARD_WORK_DAYS', 'Số ngày công chuẩn trong tháng', 22.00, 'Ngày');
