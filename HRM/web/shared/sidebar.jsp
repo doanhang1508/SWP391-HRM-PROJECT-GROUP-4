@@ -410,6 +410,12 @@
                                                             <i class="fas fa-clipboard-check"></i> Duyệt Hợp đồng
                                                         </a>
                                                     </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/contracts"
+                                                            class="sidebar-link ${param.activeMenu eq 'contract-management' ? 'active' : ''}">
+                                                            <i class="fas fa-file-signature"></i> Quản lý Hợp đồng
+                                                        </a>
+                                                    </li>
 
                                                     <li class="sidebar-menu-category">Cấu hình Chính sách</li>
 

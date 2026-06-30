@@ -124,11 +124,55 @@ public class HrEmployeeContractsController extends HttpServlet {
                 }
             }
             
-            double totalAllowance = 0;
             dao.AllowanceDAO aDao = new dao.AllowanceDAO();
+            
+            // Tính Lương Gross và lấy danh sách Phụ cấp cho TẤT CẢ hợp đồng lịch sử
+            if (contracts != null) {
+                for (EmployeeContract c : contracts) {
+                    double cTotalAlw = 0;
+                    StringBuilder cAlwHtml = new StringBuilder();
+                    List<java.util.Map<String, Object>> cAlwList = aDao.getAllowancesByContract(userId, c.getContractId());
+                    for (java.util.Map<String, Object> map : cAlwList) {
+                        Object amtObj = map.get("amount");
+                        double amt = 0;
+                        if (amtObj != null) {
+                            if (amtObj instanceof java.math.BigDecimal) {
+                                amt = ((java.math.BigDecimal) amtObj).doubleValue();
+                            } else if (amtObj instanceof Number) {
+                                amt = ((Number) amtObj).doubleValue();
+                            } else {
+                                amt = Double.parseDouble(amtObj.toString());
+                            }
+                        }
+                        cTotalAlw += amt;
+                        cAlwHtml.append(map.get("name")).append(": ")
+                                .append(String.format("%,.0f", amt).replace(',', '.')).append(" đ\n");
+                    }
+                    if (cAlwHtml.length() == 0) {
+                        cAlwHtml.append("Không có phụ cấp");
+                    }
+                    
+                    c.setGrossSalary(c.getBaseSalary() != null ? 
+                        c.getBaseSalary().add(java.math.BigDecimal.valueOf(cTotalAlw)) : 
+                        java.math.BigDecimal.valueOf(cTotalAlw));
+                    c.setAllowanceHtml(cAlwHtml.toString().trim());
+                }
+            }
+            
+            // Tính lại riêng cho Hợp đồng hiện tại để hiện ở giao diện Current Contract
+            double totalAllowance = 0;
             List<java.util.Map<String, Object>> allowanceList = aDao.getAllowancesByContract(userId, currentContractId);
             for (java.util.Map<String, Object> map : allowanceList) {
-                totalAllowance += (Double) map.get("amount");
+                Object amtObj = map.get("amount");
+                if (amtObj != null) {
+                    if (amtObj instanceof java.math.BigDecimal) {
+                        totalAllowance += ((java.math.BigDecimal) amtObj).doubleValue();
+                    } else if (amtObj instanceof Number) {
+                        totalAllowance += ((Number) amtObj).doubleValue();
+                    } else {
+                        totalAllowance += Double.parseDouble(amtObj.toString());
+                    }
+                }
             }
             
             request.setAttribute("contracts", contracts);

@@ -20,7 +20,6 @@ import model.EmployeeContract;
 import dao.EmployeeContractDAO;
 import model.Payroll;
 import java.sql.Date;
-// Cáº§n import Ä‘á»ƒ kiá»ƒm tra tráº¡ng thÃ¡i chá»‘t cháº¥m cÃ´ng
 import dao.TimesheetConfirmationDAO;
 
 public class PayrollDAO {

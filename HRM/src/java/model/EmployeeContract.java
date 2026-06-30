@@ -38,6 +38,10 @@ public class EmployeeContract {
     private String salaryGradeName;
     private String fullName;         // Tên nhân viên
 
+    // === Fields bổ sung cho hiển thị Lịch sử (Transient) ===
+    private BigDecimal grossSalary;
+    private String allowanceHtml;
+
     // =========================================================================
     // Constructors
     // =========================================================================
@@ -124,6 +128,12 @@ public class EmployeeContract {
 
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
+
+    public BigDecimal getGrossSalary() { return grossSalary; }
+    public void setGrossSalary(BigDecimal grossSalary) { this.grossSalary = grossSalary; }
+
+    public String getAllowanceHtml() { return allowanceHtml; }
+    public void setAllowanceHtml(String allowanceHtml) { this.allowanceHtml = allowanceHtml; }
 
     // =========================================================================
     // Utility

@@ -1,6 +1,7 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
+<%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 
 <jsp:include page="../header.jsp" />
 
@@ -324,7 +325,8 @@
                             data-start="<fmt:formatDate value='${c.startDate}' pattern='dd/MM/yyyy'/>"
                             data-end="<c:choose><c:when test='${not empty c.endDate}'><fmt:formatDate value='${c.endDate}' pattern='dd/MM/yyyy'/></c:when><c:otherwise>Không giới hạn</c:otherwise></c:choose>"
                             data-base="<fmt:formatNumber value='${c.baseSalary}' type='number' groupingUsed='true'/>"
-                            data-gross="<fmt:formatNumber value='${c.baseSalary}' type='number' groupingUsed='true'/>"
+                            data-gross="<fmt:formatNumber value='${c.grossSalary}' type='number' groupingUsed='true'/>"
+                            data-alw-html="${fn:escapeXml(c.allowanceHtml)}"
                             data-tax="${c.taxCalcType == 1 ? 'Theo biểu lũy tiến' : (c.taxCalcType == 2 ? 'Khấu trừ 10%' : 'Miễn thuế')}"
                             data-status="${c.status}">
                             <td style="padding: 16px; font-size: 0.875rem; color: #1a1a1a; font-weight: 600; border-bottom: 1px solid #f3f4f6;">
@@ -343,7 +345,7 @@
                                 <c:choose><c:when test="${not empty c.endDate}"><fmt:formatDate value="${c.endDate}" pattern="dd/MM/yyyy"/></c:when><c:otherwise>Không giới hạn</c:otherwise></c:choose>
                             </td>
                             <td style="padding: 16px; font-size: 0.875rem; color: #1a1a1a; font-weight: 600; border-bottom: 1px solid #f3f4f6;">
-                                <fmt:formatNumber value="${c.baseSalary}" type="number" groupingUsed="true"/> đ
+                                <fmt:formatNumber value="${c.grossSalary}" type="number" groupingUsed="true"/> đ
                             </td>
                             <td style="padding: 16px; font-size: 0.875rem; border-bottom: 1px solid #f3f4f6;">
                                 <c:choose>
@@ -416,10 +418,14 @@
             <div style="grid-column:span 2; font-weight:700; color:#1e293b; border-bottom:1px solid #e5e7eb; padding-bottom:6px; margin-top:6px;">2. Th&#244;ng tin C&#244;ng vi&#7879;c</div>
             <div style="color:#6b7280;">Ph&#242;ng ban</div>                    <div id="mcdDept"   style="font-weight:600;"></div>
             <div style="color:#6b7280;">Ch&#7913;c v&#7909;</div>               <div id="mcdPos"    style="font-weight:600;"></div>
-            <div style="grid-column:span 2; font-weight:700; color:#1e293b; border-bottom:1px solid #e5e7eb; padding-bottom:6px; margin-top:6px;">3. L&#432;&#417;ng &amp; Thu&#7871;</div>
-            <div style="color:#6b7280;">L&#432;&#417;ng c&#417; b&#7843;n</div> <div id="mcdBase"   style="font-weight:600;"></div>
-            <div style="color:#2563eb; font-weight:700;">L&#432;&#417;ng Gross</div> <div id="mcdGross" style="font-weight:700; color:#2563eb; font-size:1.05rem;"></div>
-            <div style="color:#6b7280;">Lo&#7841;i t&#237;nh thu&#7871;</div>   <div id="mcdTax"    style="font-weight:600;"></div>
+            <div style="grid-column:span 2; font-weight:700; color:#1e293b; border-bottom:1px solid #e5e7eb; padding-bottom:6px; margin-top:6px;">3. Lương &amp; Phụ cấp</div>
+            <div style="color:#6b7280;">Lương cơ bản</div> <div id="mcdBase"   style="font-weight:600;"></div>
+            <div style="color:#6b7280;">Chi tiết Phụ cấp</div> <div id="mcdAlw" style="font-weight:500; color:#4b5563; font-size:0.9rem; white-space:pre-wrap;"></div>
+            <div style="color:#2563eb; font-weight:700; margin-top:6px;">Lương Gross</div> <div id="mcdGross" style="font-weight:700; color:#2563eb; font-size:1.05rem; margin-top:6px;"></div>
+            
+            <div style="grid-column:span 2; font-weight:700; color:#1e293b; border-bottom:1px solid #e5e7eb; padding-bottom:6px; margin-top:6px;">4. Trạng thái ký kết</div>
+            <div style="color:#6b7280;">Người đại diện (Cty)</div> <div>Giám đốc nhân sự</div>
+            <div style="color:#6b7280;">Ngày ký</div> <div id="mcdSigned" style="font-weight:600;"></div>
         </div>
         <div style="padding:12px 24px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; background:#f9fafb; border-radius:0 0 10px 10px;">
             <button type="button" onclick="closeMyContractDetailModal()" class="btn-outline">&#272;&#243;ng</button>
@@ -459,7 +465,12 @@
         document.getElementById('mcdPos').textContent   = d.pos   || '';
         document.getElementById('mcdBase').textContent  = (d.base  || '0') + ' VND';
         document.getElementById('mcdGross').textContent = (d.gross || '0') + ' VND';
-        document.getElementById('mcdTax').textContent   = d.tax   || '';
+        document.getElementById('mcdSigned').textContent = d.start || '';
+        
+        var alwHtml = d.alwHtml || 'Không có phụ cấp';
+        alwHtml = alwHtml.replace(/&#013;/g, '\n').replace(/&#10;/g, '\n');
+        document.getElementById('mcdAlw').textContent = alwHtml;
+        
         var s = document.getElementById('mcdStatus');
         if (d.status === 'Active') {
             s.innerHTML = '<span style="background:#ecfdf5;color:#059669;padding:3px 10px;border-radius:10px;font-size:0.78rem;font-weight:700;">Hiệu lực</span>';
