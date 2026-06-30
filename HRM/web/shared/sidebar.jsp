@@ -416,6 +416,12 @@
                                                             <i class="fas fa-file-signature"></i> Quản lý Hợp đồng
                                                         </a>
                                                     </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/manager/kpi-history"
+                                                            class="sidebar-link ${param.activeMenu eq 'kpi-history' ? 'active' : ''}">
+                                                            <i class="fas fa-history"></i> Lịch sử đánh giá KPI
+                                                        </a>
+                                                    </li>
 
                                                     <li class="sidebar-menu-category">Cấu hình Chính sách</li>
 
@@ -533,6 +539,12 @@
                                                             </a>
                                                         </li>
                                                         <li class="sidebar-item">
+                                                            <a href="${pageContext.request.contextPath}/manager/kpi-history"
+                                                                class="sidebar-link ${param.activeMenu eq 'kpi-history' ? 'active' : ''}">
+                                                                <i class="fas fa-history"></i> Lịch sử đánh giá KPI
+                                                            </a>
+                                                        </li>
+                                                        <li class="sidebar-item">
                                                             <a href="${pageContext.request.contextPath}/manager/shift-schedule"
                                                                 class="sidebar-link ${param.activeMenu eq 'shift-schedule' ? 'active' : ''}">
                                                                 <i class="fas fa-calendar-alt"></i> Xếp lịch ca
@@ -593,6 +605,12 @@
                                                                     <i class="fas fa-chart-line"></i> Báo cáo tổng hợp
                                                                 </a>
                                                             </li>
+                                                            <li class="sidebar-item">
+                                                                <a href="${pageContext.request.contextPath}/manager/kpi-history"
+                                                                    class="sidebar-link ${param.activeMenu eq 'kpi-history' ? 'active' : ''}">
+                                                                    <i class="fas fa-history"></i> Lịch sử đánh giá KPI
+                                                                </a>
+                                                            </li>
                                                         </c:if>
 
                                                         <%-- ══════ HR STAFF (roleId=5) ══════ Quyền: xem danh sách NV,
@@ -616,6 +634,12 @@
                                                                     <a href="${pageContext.request.contextPath}/hr/kpi-cycles"
                                                                         class="sidebar-link ${param.activeMenu eq 'kpi-cycles' ? 'active' : ''}">
                                                                         <i class="fas fa-sync-alt"></i> Chu kỳ Đánh giá
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/manager/kpi-history"
+                                                                        class="sidebar-link ${param.activeMenu eq 'kpi-history' ? 'active' : ''}">
+                                                                        <i class="fas fa-history"></i> Lịch sử đánh giá KPI
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
@@ -767,6 +791,12 @@
                                                                             class="sidebar-link ${param.activeMenu eq 'kpi-approvals' ? 'active' : ''}">
                                                                             <i class="fas fa-check-circle"></i> Phê
                                                                             duyệt KPI
+                                                                        </a>
+                                                                    </li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/manager/kpi-history"
+                                                                            class="sidebar-link ${param.activeMenu eq 'kpi-history' ? 'active' : ''}">
+                                                                            <i class="fas fa-history"></i> Lịch sử đánh giá KPI
                                                                         </a>
                                                                     </li>
                                                                     <li class="sidebar-item">

@@ -125,7 +125,42 @@ public class ManagerKpiApprovalController extends HttpServlet {
                 
                 boolean updated = kpiDAO.updateEvaluationStatus(evaluationId, targetStatus, user.getUserId(), note);
                 if (updated) {
-                    response.sendRedirect(request.getContextPath() + "/manager/kpi-approvals?cycleId=" + eval.getCycleId() + "&success=" + targetStatus.toLowerCase());
+                    String redirectSuccessParam = targetStatus.toLowerCase();
+                    if ("APPROVED".equals(targetStatus) && eval.getWeightedScore() >= 9.0) {
+                        try {
+                            KpiCycle cycle = kpiDAO.getCycleById(eval.getCycleId());
+                            int month = 1;
+                            int year = 2026;
+                            if (cycle != null && cycle.getEndDate() != null) {
+                                java.time.LocalDate localEndDate = cycle.getEndDate().toLocalDate();
+                                month = localEndDate.getMonthValue();
+                                year = localEndDate.getYear();
+                            }
+                            
+                            dao.PayrollDAO payrollDAO = new dao.PayrollDAO();
+                            dao.PayrollDAO.EmployeeSalaryInfo salaryInfo = payrollDAO.getEmployeeSalaryInfo(eval.getEmployeeId());
+                            java.math.BigDecimal baseSalary = java.math.BigDecimal.ZERO;
+                            if (salaryInfo != null && salaryInfo.baseSalary != null) {
+                                baseSalary = salaryInfo.baseSalary;
+                            } else {
+                                dao.EmployeeContractDAO ecDAO = new dao.EmployeeContractDAO();
+                                model.EmployeeContract activeContract = ecDAO.getActiveContract(eval.getEmployeeId());
+                                if (activeContract != null && activeContract.getBaseSalary() != null) {
+                                    baseSalary = activeContract.getBaseSalary();
+                                }
+                            }
+                            
+                            if (baseSalary.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                                dao.RewardDisciplineDAO rdDAO = new dao.RewardDisciplineDAO();
+                                double kpiFraction = eval.getWeightedScore() / 10.0;
+                                rdDAO.calculateKPIBonus(eval.getEmployeeId(), month, year, baseSalary, kpiFraction);
+                                redirectSuccessParam = "approved_with_reward";
+                            }
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                    response.sendRedirect(request.getContextPath() + "/manager/kpi-approvals?cycleId=" + eval.getCycleId() + "&success=" + redirectSuccessParam);
                     return;
                 }
             }

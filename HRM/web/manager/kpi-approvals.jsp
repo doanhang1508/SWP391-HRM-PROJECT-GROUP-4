@@ -22,115 +22,121 @@
 
     <main class="page-main">
         <div class="container-fluid py-4">
-    <!-- Title & Select Cycle -->
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-        <div>
-            <h2 class="fw-bold mb-1">Phê duyệt Đánh giá KPI</h2>
-            <p class="text-muted mb-0">Xét duyệt và thông qua các kết quả đánh giá KPI của nhân sự</p>
-        </div>
-        
-        <div class="d-flex align-items-center gap-3">
-            <form action="${pageContext.request.contextPath}/manager/kpi-approvals" method="GET" class="d-flex align-items-center gap-2">
-                <label for="cycleSelect" class="text-nowrap fw-bold mb-0">Đợt đánh giá:</label>
-                <select name="cycleId" id="cycleSelect" class="form-select px-3" style="border-radius: 8px; min-width: 250px;" onchange="this.form.submit()">
-                    <option value="">-- Chọn đợt đánh giá --</option>
-                    <c:forEach var="c" items="${cycles}">
-                        <option value="${c.cycleId}" ${c.cycleId == selectedCycleId ? 'selected' : ''}>
-                            ${c.name}
-                        </option>
-                    </c:forEach>
-                </select>
-            </form>
-        </div>
-    </div>
+            <!-- Title & Select Cycle -->
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                <div>
+                    <h2 class="fw-bold mb-1">Phê duyệt Đánh giá KPI</h2>
+                    <p class="text-muted mb-0">Xét duyệt và thông qua các kết quả đánh giá KPI của nhân sự</p>
+                </div>
 
-    <c:if test="${param.success == 'approved'}">
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle me-2"></i> Đã phê duyệt đánh giá KPI thành công!
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    </c:if>
-    <c:if test="${param.success == 'rejected'}">
-        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-triangle me-2"></i> Đã từ chối và trả lại bản đánh giá KPI!
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    </c:if>
-    <c:if test="${param.error != null}">
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-circle me-2"></i> Có lỗi xảy ra trong quá trình phê duyệt hoặc từ chối.
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    </c:if>
-
-    <!-- Submitted Evaluations Table -->
-    <div class="card border-0 shadow-sm" style="border-radius: 16px; background: var(--th-surface);">
-        <div class="card-body p-4">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0" id="approvalsTable">
-                    <thead class="table-light">
-                        <tr>
-                            <th scope="col" style="width: 10%;">Mã NV</th>
-                            <th scope="col" style="width: 18%;">Họ tên nhân viên</th>
-                            <th scope="col" style="width: 14%;">Phòng ban</th>
-                            <th scope="col" style="width: 16%;">Người đánh giá</th>
-                            <th scope="col" style="width: 10%;" class="text-center">Điểm TB</th>
-                            <th scope="col" style="width: 10%;" class="text-center">Điểm weighted</th>
-                            <th scope="col" style="width: 10%;" class="text-center">Trạng thái</th>
-                            <th scope="col" style="width: 12%;" class="text-center">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <c:forEach var="eval" items="${evaluations}">
-                            <tr>
-                                <td><code class="fw-bold">${eval.employeeCode}</code></td>
-                                <td><strong class="text-primary-emphasis">${eval.employeeName}</strong></td>
-                                <td><span class="text-muted small">${eval.departmentName}</span></td>
-                                <td><span class="fw-semibold text-secondary">${eval.managerName}</span></td>
-                                <td class="text-center fw-semibold">${eval.score}</td>
-                                <td class="text-center fw-semibold text-success">${eval.weightedScore}</td>
-                                <td class="text-center">
-                                    <c:choose>
-                                        <c:when test="${eval.status == 'SUBMITTED'}">
-                                            <span class="badge bg-warning-subtle text-warning px-3 py-2" style="border-radius: 8px;">Chờ duyệt</span>
-                                        </c:when>
-                                        <c:when test="${eval.status == 'APPROVED'}">
-                                            <span class="badge bg-success-subtle text-success px-3 py-2" style="border-radius: 8px;">Đã duyệt</span>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <span class="badge bg-danger-subtle text-danger px-3 py-2" style="border-radius: 8px;">Bị từ chối</span>
-                                        </c:otherwise>
-                                    </c:choose>
-                                </td>
-                                <td class="text-center">
-                                    <c:choose>
-                                        <c:when test="${eval.status == 'SUBMITTED'}">
-                                            <a href="${pageContext.request.contextPath}/manager/kpi-approvals?cycleId=${selectedCycleId}&viewId=${eval.evaluationId}" class="btn btn-warning btn-sm px-3 py-1.5 fw-bold" style="border-radius: 6px;">
-                                                <i class="fas fa-check-double me-1"></i> Phê duyệt
-                                            </a>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <a href="${pageContext.request.contextPath}/manager/kpi-approvals?cycleId=${selectedCycleId}&viewId=${eval.evaluationId}" class="btn btn-outline-secondary btn-sm px-3 py-1.5" style="border-radius: 6px;">
-                                                <i class="fas fa-eye me-1"></i> Chi tiết
-                                            </a>
-                                        </c:otherwise>
-                                    </c:choose>
-                                </td>
-                            </tr>
-                        </c:forEach>
-                        <c:if test="${empty evaluations}">
-                            <tr>
-                                <td colspan="8" class="text-center py-5 text-muted">
-                                    <i class="fas fa-clipboard-check fa-2x mb-2 opacity-50"></i>
-                                    <p class="mb-0">Không có bản đánh giá nào cần phê duyệt trong chu kỳ này.</p>
-                                </td>
-                            </tr>
-                        </c:if>
-                    </tbody>
-                </table>
+                <div class="d-flex align-items-center gap-3">
+                    <form action="${pageContext.request.contextPath}/manager/kpi-approvals" method="GET" class="d-flex align-items-center gap-2">
+                        <label for="cycleSelect" class="text-nowrap fw-bold mb-0">Đợt đánh giá:</label>
+                        <select name="cycleId" id="cycleSelect" class="form-select px-3" style="border-radius: 8px; min-width: 250px;" onchange="this.form.submit()">
+                            <option value="">-- Chọn đợt đánh giá --</option>
+                            <c:forEach var="c" items="${cycles}">
+                                <option value="${c.cycleId}" ${c.cycleId == selectedCycleId ? 'selected' : ''}>
+                                    ${c.name}
+                                </option>
+                            </c:forEach>
+                        </select>
+                    </form>
+                </div>
             </div>
-        </div>
-    </div>
+
+            <c:if test="${param.success == 'approved'}">
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i> Đã phê duyệt đánh giá KPI thành công!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </c:if>
+            <c:if test="${param.success == 'approved_with_reward'}">
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-gift me-2"></i> Đã phê duyệt KPI thành công và tự động tạo đề xuất thưởng KPI cho nhân viên xuất sắc!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </c:if>
+            <c:if test="${param.success == 'rejected'}">
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i> Đã từ chối và trả lại bản đánh giá KPI!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </c:if>
+            <c:if test="${param.error != null}">
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i> Có lỗi xảy ra trong quá trình phê duyệt hoặc từ chối.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </c:if>
+
+            <!-- Submitted Evaluations Table -->
+            <div class="card border-0 shadow-sm" style="border-radius: 16px; background: var(--th-surface);">
+                <div class="card-body p-4">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="approvalsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col" style="width: 10%;">Mã NV</th>
+                                    <th scope="col" style="width: 18%;">Họ tên nhân viên</th>
+                                    <th scope="col" style="width: 14%;">Phòng ban</th>
+                                    <th scope="col" style="width: 16%;">Người đánh giá</th>
+                                    <th scope="col" style="width: 10%;" class="text-center">Điểm TB</th>
+                                    <th scope="col" style="width: 10%;" class="text-center">Điểm weighted</th>
+                                    <th scope="col" style="width: 10%;" class="text-center">Trạng thái</th>
+                                    <th scope="col" style="width: 12%;" class="text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <c:forEach var="eval" items="${evaluations}">
+                                    <tr>
+                                        <td><code class="fw-bold">${eval.employeeCode}</code></td>
+                                        <td><strong class="text-primary-emphasis">${eval.employeeName}</strong></td>
+                                        <td><span class="text-muted small">${eval.departmentName}</span></td>
+                                        <td><span class="fw-semibold text-secondary">${eval.managerName}</span></td>
+                                        <td class="text-center fw-semibold">${eval.score}</td>
+                                        <td class="text-center fw-semibold text-success">${eval.weightedScore}</td>
+                                        <td class="text-center">
+                                            <c:choose>
+                                                <c:when test="${eval.status == 'SUBMITTED'}">
+                                                    <span class="badge bg-warning-subtle text-warning px-3 py-2" style="border-radius: 8px;">Chờ duyệt</span>
+                                                </c:when>
+                                                <c:when test="${eval.status == 'APPROVED'}">
+                                                    <span class="badge bg-success-subtle text-success px-3 py-2" style="border-radius: 8px;">Đã duyệt</span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="badge bg-danger-subtle text-danger px-3 py-2" style="border-radius: 8px;">Bị từ chối</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td class="text-center">
+                                            <c:choose>
+                                                <c:when test="${eval.status == 'SUBMITTED'}">
+                                                    <a href="${pageContext.request.contextPath}/manager/kpi-approvals?cycleId=${selectedCycleId}&viewId=${eval.evaluationId}" class="btn btn-warning btn-sm px-3 py-1.5 fw-bold" style="border-radius: 6px;">
+                                                        <i class="fas fa-check-double me-1"></i> Phê duyệt
+                                                    </a>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <a href="${pageContext.request.contextPath}/manager/kpi-approvals?cycleId=${selectedCycleId}&viewId=${eval.evaluationId}" class="btn btn-outline-secondary btn-sm px-3 py-1.5" style="border-radius: 6px;">
+                                                        <i class="fas fa-eye me-1"></i> Chi tiết
+                                                    </a>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                    </tr>
+                                </c:forEach>
+                                <c:if test="${empty evaluations}">
+                                    <tr>
+                                        <td colspan="8" class="text-center py-5 text-muted">
+                                            <i class="fas fa-clipboard-check fa-2x mb-2 opacity-50"></i>
+                                            <p class="mb-0">Không có bản đánh giá nào cần phê duyệt trong chu kỳ này.</p>
+                                        </td>
+                                    </tr>
+                                </c:if>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 </div>
@@ -147,9 +153,9 @@
                         </h4>
                         <span class="text-muted small">Mã nhân viên: <code>${detailEval.employeeCode}</code> | Phòng: ${detailEval.departmentName}</span>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="window.location.href='${pageContext.request.contextPath}/manager/kpi-approvals?cycleId=${selectedCycleId}'"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="window.location.href = '${pageContext.request.contextPath}/manager/kpi-approvals?cycleId=${selectedCycleId}'"></button>
                 </div>
-                
+
                 <div class="modal-body px-4 pb-4">
                     <!-- Basic Stats Row -->
                     <div class="row g-3 mb-4">
@@ -216,7 +222,7 @@
                             <form id="approvalForm" action="${pageContext.request.contextPath}/manager/kpi-approvals" method="POST" class="mb-4">
                                 <input type="hidden" name="evaluationId" value="${detailEval.evaluationId}" />
                                 <input type="hidden" id="approvalAction" name="action" value="" />
-                                
+
                                 <div class="mb-3">
                                     <label for="approvalNote" class="form-label fw-bold">Ghi chú phê duyệt / Lý do từ chối <span class="text-danger">*</span></label>
                                     <textarea class="form-control px-3 py-2" id="approvalNote" name="note" rows="3" placeholder="Nhập nhận xét phê duyệt hoặc lý do từ chối nếu không thông qua..." required style="border-radius: 10px;"></textarea>
@@ -237,7 +243,7 @@
                                                     <span class="text-muted small"><fmt:formatDate value="${h.changedAt}" pattern="dd/MM/yyyy HH:mm" /></span>
                                                 </div>
                                                 <div class="small mb-1">
-                                                    Thay đổi: <span class="badge bg-secondary">${h.oldStatus}</span> &rarr; <span class="badge bg-primary">${h.newStatus}</span>
+                                                    Thay đổi: <span class="badge bg-secondary">${h.fromStatus}</span> &rarr; <span class="badge bg-primary">${h.toStatus}</span>
                                                 </div>
                                                 <c:if test="${not empty h.note}">
                                                     <div class="small text-danger bg-danger-subtle p-1.5 rounded mt-1"><strong>Ghi chú:</strong> ${h.note}</div>
@@ -275,15 +281,15 @@
                         </c:otherwise>
                     </c:choose>
                 </div>
-                
+
                 <div class="modal-footer border-0 px-4 pb-4">
-                    <button type="button" class="btn btn-light px-4 py-2" data-bs-dismiss="modal" onclick="window.location.href='${pageContext.request.contextPath}/manager/kpi-approvals?cycleId=${selectedCycleId}'" style="border-radius: 8px;">Đóng</button>
-                    
+                    <button type="button" class="btn btn-light px-4 py-2" data-bs-dismiss="modal" onclick="window.location.href = '${pageContext.request.contextPath}/manager/kpi-approvals?cycleId=${selectedCycleId}'" style="border-radius: 8px;">Đóng</button>
+
                     <c:if test="${detailEval.status == 'SUBMITTED'}">
                         <button type="button" id="btnReject" class="btn btn-outline-danger px-4 py-2" style="border-radius: 8px;">
                             <i class="fas fa-times me-1"></i> Từ chối duyệt
                         </button>
-                        
+
                         <button type="button" id="btnApprove" class="btn btn-success px-4 py-2" style="border-radius: 8px;">
                             <i class="fas fa-check me-1"></i> Đồng ý phê duyệt
                         </button>
@@ -295,7 +301,7 @@
 
     <!-- Trigger Modal & Control Form submission -->
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             var myModal = new bootstrap.Modal(document.getElementById('approvalModal'));
             myModal.show();
 
@@ -306,7 +312,7 @@
             var approvalNote = document.getElementById('approvalNote');
 
             if (btnApprove && btnReject) {
-                btnApprove.addEventListener('click', function() {
+                btnApprove.addEventListener('click', function () {
                     approvalAction.value = 'approve';
                     if (approvalNote.value.trim() === '') {
                         approvalNote.value = 'Đồng ý phê duyệt kết quả KPI.';
@@ -314,7 +320,7 @@
                     approvalForm.submit();
                 });
 
-                btnReject.addEventListener('click', function() {
+                btnReject.addEventListener('click', function () {
                     approvalAction.value = 'reject';
                     if (approvalNote.value.trim() === '') {
                         alert('Vui lòng nhập lý do từ chối phê duyệt vào ô ghi chú!');
