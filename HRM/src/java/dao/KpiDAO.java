@@ -14,7 +14,9 @@ public class KpiDAO {
 
     public List<KpiTemplate> getAllTemplates() {
         List<KpiTemplate> list = new ArrayList<>();
-        String sql = "SELECT * FROM kpi_templates ORDER BY template_id DESC";
+        String sql = "SELECT t.*, d.department_name FROM kpi_templates t "
+                   + "LEFT JOIN departments d ON t.department_id = d.department_id "
+                   + "ORDER BY t.template_id DESC";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -28,7 +30,9 @@ public class KpiDAO {
     }
 
     public KpiTemplate getTemplateById(int templateId) {
-        String sql = "SELECT * FROM kpi_templates WHERE template_id = ?";
+        String sql = "SELECT t.*, d.department_name FROM kpi_templates t "
+                   + "LEFT JOIN departments d ON t.department_id = d.department_id "
+                   + "WHERE t.template_id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, templateId);
@@ -61,13 +65,18 @@ public class KpiDAO {
     }
 
     public int insertTemplate(KpiTemplate template) {
-        String sql = "INSERT INTO kpi_templates (name, description, status, created_by) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO kpi_templates (name, description, status, created_by, department_id) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, template.getName());
             ps.setString(2, template.getDescription());
             ps.setInt(3, template.getStatus());
             ps.setInt(4, template.getCreatedBy());
+            if (template.getDepartmentId() != null) {
+                ps.setInt(5, template.getDepartmentId());
+            } else {
+                ps.setNull(5, java.sql.Types.INTEGER);
+            }
             ps.executeUpdate();
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (rs.next()) {
@@ -81,13 +90,18 @@ public class KpiDAO {
     }
 
     public void updateTemplate(KpiTemplate template) {
-        String sql = "UPDATE kpi_templates SET name = ?, description = ?, status = ? WHERE template_id = ?";
+        String sql = "UPDATE kpi_templates SET name = ?, description = ?, status = ?, department_id = ? WHERE template_id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, template.getName());
             ps.setString(2, template.getDescription());
             ps.setInt(3, template.getStatus());
-            ps.setInt(4, template.getTemplateId());
+            if (template.getDepartmentId() != null) {
+                ps.setInt(4, template.getDepartmentId());
+            } else {
+                ps.setNull(4, java.sql.Types.INTEGER);
+            }
+            ps.setInt(5, template.getTemplateId());
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -731,7 +745,7 @@ public class KpiDAO {
     // ==========================================
 
     private KpiTemplate mapTemplate(ResultSet rs) throws SQLException {
-        return new KpiTemplate(
+        KpiTemplate t = new KpiTemplate(
             rs.getInt("template_id"),
             rs.getString("name"),
             rs.getString("description"),
@@ -739,6 +753,16 @@ public class KpiDAO {
             rs.getTimestamp("created_at"),
             rs.getInt("created_by")
         );
+        int deptId = rs.getInt("department_id");
+        if (rs.wasNull()) {
+            t.setDepartmentId(null);
+        } else {
+            t.setDepartmentId(deptId);
+        }
+        try {
+            t.setDepartmentName(rs.getString("department_name"));
+        } catch (SQLException ignored) {}
+        return t;
     }
 
     private KpiTemplateItem mapTemplateItem(ResultSet rs) throws SQLException {
@@ -855,6 +879,30 @@ public class KpiDAO {
         return al;
     }
 
+    public List<KpiTemplateItem> getTemplateItemsForEmployee(int employeeDepartmentId, int defaultTemplateId) {
+        if (employeeDepartmentId > 0) {
+            String sql = "SELECT template_id FROM kpi_templates "
+                       + "WHERE department_id = ? AND status = 1 "
+                       + "ORDER BY template_id DESC LIMIT 1";
+            try (Connection conn = DBContext.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, employeeDepartmentId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        int deptTemplateId = rs.getInt("template_id");
+                        List<KpiTemplateItem> items = getTemplateItems(deptTemplateId);
+                        if (!items.isEmpty()) {
+                            return items;
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return getTemplateItems(defaultTemplateId);
+    }
+
     /**
      * Initializes evaluations and default evaluation items for all active employees for a given cycle.
      * Each employee is processed independently so one failure does not block the others.
@@ -863,8 +911,8 @@ public class KpiDAO {
         KpiCycle cycle = getCycleById(cycleId);
         if (cycle == null) return false;
 
-        List<KpiTemplateItem> templateItems = getTemplateItems(cycle.getTemplateId());
-        if (templateItems.isEmpty()) return false;
+        List<KpiTemplateItem> defaultTemplateItems = getTemplateItems(cycle.getTemplateId());
+        if (defaultTemplateItems.isEmpty()) return false;
 
         // Load all active non-admin employees
         List<User> employees = new ArrayList<>();
@@ -977,6 +1025,10 @@ public class KpiDAO {
 
             // Insert default evaluation items for each template criterion
             if (evalId > 0) {
+                List<KpiTemplateItem> templateItems = getTemplateItemsForEmployee(emp.getDepartmentId(), cycle.getTemplateId());
+                if (templateItems.isEmpty()) {
+                    templateItems = defaultTemplateItems;
+                }
                 String insertItemSql = "INSERT INTO kpi_evaluation_items (evaluation_id, template_item_id, score, comment) VALUES (?, ?, 0.0, '')";
                 try (Connection conn = DBContext.getConnection();
                      PreparedStatement ps = conn.prepareStatement(insertItemSql)) {

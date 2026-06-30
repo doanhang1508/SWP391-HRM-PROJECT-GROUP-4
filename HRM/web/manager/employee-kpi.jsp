@@ -221,7 +221,7 @@
                                                     <c:when test="${eval.status == 'DRAFT' || eval.status == 'REJECTED'}">
                                                         <input type="number" 
                                                                name="score_${eval.evaluationId}_${crit.itemId}"
-                                                               class="form-control text-center grid-score-input fw-semibold p-1" 
+                                                               class="form-control text-center grid-score-input fw-semibold p-1 mb-1" 
                                                                style="width: 70px; margin: 0 auto; border-radius: 6px;"
                                                                min="0" max="10" step="0.1" 
                                                                value="${not empty matchedItem ? matchedItem.score : '0.0'}"
@@ -230,9 +230,21 @@
                                                                data-weight="${crit.weight}"
                                                                data-row-idx="${rowStatus.index}"
                                                                data-col-idx="${colStatus.index}" />
+                                                        <input type="text"
+                                                               name="comment_${eval.evaluationId}_${crit.itemId}"
+                                                               class="form-control text-center grid-item-comment-input p-0.5"
+                                                               style="width: 76px; margin: 0 auto; border-radius: 4px; font-size: 0.65rem; min-height: 22px;"
+                                                               placeholder="Ghi chú..."
+                                                               value="${not empty matchedItem ? matchedItem.comment : ''}"
+                                                               data-eval-id="${eval.evaluationId}"
+                                                               data-crit-id="${crit.itemId}"
+                                                               title="Nhận xét riêng cho tiêu chí ${crit.criterionName}" />
                                                     </c:when>
                                                     <c:otherwise>
-                                                        <span class="fw-semibold grid-score-display text-muted" data-crit-id="${crit.itemId}">${not empty matchedItem ? matchedItem.score : '0.0'}</span>
+                                                        <span class="fw-semibold grid-score-display text-muted d-block" data-crit-id="${crit.itemId}">${not empty matchedItem ? matchedItem.score : '0.0'}</span>
+                                                        <c:if test="${not empty matchedItem && not empty matchedItem.comment}">
+                                                            <span class="text-muted d-block text-truncate small" style="font-size: 0.68rem; max-width: 76px; margin: 0 auto;" title="${matchedItem.comment}">${matchedItem.comment}</span>
+                                                        </c:if>
                                                     </c:otherwise>
                                                 </c:choose>
                                             </td>
@@ -433,7 +445,7 @@
                                                 <span class="text-muted small"><fmt:formatDate value="${h.changedAt}" pattern="dd/MM/yyyy HH:mm" /></span>
                                             </div>
                                             <div class="small mb-1">
-                                                Thay đổi: <span class="badge bg-secondary">${h.oldStatus}</span> &rarr; <span class="badge bg-primary">${h.newStatus}</span>
+                                                Thay đổi: <span class="badge bg-secondary">${h.fromStatus}</span> &rarr; <span class="badge bg-primary">${h.toStatus}</span>
                                             </div>
                                             <c:if test="${not empty h.note}">
                                                 <div class="small text-danger bg-danger-subtle p-1.5 rounded mt-1"><strong>Lý do:</strong> ${h.note}</div>
@@ -469,6 +481,52 @@
                             </div>
                         </div>
                     </c:if>
+
+                    <!-- Comments Section -->
+                    <div class="card border-0 shadow-sm mt-4" style="background: var(--th-surface1); border-radius: 12px;">
+                        <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center">
+                            <h5 class="fw-bold mb-0 text-primary-emphasis"><i class="fas fa-comments me-2"></i>Trao đổi & Phản hồi</h5>
+                        </div>
+                        <div class="card-body px-4 pb-4">
+                            <!-- Comment stream -->
+                            <div class="comment-stream mb-3 p-3 rounded" style="background: var(--th-surface2); max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem;">
+                                <c:forEach var="c" items="${comments}">
+                                    <div class="comment-bubble d-flex flex-column p-2.5 rounded-3 ${c.userId == currentUser.userId ? 'align-self-end bg-primary text-white' : 'align-self-start bg-light text-dark'}" style="max-width: 85%; box-shadow: 0 2px 4px rgba(0,0,0,0.05); min-width: 250px;">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="fw-bold small ${c.userId == currentUser.userId ? 'text-white-50' : 'text-primary'}">${c.userName}</span>
+                                            <span class="badge ${c.type == 'EMPLOYEE' ? 'bg-info text-dark' : c.type == 'MANAGER' ? 'bg-warning text-dark' : 'bg-secondary text-white'}" style="font-size: 0.62rem;">
+                                                <c:choose>
+                                                    <c:when test="${c.type == 'EMPLOYEE'}">Nhân viên</c:when>
+                                                    <c:when test="${c.type == 'MANAGER'}">Quản lý</c:when>
+                                                    <c:otherwise>${c.type}</c:otherwise>
+                                                </c:choose>
+                                            </span>
+                                        </div>
+                                        <div class="comment-text fw-medium" style="word-break: break-word; font-size: 0.85rem;">${c.commentText}</div>
+                                        <div class="align-self-end text-end mt-1 text-muted" style="font-size: 0.62rem; ${c.userId == currentUser.userId ? 'color: rgba(255,255,255,0.7) !important;' : ''}">
+                                            <fmt:formatDate value="${c.createdAt}" pattern="dd/MM/yyyy HH:mm" />
+                                        </div>
+                                    </div>
+                                </c:forEach>
+                                <c:if test="${empty comments}">
+                                    <div class="text-center text-muted my-3 small">Chưa có bình luận nào cho bản đánh giá này.</div>
+                                </c:if>
+                            </div>
+
+                            <!-- Comment Form -->
+                            <form action="${pageContext.request.contextPath}/manager/employee-kpi" method="POST" class="mt-2">
+                                <input type="hidden" name="action" value="addComment" />
+                                <input type="hidden" name="evaluationId" value="${detailEval.evaluationId}" />
+                                <input type="hidden" name="viewAll" value="${param.viewAll}" />
+                                <div class="input-group">
+                                    <textarea class="form-control" name="commentText" placeholder="Nhập phản hồi, câu hỏi hoặc hướng dẫn..." rows="2" style="border-radius: 8px 0 0 8px; resize: none; font-size: 0.85rem;" required></textarea>
+                                    <button class="btn btn-primary px-4" type="submit" style="border-radius: 0 8px 8px 0;">
+                                        <i class="fas fa-paper-plane me-1"></i> Gửi
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="modal-footer border-0 px-4 pb-4">
@@ -715,9 +773,13 @@
                 if (!validateScoreInput(input)) {
                     hasError = true;
                 }
-                formData.append('templateItemId', input.getAttribute('data-crit-id'));
+                const critId = input.getAttribute('data-crit-id');
+                const commentInput = row.querySelector(`input[name="comment_${evalId}_${critId}"]`);
+                const itemCommentVal = commentInput ? commentInput.value : '';
+
+                formData.append('templateItemId', critId);
                 formData.append('score', input.value || '0.0');
-                formData.append('itemComment', ''); // Grid does not have individual item comments
+                formData.append('itemComment', itemCommentVal);
             });
 
             if (hasError) {
@@ -792,6 +854,23 @@
 
             // Comment inputs
             table.querySelectorAll('.grid-comment-input').forEach(input => {
+                const evalId = input.getAttribute('data-eval-id');
+                
+                input.addEventListener('input', function() {
+                    queueSaveRow(evalId);
+                });
+                
+                input.addEventListener('blur', function() {
+                    // Force instant save on blur
+                    if (saveDebounces[evalId]) {
+                        clearTimeout(saveDebounces[evalId]);
+                    }
+                    saveRow(evalId);
+                });
+            });
+
+            // Item Comment inputs
+            table.querySelectorAll('.grid-item-comment-input').forEach(input => {
                 const evalId = input.getAttribute('data-eval-id');
                 
                 input.addEventListener('input', function() {

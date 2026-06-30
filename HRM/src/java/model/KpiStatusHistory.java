@@ -38,6 +38,10 @@ public class KpiStatusHistory {
     public String getToStatus() { return toStatus; }
     public void setToStatus(String toStatus) { this.toStatus = toStatus; }
 
+    // Compatibility getters
+    public String getOldStatus() { return fromStatus; }
+    public String getNewStatus() { return toStatus; }
+
     public int getChangedBy() { return changedBy; }
     public void setChangedBy(int changedBy) { this.changedBy = changedBy; }
 

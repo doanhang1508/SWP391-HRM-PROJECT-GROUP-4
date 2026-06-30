@@ -1,9 +1,11 @@
 package controller.hr;
 
 import dao.KpiDAO;
+import dao.DepartmentDAO;
 import model.KpiTemplate;
 import model.KpiTemplateItem;
 import model.User;
+import model.Department;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -20,6 +22,7 @@ import java.util.List;
 public class HrKpiTemplateController extends HttpServlet {
 
     private final KpiDAO kpiDAO = new KpiDAO();
+    private final DepartmentDAO departmentDAO = new DepartmentDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -39,8 +42,40 @@ public class HrKpiTemplateController extends HttpServlet {
         String path = request.getServletPath();
 
         if ("/hr/kpi-templates".equals(path)) {
-            // List all templates
-            List<KpiTemplate> list = kpiDAO.getAllTemplates();
+            // Fetch all departments for filter & select dropdowns
+            List<Department> departments = departmentDAO.getAll();
+            request.setAttribute("departments", departments);
+
+            // Filter templates by department if specified
+            String deptIdStr = request.getParameter("deptId");
+            List<KpiTemplate> list;
+            if (deptIdStr != null && !deptIdStr.isEmpty()) {
+                if ("null".equals(deptIdStr) || "all_depts".equals(deptIdStr)) {
+                    List<KpiTemplate> all = kpiDAO.getAllTemplates();
+                    list = new ArrayList<>();
+                    for (KpiTemplate t : all) {
+                        if (t.getDepartmentId() == null) {
+                            list.add(t);
+                        }
+                    }
+                } else {
+                    try {
+                        int deptId = Integer.parseInt(deptIdStr);
+                        List<KpiTemplate> all = kpiDAO.getAllTemplates();
+                        list = new ArrayList<>();
+                        for (KpiTemplate t : all) {
+                            if (t.getDepartmentId() != null && t.getDepartmentId() == deptId) {
+                                list.add(t);
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                        list = kpiDAO.getAllTemplates();
+                    }
+                }
+            } else {
+                list = kpiDAO.getAllTemplates();
+            }
+
             request.setAttribute("templateList", list);
             request.setAttribute("templates", list);
             request.getRequestDispatcher("/hr/kpi-templates.jsp").forward(request, response);
@@ -58,6 +93,8 @@ public class HrKpiTemplateController extends HttpServlet {
                 }
             }
 
+            List<Department> departments = departmentDAO.getAll();
+            request.setAttribute("departments", departments);
             request.setAttribute("template", template);
             request.setAttribute("items", items);
             request.getRequestDispatcher("/hr/kpi-template-edit.jsp").forward(request, response);
@@ -89,8 +126,11 @@ public class HrKpiTemplateController extends HttpServlet {
                 String description = request.getParameter("description");
                 String statusStr = request.getParameter("status");
                 int status = "1".equals(statusStr) ? 1 : 0;
+                String deptIdStr = request.getParameter("departmentId");
+                Integer departmentId = (deptIdStr == null || deptIdStr.trim().isEmpty() || "all".equals(deptIdStr)) ? null : Integer.parseInt(deptIdStr);
 
                 KpiTemplate template = new KpiTemplate(0, name, description, status, new Timestamp(System.currentTimeMillis()), user.getUserId());
+                template.setDepartmentId(departmentId);
                 int templateId = kpiDAO.insertTemplate(template);
                 if (templateId > 0) {
                     response.sendRedirect(request.getContextPath() + "/hr/kpi-templates/edit?id=" + templateId);
@@ -123,7 +163,6 @@ public class HrKpiTemplateController extends HttpServlet {
                     try {
                         double weight = Double.parseDouble(itemWeightStr);
 
-                        // Fetch existing items to check total weight
                         List<KpiTemplateItem> items = kpiDAO.getTemplateItems(templateId);
                         double totalWeight = 0;
                         for (KpiTemplateItem item : items) {
@@ -155,6 +194,29 @@ public class HrKpiTemplateController extends HttpServlet {
                     return;
                 }
                 response.sendRedirect(request.getContextPath() + "/hr/kpi-templates?error=1");
+            } else if ("updateHeader".equals(action)) {
+                String idStr = request.getParameter("id");
+                String name = request.getParameter("name");
+                String description = request.getParameter("description");
+                String statusStr = request.getParameter("status");
+                int status = "1".equals(statusStr) ? 1 : 0;
+                String deptIdStr = request.getParameter("departmentId");
+                Integer departmentId = (deptIdStr == null || deptIdStr.trim().isEmpty() || "all".equals(deptIdStr)) ? null : Integer.parseInt(deptIdStr);
+
+                if (idStr != null && !idStr.isEmpty()) {
+                    int templateId = Integer.parseInt(idStr);
+                    KpiTemplate template = kpiDAO.getTemplateById(templateId);
+                    if (template != null) {
+                        template.setName(name);
+                        template.setDescription(description);
+                        template.setStatus(status);
+                        template.setDepartmentId(departmentId);
+                        kpiDAO.updateTemplate(template);
+                        response.sendRedirect(request.getContextPath() + "/hr/kpi-templates/edit?id=" + templateId + "&success=header_updated");
+                        return;
+                    }
+                }
+                response.sendRedirect(request.getContextPath() + "/hr/kpi-templates?error=1");
             } else {
                 // Bulk save / update template header
                 String idStr = request.getParameter("id");
@@ -162,6 +224,8 @@ public class HrKpiTemplateController extends HttpServlet {
                 String description = request.getParameter("description");
                 String statusStr = request.getParameter("status");
                 int status = "1".equals(statusStr) ? 1 : 0;
+                String deptIdStr = request.getParameter("departmentId");
+                Integer departmentId = (deptIdStr == null || deptIdStr.trim().isEmpty() || "all".equals(deptIdStr)) ? null : Integer.parseInt(deptIdStr);
 
                 String[] criterionNames = request.getParameterValues("criterion_name");
                 String[] criterionDescriptions = request.getParameterValues("criterion_desc");
@@ -202,7 +266,10 @@ public class HrKpiTemplateController extends HttpServlet {
                     temp.setName(name);
                     temp.setDescription(description);
                     temp.setStatus(status);
+                    temp.setDepartmentId(departmentId);
 
+                    List<Department> departments = departmentDAO.getAll();
+                    request.setAttribute("departments", departments);
                     request.setAttribute("template", temp);
                     request.setAttribute("items", newItems);
                     request.getRequestDispatcher("/hr/kpi-template-edit.jsp").forward(request, response);
@@ -217,10 +284,12 @@ public class HrKpiTemplateController extends HttpServlet {
                         template.setName(name);
                         template.setDescription(description);
                         template.setStatus(status);
+                        template.setDepartmentId(departmentId);
                         kpiDAO.updateTemplate(template);
                     }
                 } else {
                     KpiTemplate template = new KpiTemplate(0, name, description, status, new Timestamp(System.currentTimeMillis()), user.getUserId());
+                    template.setDepartmentId(departmentId);
                     templateId = kpiDAO.insertTemplate(template);
                 }
 
@@ -235,6 +304,8 @@ public class HrKpiTemplateController extends HttpServlet {
                     response.sendRedirect(request.getContextPath() + "/hr/kpi-templates?success=1");
                 } else {
                     request.setAttribute("error", "Có lỗi xảy ra khi lưu mẫu đánh giá.");
+                    List<Department> departments = departmentDAO.getAll();
+                    request.setAttribute("departments", departments);
                     request.getRequestDispatcher("/hr/kpi-template-edit.jsp").forward(request, response);
                 }
             }

@@ -22,5 +22,5 @@ CREATE TABLE IF NOT EXISTS resignation_requests (
 );
 
 -- Index để tăng tốc query theo user_id và status
-CREATE INDEX IF NOT EXISTS idx_resignation_user_id ON resignation_requests(user_id);
-CREATE INDEX IF NOT EXISTS idx_resignation_status  ON resignation_requests(status);
+CREATE INDEX  idx_resignation_user_id ON resignation_requests(user_id);
+CREATE INDEX  idx_resignation_status  ON resignation_requests(status);

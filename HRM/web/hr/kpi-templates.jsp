@@ -32,6 +32,26 @@
         </button>
     </div>
 
+    <!-- Filter Bar -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px; background: var(--th-surface);">
+        <div class="card-body p-3">
+            <form action="${pageContext.request.contextPath}/hr/kpi-templates" method="GET" class="row g-3 align-items-center">
+                <div class="col-12 col-md-auto">
+                    <span class="text-muted fw-semibold small"><i class="fas fa-filter me-2"></i>Lọc theo phòng ban:</span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <select name="deptId" class="form-select border-0 bg-light" style="border-radius: 8px;" onchange="this.form.submit()">
+                        <option value="">-- Tất cả mẫu đánh giá --</option>
+                        <option value="all_depts" ${param.deptId == 'all_depts' ? 'selected' : ''}>Chung (Áp dụng cho mọi phòng ban)</option>
+                        <c:forEach var="dept" items="${departments}">
+                            <option value="${dept.departmentId}" ${param.deptId == dept.departmentId ? 'selected' : ''}>${dept.departmentName}</option>
+                        </c:forEach>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <c:if test="${param.success == '1'}">
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="fas fa-check-circle me-2"></i> Thao tác thực hiện thành công!
@@ -80,7 +100,21 @@
                             </div>
                         </div>
 
-                        <h4 class="fw-bold mb-2 text-truncate-2" style="min-height: 48px;">${template.name}</h4>
+                        <h4 class="fw-bold mb-1 text-truncate-2" style="min-height: 48px;">${template.name}</h4>
+                        <div class="mb-3">
+                            <c:choose>
+                                <c:when test="${empty template.departmentName}">
+                                    <span class="badge bg-secondary-subtle text-secondary px-2.5 py-1.5" style="border-radius: 6px;">
+                                        <i class="fas fa-globe me-1"></i>Áp dụng chung
+                                    </span>
+                                </c:when>
+                                <c:otherwise>
+                                    <span class="badge bg-primary-subtle text-primary px-2.5 py-1.5" style="border-radius: 6px;">
+                                        <i class="fas fa-building me-1"></i>Phòng ban: ${template.departmentName}
+                                    </span>
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
                         <p class="text-muted small mb-4 flex-grow-1" style="min-height: 40px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                             ${template.description}
                         </p>
@@ -116,7 +150,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow" style="border-radius: 20px; background: var(--th-surface);">
             <div class="modal-header border-0 px-4 pt-4">
-                <h5 class="modal-title fw-bold" id="exampleModalLabel">Tạo mẫu đánh giá KPI mới</h5>
+                <h5 class="modal-title fw-bold">Tạo mẫu đánh giá KPI mới</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="${pageContext.request.contextPath}/hr/kpi-templates" method="POST">
@@ -128,7 +162,16 @@
                     </div>
                     <div class="mb-3">
                         <label for="description" class="form-label fw-bold">Mô tả chi tiết</label>
-                        <textarea class="form-control px-3 py-2" id="description" name="description" rows="4" placeholder="Mô tả phạm vi áp dụng, đối tượng đánh giá..." style="border-radius: 8px;"></textarea>
+                        <textarea class="form-control px-3 py-2" id="description" name="description" rows="3" placeholder="Mô tả phạm vi áp dụng, đối tượng đánh giá..." style="border-radius: 8px;"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="departmentId" class="form-label fw-bold">Phòng ban áp dụng</label>
+                        <select class="form-select px-3 py-2" id="departmentId" name="departmentId" style="border-radius: 8px;">
+                            <option value="all">Áp dụng cho tất cả phòng ban</option>
+                            <c:forEach var="dept" items="${departments}">
+                                <option value="${dept.departmentId}">${dept.departmentName}</option>
+                            </c:forEach>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="status" class="form-label fw-bold">Trạng thái</label>

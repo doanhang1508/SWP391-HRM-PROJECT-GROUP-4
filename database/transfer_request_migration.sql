@@ -33,5 +33,5 @@ CREATE TABLE IF NOT EXISTS transfer_requests (
     CONSTRAINT fk_transfer_approver FOREIGN KEY (approved_by) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE INDEX IF NOT EXISTS idx_transfer_employee ON transfer_requests(employee_id);
-CREATE INDEX IF NOT EXISTS idx_transfer_status ON transfer_requests(status);
+CREATE INDEX idx_transfer_employee ON transfer_requests(employee_id);
+CREATE INDEX idx_transfer_status ON transfer_requests(status);

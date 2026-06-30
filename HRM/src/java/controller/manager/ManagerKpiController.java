@@ -4,6 +4,7 @@ import dao.KpiDAO;
 import model.KpiCycle;
 import model.KpiEvaluation;
 import model.KpiEvaluationItem;
+import model.KpiComment;
 import model.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -96,6 +97,7 @@ public class ManagerKpiController extends HttpServlet {
                 request.setAttribute("detailItems", detailItems);
                 request.setAttribute("statusHistory", kpiDAO.getStatusHistory(editId));
                 request.setAttribute("auditLogs", kpiDAO.getAuditLogs(editId));
+                request.setAttribute("comments", kpiDAO.getComments(editId));
                 request.setAttribute("isEditMode", true);
             }
         }
@@ -110,6 +112,7 @@ public class ManagerKpiController extends HttpServlet {
                 request.setAttribute("detailItems", detailItems);
                 request.setAttribute("statusHistory", kpiDAO.getStatusHistory(viewId));
                 request.setAttribute("auditLogs", kpiDAO.getAuditLogs(viewId));
+                request.setAttribute("comments", kpiDAO.getComments(viewId));
                 request.setAttribute("isEditMode", false);
             }
         }
@@ -190,6 +193,13 @@ public class ManagerKpiController extends HttpServlet {
             // Save items and recalculate
             boolean success = kpiDAO.saveOrUpdateEvaluationItems(evaluationId, items, user.getUserId());
             if (success) {
+                // Fetch updated scores from DB to keep eval object in sync
+                KpiEvaluation freshEval = kpiDAO.getEvaluationById(evaluationId);
+                if (freshEval != null) {
+                    eval.setScore(freshEval.getScore());
+                    eval.setWeightedScore(freshEval.getWeightedScore());
+                }
+
                 // Update general comment
                 eval.setComment(comment);
                 eval.setUpdatedBy(user.getUserId());
@@ -203,6 +213,41 @@ public class ManagerKpiController extends HttpServlet {
                 response.getWriter().write("{\"status\":\"error\", \"message\":\"Lỗi hệ thống khi lưu\"}");
             }
 
+        } else if ("addComment".equals(action)) {
+            String evaluationIdStr = request.getParameter("evaluationId");
+            String commentText = request.getParameter("commentText");
+            String viewAllStr = request.getParameter("viewAll");
+
+            if (evaluationIdStr != null && !evaluationIdStr.isEmpty() && commentText != null && !commentText.trim().isEmpty()) {
+                int evaluationId = Integer.parseInt(evaluationIdStr);
+                KpiEvaluation eval = kpiDAO.getEvaluationById(evaluationId);
+
+                if (eval != null) {
+                    KpiComment comment = new KpiComment();
+                    comment.setEvaluationId(evaluationId);
+                    comment.setUserId(user.getUserId());
+                    comment.setCommentText(commentText.trim());
+                    
+                    String type = "MANAGER";
+                    if (user.getRoleId() == 1 || user.getRoleId() == 2 || user.getRoleId() == 4) {
+                        type = "REVIEWER";
+                    }
+                    comment.setType(type);
+
+                    boolean success = kpiDAO.insertComment(comment);
+                    if (success) {
+                        String redirectUrl = request.getContextPath() + "/manager/employee-kpi?cycleId=" + eval.getCycleId() + "&viewId=" + evaluationId;
+                        if ("true".equals(viewAllStr)) {
+                            redirectUrl += "&viewAll=true";
+                        }
+                        redirectUrl += "&success=comment_added";
+                        response.sendRedirect(redirectUrl);
+                        return;
+                    }
+                }
+            }
+            response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?error=comment_failed");
+            return;
         } else if ("submit".equals(action)) {
             String evaluationIdStr = request.getParameter("evaluationId");
             String note = request.getParameter("note");

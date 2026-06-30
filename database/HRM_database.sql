@@ -1353,7 +1353,9 @@ CREATE TABLE IF NOT EXISTS kpi_templates (
     status TINYINT DEFAULT 1, -- 1: Active, 0: Inactive
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by INT,
-    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
+    department_id INT NULL,
+    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (department_id) REFERENCES departments(department_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS kpi_template_items (

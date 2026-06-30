@@ -132,37 +132,40 @@
                             <hr class="my-4 text-muted opacity-25">
 
                             <!-- Feedback/Appeal Discussion thread -->
-                            <h5 class="fw-bold mb-3"><i class="far fa-comments text-muted me-2"></i>Trao đổi & Phản hồi</h5>
+                            <h5 class="fw-bold mb-3"><i class="fas fa-comments text-muted me-2"></i>Trao đổi & Phản hồi</h5>
                             
-                            <div class="d-flex flex-column gap-3 mb-4 p-3 border rounded-3" style="background: var(--th-surface2); max-height: 300px; overflow-y: auto;">
-                                <c:forEach var="cmt" items="${comments}">
-                                    <div class="d-flex flex-column p-2.5 rounded-3 ${cmt.userId == sessionScope.currentUser.userId ? 'align-self-end bg-primary-subtle border border-primary-subtle text-end' : 'align-self-start bg-light border border-light text-start'}" style="max-width: 85%; min-width: 50%;">
-                                        <div class="d-flex justify-content-between align-items-center gap-4 mb-1 small">
-                                            <span class="fw-bold text-dark-emphasis">${cmt.userId == sessionScope.currentUser.userId ? 'Tôi' : cmt.userName}</span>
-                                            <span class="text-muted" style="font-size: 0.7rem;"><fmt:formatDate value="${cmt.createdAt}" pattern="dd/MM/yyyy HH:mm" /></span>
+                            <div class="comment-stream mb-3 p-3 rounded" style="background: var(--th-surface2); max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem;">
+                                <c:forEach var="c" items="${comments}">
+                                    <div class="comment-bubble d-flex flex-column p-2.5 rounded-3 ${c.userId == currentUser.userId ? 'align-self-end bg-primary text-white' : 'align-self-start bg-light text-dark'}" style="max-width: 85%; box-shadow: 0 2px 4px rgba(0,0,0,0.05); min-width: 250px;">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="fw-bold small ${c.userId == currentUser.userId ? 'text-white-50' : 'text-primary'}">${c.userName}</span>
+                                            <span class="badge ${c.type == 'EMPLOYEE' ? 'bg-info text-dark' : c.type == 'MANAGER' ? 'bg-warning text-dark' : 'bg-secondary text-white'}" style="font-size: 0.62rem;">
+                                                <c:choose>
+                                                    <c:when test="${c.type == 'EMPLOYEE'}">Nhân viên</c:when>
+                                                    <c:when test="${c.type == 'MANAGER'}">Quản lý</c:when>
+                                                    <c:otherwise>${c.type}</c:otherwise>
+                                                </c:choose>
+                                            </span>
                                         </div>
-                                        <div class="text-dark small" style="white-space: pre-line;">${cmt.commentText}</div>
+                                        <div class="comment-text fw-medium" style="word-break: break-word; font-size: 0.85rem;">${c.commentText}</div>
+                                        <div class="align-self-end text-end mt-1 text-muted" style="font-size: 0.62rem; ${c.userId == currentUser.userId ? 'color: rgba(255,255,255,0.7) !important;' : ''}">
+                                            <fmt:formatDate value="${c.createdAt}" pattern="dd/MM/yyyy HH:mm" />
+                                        </div>
                                     </div>
                                 </c:forEach>
                                 <c:if test="${empty comments}">
-                                    <div class="text-center py-4 text-muted small">
-                                        <i class="far fa-comment-alt fa-2x mb-2 opacity-25"></i>
-                                        <p class="mb-0">Chưa có phản hồi nào. Bạn có thể gửi ý kiến phản hồi hoặc thắc mắc về kết quả KPI tại đây.</p>
-                                    </div>
+                                    <div class="text-center text-muted my-3 small">Chưa có bình luận nào cho bản đánh giá này.</div>
                                 </c:if>
                             </div>
 
                             <!-- Comment Input Form -->
-                            <form action="${pageContext.request.contextPath}/employee/kpi-view" method="POST" class="d-flex flex-column gap-2">
+                            <form action="${pageContext.request.contextPath}/employee/kpi-view" method="POST" class="mt-2">
                                 <input type="hidden" name="action" value="addComment" />
                                 <input type="hidden" name="evaluationId" value="${selectedEval.evaluationId}" />
-                                
-                                <div class="form-group">
-                                    <textarea class="form-control px-3 py-2" name="commentText" rows="2" placeholder="Gõ ý kiến đóng góp hoặc thắc mắc của bạn..." style="border-radius: 8px;" required></textarea>
-                                </div>
-                                <div class="text-end">
-                                    <button type="submit" class="btn btn-primary px-4 py-2" style="border-radius: 8px;">
-                                        Gửi phản hồi <i class="fas fa-paper-plane ms-1"></i>
+                                <div class="input-group">
+                                    <textarea class="form-control" name="commentText" placeholder="Nhập phản hồi, câu hỏi hoặc thắc mắc..." rows="2" style="border-radius: 8px 0 0 8px; resize: none; font-size: 0.85rem;" required></textarea>
+                                    <button class="btn btn-primary px-4" type="submit" style="border-radius: 0 8px 8px 0;">
+                                        <i class="fas fa-paper-plane me-1"></i> Gửi
                                     </button>
                                 </div>
                             </form>

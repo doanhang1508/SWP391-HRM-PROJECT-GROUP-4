@@ -33,7 +33,26 @@
         <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                 <div>
-                    <h3 class="fw-bold mb-2">${template.name}</h3>
+                    <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+                        <h3 class="fw-bold mb-0">${template.name}</h3>
+                        <button class="btn btn-outline-secondary btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#editTemplateModal" style="border-radius: 8px;">
+                            <i class="fas fa-edit me-1"></i> Chỉnh sửa
+                        </button>
+                    </div>
+                    <div class="mb-2">
+                        <c:choose>
+                            <c:when test="${empty template.departmentName}">
+                                <span class="badge bg-secondary-subtle text-secondary px-2.5 py-1.5" style="border-radius: 6px;">
+                                    <i class="fas fa-globe me-1"></i>Áp dụng chung
+                                </span>
+                            </c:when>
+                            <c:otherwise>
+                                <span class="badge bg-primary-subtle text-primary px-2.5 py-1.5" style="border-radius: 6px;">
+                                    <i class="fas fa-building me-1"></i>Phòng ban: ${template.departmentName}
+                                </span>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
                     <p class="text-muted mb-0">${template.description}</p>
                 </div>
                 <span class="badge ${template.status == 1 ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'} px-3 py-2" style="border-radius: 8px;">
@@ -56,13 +75,19 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     </c:if>
+    <c:if test="${param.success == 'header_updated'}">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i> Cập nhật thông tin mẫu đánh giá thành công!
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </c:if>
     <c:if test="${param.error == 'weight_overflow'}">
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <i class="fas fa-exclamation-circle me-2"></i> Không thể thêm tiêu chí: Tổng trọng số các tiêu chí không được vượt quá 100%.
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     </c:if>
-    <c:if test="${param.error != null && param.error != 'weight_overflow'}">
+    <c:if test="${param.error != null && param.error != 'weight_overflow' && param.error != 'invalid_weight'}">
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <i class="fas fa-exclamation-circle me-2"></i> Đã xảy ra lỗi hệ thống. Vui lòng kiểm tra lại.
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -179,6 +204,52 @@
     </div>
         </div>
     </main>
+</div>
+
+<!-- Edit Template Modal -->
+<div class="modal fade" id="editTemplateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 20px; background: var(--th-surface);">
+            <div class="modal-header border-0 px-4 pt-4">
+                <h5 class="modal-title fw-bold">Chỉnh sửa thông tin mẫu đánh giá</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="${pageContext.request.contextPath}/hr/kpi-templates/edit" method="POST">
+                <input type="hidden" name="action" value="updateHeader" />
+                <input type="hidden" name="id" value="${template.templateId}" />
+                <div class="modal-body px-4 pb-4">
+                    <div class="mb-3">
+                        <label for="edit_name" class="form-label fw-bold">Tên mẫu đánh giá <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control px-3 py-2" id="edit_name" name="name" required value="${template.name}" style="border-radius: 8px;" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_description" class="form-label fw-bold">Mô tả chi tiết</label>
+                        <textarea class="form-control px-3 py-2" id="edit_description" name="description" rows="3" style="border-radius: 8px;">${template.description}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_departmentId" class="form-label fw-bold">Phòng ban áp dụng</label>
+                        <select class="form-select px-3 py-2" id="edit_departmentId" name="departmentId" style="border-radius: 8px;">
+                            <option value="all" ${empty template.departmentId ? 'selected' : ''}>Áp dụng cho tất cả phòng ban</option>
+                            <c:forEach var="dept" items="${departments}">
+                                <option value="${dept.departmentId}" ${template.departmentId == dept.departmentId ? 'selected' : ''}>${dept.departmentName}</option>
+                            </c:forEach>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_status" class="form-label fw-bold">Trạng thái</label>
+                        <select class="form-select px-3 py-2" id="edit_status" name="status" style="border-radius: 8px;">
+                            <option value="1" ${template.status == 1 ? 'selected' : ''}>Đang hoạt động</option>
+                            <option value="0" ${template.status == 0 ? 'selected' : ''}>Tạm khóa</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light px-4 py-2" data-bs-dismiss="modal" style="border-radius: 8px;">Hủy bỏ</button>
+                    <button type="submit" class="btn btn-primary px-4 py-2" style="border-radius: 8px;">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <%@include file="../footer.jsp"%>

@@ -9,6 +9,8 @@ public class KpiTemplate {
     private int status;
     private Timestamp createdAt;
     private int createdBy;
+    private Integer departmentId; // Nullable
+    private String departmentName; // Non-DB helper field
 
     public KpiTemplate() {}
 
@@ -19,6 +21,16 @@ public class KpiTemplate {
         this.status = status;
         this.createdAt = createdAt;
         this.createdBy = createdBy;
+    }
+
+    public KpiTemplate(int templateId, String name, String description, int status, Timestamp createdAt, int createdBy, Integer departmentId) {
+        this.templateId = templateId;
+        this.name = name;
+        this.description = description;
+        this.status = status;
+        this.createdAt = createdAt;
+        this.createdBy = createdBy;
+        this.departmentId = departmentId;
     }
 
     public int getTemplateId() { return templateId; }
@@ -38,4 +50,10 @@ public class KpiTemplate {
 
     public int getCreatedBy() { return createdBy; }
     public void setCreatedBy(int createdBy) { this.createdBy = createdBy; }
+
+    public Integer getDepartmentId() { return departmentId; }
+    public void setDepartmentId(Integer departmentId) { this.departmentId = departmentId; }
+
+    public String getDepartmentName() { return departmentName; }
+    public void setDepartmentName(String departmentName) { this.departmentName = departmentName; }
 }
