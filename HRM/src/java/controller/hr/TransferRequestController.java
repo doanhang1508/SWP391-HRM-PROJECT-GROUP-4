@@ -2,10 +2,12 @@ package controller.hr;
 
 import dao.DepartmentDAO;
 import dao.PositionDAO;
+import dao.RoleDAO;
 import dao.TransferRequestDAO;
 import dao.UserDAO;
 import model.Department;
 import model.Position;
+import model.Role;
 import model.TransferRequest;
 import model.User;
 
@@ -31,6 +33,7 @@ public class TransferRequestController extends HttpServlet {
     private final UserDAO userDAO = new UserDAO();
     private final DepartmentDAO deptDAO = new DepartmentDAO();
     private final PositionDAO posDAO = new PositionDAO();
+    private final RoleDAO roleDAO = new RoleDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -58,10 +61,12 @@ public class TransferRequestController extends HttpServlet {
             List<User> employees = userDAO.getActiveEmployees();
             List<Department> departments = deptDAO.getAll();
             List<Position> positions = posDAO.getAll();
+            List<Role> roles = roleDAO.getAllRoles();
 
             request.setAttribute("employees", employees);
             request.setAttribute("departments", departments);
             request.setAttribute("positions", positions);
+            request.setAttribute("roles", roles);
 
             request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
         } else {
@@ -105,6 +110,7 @@ public class TransferRequestController extends HttpServlet {
         String employeeIdStr = request.getParameter("employeeId");
         String newDepartmentIdStr = request.getParameter("newDepartmentId");
         String newPositionIdStr = request.getParameter("newPositionId");
+        String newRoleIdStr = request.getParameter("newRoleId");
         String reason = request.getParameter("reason");
         String effectiveDateStr = request.getParameter("effectiveDate");
 
@@ -112,14 +118,17 @@ public class TransferRequestController extends HttpServlet {
         List<User> employees = userDAO.getActiveEmployees();
         List<Department> departments = deptDAO.getAll();
         List<Position> positions = posDAO.getAll();
+        List<Role> roles = roleDAO.getAllRoles();
         request.setAttribute("employees", employees);
         request.setAttribute("departments", departments);
         request.setAttribute("positions", positions);
+        request.setAttribute("roles", roles);
 
         // Validation
         if (employeeIdStr == null || employeeIdStr.isEmpty() ||
             newDepartmentIdStr == null || newDepartmentIdStr.isEmpty() ||
             newPositionIdStr == null || newPositionIdStr.isEmpty() ||
+            newRoleIdStr == null || newRoleIdStr.isEmpty() ||
             reason == null || reason.trim().isEmpty() ||
             effectiveDateStr == null || effectiveDateStr.isEmpty()) {
             
@@ -132,11 +141,23 @@ public class TransferRequestController extends HttpServlet {
             int employeeId = Integer.parseInt(employeeIdStr);
             int newDepartmentId = Integer.parseInt(newDepartmentIdStr);
             int newPositionId = Integer.parseInt(newPositionIdStr);
+            int newRoleId = Integer.parseInt(newRoleIdStr);
             Date effectiveDate = Date.valueOf(effectiveDateStr);
 
             User employee = userDAO.getUserById(employeeId);
+            
+            // 1. Employee must be active
             if (employee == null || employee.getStatus() != 1) {
                 request.setAttribute("errorMessage", "Nhân viên không tồn tại hoặc đã nghỉ việc.");
+                request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
+                return;
+            }
+
+            // 2. Employee must NOT be Admin, HR Manager, Department Manager, Factory Manager or Trưởng phòng (positionId = 2)
+            int currentRole = employee.getRoleId();
+            int currentPos = employee.getPositionId();
+            if (currentRole == 1 || currentRole == 2 || currentRole == 3 || currentRole == 6 || currentPos == 2) {
+                request.setAttribute("errorMessage", "Nhân viên thuộc nhóm quản lý hoặc có vai trò đặc biệt không được phép điều chuyển bằng phiếu này.");
                 request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
                 return;
             }
@@ -149,21 +170,14 @@ public class TransferRequestController extends HttpServlet {
                 return;
             }
 
-            // Check duplicate pending request
+            // 3. Employee must NOT have another transfer request PENDING
             if (trDAO.hasPendingRequest(employeeId)) {
                 request.setAttribute("errorMessage", "Nhân viên đã có một yêu cầu điều chuyển đang chờ duyệt.");
                 request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
                 return;
             }
 
-            // Check identical dept & pos
-            if (employee.getDepartmentId() == newDepartmentId && employee.getPositionId() == newPositionId) {
-                request.setAttribute("errorMessage", "Phòng ban và chức vụ mới giống hoàn toàn hiện tại.");
-                request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
-                return;
-            }
-
-            // Check if new department and position exist in database
+            // 4. New department, position, role must exist
             boolean deptExists = false;
             for (Department d : departments) {
                 if (d.getDepartmentId() == newDepartmentId) {
@@ -178,47 +192,58 @@ public class TransferRequestController extends HttpServlet {
                     break;
                 }
             }
+            boolean roleExists = false;
+            for (Role r : roles) {
+                if (r.getRoleId() == newRoleId) {
+                    roleExists = true;
+                    break;
+                }
+            }
 
-            if (!deptExists || !posExists) {
-                request.setAttribute("errorMessage", "Phòng ban hoặc chức vụ được chọn không hợp lệ.");
+            if (!deptExists || !posExists || !roleExists) {
+                request.setAttribute("errorMessage", "Phòng ban, chức vụ hoặc vai trò mới được chọn không hợp lệ.");
                 request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
                 return;
             }
 
-            // Validate that the new position belongs to the selected new department
-            boolean validDeptPosRelation = false;
-            switch (newDepartmentId) {
-                case 1: // Hành chính
-                    if (newPositionId == 1 || newPositionId == 2 || newPositionId == 3 || newPositionId == 7 || newPositionId == 8) {
-                        validDeptPosRelation = true;
-                    }
-                    break;
-                case 2: // Nhân sự
-                    if (newPositionId == 2 || newPositionId == 3 || newPositionId == 7 || newPositionId == 8) {
-                        validDeptPosRelation = true;
-                    }
-                    break;
-                case 3: // Kế toán
-                    if (newPositionId == 2 || newPositionId == 3 || newPositionId == 6 || newPositionId == 7 || newPositionId == 8) {
-                        validDeptPosRelation = true;
-                    }
-                    break;
-                case 4: // Kinh doanh
-                    if (newPositionId == 2 || newPositionId == 3 || newPositionId == 7 || newPositionId == 8) {
-                        validDeptPosRelation = true;
-                    }
-                    break;
-                case 5: // Xưởng sản xuất
-                    if (newPositionId == 4 || newPositionId == 5 || newPositionId == 9) {
-                        validDeptPosRelation = true;
-                    }
-                    break;
-                default:
-                    break;
+            // 5. Department/position/role new must NOT be identical to current
+            if (employee.getDepartmentId() == newDepartmentId && employee.getPositionId() == newPositionId && employee.getRoleId() == newRoleId) {
+                request.setAttribute("errorMessage", "Thông tin phòng ban, chức vụ và vai trò mới trùng khớp hoàn toàn với hiện tại.");
+                request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
+                return;
             }
 
-            if (!validDeptPosRelation) {
-                request.setAttribute("errorMessage", "Chức vụ mới được chọn không phù hợp với phòng ban mới.");
+            // 6. New role must NOT be Admin (1), HR Manager (2), Department Manager (6), Factory Manager (3) (and block Director 4 too)
+            if (newRoleId == 1 || newRoleId == 2 || newRoleId == 3 || newRoleId == 4 || newRoleId == 6) {
+                request.setAttribute("errorMessage", "Không thể phân quyền Admin hoặc Quản lý cho nhân viên qua luồng điều chuyển này.");
+                request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
+                return;
+            }
+
+            // 7. Validate position-role mapping
+            boolean isValidMapping = true;
+            if (newRoleId == 8) { // Accountant
+                if (newDepartmentId != 3 || (newPositionId != 6 && newPositionId != 7 && newPositionId != 8)) {
+                    isValidMapping = false;
+                }
+            } else if (newRoleId == 5) { // HR Staff
+                if (newDepartmentId != 2 || (newPositionId != 7 && newPositionId != 8)) {
+                    isValidMapping = false;
+                }
+            } else if (newRoleId == 7) { // Employee
+                if (newDepartmentId == 5) { // Xưởng
+                    if (newPositionId != 5 && newPositionId != 9) {
+                        isValidMapping = false;
+                    }
+                } else { // Office
+                    if (newPositionId != 3 && newPositionId != 7 && newPositionId != 8) {
+                        isValidMapping = false;
+                    }
+                }
+            }
+
+            if (!isValidMapping) {
+                request.setAttribute("errorMessage", "Vai trò mới được chọn không phù hợp với chức vụ hoặc phòng ban mới.");
                 request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
                 return;
             }
@@ -228,8 +253,10 @@ public class TransferRequestController extends HttpServlet {
             req.setEmployeeId(employeeId);
             req.setOldDepartmentId(employee.getDepartmentId());
             req.setOldPositionId(employee.getPositionId());
+            req.setOldRoleId(employee.getRoleId());
             req.setNewDepartmentId(newDepartmentId);
             req.setNewPositionId(newPositionId);
+            req.setNewRoleId(newRoleId);
             req.setReason(reason.trim());
             req.setEffectiveDate(effectiveDate);
             req.setRequestedBy(currentUser.getUserId());

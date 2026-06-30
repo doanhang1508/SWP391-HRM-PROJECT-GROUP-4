@@ -13,8 +13,8 @@ import java.util.List;
 public class TransferRequestDAO {
 
     public boolean createTransferRequest(TransferRequest req) {
-        String sql = "INSERT INTO transfer_requests (employee_id, old_department_id, old_position_id, new_department_id, new_position_id, reason, effective_date, status, requested_by) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING', ?)";
+        String sql = "INSERT INTO transfer_requests (employee_id, old_department_id, old_position_id, old_role_id, new_department_id, new_position_id, new_role_id, reason, effective_date, status, requested_by) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?)";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, req.getEmployeeId());
@@ -22,11 +22,14 @@ public class TransferRequestDAO {
             else ps.setNull(2, java.sql.Types.INTEGER);
             if (req.getOldPositionId() > 0) ps.setInt(3, req.getOldPositionId());
             else ps.setNull(3, java.sql.Types.INTEGER);
-            ps.setInt(4, req.getNewDepartmentId());
-            ps.setInt(5, req.getNewPositionId());
-            ps.setString(6, req.getReason());
-            ps.setDate(7, req.getEffectiveDate());
-            ps.setInt(8, req.getRequestedBy());
+            if (req.getOldRoleId() != null && req.getOldRoleId() > 0) ps.setInt(4, req.getOldRoleId());
+            else ps.setNull(4, java.sql.Types.INTEGER);
+            ps.setInt(5, req.getNewDepartmentId());
+            ps.setInt(6, req.getNewPositionId());
+            ps.setInt(7, req.getNewRoleId());
+            ps.setString(8, req.getReason());
+            ps.setDate(9, req.getEffectiveDate());
+            ps.setInt(10, req.getRequestedBy());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -39,6 +42,7 @@ public class TransferRequestDAO {
         String sql = "SELECT tr.*, u.full_name AS employee_name, " +
                      "d1.department_name AS old_dept_name, d2.department_name AS new_dept_name, " +
                      "p1.position_name AS old_pos_name, p2.position_name AS new_pos_name, " +
+                     "r1.role_name AS old_role_name, r2.role_name AS new_role_name, " +
                      "ur.full_name AS requester_name, ua.full_name AS approver_name " +
                      "FROM transfer_requests tr " +
                      "JOIN users u ON tr.employee_id = u.user_id " +
@@ -46,6 +50,8 @@ public class TransferRequestDAO {
                      "LEFT JOIN departments d2 ON tr.new_department_id = d2.department_id " +
                      "LEFT JOIN positions p1 ON tr.old_position_id = p1.position_id " +
                      "LEFT JOIN positions p2 ON tr.new_position_id = p2.position_id " +
+                     "LEFT JOIN roles r1 ON tr.old_role_id = r1.role_id " +
+                     "LEFT JOIN roles r2 ON tr.new_role_id = r2.role_id " +
                      "JOIN users ur ON tr.requested_by = ur.user_id " +
                      "LEFT JOIN users ua ON tr.approved_by = ua.user_id " +
                      "ORDER BY tr.created_at DESC";
@@ -65,6 +71,7 @@ public class TransferRequestDAO {
         String sql = "SELECT tr.*, u.full_name AS employee_name, " +
                      "d1.department_name AS old_dept_name, d2.department_name AS new_dept_name, " +
                      "p1.position_name AS old_pos_name, p2.position_name AS new_pos_name, " +
+                     "r1.role_name AS old_role_name, r2.role_name AS new_role_name, " +
                      "ur.full_name AS requester_name, ua.full_name AS approver_name " +
                      "FROM transfer_requests tr " +
                      "JOIN users u ON tr.employee_id = u.user_id " +
@@ -72,6 +79,8 @@ public class TransferRequestDAO {
                      "LEFT JOIN departments d2 ON tr.new_department_id = d2.department_id " +
                      "LEFT JOIN positions p1 ON tr.old_position_id = p1.position_id " +
                      "LEFT JOIN positions p2 ON tr.new_position_id = p2.position_id " +
+                     "LEFT JOIN roles r1 ON tr.old_role_id = r1.role_id " +
+                     "LEFT JOIN roles r2 ON tr.new_role_id = r2.role_id " +
                      "JOIN users ur ON tr.requested_by = ur.user_id " +
                      "LEFT JOIN users ua ON tr.approved_by = ua.user_id " +
                      "WHERE tr.transfer_request_id = ?";
@@ -94,6 +103,7 @@ public class TransferRequestDAO {
         String sql = "SELECT tr.*, u.full_name AS employee_name, " +
                      "d1.department_name AS old_dept_name, d2.department_name AS new_dept_name, " +
                      "p1.position_name AS old_pos_name, p2.position_name AS new_pos_name, " +
+                     "r1.role_name AS old_role_name, r2.role_name AS new_role_name, " +
                      "ur.full_name AS requester_name, ua.full_name AS approver_name " +
                      "FROM transfer_requests tr " +
                      "JOIN users u ON tr.employee_id = u.user_id " +
@@ -101,6 +111,8 @@ public class TransferRequestDAO {
                      "LEFT JOIN departments d2 ON tr.new_department_id = d2.department_id " +
                      "LEFT JOIN positions p1 ON tr.old_position_id = p1.position_id " +
                      "LEFT JOIN positions p2 ON tr.new_position_id = p2.position_id " +
+                     "LEFT JOIN roles r1 ON tr.old_role_id = r1.role_id " +
+                     "LEFT JOIN roles r2 ON tr.new_role_id = r2.role_id " +
                      "JOIN users ur ON tr.requested_by = ur.user_id " +
                      "LEFT JOIN users ua ON tr.approved_by = ua.user_id " +
                      "WHERE tr.status = 'PENDING' AND tr.old_department_id = ? " +
@@ -166,8 +178,11 @@ public class TransferRequestDAO {
                         req.setEmployeeId(rsSel.getInt("employee_id"));
                         req.setOldDepartmentId(rsSel.getInt("old_department_id"));
                         req.setOldPositionId(rsSel.getInt("old_position_id"));
+                        int oldRoleIdVal = rsSel.getInt("old_role_id");
+                        req.setOldRoleId(rsSel.wasNull() ? null : oldRoleIdVal);
                         req.setNewDepartmentId(rsSel.getInt("new_department_id"));
                         req.setNewPositionId(rsSel.getInt("new_position_id"));
+                        req.setNewRoleId(rsSel.getInt("new_role_id"));
                         req.setReason(rsSel.getString("reason"));
                         req.setEffectiveDate(rsSel.getDate("effective_date"));
                         req.setStatus(rsSel.getString("status"));
@@ -187,6 +202,8 @@ public class TransferRequestDAO {
             String newDeptName = "-";
             String oldPosName = "-";
             String newPosName = "-";
+            String oldRoleName = "-";
+            String newRoleName = "-";
 
             String deptSql = "SELECT department_id, department_name FROM departments WHERE department_id IN (?, ?)";
             try (PreparedStatement psDept = conn.prepareStatement(deptSql)) {
@@ -216,6 +233,21 @@ public class TransferRequestDAO {
                 }
             }
 
+            String roleSql = "SELECT role_id, role_name FROM roles WHERE role_id IN (?, ?)";
+            try (PreparedStatement psRole = conn.prepareStatement(roleSql)) {
+                if (req.getOldRoleId() != null) psRole.setInt(1, req.getOldRoleId());
+                else psRole.setNull(1, java.sql.Types.INTEGER);
+                psRole.setInt(2, req.getNewRoleId());
+                try (ResultSet rsRole = psRole.executeQuery()) {
+                    while (rsRole.next()) {
+                        int id = rsRole.getInt("role_id");
+                        String name = rsRole.getString("role_name");
+                        if (req.getOldRoleId() != null && id == req.getOldRoleId()) oldRoleName = name;
+                        if (id == req.getNewRoleId()) newRoleName = name;
+                    }
+                }
+            }
+
             // 3. Update transfer_requests
             String updateReqSql = "UPDATE transfer_requests SET status = 'APPROVED', approved_by = ?, approved_at = NOW(), updated_at = NOW() WHERE transfer_request_id = ?";
             try (PreparedStatement psUpReq = conn.prepareStatement(updateReqSql)) {
@@ -225,11 +257,12 @@ public class TransferRequestDAO {
             }
 
             // 4. Update users
-            String updateUserSql = "UPDATE users SET department_id = ?, position_id = ? WHERE user_id = ?";
+            String updateUserSql = "UPDATE users SET department_id = ?, position_id = ?, role_id = ? WHERE user_id = ?";
             try (PreparedStatement psUpUser = conn.prepareStatement(updateUserSql)) {
                 psUpUser.setInt(1, req.getNewDepartmentId());
                 psUpUser.setInt(2, req.getNewPositionId());
-                psUpUser.setInt(3, req.getEmployeeId());
+                psUpUser.setInt(3, req.getNewRoleId());
+                psUpUser.setInt(4, req.getEmployeeId());
                 psUpUser.executeUpdate();
             }
 
@@ -246,8 +279,8 @@ public class TransferRequestDAO {
             whDAO.closeCurrentHistory(conn, req.getEmployeeId(), req.getEffectiveDate());
 
             // 7. Insert new work history
-            String description = "Điều chuyển nội bộ từ " + oldDeptName + " - " + oldPosName 
-                               + " sang " + newDeptName + " - " + newPosName 
+            String description = "Điều chuyển nội bộ từ " + oldDeptName + " - " + oldPosName + " - " + oldRoleName
+                               + " sang " + newDeptName + " - " + newPosName + " - " + newRoleName
                                + ". Lý do: " + req.getReason();
             whDAO.insertTransferHistory(conn, req.getEmployeeId(), newPosName, newDeptName, req.getEffectiveDate(), description);
 
@@ -284,10 +317,15 @@ public class TransferRequestDAO {
         tr.setOldDepartmentName(rs.getString("old_dept_name"));
         tr.setOldPositionId(rs.getInt("old_position_id"));
         tr.setOldPositionName(rs.getString("old_pos_name"));
+        int oldRoleIdVal = rs.getInt("old_role_id");
+        tr.setOldRoleId(rs.wasNull() ? null : oldRoleIdVal);
+        tr.setOldRoleName(rs.getString("old_role_name"));
         tr.setNewDepartmentId(rs.getInt("new_department_id"));
         tr.setNewDepartmentName(rs.getString("new_dept_name"));
         tr.setNewPositionId(rs.getInt("new_position_id"));
         tr.setNewPositionName(rs.getString("new_pos_name"));
+        tr.setNewRoleId(rs.getInt("new_role_id"));
+        tr.setNewRoleName(rs.getString("new_role_name"));
         tr.setReason(rs.getString("reason"));
         tr.setEffectiveDate(rs.getDate("effective_date"));
         tr.setStatus(rs.getString("status"));

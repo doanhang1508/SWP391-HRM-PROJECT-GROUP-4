@@ -24,6 +24,10 @@ public class TransferRequest {
     private String approvedByName;
     private Timestamp approvedAt;
     private String rejectReason;
+    private Integer oldRoleId;
+    private String oldRoleName;
+    private int newRoleId;
+    private String newRoleName;
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
@@ -205,5 +209,37 @@ public class TransferRequest {
 
     public void setUpdatedAt(Timestamp updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Integer getOldRoleId() {
+        return oldRoleId;
+    }
+
+    public void setOldRoleId(Integer oldRoleId) {
+        this.oldRoleId = oldRoleId;
+    }
+
+    public String getOldRoleName() {
+        return oldRoleName;
+    }
+
+    public void setOldRoleName(String oldRoleName) {
+        this.oldRoleName = oldRoleName;
+    }
+
+    public int getNewRoleId() {
+        return newRoleId;
+    }
+
+    public void setNewRoleId(int newRoleId) {
+        this.newRoleId = newRoleId;
+    }
+
+    public String getNewRoleName() {
+        return newRoleName;
+    }
+
+    public void setNewRoleName(String newRoleName) {
+        this.newRoleName = newRoleName;
     }
 }

@@ -168,6 +168,10 @@
                             <div class="compare-label">Chức vụ</div>
                             <div class="compare-val">${req.oldPositionName}</div>
                         </div>
+                        <div class="compare-item">
+                            <div class="compare-label">Quyền hạn</div>
+                            <div class="compare-val">${req.oldRoleName != null ? req.oldRoleName : '-'}</div>
+                        </div>
                     </div>
                     
                     <!-- NEW POSITION -->
@@ -180,6 +184,10 @@
                         <div class="compare-item">
                             <div class="compare-label">Chức vụ mới</div>
                             <div class="compare-val" style="color: var(--ok-dark)">${req.newPositionName}</div>
+                        </div>
+                        <div class="compare-item">
+                            <div class="compare-label">Quyền hạn mới</div>
+                            <div class="compare-val" style="color: var(--ok-dark)">${req.newRoleName}</div>
                         </div>
                     </div>
                 </div>

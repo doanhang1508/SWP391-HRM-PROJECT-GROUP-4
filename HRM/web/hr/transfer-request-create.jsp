@@ -37,7 +37,7 @@
 
     /* PANEL */
     .panel-container { display: flex; justify-content: center; align-items: flex-start; margin-top: 20px; }
-    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 36px 40px; width: 100%; max-width: 650px; box-shadow: 0 10px 25px rgba(10,37,64,0.05); }
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 36px 40px; width: 100%; max-width: 750px; box-shadow: 0 10px 25px rgba(10,37,64,0.05); }
     
     .panel-icon-wrap { width: 56px; height: 56px; background: rgba(99, 102, 241, 0.1); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: var(--pri); margin: 0 auto 20px; }
     .panel-title  { font-family: 'Be Vietnam Pro', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--navy); margin: 0 0 8px; text-align: center; }
@@ -99,7 +99,7 @@
                     <i class="fas fa-user-friends"></i>
                 </div>
                 <h2 class="panel-title">Phiếu đề xuất Điều chuyển Nội bộ</h2>
-                <p class="panel-subtitle">Thay đổi phòng ban/chức vụ cho nhân sự trong công ty.</p>
+                <p class="panel-subtitle">Thay đổi phòng ban, chức vụ và phân lại quyền hạn cho nhân sự.</p>
 
                 <form action="${pageContext.request.contextPath}/hr/transfer-request/create" method="post">
                     
@@ -122,28 +122,41 @@
                                         <c:set var="empPosName" value="${p.positionName}" />
                                     </c:if>
                                 </c:forEach>
-                                <option value="${emp.userId}" data-dept="${empDeptName}" data-pos="${empPosName}">${emp.fullName} (#${emp.userId})</option>
+
+                                <c:set var="empRoleName" value="Nhân viên" />
+                                <c:forEach items="${roles}" var="r">
+                                    <c:if test="${r.roleId == emp.roleId}">
+                                        <c:set var="empRoleName" value="${r.roleName}" />
+                                    </c:if>
+                                </c:forEach>
+                                <option value="${emp.userId}" data-dept="${empDeptName}" data-pos="${empPosName}" data-role-id="${emp.roleId}" data-role="${empRoleName}">${emp.fullName} (#${emp.userId})</option>
                             </c:forEach>
                         </select>
                     </div>
 
-                    <!-- CURRENT DEPT & POSITION (READONLY) -->
+                    <!-- CURRENT DEPT, POSITION & ROLE (READONLY) -->
                     <div class="form-row">
                         <div class="form-col">
                             <div class="form-group">
                                 <label class="form-label">Phòng ban hiện tại</label>
-                                <input type="text" id="currentDeptInput" class="form-control" readonly placeholder="Chưa chọn nhân viên">
+                                <input type="text" id="currentDeptInput" class="form-control" readonly placeholder="Chưa chọn">
                             </div>
                         </div>
                         <div class="form-col">
                             <div class="form-group">
                                 <label class="form-label">Chức vụ hiện tại</label>
-                                <input type="text" id="currentPosInput" class="form-control" readonly placeholder="Chưa chọn nhân viên">
+                                <input type="text" id="currentPosInput" class="form-control" readonly placeholder="Chưa chọn">
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label class="form-label">Quyền hạn hiện tại (Role)</label>
+                                <input type="text" id="currentRoleInput" class="form-control" readonly placeholder="Chưa chọn">
                             </div>
                         </div>
                     </div>
 
-                    <!-- NEW DEPT & POSITION -->
+                    <!-- NEW DEPT, POSITION & ROLE -->
                     <div class="form-row">
                         <div class="form-col">
                             <div class="form-group">
@@ -159,10 +172,21 @@
                         <div class="form-col">
                             <div class="form-group">
                                 <label class="form-label" for="newPositionId">Chức vụ mới *</label>
-                                <select id="newPositionId" name="newPositionId" class="form-control" required disabled>
+                                <select id="newPositionId" name="newPositionId" class="form-control" onchange="updateNewRoles()" required disabled>
                                     <option value="">-- Chọn chức vụ mới --</option>
                                     <c:forEach items="${positions}" var="p">
                                         <option value="${p.positionId}">${p.positionName}</option>
+                                    </c:forEach>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label class="form-label" for="newRoleId">Quyền hạn mới (Role) *</label>
+                                <select id="newRoleId" name="newRoleId" class="form-control" required disabled>
+                                    <option value="">-- Chọn quyền hạn mới --</option>
+                                    <c:forEach items="${roles}" var="r">
+                                        <option value="${r.roleId}">${r.roleName}</option>
                                     </c:forEach>
                                 </select>
                             </div>
@@ -201,12 +225,22 @@
     };
 
     let originalPositions = [];
+    let originalRoles = [];
 
     window.addEventListener('DOMContentLoaded', (event) => {
         var posSelect = document.getElementById("newPositionId");
         for (var i = 0; i < posSelect.options.length; i++) {
             var opt = posSelect.options[i];
             originalPositions.push({
+                value: opt.value,
+                text: opt.text
+            });
+        }
+
+        var roleSelect = document.getElementById("newRoleId");
+        for (var i = 0; i < roleSelect.options.length; i++) {
+            var opt = roleSelect.options[i];
+            originalRoles.push({
                 value: opt.value,
                 text: opt.text
             });
@@ -219,19 +253,24 @@
         
         var dept = selectedOption.getAttribute("data-dept") || "";
         var pos = selectedOption.getAttribute("data-pos") || "";
+        var role = selectedOption.getAttribute("data-role") || "";
         
         document.getElementById("currentDeptInput").value = dept;
         document.getElementById("currentPosInput").value = pos;
+        document.getElementById("currentRoleInput").value = role;
     }
 
     function updateNewPositions() {
         var deptSelect = document.getElementById("newDepartmentId");
         var posSelect = document.getElementById("newPositionId");
+        var roleSelect = document.getElementById("newRoleId");
         var selectedDept = deptSelect.value;
 
         if (!selectedDept) {
             posSelect.innerHTML = '<option value="">-- Chọn chức vụ mới --</option>';
             posSelect.disabled = true;
+            roleSelect.innerHTML = '<option value="">-- Chọn quyền hạn mới --</option>';
+            roleSelect.disabled = true;
             return;
         }
 
@@ -258,6 +297,72 @@
                 posSelect.appendChild(newOpt);
             }
         });
+
+        // Clear and disable new role select until position is chosen
+        roleSelect.innerHTML = '<option value="">-- Chọn quyền hạn mới --</option>';
+        roleSelect.disabled = true;
+    }
+
+    function updateNewRoles() {
+        var deptSelect = document.getElementById("newDepartmentId");
+        var posSelect = document.getElementById("newPositionId");
+        var roleSelect = document.getElementById("newRoleId");
+        
+        var selectedDept = parseInt(deptSelect.value);
+        var selectedPos = parseInt(posSelect.value);
+
+        if (!selectedDept || !selectedPos) {
+            roleSelect.innerHTML = '<option value="">-- Chọn quyền hạn mới --</option>';
+            roleSelect.disabled = true;
+            return;
+        }
+
+        roleSelect.disabled = false;
+
+        // Establish the roles we want to make available based on selectedDept & selectedPos
+        // We block Admin (1), HR Manager (2), Factory Manager (3), Director (4), Department Manager (6)
+        let validRoleIds = [];
+
+        if (selectedPos === 9 || selectedPos === 5) { // Công nhân or Tổ trưởng
+            validRoleIds = [7]; // Employee
+        } else if (selectedPos === 6) { // Kế toán trưởng
+            validRoleIds = [8]; // Accountant
+        } else if (selectedPos === 7 || selectedPos === 8) { // Chuyên viên or Nhân viên
+            if (selectedDept === 2) { // Nhân sự
+                validRoleIds = [5]; // HR Staff
+            } else if (selectedDept === 3) { // Kế toán
+                validRoleIds = [8]; // Accountant
+            } else {
+                validRoleIds = [7]; // Employee
+            }
+        } else if (selectedPos === 3) { // Phó phòng
+            validRoleIds = [7]; // Employee
+        }
+
+        // Rebuild role options
+        roleSelect.innerHTML = '';
+
+        // Add placeholder option
+        var placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.text = "-- Chọn quyền hạn mới --";
+        roleSelect.appendChild(placeholder);
+
+        originalRoles.forEach(function(opt) {
+            if (opt.value === "") return;
+            var roleId = parseInt(opt.value);
+            if (validRoleIds.includes(roleId)) {
+                var newOpt = document.createElement("option");
+                newOpt.value = opt.value;
+                newOpt.text = opt.text;
+                roleSelect.appendChild(newOpt);
+            }
+        });
+
+        // Auto select if only one valid option
+        if (validRoleIds.length === 1) {
+            roleSelect.value = validRoleIds[0];
+        }
     }
 </script>
 
