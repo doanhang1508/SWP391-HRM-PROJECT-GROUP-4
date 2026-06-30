@@ -732,7 +732,7 @@ INSERT INTO employee_profiles (user_id,department_id,id_card,dob,gender,address,
 (19,4,'024830000019','1983-07-22',1,'Đống Đa, Hà Nội',       '2024-01-01','8012345719','0200001019','0011234519','Vietcombank', 3,1,2,2),
 (20,4,'024890000020','1989-11-08',0,'Hà Nội',                 '2026-05-15','8012345720','0200001020','0011234520','BIDV',        1,2,2,2),
 (33,3,'024910000033','1991-07-15',0,'Cầu Giấy, Hà Nội',       '2026-03-01','8012345733','0200001033','0011234533','Vietcombank', 2,2,2,2),
-(11,5,'024920000011','1992-05-10',1,'Hà Nội',                 '2021-01-01','8012345711','0200001011','0011234511','Vietcombank', 3,4,4,5);
+(11,5,'024920000011','1992-05-10',1,'Hà Nội',                 '2021-01-01','8012345711','0200001011','0011234511','Vietcombank', 3,4,4,5); -- employment_status_id=4: Đã nghỉ việc
 
 -- ── 16d. Employee Contracts (Dữ liệu cụ thể cho từng nhân viên) ──
 -- Cột: user_id, contract_type_id, position_id, department_id, salary_grade_id,
@@ -786,7 +786,12 @@ UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 5;  -- 1 ngư�
 UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 10; -- 1 người phụ thuộc
 UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 14; -- 1 người phụ thuộc
 UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 19; -- 1 người phụ thuộc
-UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 20; -- 1 người phụ thuộc
+UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 20;
+
+-- Fix user 11 "Đã Nghỉ": user này được dùng để test payroll eligibility — phải có status=0
+-- và employment_status_id=4 (đã nghỉ), hợp đồng Expired từ 2024-01-01.
+-- Kết quả mong đợi: không xuất hiện trong Payroll Draft cho bất kỳ tháng nào sau 2024-01.
+UPDATE users SET status = 0 WHERE user_id = 11;
 
 -- ================================================================
 -- 18. MOCK DATA (Kỷ luật, ca làm việc, nghỉ phép, lịch sử)
