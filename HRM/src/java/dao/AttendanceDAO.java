@@ -7,8 +7,11 @@ import util.DBContext;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 /**
  * AttendanceDAO - Xử lý tất cả thao tác DB liên quan đến:
@@ -644,6 +647,11 @@ public class AttendanceDAO {
         return false;
     }
 
+    /**
+     * @deprecated Dùng {@link #getPaidAttendanceDayMap(int, int, int)} thay thế để tránh
+     *             đếm trùng ngày khi kết hợp với dữ liệu nghỉ phép có lương.
+     */
+    @Deprecated
     public double getPaidAttendanceDays(int userId, int month, int year) {
         String sql = "SELECT COALESCE(SUM(CASE WHEN UPPER(status) IN ('PRESENT', 'LATE', 'P', 'T') THEN 1 WHEN UPPER(status)='HALFDAY' THEN 0.5 ELSE 0 END), 0) " +
                      "FROM attendance WHERE user_id=? AND MONTH(work_date)=? AND YEAR(work_date)=?";
@@ -662,6 +670,48 @@ public class AttendanceDAO {
             e.printStackTrace();
         }
         return 0.0;
+    }
+
+    /**
+     * Trả về Map ngày → giá trị công (1.0 hoặc 0.5) cho các ngày chấm công hợp lệ
+     * trong tháng/năm chỉ định của nhân viên.
+     * <p>
+     * Thay thế {@link #getPaidAttendanceDays} để có thể hợp (union) với tập ngày nghỉ phép
+     * có lương mà không bị đếm trùng khi 1 ngày xuất hiện trong cả 2 bảng.
+     * </p>
+     *
+     * @param userId user_id của nhân viên
+     * @param month  tháng cần tính (1–12)
+     * @param year   năm cần tính
+     * @return Map&lt;LocalDate, Double&gt; với key là ngày làm việc, value là 1.0 (Present/Late/P/T) hoặc 0.5 (HalfDay)
+     */
+    public Map<LocalDate, Double> getPaidAttendanceDayMap(int userId, int month, int year) {
+        // Lấy từng bản ghi riêng lẻ (theo work_date) thay vì SUM tổng, để giữ được
+        // thông tin ngày cụ thể dùng cho bước hợp tập với leave.
+        String sql = "SELECT work_date, UPPER(status) AS status " +
+                     "FROM attendance " +
+                     "WHERE user_id=? AND MONTH(work_date)=? AND YEAR(work_date)=? " +
+                     "  AND UPPER(status) IN ('PRESENT','LATE','P','T','HALFDAY')";
+        Map<LocalDate, Double> dayMap = new HashMap<>();
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    LocalDate workDate = rs.getDate("work_date").toLocalDate();
+                    String status     = rs.getString("status");
+                    double value      = "HALFDAY".equals(status) ? 0.5 : 1.0;
+                    // Nếu 1 ngày có nhiều bản ghi (trường hợp data lỗi), ưu tiên giá trị lớn hơn
+                    dayMap.merge(workDate, value, Math::max);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return dayMap;
     }
 
     public List<Integer> getUserIdsWithAttendance(int month, int year) {

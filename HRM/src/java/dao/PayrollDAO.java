@@ -9,7 +9,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.time.LocalDate;
+import java.time.DayOfWeek;
 import model.EmployeeContract;
 import dao.EmployeeContractDAO;
 import model.Payroll;
@@ -703,9 +709,45 @@ public class PayrollDAO {
                 // GiÃ¡m Ä‘á»‘c miá»…n cháº¥m cÃ´ng, auto full cÃ´ng chuáº©n
                 totalDays = standardWorkDays.doubleValue();
             } else {
-                double presentDays = attendanceDAO.getPaidAttendanceDays(userId, month, year);
-                double paidLeaveDays = leaveDAO.getPaidLeaveDays(userId, month, year);
-                totalDays = presentDays + paidLeaveDays;
+                // -------------------------------------------------------------------
+                // Tính ngày công thực tế theo tập hợp ngày duy nhất (union-based).
+                // Lý do đổi cách tính: cách cũ (presentDays + paidLeaveDays) đếm
+                // độc lập 2 bảng riêng, nếu cùng 1 ngày vừa có bản ghi attendance
+                // hợp lệ vừa có leave đã duyệt thì ngày đó bị tính 2 lần, gây sai lương.
+                // -------------------------------------------------------------------
+
+                // Bước 1: Lấy Map ngày -> giá trị công từ attendance (1.0 hoặc 0.5 cho HalfDay)
+                Map<LocalDate, Double> attendanceDayMap =
+                        attendanceDAO.getPaidAttendanceDayMap(userId, month, year);
+
+                // Bước 2: Lấy Set ngày nghỉ phép có lương đã duyệt
+                Set<LocalDate> leaveDaySet =
+                        ((LeaveRequestDAOImpl) leaveDAO).getPaidLeaveDaySet(userId, month, year);
+
+                // Bước 3: Hợp (union) 2 tập ngày.
+                // - Ưu tiên attendance nếu ngày xuất hiện ở cả 2 (số liệu chấm công thực tế hơn).
+                // - Ngày chỉ có trong leave (không có bản ghi attendance) được tính 1.0.
+                Map<LocalDate, Double> unionDayMap = new HashMap<>(attendanceDayMap);
+                for (LocalDate leaveDate : leaveDaySet) {
+                    // putIfAbsent: nếu ngày đó đã có trong attendance thì bỏ qua (không đếm trùng)
+                    unionDayMap.putIfAbsent(leaveDate, 1.0);
+                }
+
+                // Bước 4: Cộng giá trị của từng ngày trong tập hợp
+                totalDays = unionDayMap.values().stream()
+                                       .mapToDouble(Double::doubleValue)
+                                       .sum();
+
+                // Bước 5: Kiểm tra cảnh báo nếu totalDays vượt công chuẩn.
+                // Trường hợp này xảy ra khi data gốc bị lỗi (ví dụ nhân viên có attendance
+                // trên cả ngày nghỉ lễ hoặc ngày đang nghỉ phép không có lương).
+                if (totalDays > standardWorkDays.doubleValue()) {
+                    System.err.println("[PAYROLL WARNING] userId=" + userId +
+                        ", tháng=" + month + "/" + year +
+                        ": totalDays=" + totalDays +
+                        " vượt standardWorkDays=" + standardWorkDays +
+                        ". Kiểm tra lại data attendance/leave gốc.");
+                }
             }
             
             // Calculate BaseWorkedSalary

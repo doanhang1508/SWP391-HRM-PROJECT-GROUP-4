@@ -8,7 +8,9 @@ import model.LeaveType;
 import util.DBContext;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class LeaveRequestDAOImpl implements LeaveRequestDAO {
 
@@ -515,6 +517,11 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
         return this.getRequestsByUserId(userId);
     }
 
+    /**
+     * @deprecated Dùng {@link #getPaidLeaveDaySet(int, int, int)} thay thế để tránh
+     *             đếm trùng ngày khi kết hợp với dữ liệu chấm công.
+     */
+    @Deprecated
     @Override
     public double getPaidLeaveDays(int employeeId, int month, int year) {
         // Fetch all approved paid-leave requests that overlap with the target month.
@@ -560,6 +567,63 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
             e.printStackTrace();
         }
         return totalDays;
+    }
+
+    /**
+     * Trả về tập (Set) các ngày nghỉ phép có lương đã duyệt trong tháng/năm chỉ định.
+     * <p>
+     * Sử dụng Set để bước sau có thể hợp (union) với tập ngày chấm công mà không đếm
+     * trùng ngày nào đồng thời có cả attendance lẫn leave.
+     * </p>
+     * Logic giống method cũ: clamp phạm vi leave theo tháng, loại Chủ nhật.
+     *
+     * @param employeeId user_id của nhân viên
+     * @param month      tháng cần tính (1–12)
+     * @param year       năm cần tính
+     * @return Set&lt;LocalDate&gt; các ngày nghỉ phép hợp lệ (không trùng nhau, không có Chủ nhật)
+     */
+    public Set<LocalDate> getPaidLeaveDaySet(int employeeId, int month, int year) {
+        LocalDate firstDayOfMonth = LocalDate.of(year, month, 1);
+        LocalDate lastDayOfMonth  = firstDayOfMonth.withDayOfMonth(firstDayOfMonth.lengthOfMonth());
+
+        String sql = "SELECT lr.start_date, lr.end_date " +
+                     "FROM leave_requests lr " +
+                     "JOIN leave_types lt ON lr.leave_type_id = lt.leave_type_id " +
+                     "WHERE lr.user_id = ? " +
+                     "  AND lr.status = 'Approved' " +
+                     "  AND lt.paid_leave = 1 " +
+                     "  AND lr.start_date <= ? " +
+                     "  AND lr.end_date   >= ?";
+
+        Set<LocalDate> leaveDays = new HashSet<>();
+        try (Connection c = DBContext.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            ps.setDate(2, java.sql.Date.valueOf(lastDayOfMonth));
+            ps.setDate(3, java.sql.Date.valueOf(firstDayOfMonth));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    LocalDate leaveStart = rs.getDate("start_date").toLocalDate();
+                    LocalDate leaveEnd   = rs.getDate("end_date").toLocalDate();
+
+                    // Clamp phạm vi leave vào đúng tháng đang tính
+                    LocalDate effectiveStart = leaveStart.isBefore(firstDayOfMonth) ? firstDayOfMonth : leaveStart;
+                    LocalDate effectiveEnd   = leaveEnd.isAfter(lastDayOfMonth)     ? lastDayOfMonth  : leaveEnd;
+
+                    // Duyệt từng ngày trong phạm vi, loại Chủ nhật (tuần làm việc Mon-Sat)
+                    LocalDate current = effectiveStart;
+                    while (!current.isAfter(effectiveEnd)) {
+                        if (current.getDayOfWeek() != DayOfWeek.SUNDAY) {
+                            leaveDays.add(current);
+                        }
+                        current = current.plusDays(1);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return leaveDays;
     }
 }
 
