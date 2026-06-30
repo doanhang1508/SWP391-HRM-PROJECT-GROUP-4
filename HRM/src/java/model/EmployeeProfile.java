@@ -28,6 +28,7 @@ public class EmployeeProfile {
     private Integer salaryGradeId;
     private Integer employmentStatusId;
     private Integer educationLevelId;
+    private int dependentCount;     // dependent_count — số người phụ thuộc (giảm trừ gia cảnh)
 
     // Trường JOIN — tên loại hợp đồng, tên bậc lương (load từ query JOIN)
     private String contractTypeName;
@@ -92,6 +93,9 @@ public class EmployeeProfile {
 
     public Integer getEducationLevelId() { return educationLevelId; }
     public void setEducationLevelId(Integer educationLevelId) { this.educationLevelId = educationLevelId; }
+
+    public int getDependentCount() { return dependentCount; }
+    public void setDependentCount(int dependentCount) { this.dependentCount = dependentCount; }
 
     // JOIN fields
     public String getContractTypeName() { return contractTypeName; }

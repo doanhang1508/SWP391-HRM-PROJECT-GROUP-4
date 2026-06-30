@@ -19,8 +19,8 @@ public class SalaryGradeDAO {
         return new SalaryGrade(
             rs.getInt("salary_grade_id"),
             rs.getString("grade_name"),
-            rs.getBigDecimal("base_salary"),
-            rs.getBigDecimal("coefficient"),
+            rs.getBigDecimal("min_salary"),
+            rs.getBigDecimal("max_salary"),
             rs.getString("description"),
             rs.getBoolean("status")
         );
@@ -107,13 +107,13 @@ public class SalaryGradeDAO {
 
     // ── 4. Create New Salary Grade ────────────────────────────────────────────
     public boolean insert(SalaryGrade sg) {
-        String sql = "INSERT INTO salary_grades (grade_name, base_salary, coefficient, description, status) "
+        String sql = "INSERT INTO salary_grades (grade_name, min_salary, max_salary, description, status) "
                    + "VALUES (?, ?, ?, ?, 1)";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, sg.getGradeName());
-            ps.setBigDecimal(2, sg.getBaseSalary());
-            ps.setBigDecimal(3, sg.getCoefficient());
+            ps.setBigDecimal(2, sg.getMinSalary());
+            ps.setBigDecimal(3, sg.getMaxSalary());
             ps.setString(4, sg.getDescription());
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
@@ -125,13 +125,13 @@ public class SalaryGradeDAO {
     // ── 5. Update Salary Grade ────────────────────────────────────────────────
     public boolean update(SalaryGrade sg) {
         String sql = "UPDATE salary_grades "
-                   + "SET grade_name=?, base_salary=?, coefficient=?, description=? "
+                   + "SET grade_name=?, min_salary=?, max_salary=?, description=? "
                    + "WHERE salary_grade_id=?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, sg.getGradeName());
-            ps.setBigDecimal(2, sg.getBaseSalary());
-            ps.setBigDecimal(3, sg.getCoefficient());
+            ps.setBigDecimal(2, sg.getMinSalary());
+            ps.setBigDecimal(3, sg.getMaxSalary());
             ps.setString(4, sg.getDescription());
             ps.setInt(5, sg.getSalaryGradeId());
             return ps.executeUpdate() > 0;

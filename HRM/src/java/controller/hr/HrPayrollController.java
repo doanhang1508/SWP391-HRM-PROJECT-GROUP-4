@@ -18,6 +18,17 @@ import java.util.List;
 import java.util.Map;
 import model.Payroll;
 import model.User;
+import util.DBContext;
+import dao.EmployeeContractDAO;
+import dao.InsuranceRateDAO;
+import dao.PayrollConfigDAO;
+import dao.RewardDisciplineDAO;
+import model.EmployeeContract;
+import model.EmployeeRewardDiscipline;
+import model.InsuranceRate;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 @WebServlet(name = "HrPayrollController", urlPatterns = {"/hr/payroll"})
 public class HrPayrollController extends HttpServlet {
@@ -64,6 +75,7 @@ public class HrPayrollController extends HttpServlet {
             case "edit" -> showEditForm(request, response);
             case "exportExcel" -> exportExcel(request, response);
             case "recalculate" -> recalculatePreview(request, response);
+            case "details_json" -> getPayslipDetailsJson(request, response);
             default -> response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }
@@ -349,6 +361,132 @@ public class HrPayrollController extends HttpServlet {
             response.getWriter().write(json);
         } catch (NumberFormatException e) {
             response.getWriter().write("{\"error\":\"Dữ liệu không hợp lệ\"}");
+        }
+    }
+
+    private void getPayslipDetailsJson(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        String userIdStr = request.getParameter("userId");
+        String monthStr = request.getParameter("month");
+        String yearStr = request.getParameter("year");
+
+        if (userIdStr == null || monthStr == null || yearStr == null) {
+            response.getWriter().write("{\"error\": \"Missing parameters\"}");
+            return;
+        }
+
+        try {
+            int userId = Integer.parseInt(userIdStr);
+            int month = Integer.parseInt(monthStr);
+            int year = Integer.parseInt(yearStr);
+
+            Payroll p = payrollDAO.getPayroll(userId, month, year);
+            if (p == null) {
+                response.getWriter().write("{\"error\": \"Payroll not found\"}");
+                return;
+            }
+
+            StringBuilder json = new StringBuilder();
+            json.append("{");
+
+            PayrollConfigDAO configDAO = new PayrollConfigDAO();
+            BigDecimal standardWorkDays = configDAO.getConfigValue("STANDARD_WORK_DAYS", new BigDecimal("26"));
+            BigDecimal baseWorkedSalary = BigDecimal.ZERO;
+            if (standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal daysRatio = new BigDecimal(p.getWorkingDays()).divide(standardWorkDays, 4, java.math.RoundingMode.HALF_UP);
+                baseWorkedSalary = p.getBaseSalary().multiply(daysRatio).setScale(2, java.math.RoundingMode.HALF_UP);
+            }
+            json.append("\"baseSalary\":").append(p.getBaseSalary()).append(",");
+            json.append("\"baseWorkedSalary\":").append(baseWorkedSalary).append(",");
+            json.append("\"workingDays\":").append(p.getWorkingDays()).append(",");
+            json.append("\"standardWorkDays\":").append(standardWorkDays).append(",");
+
+            EmployeeContractDAO ecDAO = new EmployeeContractDAO();
+            EmployeeContract activeContract = ecDAO.getActiveContract(userId);
+            int activeContractId = (activeContract != null) ? activeContract.getContractId() : 0;
+            
+            json.append("\"allowances\":[");
+            String sqlAllowance = "SELECT a.allowance_name, a.amount, a.calculation_type, a.is_bhxh_applied " +
+                                  "FROM employee_allowances ea " +
+                                  "JOIN allowances a ON ea.allowance_id = a.allowance_id " +
+                                  "WHERE ea.user_id = ? AND a.status = 1 AND ea.contract_id = ?";
+            boolean firstAllow = true;
+            try (Connection conn = DBContext.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sqlAllowance)) {
+                ps.setInt(1, userId);
+                ps.setInt(2, activeContractId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        if (!firstAllow) json.append(",");
+                        json.append("{");
+                        json.append("\"name\":\"").append(escapeHtml(rs.getString("allowance_name"))).append("\",");
+                        
+                        BigDecimal amount = rs.getBigDecimal("amount");
+                        String calcType = rs.getString("calculation_type");
+                        BigDecimal earned = amount;
+                        if ("PER_DAY".equals(calcType) && standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
+                            BigDecimal dailyRate = amount.divide(standardWorkDays, 4, java.math.RoundingMode.HALF_UP);
+                            earned = dailyRate.multiply(new BigDecimal(p.getWorkingDays())).setScale(2, java.math.RoundingMode.HALF_UP);
+                        }
+                        
+                        json.append("\"amount\":").append(earned).append(",");
+                        json.append("\"isBhxh\":").append(rs.getInt("is_bhxh_applied") == 1);
+                        json.append("}");
+                        firstAllow = false;
+                    }
+                }
+            }
+            json.append("],");
+
+            json.append("\"insurances\":[");
+            InsuranceRateDAO irDAO = new InsuranceRateDAO();
+            List<InsuranceRate> rates = irDAO.getAllActiveRates();
+            boolean firstIns = true;
+            for (InsuranceRate r : rates) {
+                if ("Employee".equalsIgnoreCase(r.getAppliedTo())) {
+                    if (!firstIns) json.append(",");
+                    BigDecimal amt = p.getBaseSalary().multiply(r.getRatePercentage()).divide(new BigDecimal("100")).setScale(2, java.math.RoundingMode.HALF_UP);
+                    json.append("{");
+                    json.append("\"name\":\"").append(escapeHtml(r.getName())).append(" (").append(r.getRatePercentage()).append("%)\",");
+                    json.append("\"amount\":").append(amt);
+                    json.append("}");
+                    firstIns = false;
+                }
+            }
+            json.append("],");
+
+            json.append("\"deductions\":[");
+            RewardDisciplineDAO rdDAO = new RewardDisciplineDAO();
+            List<EmployeeRewardDiscipline> erdRecords = rdDAO.getRecordsByUserIdAndMonthYear(userId, month, year);
+            boolean firstDed = true;
+            for (EmployeeRewardDiscipline erd : erdRecords) {
+                if ("Discipline".equalsIgnoreCase(erd.getType())) {
+                    if (!firstDed) json.append(",");
+                    json.append("{");
+                    String note = erd.getNote() != null ? " - " + erd.getNote() : "";
+                    json.append("\"name\":\"").append(escapeHtml(erd.getRewardDisciplineName() + note)).append("\",");
+                    json.append("\"amount\":").append(erd.getAmount());
+                    json.append("}");
+                    firstDed = false;
+                }
+            }
+            json.append("],");
+
+            PayrollDAO.TaxProfileInfo taxProfile = payrollDAO.getTaxProfile(userId);
+            json.append("\"taxProfile\":{");
+            json.append("\"personalDeduction\":").append(taxProfile.personalDeduction).append(",");
+            json.append("\"dependentCount\":").append(taxProfile.dependentCount).append(",");
+            json.append("\"dependentDeduction\":").append(taxProfile.dependentDeduction);
+            json.append("}");
+
+            json.append("}");
+            response.getWriter().write(json.toString());
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.getWriter().write("{\"error\": \"Server error\"}");
         }
     }
 

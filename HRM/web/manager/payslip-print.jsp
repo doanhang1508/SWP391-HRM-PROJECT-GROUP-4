@@ -241,6 +241,13 @@
                 <span>${payroll.workingDays} ngày</span>
             </div>
             <div class="row-item">
+                <span>Lương theo ngày công:</span>
+                <span>
+                    <c:set var="baseWorkedSalary" value="${payroll.grossSalary - (payroll.overtimeAmount != null ? payroll.overtimeAmount : 0) - (payroll.allowanceAmount != null ? payroll.allowanceAmount : 0) - (payroll.bonusAmount != null ? payroll.bonusAmount : 0)}" />
+                    <fmt:formatNumber value="${baseWorkedSalary}" type="number" groupingUsed="true"/> ₫
+                </span>
+            </div>
+            <div class="row-item">
                 <span>Lương tăng ca (OT):</span>
                 <span>+ <fmt:formatNumber value="${payroll.overtimeAmount != null ? payroll.overtimeAmount : 0}" type="number" groupingUsed="true"/> ₫</span>
             </div>
@@ -270,7 +277,7 @@
                 <span style="color: #dc2626;">- <fmt:formatNumber value="${payroll.taxAmount != null ? payroll.taxAmount : 0}" type="number" groupingUsed="true"/> ₫</span>
             </div>
             <div class="row-item">
-                <span>Khấu trừ khác / Phạt:</span>
+                <span>Phạt / Khấu trừ khác:</span>
                 <span style="color: #dc2626;">- <fmt:formatNumber value="${payroll.deductionAmount != null ? payroll.deductionAmount : 0}" type="number" groupingUsed="true"/> ₫</span>
             </div>
             <div class="total-row-item text-danger" style="border-top: 1px solid #cbd5e1; padding-top: 10px; margin-top: auto;">

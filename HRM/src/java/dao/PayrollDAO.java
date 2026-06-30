@@ -1,4 +1,5 @@
 package dao;
+import util.DBContext;
 import model.EmployeeRewardDiscipline;
 import dao.RewardDisciplineDAO;
 
@@ -12,9 +13,8 @@ import java.util.List;
 import model.EmployeeContract;
 import dao.EmployeeContractDAO;
 import model.Payroll;
-import util.DBContext;
 import java.sql.Date;
-// Cần import để kiểm tra trạng thái chốt chấm công
+// Cáº§n import Ä‘á»ƒ kiá»ƒm tra tráº¡ng thÃ¡i chá»‘t cháº¥m cÃ´ng
 import dao.TimesheetConfirmationDAO;
 
 public class PayrollDAO {
@@ -92,7 +92,7 @@ public class PayrollDAO {
         }
     }
 
-    // Helper map đầy đủ tất cả cột DB
+    // Helper map Ä‘áº§y Ä‘á»§ táº¥t cáº£ cá»™t DB
     private Payroll mapRow(ResultSet rs) throws SQLException {
         Payroll p = new Payroll();
         p.setPayrollId(rs.getInt("payroll_id"));
@@ -126,13 +126,12 @@ public class PayrollDAO {
     }
 
     public EmployeeSalaryInfo getEmployeeSalaryInfo(int userId) {
-        String sql = "SELECT ep.hire_date, sg.base_salary, u.role_id " +
+        String sql = "SELECT ep.hire_date, sg.min_salary as base_salary, u.role_id " +
                      "FROM employee_profiles ep " +
                      "JOIN salary_grades sg ON ep.salary_grade_id = sg.salary_grade_id " +
                      "JOIN users u ON ep.user_id = u.user_id " +
                      "WHERE ep.user_id = ?";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -151,13 +150,12 @@ public class PayrollDAO {
     }
 
     /**
-     * Kiểm tra xem đã có bảng lương nháp (Draft/Pending/Approved/Paid) cho tháng/năm chưa.
-     * Dùng để chặn mở khóa bảng công khi đã gen payroll draft.
+     * Kiá»ƒm tra xem Ä‘Ã£ cÃ³ báº£ng lÆ°Æ¡ng nhÃ¡p (Draft/Pending/Approved/Paid) cho thÃ¡ng/nÄƒm chÆ°a.
+     * DÃ¹ng Ä‘á»ƒ cháº·n má»Ÿ khÃ³a báº£ng cÃ´ng khi Ä‘Ã£ gen payroll draft.
      */
     public boolean hasPayrollGenerated(int month, int year) {
         String sql = "SELECT COUNT(*) FROM payroll WHERE month = ? AND year = ?";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, month);
             ps.setInt(2, year);
@@ -172,7 +170,7 @@ public class PayrollDAO {
         return false;
     }
 
-    // Insert hoặc update đầy đủ tất cả cột
+    // Insert hoáº·c update Ä‘áº§y Ä‘á»§ táº¥t cáº£ cá»™t
     public boolean insertOrUpdatePayroll(Payroll p) {
         String sql = "INSERT INTO payroll " +
                      "(user_id, month, year, base_salary, working_days, overtime_amount, " +
@@ -190,8 +188,7 @@ public class PayrollDAO {
                      "approved_by=VALUES(approved_by), approved_at=VALUES(approved_at), " +
                      "reject_reason=VALUES(reject_reason), paid_by=VALUES(paid_by), " +
                      "paid_at=VALUES(paid_at), payment_note=VALUES(payment_note)";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, p.getUserId());
             ps.setInt(2, p.getMonth());
@@ -233,8 +230,7 @@ public class PayrollDAO {
 
     public Payroll getPayroll(int userId, int month, int year) {
         String sql = "SELECT * FROM payroll WHERE user_id = ? AND month = ? AND year = ?";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
             ps.setInt(2, month);
@@ -251,8 +247,7 @@ public class PayrollDAO {
     public List<Payroll> getByUserId(int userId) {
         List<Payroll> list = new ArrayList<>();
         String sql = "SELECT * FROM payroll WHERE user_id = ? ORDER BY year DESC, month DESC";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -267,8 +262,7 @@ public class PayrollDAO {
     public List<Payroll> getByMonthYear(int month, int year) {
         List<Payroll> list = new ArrayList<>();
         String sql = "SELECT * FROM payroll WHERE month = ? AND year = ? ORDER BY user_id";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, month);
             ps.setInt(2, year);
@@ -296,8 +290,7 @@ public class PayrollDAO {
                      "FROM payroll " +
                      "GROUP BY year, month " +
                      "ORDER BY year DESC, month DESC";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
@@ -361,8 +354,7 @@ public class PayrollDAO {
 
     public Payroll getById(int payrollId) {
         String sql = "SELECT * FROM payroll WHERE payroll_id = ?";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, payrollId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -376,7 +368,7 @@ public class PayrollDAO {
 
     public Payroll getByUserMonthYear(int userId, int month, int year) {
         if (month < 1 || month > 12 || year < 2000) {
-            throw new IllegalArgumentException("Tháng hoặc năm không hợp lệ");
+            throw new IllegalArgumentException("ThÃ¡ng hoáº·c nÄƒm khÃ´ng há»£p lá»‡");
         }
         return getPayroll(userId, month, year);
     }
@@ -384,8 +376,7 @@ public class PayrollDAO {
     public List<Integer> getAllActiveEmployeeIds() {
         List<Integer> list = new ArrayList<>();
         String sql = "SELECT user_id FROM users WHERE status = 1";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
@@ -441,8 +432,7 @@ public class PayrollDAO {
                      "       ) " +
                      "   )";
 
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setDate(1, sqlFirstDay);
             ps.setDate(2, sqlLastDay);
@@ -470,8 +460,7 @@ public class PayrollDAO {
                      "JOIN overtime_plans op ON oa.plan_id = op.plan_id " +
                      "WHERE oa.user_id = ? AND oa.status = 'Approved' " +
                      "AND MONTH(op.target_date) = ? AND YEAR(op.target_date) = ?";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, empId);
             ps.setInt(2, month);
@@ -491,40 +480,36 @@ public class PayrollDAO {
     }
 
     /**
-     * Tính tổng phụ cấp tháng theo logic chuẩn.
-     * Chỉ đọc phụ cấp thuộc hợp đồng đang hiệu lực HOẸC phụ cấp vận hành (contract_id IS NULL).
+     * TÃ­nh tá»•ng phá»¥ cáº¥p thÃ¡ng theo logic chuáº©n.
+     * Chá»‰ Ä‘á»c phá»¥ cáº¥p thuá»™c há»£p Ä‘á»“ng Ä‘ang hiá»‡u lá»±c HOáº¸C phá»¥ cáº¥p váº­n hÃ nh (contract_id IS NULL).
      *
-     * @param activeContractId  ID của hợp đồng đang active (truyền 0 nếu không có hợp đồng)
+     * @param activeContractId  ID cá»§a há»£p Ä‘á»“ng Ä‘ang active (truyá»n 0 náº¿u khÃ´ng cÃ³ há»£p Ä‘á»“ng)
      */
     public AllowanceResult calculateAllowances(
             int empId, int activeContractId,
             double actualWorkDays, double standardWorkDays, int month, int year) {
         /*
-         * Logic lấy phụ cấp:
-         *   - contract_id = activeContractId  → Phụ cấp "cam kết" đã ghi vào hợp đồng/phụ lục
-         *   - contract_id IS NULL            → Phụ cấp "vận hành" (ăn ca, đi lại...), áp dụng chung
-         * Tỷ lệ BHXH chỉ tính trên phụ cấp có is_bhxh_applied = 1.
+         * Logic láº¥y phá»¥ cáº¥p:
+         *   - contract_id = activeContractId  â†’ Phá»¥ cáº¥p "cam káº¿t" Ä‘Ã£ ghi vÃ o há»£p Ä‘á»“ng/phá»¥ lá»¥c
+         *   - contract_id IS NULL            â†’ Phá»¥ cáº¥p "váº­n hÃ nh" (Äƒn ca, Ä‘i láº¡i...), Ã¡p dá»¥ng chung
+         * Tá»· lá»‡ BHXH chá»‰ tÃ­nh trÃªn phá»¥ cáº¥p cÃ³ is_bhxh_applied = 1.
          */
         String sql;
         if (activeContractId > 0) {
-            sql = "SELECT ea.amount, a.calculation_type, a.is_bhxh_applied " +
+            sql = "SELECT a.amount, a.calculation_type, a.is_bhxh_applied " +
                   "FROM employee_allowances ea " +
                   "JOIN allowances a ON ea.allowance_id = a.allowance_id " +
                   "WHERE ea.user_id = ? AND a.status = 1 " +
-                  "  AND (ea.contract_id = ? OR ea.contract_id IS NULL)";
+                  "  AND ea.contract_id = ?";
         } else {
-            // Fallback: lấy tất cả phụ cấp vận hành (không gắn hợp đồng)
-            sql = "SELECT ea.amount, a.calculation_type, a.is_bhxh_applied " +
-                  "FROM employee_allowances ea " +
-                  "JOIN allowances a ON ea.allowance_id = a.allowance_id " +
-                  "WHERE ea.user_id = ? AND a.status = 1 AND ea.contract_id IS NULL";
+            // KhÃ´ng cÃ³ há»£p Ä‘á»“ng -> KhÃ´ng cÃ³ phá»¥ cáº¥p
+            return new AllowanceResult(BigDecimal.ZERO, BigDecimal.ZERO);
         }
 
         BigDecimal totalAllowance = BigDecimal.ZERO;
         BigDecimal bhxhBaseFromAllowances = BigDecimal.ZERO;
 
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, empId);
             if (activeContractId > 0) ps.setInt(2, activeContractId);
@@ -539,7 +524,7 @@ public class PayrollDAO {
                     BigDecimal earned;
                     switch (calcType != null ? calcType : "FIXED") {
                         case "PER_DAY" -> {
-                            // Tính theo ngày công thực tế (ví dụ: ăn ca)
+                            // TÃ­nh theo ngÃ y cÃ´ng thá»±c táº¿ (vÃ­ dá»¥: Äƒn ca)
                             if (standardWorkDays > 0) {
                                 BigDecimal dailyRate = amount.divide(
                                     new BigDecimal(String.valueOf(standardWorkDays)), 4, java.math.RoundingMode.HALF_UP);
@@ -550,7 +535,7 @@ public class PayrollDAO {
                             }
                         }
                         case "CONDITIONAL" -> {
-                            // Trả đủ nếu không có ngày ABSENT không phép trong tháng
+                            // Tráº£ Ä‘á»§ náº¿u khÃ´ng cÃ³ ngÃ y ABSENT khÃ´ng phÃ©p trong thÃ¡ng
                             boolean hasUnexcused = hasUnexcusedAbsence(empId, month, year);
                             earned = hasUnexcused ? BigDecimal.ZERO : amount;
                         }
@@ -569,13 +554,12 @@ public class PayrollDAO {
         return new AllowanceResult(totalAllowance, bhxhBaseFromAllowances);
     }
 
-    /** Kiểm tra có ngày ABSENT không phép trong tháng không. */
+    /** Kiá»ƒm tra cÃ³ ngÃ y ABSENT khÃ´ng phÃ©p trong thÃ¡ng khÃ´ng. */
     private boolean hasUnexcusedAbsence(int userId, int month, int year) {
         String sql = "SELECT COUNT(*) FROM attendance " +
                      "WHERE user_id = ? AND MONTH(work_date) = ? AND YEAR(work_date) = ? " +
                      "AND status = 'ABSENT'";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
             ps.setInt(2, month);
@@ -587,7 +571,7 @@ public class PayrollDAO {
         return false;
     }
 
-    /** Kết quả tính phụ cấp: tổng phụ cấp và phần thuộc nền BHXH */
+    /** Káº¿t quáº£ tÃ­nh phá»¥ cáº¥p: tá»•ng phá»¥ cáº¥p vÃ  pháº§n thuá»™c ná»n BHXH */
     public static class AllowanceResult {
         public final BigDecimal totalAmount;
         public final BigDecimal bhxhBase;
@@ -597,13 +581,12 @@ public class PayrollDAO {
         }
     }
 
-    /** Giữ lại method cũ để backward-compatible, gọi sang method mới */
+    /** Giá»¯ láº¡i method cÅ© Ä‘á»ƒ backward-compatible, gá»i sang method má»›i */
     public BigDecimal getFixedAllowances(int empId) {
-        String sql = "SELECT SUM(ea.amount) FROM employee_allowances ea " +
+        String sql = "SELECT SUM(a.amount) FROM employee_allowances ea " +
                      "JOIN allowances a ON ea.allowance_id = a.allowance_id " +
                      "WHERE ea.user_id = ? AND a.status = 1 AND a.calculation_type = 'FIXED'";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, empId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -635,8 +618,7 @@ public class PayrollDAO {
                      "approved_by = NULL, " +
                      "approved_at = NULL " +
                      "WHERE payroll_id = ?";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setBigDecimal(1, p.getBaseSalary());
             ps.setDouble(2, p.getWorkingDays());
@@ -658,26 +640,26 @@ public class PayrollDAO {
 
     public PayrollGenerationResult generatePayrollDraft(int month, int year) {
         if (month < 1 || month > 12 || year < 2000) {
-            throw new IllegalArgumentException("Tháng hoặc năm không hợp lệ");
+            throw new IllegalArgumentException("ThÃ¡ng hoáº·c nÄƒm khÃ´ng há»£p lá»‡");
         }
 
         PayrollGenerationResult result = new PayrollGenerationResult();
         AttendanceDAO attendanceDAO = new AttendanceDAO();
 
-        // 1. Kiểm tra dữ liệu chấm công
+        // 1. Kiá»ƒm tra dá»¯ liá»‡u cháº¥m cÃ´ng
         if (!attendanceDAO.hasAttendanceData(month, year)) {
             result.setNoAttendanceData(true);
             return result;
         }
 
-        // 2. GATE: Chấm công phải được chốt (HR_MANAGER_APPROVED / LOCKED) cho tất cả phòng ban
-        //    trước khi được phép tạo bảng lương.
+        // 2. GATE: Cháº¥m cÃ´ng pháº£i Ä‘Æ°á»£c chá»‘t (HR_MANAGER_APPROVED / LOCKED) cho táº¥t cáº£ phÃ²ng ban
+        //    trÆ°á»›c khi Ä‘Æ°á»£c phÃ©p táº¡o báº£ng lÆ°Æ¡ng.
         TimesheetConfirmationDAO tsDAO = new TimesheetConfirmationDAO();
         List<String> unapprovedDepts = tsDAO.getUnapprovedDepartments(month, year);
         if (!unapprovedDepts.isEmpty()) {
-            // Vẫn cho chạy nếu không có phòng ban nào có chấm công (ví dụ môi trường test)
-            // nhưng log cảnh báo rõ ràng
-            System.err.println("[PAYROLL WARNING] Các phòng ban chưa chốt chấm công: " + unapprovedDepts);
+            // Váº«n cho cháº¡y náº¿u khÃ´ng cÃ³ phÃ²ng ban nÃ o cÃ³ cháº¥m cÃ´ng (vÃ­ dá»¥ mÃ´i trÆ°á»ng test)
+            // nhÆ°ng log cáº£nh bÃ¡o rÃµ rÃ ng
+            System.err.println("[PAYROLL WARNING] CÃ¡c phÃ²ng ban chÆ°a chá»‘t cháº¥m cÃ´ng: " + unapprovedDepts);
         }
         
         // 2. Get list of all eligible users (including those without attendance logs like Director)
@@ -690,7 +672,7 @@ public class PayrollDAO {
         LeaveRequestDAOImpl leaveDAO = new LeaveRequestDAOImpl();
         PayrollConfigDAO configDAO = new PayrollConfigDAO();
         
-        BigDecimal standardWorkDays = configDAO.getConfigValue("STANDARD_WORK_DAYS", new BigDecimal("22"));
+        BigDecimal standardWorkDays = configDAO.getConfigValue("STANDARD_WORK_DAYS", new BigDecimal("26"));
         
         for (int userId : userIds) {
             Payroll existing = getPayroll(userId, month, year);
@@ -706,16 +688,10 @@ public class PayrollDAO {
             EmployeeContract activeContract = ecDAO.getActiveContract(userId);
             
             BigDecimal baseSalary = BigDecimal.ZERO;
-            BigDecimal bhxhRate = new BigDecimal("8.00");
-            BigDecimal bhytRate = new BigDecimal("1.50");
-            BigDecimal bhtnRate = new BigDecimal("1.00");
             int taxCalcType = 1;
             
             if (activeContract != null) {
                 baseSalary = activeContract.getBaseSalary() != null ? activeContract.getBaseSalary() : BigDecimal.ZERO;
-                bhxhRate = activeContract.getBhxhRate() != null ? activeContract.getBhxhRate() : new BigDecimal("8.00");
-                bhytRate = activeContract.getBhytRate() != null ? activeContract.getBhytRate() : new BigDecimal("1.50");
-                bhtnRate = activeContract.getBhtnRate() != null ? activeContract.getBhtnRate() : new BigDecimal("1.00");
                 taxCalcType = activeContract.getTaxCalcType();
             } else {
                 baseSalary = (salaryInfo != null && salaryInfo.baseSalary != null) ? salaryInfo.baseSalary : BigDecimal.ZERO;
@@ -724,7 +700,7 @@ public class PayrollDAO {
             // Get working days
             double totalDays;
             if (roleId == 4) { // 4 = Director
-                // Giám đốc miễn chấm công, auto full công chuẩn
+                // GiÃ¡m Ä‘á»‘c miá»…n cháº¥m cÃ´ng, auto full cÃ´ng chuáº©n
                 totalDays = standardWorkDays.doubleValue();
             } else {
                 double presentDays = attendanceDAO.getPaidAttendanceDays(userId, month, year);
@@ -739,8 +715,8 @@ public class PayrollDAO {
                 baseWorkedSalary = baseSalary.multiply(daysRatio).setScale(2, java.math.RoundingMode.HALF_UP);
             }
             
-            // Tính lương 1 giờ dựa trên số giờ làm việc thực tế của tháng (standardWorkDays * 8h)
-            // thay vì chia cứng cho 176 giờ.
+            // TÃ­nh lÆ°Æ¡ng 1 giá» dá»±a trÃªn sá»‘ giá» lÃ m viá»‡c thá»±c táº¿ cá»§a thÃ¡ng (standardWorkDays * 8h)
+            // thay vÃ¬ chia cá»©ng cho 176 giá».
             BigDecimal hourlyRate = BigDecimal.ZERO;
             if (baseSalary.compareTo(BigDecimal.ZERO) > 0 && standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
                 BigDecimal monthlyWorkingHours = standardWorkDays.multiply(new BigDecimal("8"));
@@ -750,20 +726,19 @@ public class PayrollDAO {
             BigDecimal overtimeHours = attendanceDAO.getTotalOvertimeHoursFromAttendance(userId, month, year);
             BigDecimal overtimeAmount = overtimeHours.multiply(hourlyRate).multiply(new BigDecimal("1.5")).setScale(2, java.math.RoundingMode.HALF_UP);
 
-            // Tính phụ cấp: chỉ lấy khoản thuộc hợp đồng đang hiệu lực HOẸC phụ cấp vận hành (contract_id IS NULL)
+            // TÃ­nh phá»¥ cáº¥p: chá»‰ láº¥y khoáº£n thuá»™c há»£p Ä‘á»“ng Ä‘ang hiá»‡u lá»±c HOáº¸C phá»¥ cáº¥p váº­n hÃ nh (contract_id IS NULL)
             int activeContractId = (activeContract != null) ? activeContract.getContractId() : 0;
             AllowanceResult allowanceResult = calculateAllowances(
                 userId, activeContractId, totalDays, standardWorkDays.doubleValue(), month, year);
             BigDecimal allowanceAmount = allowanceResult.totalAmount;
 
-            // Nền tính BHXH = CHỈ lương cơ bản (từ hợp đồng), không cộng thưởng hay OT.
-            // Quy định: bảo hiểm chỉ tính trên lương cơ bản theo hợp đồng lao động.
-            BigDecimal totalInsuranceRate = bhxhRate.add(bhytRate).add(bhtnRate);
-            BigDecimal insuranceAmount = baseSalary.multiply(totalInsuranceRate)
-                .divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
+            // Ná»n tÃ­nh BHXH = CHá»ˆ lÆ°Æ¡ng cÆ¡ báº£n (tá»« há»£p Ä‘á»“ng), khÃ´ng cá»™ng thÆ°á»Ÿng hay OT.
+            // Quy Ä‘á»‹nh: báº£o hiá»ƒm chá»‰ tÃ­nh trÃªn lÆ°Æ¡ng cÆ¡ báº£n theo há»£p Ä‘á»“ng lao Ä‘á»™ng.
+            // Láº¥y tá»•ng tá»· lá»‡ báº£o hiá»ƒm tá»« báº£ng cáº¥u hÃ¬nh insurance_rates thÃ´ng qua hÃ m tÃ­nh toÃ¡n
+            BigDecimal insuranceAmount = calculateInsurance(baseSalary);
 
-            // Gross = Lương theo công + Phụ cấp + OT + Thưởng
-            // -- Trước hết: tính Thưởng/Kỷ luật trong tháng
+            // Gross = LÆ°Æ¡ng theo cÃ´ng + Phá»¥ cáº¥p + OT + ThÆ°á»Ÿng
+            // -- TrÆ°á»›c háº¿t: tÃ­nh ThÆ°á»Ÿng/Ká»· luáº­t trong thÃ¡ng
             RewardDisciplineDAO rewardDisciplineDAO = new RewardDisciplineDAO();
             List<EmployeeRewardDiscipline> erdRecords = rewardDisciplineDAO.getRecordsByUserIdAndMonthYear(userId, month, year);
             BigDecimal bonusAmount = BigDecimal.ZERO;
@@ -795,7 +770,7 @@ public class PayrollDAO {
             } else if (taxCalcType == 2) {
                 taxAmount = grossSalary.multiply(new BigDecimal("0.1")).setScale(2, java.math.RoundingMode.HALF_UP);
             } else {
-                taxAmount = BigDecimal.ZERO; // Không thuế
+                taxAmount = BigDecimal.ZERO; // KhÃ´ng thuáº¿
             }
             
             // Total Deductions = Discipline Penalties + Insurance + Tax
@@ -836,11 +811,11 @@ public class PayrollDAO {
     }
 
     /**
-     * TASK 2: Viết lại updatePayrollDraft — tự động tính lại Thuế TNCN và Bảo hiểm
-     * khi HR thay đổi thưởng, phụ cấp hoặc phạt.
+     * TASK 2: Viáº¿t láº¡i updatePayrollDraft â€” tá»± Ä‘á»™ng tÃ­nh láº¡i Thuáº¿ TNCN vÃ  Báº£o hiá»ƒm
+     * khi HR thay Ä‘á»•i thÆ°á»Ÿng, phá»¥ cáº¥p hoáº·c pháº¡t.
      * 
-     * HR chỉ nhập: workingDays, overtimeAmount, allowanceAmount, bonusAmount, deductionAmount
-     * Hệ thống tự tính: insurance, tax (PIT), gross, net
+     * HR chá»‰ nháº­p: workingDays, overtimeAmount, allowanceAmount, bonusAmount, deductionAmount
+     * Há»‡ thá»‘ng tá»± tÃ­nh: insurance, tax (PIT), gross, net
      */
     public boolean updatePayrollDraft(Payroll payroll) {
         if (payroll == null) return false;
@@ -852,16 +827,16 @@ public class PayrollDAO {
             return false;
         }
         
-        // --- Lấy giá trị HR nhập (hoặc giữ nguyên từ bản ghi hiện tại) ---
+        // --- Láº¥y giÃ¡ trá»‹ HR nháº­p (hoáº·c giá»¯ nguyÃªn tá»« báº£n ghi hiá»‡n táº¡i) ---
         BigDecimal baseSalary = current.getBaseSalary() != null ? current.getBaseSalary() : BigDecimal.ZERO;
         BigDecimal overtime = payroll.getOvertimeAmount() != null ? payroll.getOvertimeAmount() : BigDecimal.ZERO;
         BigDecimal allowance = payroll.getAllowanceAmount() != null ? payroll.getAllowanceAmount() : BigDecimal.ZERO;
         BigDecimal bonus = payroll.getBonusAmount() != null ? payroll.getBonusAmount() : BigDecimal.ZERO;
         BigDecimal deduction = payroll.getDeductionAmount() != null ? payroll.getDeductionAmount() : BigDecimal.ZERO;
         
-        // --- Tính lương theo ngày công thực tế ---
+        // --- TÃ­nh lÆ°Æ¡ng theo ngÃ y cÃ´ng thá»±c táº¿ ---
         PayrollConfigDAO configDAO = new PayrollConfigDAO();
-        BigDecimal standardWorkDays = configDAO.getConfigValue("STANDARD_WORK_DAYS", new BigDecimal("22"));
+        BigDecimal standardWorkDays = configDAO.getConfigValue("STANDARD_WORK_DAYS", new BigDecimal("26"));
         
         BigDecimal baseWorkedSalary = BigDecimal.ZERO;
         if (standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
@@ -869,13 +844,13 @@ public class PayrollDAO {
             baseWorkedSalary = baseSalary.multiply(daysRatio).setScale(2, java.math.RoundingMode.HALF_UP);
         }
         
-        // --- Tính Gross Salary ---
+        // --- TÃ­nh Gross Salary ---
         BigDecimal grossSalary = baseWorkedSalary.add(overtime).add(allowance).add(bonus);
         
-        // --- Tự động tính Bảo hiểm (BHXH + BHYT + BHTN) dựa trên lương cơ bản ---
+        // --- Tá»± Ä‘á»™ng tÃ­nh Báº£o hiá»ƒm (BHXH + BHYT + BHTN) dá»±a trÃªn lÆ°Æ¡ng cÆ¡ báº£n ---
         BigDecimal insuranceAmount = calculateInsurance(baseSalary);
         
-        // --- Tự động tính Thuế TNCN (PIT) lũy tiến ---
+        // --- Tá»± Ä‘á»™ng tÃ­nh Thuáº¿ TNCN (PIT) lÅ©y tiáº¿n ---
         TaxProfileInfo taxProfile = getTaxProfile(current.getUserId());
         BigDecimal totalDeductionForTax = insuranceAmount
                 .add(taxProfile.personalDeduction)
@@ -887,7 +862,7 @@ public class PayrollDAO {
         }
         BigDecimal taxAmount = calculateDynamicPIT(taxableIncome);
         
-        // --- Tính Net Salary ---
+        // --- TÃ­nh Net Salary ---
         BigDecimal totalDeductions = deduction.add(insuranceAmount).add(taxAmount);
 
         BigDecimal netSalary = grossSalary.subtract(totalDeductions);
@@ -895,7 +870,7 @@ public class PayrollDAO {
             netSalary = BigDecimal.ZERO;
         }
         
-        // --- Cập nhật vào payroll object để controller có thể trả về ---
+        // --- Cáº­p nháº­t vÃ o payroll object Ä‘á»ƒ controller cÃ³ thá»ƒ tráº£ vá» ---
         payroll.setBaseSalary(baseSalary);
         payroll.setInsuranceAmount(insuranceAmount);
         payroll.setTaxAmount(taxAmount);
@@ -913,8 +888,7 @@ public class PayrollDAO {
                      "gross_salary = ?, " +
                      "net_salary = ? " +
                      "WHERE payroll_id = ?";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setDouble(1, payroll.getWorkingDays());
             ps.setBigDecimal(2, overtime);
@@ -934,9 +908,9 @@ public class PayrollDAO {
     }
 
     /**
-     * TASK 2: Tính toán preview khi HR thay đổi giá trị (dùng cho AJAX recalculate)
-     * Trả về Payroll object với các giá trị insurance, tax, gross, net đã tính sẵn.
-     * KHÔNG lưu vào DB.
+     * TASK 2: TÃ­nh toÃ¡n preview khi HR thay Ä‘á»•i giÃ¡ trá»‹ (dÃ¹ng cho AJAX recalculate)
+     * Tráº£ vá» Payroll object vá»›i cÃ¡c giÃ¡ trá»‹ insurance, tax, gross, net Ä‘Ã£ tÃ­nh sáºµn.
+     * KHÃ”NG lÆ°u vÃ o DB.
      */
     public Payroll recalculatePayrollPreview(int payrollId, BigDecimal overtimeAmount,
             BigDecimal allowanceAmount, BigDecimal bonusAmount, BigDecimal deductionAmount) {
@@ -993,8 +967,7 @@ public class PayrollDAO {
         }
         
         String sql = "UPDATE payroll SET status = 'Pending', reject_reason = NULL WHERE payroll_id = ?";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, payrollId);
             return ps.executeUpdate() > 0;
@@ -1005,12 +978,11 @@ public class PayrollDAO {
     }
 
     /**
-     * Kế toán xác nhận đã chuyển khoản cho 1 nhân viên → status: Approved → Paid
+     * Káº¿ toÃ¡n xÃ¡c nháº­n Ä‘Ã£ chuyá»ƒn khoáº£n cho 1 nhÃ¢n viÃªn â†’ status: Approved â†’ Paid
      */
     public boolean markAsPaid(int payrollId) {
         String sql = "UPDATE payroll SET status = 'Paid' WHERE payroll_id = ? AND status = 'Approved'";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, payrollId);
             return ps.executeUpdate() > 0;
@@ -1022,12 +994,11 @@ public class PayrollDAO {
 
     public int submitMonthlyPayrollForApproval(int month, int year) {
         if (month < 1 || month > 12 || year < 2000) {
-            throw new IllegalArgumentException("Tháng hoặc năm không hợp lệ");
+            throw new IllegalArgumentException("ThÃ¡ng hoáº·c nÄƒm khÃ´ng há»£p lá»‡");
         }
         String sql = "UPDATE payroll SET status = 'Pending', reject_reason = NULL " +
                      "WHERE month = ? AND year = ? AND (status = 'Draft' OR status = 'Rejected')";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, month);
             ps.setInt(2, year);
@@ -1039,13 +1010,12 @@ public class PayrollDAO {
     }
 
     /**
-     * Kế toán xác nhận đã chuyển khoản cho TẤT CẢ nhân viên có status=Approved trong tháng (có tracking)
-     * @return số bản ghi được cập nhật
+     * Káº¿ toÃ¡n xÃ¡c nháº­n Ä‘Ã£ chuyá»ƒn khoáº£n cho Táº¤T Cáº¢ nhÃ¢n viÃªn cÃ³ status=Approved trong thÃ¡ng (cÃ³ tracking)
+     * @return sá»‘ báº£n ghi Ä‘Æ°á»£c cáº­p nháº­t
      */
     public int markAllApprovedAsPaid(int month, int year, int paidBy) {
         String sql = "UPDATE payroll SET status = 'Paid', paid_by = ?, paid_at = NOW() WHERE month = ? AND year = ? AND status = 'Approved'";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, paidBy);
             ps.setInt(2, month);
@@ -1057,18 +1027,17 @@ public class PayrollDAO {
         return 0;
     }
 
-    // ═══════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // TASK 24: Director Approve / Reject Payroll (Verified -> Approved/Rejected)
-    // ═══════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
-     * Director duyệt 1 bảng lương: Verified → Approved
+     * Director duyá»‡t 1 báº£ng lÆ°Æ¡ng: Verified â†’ Approved
      */
     public boolean approvePayroll(int payrollId, int approvedBy) {
         String sql = "UPDATE payroll SET status = 'Approved', approved_by = ?, approved_at = NOW() " +
                      "WHERE payroll_id = ? AND status = 'Verified'";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, approvedBy);
             ps.setInt(2, payrollId);
@@ -1080,13 +1049,12 @@ public class PayrollDAO {
     }
 
     /**
-     * Director từ chối 1 bảng lương: Verified → Rejected
+     * Director tá»« chá»‘i 1 báº£ng lÆ°Æ¡ng: Verified â†’ Rejected
      */
     public boolean rejectPayroll(int payrollId, String reason) {
         String sql = "UPDATE payroll SET status = 'Rejected', reject_reason = ? " +
                      "WHERE payroll_id = ? AND status = 'Verified'";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, reason);
             ps.setInt(2, payrollId);
@@ -1098,14 +1066,13 @@ public class PayrollDAO {
     }
 
     /**
-     * Director duyệt TẤT CẢ bảng lương Verified trong tháng
-     * @return số bản ghi được duyệt
+     * Director duyá»‡t Táº¤T Cáº¢ báº£ng lÆ°Æ¡ng Verified trong thÃ¡ng
+     * @return sá»‘ báº£n ghi Ä‘Æ°á»£c duyá»‡t
      */
     public int approveAllPending(int month, int year, int approvedBy) {
         String sql = "UPDATE payroll SET status = 'Approved', approved_by = ?, approved_at = NOW() " +
                      "WHERE month = ? AND year = ? AND status = 'Verified'";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, approvedBy);
             ps.setInt(2, month);
@@ -1117,17 +1084,16 @@ public class PayrollDAO {
         return 0;
     }
 
-    // ═══════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // HR Manager Approve / Reject Payroll (Pending -> Verified/Rejected)
-    // ═══════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
-     * HR Manager duyệt 1 bảng lương: Pending → Verified
+     * HR Manager duyá»‡t 1 báº£ng lÆ°Æ¡ng: Pending â†’ Verified
      */
     public boolean hrApprovePayroll(int payrollId) {
         String sql = "UPDATE payroll SET status = 'Verified' WHERE payroll_id = ? AND status = 'Pending'";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, payrollId);
             return ps.executeUpdate() > 0;
@@ -1138,12 +1104,11 @@ public class PayrollDAO {
     }
 
     /**
-     * HR Manager từ chối 1 bảng lương: Pending → Rejected
+     * HR Manager tá»« chá»‘i 1 báº£ng lÆ°Æ¡ng: Pending â†’ Rejected
      */
     public boolean hrRejectPayroll(int payrollId, String reason) {
         String sql = "UPDATE payroll SET status = 'Rejected', reject_reason = ? WHERE payroll_id = ? AND status = 'Pending'";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, reason);
             ps.setInt(2, payrollId);
@@ -1155,12 +1120,11 @@ public class PayrollDAO {
     }
 
     /**
-     * HR Manager duyệt TẤT CẢ bảng lương Pending trong tháng
+     * HR Manager duyá»‡t Táº¤T Cáº¢ báº£ng lÆ°Æ¡ng Pending trong thÃ¡ng
      */
     public int hrApproveAllPending(int month, int year) {
         String sql = "UPDATE payroll SET status = 'Verified' WHERE month = ? AND year = ? AND status = 'Pending'";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, month);
             ps.setInt(2, year);
@@ -1172,15 +1136,14 @@ public class PayrollDAO {
     }
 
     /**
-     * Lấy danh sách payroll theo tháng/năm kèm tên nhân viên (JOIN users)
+     * Láº¥y danh sÃ¡ch payroll theo thÃ¡ng/nÄƒm kÃ¨m tÃªn nhÃ¢n viÃªn (JOIN users)
      */
     public List<Payroll> getPayrollsWithNames(int month, int year) {
         List<Payroll> list = new ArrayList<>();
         String sql = "SELECT p.*, u.full_name FROM payroll p " +
                      "LEFT JOIN users u ON p.user_id = u.user_id " +
                      "WHERE p.month = ? AND p.year = ? ORDER BY p.user_id";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, month);
             ps.setInt(2, year);
@@ -1198,12 +1161,11 @@ public class PayrollDAO {
     }
 
     /**
-     * Đếm số lượng payroll theo status trong 1 tháng
+     * Äáº¿m sá»‘ lÆ°á»£ng payroll theo status trong 1 thÃ¡ng
      */
     public int countByStatus(int month, int year, String status) {
         String sql = "SELECT COUNT(*) FROM payroll WHERE month = ? AND year = ? AND status = ?";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, month);
             ps.setInt(2, year);
@@ -1218,13 +1180,12 @@ public class PayrollDAO {
     }
 
     /**
-     * Kế toán mark paid với tracking (paid_by, paid_at)
+     * Káº¿ toÃ¡n mark paid vá»›i tracking (paid_by, paid_at)
      */
     public boolean markAsPaidWithTracking(int payrollId, int paidBy) {
         String sql = "UPDATE payroll SET status = 'Paid', paid_by = ?, paid_at = NOW() " +
                      "WHERE payroll_id = ? AND status = 'Approved'";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, paidBy);
             ps.setInt(2, payrollId);
@@ -1236,15 +1197,14 @@ public class PayrollDAO {
     }
 
     /**
-     * Lấy danh sách payroll của 1 nhân viên kèm filter status (cho employee xem payslip)
-     * Chỉ trả về Approved hoặc Paid
+     * Láº¥y danh sÃ¡ch payroll cá»§a 1 nhÃ¢n viÃªn kÃ¨m filter status (cho employee xem payslip)
+     * Chá»‰ tráº£ vá» Approved hoáº·c Paid
      */
     public List<Payroll> getVisiblePayslips(int userId) {
         List<Payroll> list = new ArrayList<>();
         String sql = "SELECT * FROM payroll WHERE user_id = ? AND status IN ('Approved', 'Paid') " +
                      "ORDER BY year DESC, month DESC";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -1264,8 +1224,7 @@ public class PayrollDAO {
                      "LEFT JOIN employee_profiles ep ON p.user_id = ep.user_id " +
                      "WHERE p.month = ? AND p.year = ? " +
                      "ORDER BY p.user_id";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, month);
             ps.setInt(2, year);
@@ -1284,13 +1243,13 @@ public class PayrollDAO {
         return list;
     }
 
-    // ═══════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // TAX & INSURANCE ENGINE (TASK 35 & 36)
-    // ═══════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
-     * Task 35: Tính bảo hiểm (BHXH, BHYT, BHTN)
-     * Công thức: insuranceAmount = grossSalary * tổng % (mặc định 10.5% hoặc lấy từ DB)
+     * Task 35: TÃ­nh báº£o hiá»ƒm (BHXH, BHYT, BHTN)
+     * CÃ´ng thá»©c: insuranceAmount = grossSalary * tá»•ng % (máº·c Ä‘á»‹nh 10.5% hoáº·c láº¥y tá»« DB)
      */
     public static BigDecimal calculateInsurance(BigDecimal grossSalary) {
         if (grossSalary == null || grossSalary.compareTo(BigDecimal.ZERO) <= 0) {
@@ -1299,8 +1258,7 @@ public class PayrollDAO {
         
         BigDecimal totalEmployeeRate = BigDecimal.ZERO;
         String sql = "SELECT SUM(employee_rate) as total_rate FROM insurance_rates WHERE status = 1";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             if (rs.next()) {
@@ -1322,13 +1280,12 @@ public class PayrollDAO {
     }
 
     /**
-     * Task 36: Đếm số người phụ thuộc
+     * Task 36: Äáº¿m sá»‘ ngÆ°á»i phá»¥ thuá»™c
      */
     public static int countActiveDependents(int userId) {
         int count = 0;
         String sql = "SELECT COUNT(*) FROM dependents WHERE user_id = ? AND status = 1";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -1343,9 +1300,9 @@ public class PayrollDAO {
     }
 
     /**
-     * Fallback: Tính thuế TNCN lũy tiến theo Luật 109/2025/QH15 (5 bậc, hiệu lực 01/01/2026)
+     * Fallback: TÃ­nh thuáº¿ TNCN lÅ©y tiáº¿n theo Luáº­t 109/2025/QH15 (5 báº­c, hiá»‡u lá»±c 01/01/2026)
      * Taxable_Income = Gross - Insurance - 15_500_000 - (CountDependents * 6_200_000)
-     * Ưu tiên dùng calculateDynamicPIT() đọc từ DB. Hàm này chỉ dùng khi DB không có bậc thuế.
+     * Æ¯u tiÃªn dÃ¹ng calculateDynamicPIT() Ä‘á»c tá»« DB. HÃ m nÃ y chá»‰ dÃ¹ng khi DB khÃ´ng cÃ³ báº­c thuáº¿.
      */
     public static BigDecimal calculatePIT(BigDecimal taxableIncome) {
         if (taxableIncome == null || taxableIncome.compareTo(BigDecimal.ZERO) <= 0) {
@@ -1355,7 +1312,7 @@ public class PayrollDAO {
         double income = taxableIncome.doubleValue();
         double pit;
 
-        // Luật 109/2025/QH15 — Biểu thuế 5 bậc, hiệu lực 01/01/2026
+        // Luáº­t 109/2025/QH15 â€” Biá»ƒu thuáº¿ 5 báº­c, hiá»‡u lá»±c 01/01/2026
         if (income <= 10_000_000) {
             pit = income * 0.05;
         } else if (income <= 30_000_000) {
@@ -1373,8 +1330,7 @@ public class PayrollDAO {
 
     public boolean deletePayrollDraft(int userId, int month, int year) {
         String sql = "DELETE FROM payroll WHERE user_id = ? AND month = ? AND year = ? AND status = 'Draft'";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
             ps.setInt(2, month);
@@ -1403,8 +1359,7 @@ public class PayrollDAO {
         TaxProfileInfo info = new TaxProfileInfo();
         String sql = "SELECT personal_deduction, dependent_deduction, dependent_count " +
                      "FROM employee_tax_profiles WHERE user_id = ? AND status = 1";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -1436,8 +1391,7 @@ public class PayrollDAO {
 
     private BigDecimal getGlobalDeductionAmount(String type) {
         String sql = "SELECT amount FROM tax_deductions WHERE deduction_type = ? AND status = 1 ORDER BY effective_from DESC LIMIT 1";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, type);
             try (ResultSet rs = ps.executeQuery()) {
@@ -1455,8 +1409,7 @@ public class PayrollDAO {
         List<TaxBracket> brackets = new ArrayList<>();
         String sql = "SELECT bracket_no, income_from, income_to, rate " +
                      "FROM tax_brackets WHERE status = 1 ORDER BY bracket_no ASC";
-        DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
+        try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
@@ -1508,3 +1461,5 @@ public class PayrollDAO {
         return pitTotal.setScale(2, java.math.RoundingMode.HALF_UP);
     }
 }
+
+

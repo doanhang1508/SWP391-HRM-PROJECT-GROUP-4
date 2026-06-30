@@ -194,7 +194,7 @@ public class TimesheetConfirmationDAO {
     public boolean haveAllEmployeesConfirmed(int month, int year, int deptId) {
         String sqlTotal = "SELECT COUNT(DISTINCT u.user_id) FROM users u " +
                           "JOIN attendance a ON u.user_id = a.user_id " +
-                          "WHERE u.department_id = ? AND MONTH(a.work_date) = ? AND YEAR(a.work_date) = ?";
+                          "WHERE u.department_id = ? AND MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? AND u.role_id NOT IN (1, 4)";
         String sqlConfirmed = "SELECT COUNT(DISTINCT tec.user_id) FROM timesheet_employee_confirmations tec " +
                               "JOIN attendance a ON tec.user_id = a.user_id AND MONTH(a.work_date) = tec.month AND YEAR(a.work_date) = tec.year " +
                               "WHERE tec.department_id = ? AND tec.month = ? AND tec.year = ?";
@@ -320,7 +320,7 @@ public class TimesheetConfirmationDAO {
                      "FROM attendance a " +
                      "JOIN users u ON a.user_id = u.user_id " +
                      "LEFT JOIN shifts s ON a.shift_id = s.shift_id " +
-                     "WHERE MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? AND u.department_id = ? " +
+                     "WHERE MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? AND u.department_id = ? AND u.role_id NOT IN (1, 4) " +
                      "ORDER BY a.work_date DESC, u.full_name";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -433,7 +433,7 @@ public class TimesheetConfirmationDAO {
                      "LEFT JOIN positions p ON u.position_id = p.position_id " +
                      "LEFT JOIN attendance a ON u.user_id = a.user_id AND MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? " +
                      "LEFT JOIN timesheet_employee_confirmations tec ON u.user_id = tec.user_id AND tec.month = ? AND tec.year = ? " +
-                     "WHERE u.department_id = ? " +
+                     "WHERE u.department_id = ? AND u.role_id NOT IN (1, 4) " +
                      "GROUP BY u.user_id, u.full_name, d.department_name, p.position_name " +
                      "ORDER BY u.full_name";
         try (Connection conn = DBContext.getConnection();

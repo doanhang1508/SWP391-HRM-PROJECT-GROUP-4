@@ -21,7 +21,7 @@ public class EmployeeProfileDAO {
                 ep.*,
                 ct.type_name  AS contract_type_name,
                 sg.grade_name AS salary_grade_name,
-                sg.base_salary,
+                sg.min_salary AS base_salary,
                 es.status_name AS employment_status_name
             FROM employee_profiles ep
             LEFT JOIN contract_types      ct ON ep.contract_type_id     = ct.contract_type_id
@@ -173,6 +173,8 @@ public class EmployeeProfileDAO {
         ep.setSalaryGradeName(rs.getString("salary_grade_name"));
         ep.setBaseSalary(rs.getBigDecimal("base_salary"));
         ep.setEmploymentStatusName(rs.getString("employment_status_name"));
+
+        ep.setDependentCount(rs.getInt("dependent_count"));
 
         return ep;
     }

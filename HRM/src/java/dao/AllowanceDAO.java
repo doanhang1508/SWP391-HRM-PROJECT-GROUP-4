@@ -168,9 +168,9 @@ public class AllowanceDAO {
      */
     public List<java.util.Map<String, Object>> getAllowancesByContract(int userId, int contractId) {
         List<java.util.Map<String, Object>> list = new java.util.ArrayList<>();
-        String sql = "SELECT a.allowance_name, ea.amount FROM employee_allowances ea " +
+        String sql = "SELECT a.allowance_name, a.amount FROM employee_allowances ea " +
                      "JOIN allowances a ON ea.allowance_id = a.allowance_id " +
-                     "WHERE ea.user_id = ? AND (ea.contract_id = ? OR ea.contract_id IS NULL)";
+                     "WHERE ea.user_id = ? AND ea.contract_id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
@@ -194,17 +194,16 @@ public class AllowanceDAO {
      */
     public void insertEmployeeAllowances(int userId, int contractId, java.sql.Date effectiveDate, String[] allowanceIds) {
         if (allowanceIds == null || allowanceIds.length == 0) return;
-        String sql = "INSERT INTO employee_allowances (user_id, allowance_id, amount, contract_id, effective_date) " +
-                     "VALUES (?, ?, (SELECT amount FROM allowances WHERE allowance_id = ?), ?, ?)";
+        String sql = "INSERT INTO employee_allowances (user_id, allowance_id, contract_id, effective_date) " +
+                     "VALUES (?, ?, ?, ?)";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             for (String alwIdStr : allowanceIds) {
                 int alwId = Integer.parseInt(alwIdStr);
                 ps.setInt(1, userId);
                 ps.setInt(2, alwId);
-                ps.setInt(3, alwId);
-                ps.setInt(4, contractId);
-                ps.setDate(5, effectiveDate);
+                ps.setInt(3, contractId);
+                ps.setDate(4, effectiveDate);
                 ps.addBatch();
             }
             ps.executeBatch();

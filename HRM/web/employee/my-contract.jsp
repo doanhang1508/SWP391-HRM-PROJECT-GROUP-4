@@ -209,11 +209,16 @@
                     </div>
                     
                     <div class="detail-grid">
-                        <div class="dl-label">Vị trí</div>
-                        <div class="dl-value">Nhân sự (Theo chức danh hiện tại)</div>
+                        <!-- 1. Thông tin HĐ -->
+                        <div class="section-heading" style="grid-column: span 2; color: #1e293b; font-size: 1.1rem; font-weight: 600; margin-top: 10px; margin-bottom: 5px; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">
+                            1. Thông tin Hợp đồng
+                        </div>
                         
-                        <div class="dl-label">Phòng ban</div>
-                        <div class="dl-value">Khối Văn phòng</div>
+                        <div class="dl-label">Mã hợp đồng</div>
+                        <div class="dl-value">HĐ-${activeContract.startDate.year + 1900}-<fmt:formatNumber value="${activeContract.contractId}" pattern="0000"/></div>
+                        
+                        <div class="dl-label">Loại hợp đồng</div>
+                        <div class="dl-value">${activeContract.contractTypeName}</div>
                         
                         <div class="dl-label">Ngày bắt đầu</div>
                         <div class="dl-value"><fmt:formatDate value="${activeContract.startDate}" pattern="dd/MM/yyyy"/></div>
@@ -222,54 +227,69 @@
                         <div class="dl-value">
                             <c:choose>
                                 <c:when test="${not empty activeContract.endDate}"><fmt:formatDate value="${activeContract.endDate}" pattern="dd/MM/yyyy"/></c:when>
-                                <c:otherwise>Không giới hạn</c:otherwise>
+                                <c:otherwise>Vô thời hạn</c:otherwise>
                             </c:choose>
                         </div>
                         
-                        <div class="dl-label">Nơi làm việc</div>
-                        <div class="dl-value">Trụ sở Công ty (Theo phân công)</div>
+                        <div class="dl-label">Trạng thái HĐ</div>
+                        <div class="dl-value">
+                            <c:choose>
+                                <c:when test="${activeContract.status == 'Active'}"><span style="color: #16a34a; font-weight: 600;">Đang hiệu lực</span></c:when>
+                                <c:otherwise><span style="color: #64748b; font-weight: 600;">${activeContract.status}</span></c:otherwise>
+                            </c:choose>
+                        </div>
+
+                        <!-- 2. Thông tin công việc -->
+                        <div class="section-heading" style="grid-column: span 2; color: #1e293b; font-size: 1.1rem; font-weight: 600; margin-top: 15px; margin-bottom: 5px; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">
+                            2. Thông tin công việc
+                        </div>
                         
-                        <div class="dl-label">Thời gian làm việc</div>
-                        <div class="dl-value">Ca hành chính, 08:00 - 17:00</div>
-                        
-                        <div class="dl-label">Người đại diện (Cty)</div>
-                        <div class="dl-value">Trưởng phòng Nhân sự (Đại diện ủy quyền)</div>
-                        
-                        <div style="grid-column: span 2; border-top: 1px dashed #e5e7eb; margin: 8px 0;"></div>
+                        <div class="dl-label">Phòng ban</div>
+                        <div class="dl-value">${activeContract.departmentName}</div>
+
+                        <div class="dl-label">Chức vụ</div>
+                        <div class="dl-value">${activeContract.positionName}</div>
+
+                        <!-- 3. Lương -->
+                        <div class="section-heading" style="grid-column: span 2; color: #1e293b; font-size: 1.1rem; font-weight: 600; margin-top: 15px; margin-bottom: 5px; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">
+                            3. Lương &amp; Phụ cấp
+                        </div>
                         
                         <div class="dl-label">Lương cơ bản</div>
                         <div class="dl-value" style="font-weight: 500;"><fmt:formatNumber value="${activeContract.baseSalary}" type="number" groupingUsed="true"/> VNĐ</div>
                         
-                        <div class="dl-label">Tổng Phụ cấp</div>
+                        <div class="dl-label">Các khoản phụ cấp</div>
                         <div>
-                            <div class="dl-value" style="font-weight: 500;">+ <fmt:formatNumber value="${totalAllowance}" type="number" groupingUsed="true"/> VNĐ</div>
-                            <c:if test="${not empty allowanceList}">
-                                <div style="margin-top: 8px; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 0.85rem;">
-                                    <ul style="margin: 0; padding-left: 16px; color: #475569;">
-                                        <c:forEach var="alw" items="${allowanceList}">
-                                            <li>${alw.name}: <fmt:formatNumber value="${alw.amount}" type="number" groupingUsed="true"/> đ</li>
-                                        </c:forEach>
-                                    </ul>
-                                </div>
-                            </c:if>
+                            <c:choose>
+                                <c:when test="${empty allowanceList}">
+                                    <div class="dl-value" style="color: #64748b;">Không có phụ cấp</div>
+                                </c:when>
+                                <c:otherwise>
+                                    <div class="dl-value" style="font-weight: 500;">+ <fmt:formatNumber value="${totalAllowance}" type="number" groupingUsed="true"/> VNĐ</div>
+                                    <div style="margin-top: 8px; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 0.85rem;">
+                                        <ul style="margin: 0; padding-left: 16px; color: #475569;">
+                                            <c:forEach var="alw" items="${allowanceList}">
+                                                <li>${alw.name}: <fmt:formatNumber value="${alw.amount}" type="number" groupingUsed="true"/> đ</li>
+                                            </c:forEach>
+                                        </ul>
+                                    </div>
+                                </c:otherwise>
+                            </c:choose>
                         </div>
                         
                         <div class="dl-label" style="color: #2563eb; font-weight: 700;">Lương Gross (Dự kiến)</div>
                         <div class="dl-value" style="color: #2563eb; font-size: 1.15rem; font-weight: 700;"><fmt:formatNumber value="${grossSalary}" type="number" groupingUsed="true"/> VNĐ</div>
                         
-                        <div style="grid-column: span 2; border-top: 1px dashed #e5e7eb; margin: 8px 0;"></div>
-                        
-                        <div class="dl-label">Tỷ lệ Bảo hiểm</div>
-                        <div class="dl-value" style="font-weight: 500;">BHXH: ${activeContract.bhxhRate}% | BHYT: ${activeContract.bhytRate}% | BHTN: ${activeContract.bhtnRate}%</div>
-                        
-                        <div class="dl-label">Tính Thuế TNCN</div>
-                        <div class="dl-value" style="font-weight: 500;">
-                            <c:choose>
-                                <c:when test="${activeContract.taxCalcType == 1}">Biểu thuế lũy tiến từng phần</c:when>
-                                <c:when test="${activeContract.taxCalcType == 2}">Khấu trừ 10% tại nguồn</c:when>
-                                <c:otherwise>Không khấu trừ thuế</c:otherwise>
-                            </c:choose>
+                        <!-- 4. Trạng thái ký -->
+                        <div class="section-heading" style="grid-column: span 2; color: #1e293b; font-size: 1.1rem; font-weight: 600; margin-top: 15px; margin-bottom: 5px; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">
+                            4. Trạng thái ký kết
                         </div>
+                        
+                        <div class="dl-label">Người đại diện (Cty)</div>
+                        <div class="dl-value">Giám đốc nhân sự</div>
+                        
+                        <div class="dl-label">Ngày ký</div>
+                        <div class="dl-value"><fmt:formatDate value="${activeContract.startDate}" pattern="dd/MM/yyyy"/></div>
                     </div>
                 </div>
             </c:when>
@@ -292,18 +312,38 @@
                         <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Thời hạn</th>
                         <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Lương Gross</th>
                         <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Trạng thái</th>
+                        <th style="padding: 12px 16px; text-align: left; font-size: 0.8rem; font-weight: 600; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
                     <c:forEach var="c" items="${contracts}">
-                        <tr>
-                            <td style="padding: 16px; font-size: 0.875rem; color: #1a1a1a; font-weight: 600; border-bottom: 1px solid #f3f4f6;">${c.contractTypeName}</td>
+                        <tr data-contract-id="${c.contractId}"
+                            data-type="${c.contractTypeName}"
+                            data-dept="${c.departmentName}"
+                            data-pos="${c.positionName}"
+                            data-start="<fmt:formatDate value='${c.startDate}' pattern='dd/MM/yyyy'/>"
+                            data-end="<c:choose><c:when test='${not empty c.endDate}'><fmt:formatDate value='${c.endDate}' pattern='dd/MM/yyyy'/></c:when><c:otherwise>Không giới hạn</c:otherwise></c:choose>"
+                            data-base="<fmt:formatNumber value='${c.baseSalary}' type='number' groupingUsed='true'/>"
+                            data-gross="<fmt:formatNumber value='${c.grossSalary}' type='number' groupingUsed='true'/>"
+                            data-tax="${c.taxCalcTypeName}"
+                            data-status="${c.status}">
+                            <td style="padding: 16px; font-size: 0.875rem; color: #1a1a1a; font-weight: 600; border-bottom: 1px solid #f3f4f6;">
+                                <c:choose>
+                                    <c:when test="${c.docType == 'ADDENDUM'}">
+                                        <span style="color: #d97706; font-weight: 700;"><i class="fas fa-file-signature me-1"></i> Phụ lục Hợp đồng</span>
+                                        <div style="font-size: 0.8rem; font-weight: 500; color: #64748b; margin-top: 4px;">Lý do: ${c.addendumReason != null ? c.addendumReason : 'Không có'}</div>
+                                    </c:when>
+                                    <c:otherwise>
+                                        ${c.contractTypeName}
+                                    </c:otherwise>
+                                </c:choose>
+                            </td>
                             <td style="padding: 16px; font-size: 0.875rem; color: #4b5563; border-bottom: 1px solid #f3f4f6;">
-                                <fmt:formatDate value="${c.startDate}" pattern="dd/MM/yyyy"/> - 
+                                <fmt:formatDate value="${c.startDate}" pattern="dd/MM/yyyy"/> -
                                 <c:choose><c:when test="${not empty c.endDate}"><fmt:formatDate value="${c.endDate}" pattern="dd/MM/yyyy"/></c:when><c:otherwise>Không giới hạn</c:otherwise></c:choose>
                             </td>
                             <td style="padding: 16px; font-size: 0.875rem; color: #1a1a1a; font-weight: 600; border-bottom: 1px solid #f3f4f6;">
-                                <fmt:formatNumber value="${c.baseSalary + totalAllowance}" type="number" groupingUsed="true"/> đ
+                                <fmt:formatNumber value="${c.grossSalary}" type="number" groupingUsed="true"/> đ
                             </td>
                             <td style="padding: 16px; font-size: 0.875rem; border-bottom: 1px solid #f3f4f6;">
                                 <c:choose>
@@ -315,10 +355,17 @@
                                     </c:otherwise>
                                 </c:choose>
                             </td>
+                            <td style="padding: 16px; border-bottom: 1px solid #f3f4f6;">
+                                <button type="button"
+                                    onclick="viewMyContractDetail(this.closest('tr'))"
+                                    style="padding: 4px 10px; background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; white-space: nowrap;">
+                                    <i class="fas fa-eye me-1"></i> Xem chi tiết
+                                </button>
+                            </td>
                         </tr>
                     </c:forEach>
                     <c:if test="${empty contracts}">
-                        <tr><td colspan="4" style="padding: 24px; text-align: center; color: #9ca3af; font-size: 0.875rem;">Trống</td></tr>
+                        <tr><td colspan="5" style="padding: 24px; text-align: center; color: #9ca3af; font-size: 0.875rem;">Trống</td></tr>
                     </c:if>
                 </tbody>
             </table>
@@ -350,6 +397,36 @@
     <input type="hidden" name="contractId" id="signContractId">
 </form>
 
+<!-- Modal Xem Chi Tiết Hợp Đồng (Lịch sử) -->
+<div id="myContractDetailModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; width:560px; max-width:95vw; border-radius:10px; box-shadow:0 20px 60px rgba(0,0,0,0.15); display:flex; flex-direction:column; max-height:90vh;">
+        <div style="padding:16px 24px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; background:#f9fafb; border-radius:10px 10px 0 0;">
+            <h3 style="margin:0; font-size:1rem; font-weight:700; color:#1a1a1a;">
+                <i class="fas fa-file-contract me-2" style="color:#2563eb;"></i>
+                Chi ti&#7871;t H&#7907;p &#273;&#7891;ng &nbsp;<span id="mcdCode" style="color:#2563eb;"></span>
+            </h3>
+            <button type="button" onclick="closeMyContractDetailModal()" style="background:transparent;border:none;font-size:1.4rem;color:#9ca3af;cursor:pointer;">&times;</button>
+        </div>
+        <div style="padding:20px 24px; overflow-y:auto; display:grid; grid-template-columns:170px 1fr; row-gap:12px; font-size:0.9rem;">
+            <div style="grid-column:span 2; font-weight:700; color:#1e293b; border-bottom:1px solid #e5e7eb; padding-bottom:6px;">1. Th&#244;ng tin H&#7907;p &#273;&#7891;ng</div>
+            <div style="color:#6b7280;">Lo&#7841;i h&#7907;p &#273;&#7891;ng</div>  <div id="mcdType"   style="font-weight:600;"></div>
+            <div style="color:#6b7280;">Ng&#224;y b&#7855;t &#273;&#7847;u</div>   <div id="mcdStart"  style="font-weight:600;"></div>
+            <div style="color:#6b7280;">Ng&#224;y k&#7871;t th&#250;c</div>       <div id="mcdEnd"    style="font-weight:600;"></div>
+            <div style="color:#6b7280;">Tr&#7841;ng th&#225;i</div>             <div id="mcdStatus"></div>
+            <div style="grid-column:span 2; font-weight:700; color:#1e293b; border-bottom:1px solid #e5e7eb; padding-bottom:6px; margin-top:6px;">2. Th&#244;ng tin C&#244;ng vi&#7879;c</div>
+            <div style="color:#6b7280;">Ph&#242;ng ban</div>                    <div id="mcdDept"   style="font-weight:600;"></div>
+            <div style="color:#6b7280;">Ch&#7913;c v&#7909;</div>               <div id="mcdPos"    style="font-weight:600;"></div>
+            <div style="grid-column:span 2; font-weight:700; color:#1e293b; border-bottom:1px solid #e5e7eb; padding-bottom:6px; margin-top:6px;">3. L&#432;&#417;ng &amp; Thu&#7871;</div>
+            <div style="color:#6b7280;">L&#432;&#417;ng c&#417; b&#7843;n</div> <div id="mcdBase"   style="font-weight:600;"></div>
+            <div style="color:#2563eb; font-weight:700;">L&#432;&#417;ng Gross</div> <div id="mcdGross" style="font-weight:700; color:#2563eb; font-size:1.05rem;"></div>
+            <div style="color:#6b7280;">Lo&#7841;i t&#237;nh thu&#7871;</div>   <div id="mcdTax"    style="font-weight:600;"></div>
+        </div>
+        <div style="padding:12px 24px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; background:#f9fafb; border-radius:0 0 10px 10px;">
+            <button type="button" onclick="closeMyContractDetailModal()" class="btn-outline">&#272;&#243;ng</button>
+        </div>
+    </div>
+</div>
+
 <script>
     function confirmSign(contractId) {
         if (confirm('Bạn xác nhận Đồng ý ký phụ lục hợp đồng này?')) {
@@ -369,9 +446,34 @@
         if (!reason) { e.preventDefault(); alert('Vui lòng nhập lý do từ chối.'); return; }
         document.getElementById('rejectReasonHidden').value = reason;
     }
-    // Tự ẩn toast sau 5 giây
     const toast = document.getElementById('toastMsg');
     if (toast) setTimeout(() => toast.style.display = 'none', 5000);
+
+    function viewMyContractDetail(row) {
+        var d = row.dataset;
+        document.getElementById('mcdCode').textContent  = d.contractId ? ('HD-' + d.contractId) : '';
+        document.getElementById('mcdType').textContent  = d.type  || '';
+        document.getElementById('mcdStart').textContent = d.start || '';
+        document.getElementById('mcdEnd').textContent   = d.end   || '';
+        document.getElementById('mcdDept').textContent  = d.dept  || '';
+        document.getElementById('mcdPos').textContent   = d.pos   || '';
+        document.getElementById('mcdBase').textContent  = (d.base  || '0') + ' VND';
+        document.getElementById('mcdGross').textContent = (d.gross || '0') + ' VND';
+        document.getElementById('mcdTax').textContent   = d.tax   || '';
+        var s = document.getElementById('mcdStatus');
+        if (d.status === 'Active') {
+            s.innerHTML = '<span style="background:#ecfdf5;color:#059669;padding:3px 10px;border-radius:10px;font-size:0.78rem;font-weight:700;">Hiệu lực</span>';
+        } else {
+            s.innerHTML = '<span style="background:#fef2f2;color:#dc2626;padding:3px 10px;border-radius:10px;font-size:0.78rem;font-weight:700;">Hết hạn</span>';
+        }
+        document.getElementById('myContractDetailModal').style.display = 'flex';
+    }
+    function closeMyContractDetailModal() {
+        document.getElementById('myContractDetailModal').style.display = 'none';
+    }
+    document.getElementById('myContractDetailModal').addEventListener('click', function(e) {
+        if (e.target === this) closeMyContractDetailModal();
+    });
 </script>
 
 <jsp:include page="../footer.jsp" />

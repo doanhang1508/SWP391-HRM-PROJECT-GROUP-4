@@ -5,20 +5,20 @@ import java.math.BigDecimal;
 public class SalaryGrade {
     private int salaryGradeId;
     private String gradeName;
-    private BigDecimal baseSalary;
-    private BigDecimal coefficient;
+    private BigDecimal minSalary;
+    private BigDecimal maxSalary;
     private String description;
     private boolean status;
 
     public SalaryGrade() {}
 
     public SalaryGrade(int salaryGradeId, String gradeName,
-                       BigDecimal baseSalary, BigDecimal coefficient,
+                       BigDecimal minSalary, BigDecimal maxSalary,
                        String description, boolean status) {
         this.salaryGradeId = salaryGradeId;
         this.gradeName     = gradeName;
-        this.baseSalary    = baseSalary;
-        this.coefficient   = coefficient;
+        this.minSalary     = minSalary;
+        this.maxSalary     = maxSalary;
         this.description   = description;
         this.status        = status;
     }
@@ -29,11 +29,11 @@ public class SalaryGrade {
     public String getGradeName() { return gradeName; }
     public void setGradeName(String gradeName) { this.gradeName = gradeName; }
 
-    public BigDecimal getBaseSalary() { return baseSalary; }
-    public void setBaseSalary(BigDecimal baseSalary) { this.baseSalary = baseSalary; }
+    public BigDecimal getMinSalary() { return minSalary; }
+    public void setMinSalary(BigDecimal minSalary) { this.minSalary = minSalary; }
 
-    public BigDecimal getCoefficient() { return coefficient; }
-    public void setCoefficient(BigDecimal coefficient) { this.coefficient = coefficient; }
+    public BigDecimal getMaxSalary() { return maxSalary; }
+    public void setMaxSalary(BigDecimal maxSalary) { this.maxSalary = maxSalary; }
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }

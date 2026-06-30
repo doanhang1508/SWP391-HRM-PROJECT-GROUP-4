@@ -705,6 +705,12 @@
                                     <span class="fw-semibold text-dark" id="modalWorkingDays">0</span>
                                 </div>
                                 <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Lương theo ngày công:</span>
+                                    <span class="fw-semibold text-dark" id="modalBaseWorkedSalary">
+                                        <span class="text-muted fst-italic" style="font-size: 0.8rem;">Đang tải...</span>
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between">
                                     <span class="text-muted">Tiền tăng ca:</span>
                                     <span class="fw-semibold text-dark text-success" id="modalOvertime">+ 0 ₫</span>
                                 </div>
@@ -712,6 +718,7 @@
                                     <span class="text-muted">Phụ cấp:</span>
                                     <span class="fw-semibold text-dark text-success" id="modalAllowance">+ 0 ₫</span>
                                 </div>
+                                <div id="modalAllowanceDetails" style="padding-left: 15px; font-size: 0.8rem; display: none;"></div>
                                 <div class="d-flex justify-content-between">
                                     <span class="text-muted">Thưởng:</span>
                                     <span class="fw-semibold text-dark text-success" id="modalBonus">+ 0 ₫</span>
@@ -736,14 +743,17 @@
                                     <span class="text-muted">Bảo hiểm xã hội:</span>
                                     <span class="fw-semibold text-dark text-danger" id="modalInsurance">- 0 ₫</span>
                                 </div>
+                                <div id="modalInsuranceDetails" style="padding-left: 15px; font-size: 0.8rem; display: none;"></div>
                                 <div class="d-flex justify-content-between">
                                     <span class="text-muted">Thuế TNCN:</span>
                                     <span class="fw-semibold text-dark text-danger" id="modalTax">- 0 ₫</span>
                                 </div>
+                                <div id="modalTaxDetails" style="padding-left: 15px; font-size: 0.8rem; display: none;"></div>
                                 <div class="d-flex justify-content-between">
-                                    <span class="text-muted">Khấu trừ khác / Phạt:</span>
+                                    <span class="text-muted">Phạt / Khấu trừ khác:</span>
                                     <span class="fw-semibold text-dark text-danger" id="modalDeduction">- 0 ₫</span>
                                 </div>
+                                <div id="modalDeductionDetails" style="padding-left: 15px; font-size: 0.8rem; display: none;"></div>
                             </div>
                         </div>
                     </div>
@@ -916,6 +926,99 @@ document.addEventListener("DOMContentLoaded", function() {
             document.getElementById('modalTax').textContent = '- ' + tax;
             document.getElementById('modalDeduction').textContent = '- ' + deduction;
             document.getElementById('modalNet').textContent = net;
+
+            // Fetch detailed breakdowns
+            const contextPath = '${pageContext.request.contextPath}';
+            const [month, year] = monthYear.split('/');
+            
+            document.getElementById('modalAllowanceDetails').innerHTML = '<div class="text-muted fst-italic">Đang tải...</div>';
+            document.getElementById('modalAllowanceDetails').style.display = 'block';
+            document.getElementById('modalInsuranceDetails').innerHTML = '<div class="text-muted fst-italic">Đang tải...</div>';
+            document.getElementById('modalInsuranceDetails').style.display = 'block';
+            document.getElementById('modalDeductionDetails').innerHTML = '<div class="text-muted fst-italic">Đang tải...</div>';
+            document.getElementById('modalDeductionDetails').style.display = 'block';
+            document.getElementById('modalBaseWorkedSalary').innerHTML = '<span class="text-muted fst-italic" style="font-size: 0.8rem;">Đang tải...</span>';
+            const taxDetailsEl = document.getElementById('modalTaxDetails');
+            if (taxDetailsEl) {
+                taxDetailsEl.innerHTML = '<div class="text-muted fst-italic">Đang tải...</div>';
+                taxDetailsEl.style.display = 'block';
+            }
+
+            fetch(contextPath + '/hr/payroll?action=details_json&userId=' + userId + '&month=' + month + '&year=' + year)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error("Lỗi:", data.error);
+                        return;
+                    }
+                    
+                    const baseWorkedEl = document.getElementById('modalBaseWorkedSalary');
+                    if (baseWorkedEl && data.baseWorkedSalary !== undefined) {
+                        baseWorkedEl.textContent = new Intl.NumberFormat('vi-VN').format(data.baseWorkedSalary) + ' ₫';
+                    }
+
+                    let allowHtml = '';
+                    if (data.allowances && data.allowances.length > 0) {
+                        data.allowances.forEach(a => {
+                            allowHtml += `<div class="d-flex justify-content-between text-muted">
+                                <span>- \${a.name}:</span>
+                                <span>+ \${new Intl.NumberFormat('vi-VN').format(a.amount)} ₫</span>
+                            </div>`;
+                        });
+                    } else {
+                        allowHtml = '<div class="text-muted fst-italic">Không có</div>';
+                    }
+                    document.getElementById('modalAllowanceDetails').innerHTML = allowHtml;
+
+                    let insHtml = '';
+                    if (data.insurances && data.insurances.length > 0) {
+                        data.insurances.forEach(i => {
+                            insHtml += `<div class="d-flex justify-content-between text-muted">
+                                <span>- \${i.name}:</span>
+                                <span>- \${new Intl.NumberFormat('vi-VN').format(i.amount)} ₫</span>
+                            </div>`;
+                        });
+                    } else {
+                        insHtml = '<div class="text-muted fst-italic">Không có</div>';
+                    }
+                    document.getElementById('modalInsuranceDetails').innerHTML = insHtml;
+
+                    let dedHtml = '';
+                    if (data.deductions && data.deductions.length > 0) {
+                        data.deductions.forEach(d => {
+                            dedHtml += `<div class="d-flex justify-content-between text-muted">
+                                <span>- \${d.name}:</span>
+                                <span>- \${new Intl.NumberFormat('vi-VN').format(d.amount)} ₫</span>
+                            </div>`;
+                        });
+                    } else {
+                        dedHtml = '<div class="text-muted fst-italic">Không có</div>';
+                    }
+                    document.getElementById('modalDeductionDetails').innerHTML = dedHtml;
+
+                    const taxEl = document.getElementById('modalTaxDetails');
+                    if (taxEl && data.taxProfile) {
+                        let taxHtml = '';
+                        taxHtml += `<div class="d-flex justify-content-between text-muted" style="font-size: 0.8rem;">
+                            <span>- Khấu trừ bản thân (Tính thuế):</span>
+                            <span>\${new Intl.NumberFormat('vi-VN').format(data.taxProfile.personalDeduction)} ₫</span>
+                        </div>`;
+                        if (data.taxProfile.dependentCount > 0) {
+                            let depTotal = data.taxProfile.dependentDeduction * data.taxProfile.dependentCount;
+                            taxHtml += `<div class="d-flex justify-content-between text-muted" style="font-size: 0.8rem;">
+                                <span>- Khấu trừ phụ thuộc (\${data.taxProfile.dependentCount} người):</span>
+                                <span>\${new Intl.NumberFormat('vi-VN').format(depTotal)} ₫</span>
+                            </div>`;
+                        } else {
+                            taxHtml += `<div class="d-flex justify-content-between text-muted" style="font-size: 0.8rem;">
+                                <span>- Khấu trừ người phụ thuộc:</span>
+                                <span>0 ₫</span>
+                            </div>`;
+                        }
+                        taxEl.innerHTML = taxHtml;
+                    }
+                })
+                .catch(err => console.error("Error fetching details", err));
 
             // Status Badge Formatting
             const statusEl = document.getElementById('modalStatus');

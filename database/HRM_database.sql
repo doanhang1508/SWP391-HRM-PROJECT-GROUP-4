@@ -41,8 +41,8 @@ CREATE TABLE positions (
 CREATE TABLE salary_grades (
     salary_grade_id INT          PRIMARY KEY AUTO_INCREMENT,
     grade_name      VARCHAR(100) NOT NULL UNIQUE,
-    base_salary     DECIMAL(15,2) NOT NULL,
-    coefficient     DECIMAL(5,2)  DEFAULT 1.00 COMMENT 'Không dùng trong tính lương — giữ để tương thích schema',
+    min_salary      DECIMAL(15,2) NOT NULL,
+    max_salary      DECIMAL(15,2) NOT NULL,
     description     VARCHAR(255),
     status          TINYINT(1)    DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -212,6 +212,8 @@ CREATE TABLE employee_profiles (
     salary_grade_id      INT,
     employment_status_id INT,
     education_level_id   INT,
+    dependent_count      INT          NOT NULL DEFAULT 0
+                         COMMENT 'Số lượng người phụ thuộc (dùng để tính giảm trừ gia cảnh thuế TNCN)',
     CONSTRAINT fk_profile_user FOREIGN KEY (user_id)              REFERENCES users(user_id)                         ON DELETE CASCADE,
     CONSTRAINT fk_profile_dept FOREIGN KEY (department_id)        REFERENCES departments(department_id)             ON DELETE SET NULL,
     CONSTRAINT fk_profile_ct   FOREIGN KEY (contract_type_id)     REFERENCES contract_types(contract_type_id)       ON DELETE SET NULL,
@@ -224,49 +226,43 @@ CREATE TABLE employee_contracts (
     contract_id      INT           PRIMARY KEY AUTO_INCREMENT,
     user_id          INT           NOT NULL,
     contract_type_id INT           NOT NULL,
+    position_id      INT           NOT NULL,
+    department_id    INT           NOT NULL,
+    salary_grade_id  INT           NOT NULL,
     start_date       DATE          NOT NULL,
     end_date         DATE          NULL,
     base_salary      DECIMAL(15,2) NOT NULL,
-    bhxh_rate        DECIMAL(5,2)  NOT NULL DEFAULT 8.00,
-    bhyt_rate        DECIMAL(5,2)  NOT NULL DEFAULT 1.50,
-    bhtn_rate        DECIMAL(5,2)  NOT NULL DEFAULT 1.00,
     tax_calc_type    INT           NOT NULL DEFAULT 1
                      COMMENT '1=Lũy tiến, 2=Khấu trừ 10%, 3=Không thuế',
-    status           VARCHAR(20)   NOT NULL DEFAULT 'Active'
-                     COMMENT 'Active, Expired, Terminated',
-    -- === THÊM MỚI: Hỗ trợ Phụ lục Hợp đồng (Addendum) ===
+    file_path        VARCHAR(255),
     doc_type         ENUM('CONTRACT', 'ADDENDUM') NOT NULL DEFAULT 'CONTRACT'
                      COMMENT 'CONTRACT=Hợp đồng chính thức, ADDENDUM=Phụ lục (tăng lương, điều chuyển...)',
     parent_contract_id INT NULL DEFAULT NULL
                      COMMENT 'Nếu là Phụ lục thì trỏ về contract_id của hợp đồng gốc',
     addendum_reason  VARCHAR(255) NULL
                      COMMENT 'Lý do tạo phụ lục: Tăng lương, Điều chuyển phòng ban, Thăng tiến...',
-    -- Luồng ký xác nhận phụ lục của nhân viên
+    status           VARCHAR(50)   NOT NULL DEFAULT 'Active'
+                     COMMENT 'Active, Expired, Terminated',
     sign_status      ENUM('N/A','PENDING','SIGNED','REJECTED') NOT NULL DEFAULT 'N/A'
                      COMMENT 'N/A=Hợp đồng gốc (không cần ký online), PENDING=Chờ nhân viên xác nhận, SIGNED=Đã xác nhận, REJECTED=Từ chối',
     signed_at        TIMESTAMP NULL DEFAULT NULL
                      COMMENT 'Thời điểm nhân viên bấm Xác nhận hoặc Từ chối',
     reject_reason    VARCHAR(255) NULL
                      COMMENT 'Lý do nhân viên từ chối ký phụ lục',
-    -- ======================================================
     created_at       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_ec_user       FOREIGN KEY (user_id)           REFERENCES users(user_id)                         ON DELETE CASCADE,
-    CONSTRAINT fk_ec_type       FOREIGN KEY (contract_type_id)  REFERENCES contract_types(contract_type_id)       ON DELETE RESTRICT,
+    updated_at       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_contract_user FOREIGN KEY (user_id)          REFERENCES users(user_id)                         ON DELETE CASCADE,
+    CONSTRAINT fk_contract_type FOREIGN KEY (contract_type_id) REFERENCES contract_types(contract_type_id)       ON DELETE RESTRICT,
+    CONSTRAINT fk_contract_pos  FOREIGN KEY (position_id)      REFERENCES positions(position_id)                 ON DELETE RESTRICT,
+    CONSTRAINT fk_contract_dept FOREIGN KEY (department_id)    REFERENCES departments(department_id)             ON DELETE RESTRICT,
+    CONSTRAINT fk_contract_sg   FOREIGN KEY (salary_grade_id)  REFERENCES salary_grades(salary_grade_id)         ON DELETE RESTRICT,
     CONSTRAINT fk_ec_parent     FOREIGN KEY (parent_contract_id) REFERENCES employee_contracts(contract_id)       ON DELETE SET NULL,
     INDEX idx_ec_user_status    (user_id, status),
     INDEX idx_ec_parent         (parent_contract_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE dependents (
-    dependent_id INT          PRIMARY KEY AUTO_INCREMENT,
-    user_id      INT          NOT NULL,
-    full_name    VARCHAR(100) NOT NULL,
-    relationship VARCHAR(50)  NOT NULL,
-    dob          DATE,
-    tax_code     VARCHAR(50),
-    status       TINYINT(1)   NOT NULL DEFAULT 1,
-    CONSTRAINT fk_dep_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- Bảng dependents đã được đơn giản hoá: chỉ lưu số lượng người phụ thuộc
+-- trực tiếp trong cột dependent_count của bảng employee_profiles.
 
 CREATE TABLE work_history (
     history_id     INT          PRIMARY KEY AUTO_INCREMENT,
@@ -463,7 +459,6 @@ CREATE TABLE employee_allowances (
     id              INT           PRIMARY KEY AUTO_INCREMENT,
     user_id         INT           NOT NULL,
     allowance_id    INT           NOT NULL,
-    amount          DECIMAL(15,2) NOT NULL,
     -- === THÊM MỚI: Liên kết với Hợp đồng để lịch sử hoá phụ cấp ===
     contract_id     INT           NULL
                     COMMENT 'FK về employee_contracts. NULL=áp dụng chung, có giá trị=gắn với hợp đồng/phụ lục cụ thể',
@@ -516,11 +511,11 @@ INSERT INTO positions (position_id, position_name, description) VALUES
 
 
 -- ── 4. Salary Grades ──
-INSERT INTO salary_grades (salary_grade_id, grade_name, base_salary, coefficient, description) VALUES
-(1, 'Ngạch Quản lý',   30000000, 1.00, 'Giám đốc, Trưởng phòng'),
-(2, 'Ngạch Chuyên viên',12000000, 1.00, 'Khối văn phòng'),
-(3, 'Ngạch Kinh doanh', 10000000, 1.00, 'Nhân viên kinh doanh'),
-(4, 'Ngạch Sản xuất',    7000000, 1.00, 'Công nhân sản xuất');
+INSERT INTO salary_grades (salary_grade_id, grade_name, min_salary, max_salary, description) VALUES
+(1, 'Ngạch Quản lý',   20000000, 50000000, 'Giám đốc, Trưởng phòng'),
+(2, 'Ngạch Chuyên viên',10000000, 25000000, 'Khối văn phòng'),
+(3, 'Ngạch Kinh doanh', 8000000,  20000000, 'Nhân viên kinh doanh'),
+(4, 'Ngạch Sản xuất',    5000000,  15000000, 'Công nhân sản xuất');
 
 -- ── 5. Contract Types ──
 INSERT INTO contract_types (contract_type_id, type_name, description, duration, duration_unit) VALUES
@@ -542,7 +537,9 @@ INSERT INTO allowances (allowance_id, allowance_name, description, amount, apply
 -- Thâm niên: thuộc nền BHXH + chịu thuế, cố định theo hệ số năm làm việc
 (4, 'Thâm niên',   'Phụ cấp thâm niên theo năm làm việc', 300000, 'Áp dụng sau 3 năm công tác',                 'FIXED',       1, 1),
 -- Điện thoại: miễn thuế, cố định
-(5, 'Điện thoại',  'Phụ cấp cước viễn thông',          500000,  'Nhân viên kinh doanh, quản lý',                 'FIXED',       0, 0);
+(5, 'Điện thoại',  'Phụ cấp cước viễn thông',          500000,  'Nhân viên kinh doanh, quản lý',                 'FIXED',       0, 0),
+-- Trách nhiệm Giám Đốc
+(6, 'Trách nhiệm GĐ', 'Phụ cấp chức vụ cho Giám đốc', 5000000, 'Giám đốc', 'FIXED', 1, 1);
 
 -- ── 7. Insurance Rates (BHXH / BHYT / BHTN) ──
 INSERT INTO insurance_rates (insurance_rate_id, insurance_code, insurance_name, company_rate, employee_rate, description, effective_from) VALUES
@@ -690,14 +687,14 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 -- ── 16a. Users cốt lõi (user_id 1-5) ──
 INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
 (1,'admin',     '@123456','Quản Trị Viên',          'admin@hrm.com',     '0900000001',1,NULL,NULL),
-(2,'giam_doc',  '@123456','Nguyễn Văn Giám Đốc',    'giamdoc@hrm.com',   '0901000002',4,NULL,1),
+(2,'giam_doc',  '@123456','Nguyễn Văn Giám Đốc',    'giamdoc@hrm.com',   '0901000002',4,1,1),
 (3,'hr_manager','@123456','Trần Thị Nhân Sự',       'hr@hrm.com',        '0901000003',2,2,2),
 (4,'quan_doc',  '@123456','Lê Văn Quản Đốc',        'quandoc@hrm.com',   '0901000004',3,5,4),
 (5,'cong_nhan', '@123456','Phạm Công Nhân',          'cn1@hrm.com',       '0901000005',7,5,9);
 
 -- ── 16b. Profiles users 2-5 ──
 INSERT INTO employee_profiles (user_id,department_id,id_card,dob,gender,address,hire_date,tax_code,social_insurance_no,bank_account,bank_name,contract_type_id,salary_grade_id,employment_status_id,education_level_id) VALUES
-(2,NULL,'001085000001','1985-01-01',1,'Hà Nội',     '2020-01-01','8012345678','0100001001','190300001','Vietcombank',4,1,2,1),
+(2,1,'001085000001','1985-01-01',1,'Hà Nội',     '2020-01-01','8012345678','0100001001','190300001','Vietcombank',4,1,2,1),
 (3,2,'001090000002','1990-05-15',0,'Hà Nội',     '2021-03-10','8012345679','0100001002','190300002','BIDV',        4,2,2,2),
 (4,5,'001088000003','1988-08-20',1,'Hải Phòng',  '2020-06-01','8012345680','0100001003','190300003','Techcombank',4,2,2,2),
 (5,5,'001095000004','1995-12-10',1,'Bắc Ninh',   '2026-02-15','8012345681','0100001004','190300004','Agribank',   2,4,2,5);
@@ -737,32 +734,59 @@ INSERT INTO employee_profiles (user_id,department_id,id_card,dob,gender,address,
 (33,3,'024910000033','1991-07-15',0,'Cầu Giấy, Hà Nội',       '2026-03-01','8012345733','0200001033','0011234533','Vietcombank', 2,2,2,2),
 (11,5,'024920000011','1992-05-10',1,'Hà Nội',                 '2021-01-01','8012345711','0200001011','0011234511','Vietcombank', 3,4,4,5);
 
--- ── 16d. Employee Contracts (Sinh tự động từ profile) ──
-INSERT INTO employee_contracts (user_id, contract_type_id, start_date, end_date, base_salary, status)
-SELECT 
-    ep.user_id, 
-    ep.contract_type_id, 
-    IFNULL(ep.hire_date, '2020-01-01'), 
-    DATE_ADD(IFNULL(ep.hire_date, '2020-01-01'), INTERVAL (SELECT CASE WHEN duration_unit = 'Năm' THEN duration * 12 ELSE duration END FROM contract_types WHERE contract_type_id = ep.contract_type_id) MONTH),
-    CASE WHEN ep.contract_type_id = 1 THEN sg.base_salary * 0.85 ELSE sg.base_salary END,
-    'Active'
-FROM employee_profiles ep
-JOIN salary_grades sg ON ep.salary_grade_id = sg.salary_grade_id
-WHERE ep.contract_type_id IS NOT NULL;
+-- ── 16d. Employee Contracts (Dữ liệu cụ thể cho từng nhân viên) ──
+-- Cột: user_id, contract_type_id, position_id, department_id, salary_grade_id,
+--       start_date,    end_date,       base_salary,  status
+INSERT INTO employee_contracts (user_id, contract_type_id, position_id, department_id, salary_grade_id, start_date, end_date, base_salary, status) VALUES
+-- user 2:  Giám đốc          | Vô thời hạn | Lương 30.000.000
+(2,  4, 1, 1, 1, '2020-01-01', NULL,         30000000, 'Active'),
 
-UPDATE employee_contracts SET status = 'Expired', end_date = '2024-01-01' WHERE user_id = 11;
+-- ════ user 3: HR Manager — có 2 hợp đồng để test lịch sử ════
+-- HĐ cũ: 3 năm, 2021-03-10 → 2024-03-10, lương 12tr (đã hết hạn)
+(3,  3, 2, 2, 2, '2021-03-10', '2024-03-10', 12000000, 'Expired'),
+-- HĐ mới: Vô thời hạn, gia hạn từ 2024-03-10, lương 15tr (đang hiệu lực)
+(3,  4, 2, 2, 2, '2024-03-10', NULL,         15000000, 'Active'),
 
--- ── 16e. Dependents ──
-INSERT INTO dependents (user_id, full_name, relationship, dob) VALUES
-(2,'Trần Ngọc Ánh', 'Vợ', '1987-05-20'),
-(2,'Nguyễn Văn A', 'Con ruột', '2015-08-12'),
-(3,'Nguyễn Bé Bỏng','Con ruột','2020-10-10'),
-(4,'Lê Văn Nhỏ', 'Con ruột', '2018-02-15'),
-(5,'Phạm Thị Mẹ',   'Mẹ ruột', '1960-01-01'),
-(10,'Đặng Tuấn Anh', 'Con ruột', '2022-04-10'),
-(14,'Phan Quốc Bảo', 'Con ruột', '2016-11-25'),
-(19,'Hoàng Gia Khang', 'Con ruột', '2014-09-05'),
-(20,'Nguyễn Phương Chi', 'Con ruột', '2019-12-01');
+-- user 4:  Quản đốc          | Vô thời hạn | Lương 12.000.000
+(4,  4, 4, 5, 2, '2020-06-01', NULL,         12000000, 'Active'),
+-- user 5:  Công nhân         | 1 năm       | Lương 5.000.000
+(5,  2, 9, 5, 4, '2026-02-15', '2027-02-15',  5000000, 'Active'),
+
+-- ════ user 6: Trưởng phòng HC — có 2 hợp đồng để test lịch sử ════
+-- HĐ cũ: 3 năm, 2018-03-01 → 2021-03-01, lương 16tr (đã hết hạn)
+(6,  3, 2, 1, 1, '2018-03-01', '2021-03-01', 16000000, 'Expired'),
+-- HĐ mới: Vô thời hạn, gia hạn từ 2021-03-01, lương 20tr (đang hiệu lực)
+(6,  4, 2, 1, 1, '2021-03-01', NULL,         20000000, 'Active'),
+
+-- user 10: HR Staff          | 3 năm       | Lương 10.000.000
+(10, 3, 8, 2, 2, '2024-06-01', '2027-06-01', 10000000, 'Active'),
+-- user 11: Công nhân nghỉ    | 3 năm       | Đã hết hạn 2024-01-01
+(11, 3, 9, 5, 4, '2021-01-01', '2024-01-01',  5000000, 'Expired'),
+-- user 14: Kế toán trưởng   | 1 năm       | Lương 20.000.000
+(14, 2, 6, 3, 1, '2026-02-01', '2027-02-01', 20000000, 'Active'),
+-- user 19: Trưởng phòng KD  | 3 năm       | Lương 20.000.000
+(19, 3, 2, 4, 1, '2024-01-01', '2027-01-01', 20000000, 'Active'),
+-- user 20: Phó phòng KD     | Thử việc    | Lương 8.500.000 (= 10tr * 85%)
+(20, 1, 3, 4, 2, '2026-05-15', '2026-07-15',  8500000, 'Active'),
+-- user 33: Kế toán viên     | 1 năm       | Lương 10.000.000
+(33, 2, 7, 3, 2, '2026-03-01', '2027-03-01', 10000000, 'Active');
+
+-- ── 16d.2 Insert Phụ lục Hợp đồng (Addendum) mẫu ──
+INSERT INTO employee_contracts (user_id, contract_type_id, position_id, department_id, salary_grade_id, start_date, end_date, base_salary, status, doc_type, addendum_reason, sign_status) VALUES
+-- Phụ lục của user 19 (Trưởng phòng KD): Tăng lương lên 25tr, đã ký
+(19, 3, 2, 4, 1, '2025-01-01', '2027-01-01', 25000000, 'Active', 'ADDENDUM', 'Tăng lương', 'SIGNED');
+
+
+
+-- ── 16e. Số lượng người phụ thuộc (cập nhật vào employee_profiles) ──
+UPDATE employee_profiles SET dependent_count = 2 WHERE user_id = 2;  -- 2 người phụ thuộc
+UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 3;  -- 1 người phụ thuộc
+UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 4;  -- 1 người phụ thuộc
+UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 5;  -- 1 người phụ thuộc
+UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 10; -- 1 người phụ thuộc
+UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 14; -- 1 người phụ thuộc
+UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 19; -- 1 người phụ thuộc
+UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 20; -- 1 người phụ thuộc
 
 -- ================================================================
 -- 18. MOCK DATA (Kỷ luật, ca làm việc, nghỉ phép, lịch sử)
@@ -848,31 +872,36 @@ INSERT INTO work_history (user_id, position_title, company_name, location, start
 
 -- Phụ cấp Ăn trưa (allowance_id = 1) & Đi lại (allowance_id = 2):
 -- Áp dụng toàn bộ nhân viên, amount lấy từ bảng allowances để luôn đồng bộ cấu hình
-INSERT INTO employee_allowances (user_id, allowance_id, amount)
-SELECT u.user_id, a.allowance_id, a.amount
+INSERT INTO employee_allowances (user_id, allowance_id, contract_id, effective_date)
+SELECT 
+    u.user_id, 
+    a.allowance_id,
+    (SELECT contract_id FROM employee_contracts ec WHERE ec.user_id = u.user_id AND ec.status = 'Active' ORDER BY contract_id DESC LIMIT 1),
+    (SELECT start_date FROM employee_contracts ec WHERE ec.user_id = u.user_id AND ec.status = 'Active' ORDER BY contract_id DESC LIMIT 1)
 FROM (SELECT 2 AS user_id UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6
       UNION SELECT 10 UNION SELECT 14 UNION SELECT 19 UNION SELECT 20 UNION SELECT 33) u
 CROSS JOIN allowances a
 WHERE a.allowance_id IN (1, 2);
 
 -- Phụ cấp Trách nhiệm (allowance_id = 3): Chỉ áp dụng cho quản lý/trưởng phòng
--- Amount theo bậc chức vụ (position_id):
---   1 = Giám đốc       → 5,000,000đ
---   2 = Trưởng phòng   → 3,000,000đ
---   6 = Kế toán trưởng → 3,000,000đ (tương đương Trưởng phòng)
---   4 = Quản đốc       → 2,000,000đ
-INSERT INTO employee_allowances (user_id, allowance_id, amount)
-SELECT u.user_id,
-       3,
-       CASE u.position_id
-           WHEN 1 THEN 5000000   -- Giám đốc
-           WHEN 2 THEN 3000000   -- Trưởng phòng
-           WHEN 6 THEN 3000000   -- Kế toán trưởng (tương đương Trưởng phòng)
-           WHEN 4 THEN 2000000   -- Quản đốc
-           ELSE        1000000   -- Các chức vụ quản lý khác (dự phòng)
-       END
+INSERT INTO employee_allowances (user_id, allowance_id, contract_id, effective_date)
+SELECT 
+    u.user_id, 
+    3,
+    (SELECT contract_id FROM employee_contracts ec WHERE ec.user_id = u.user_id AND ec.status = 'Active' ORDER BY contract_id DESC LIMIT 1),
+    (SELECT start_date FROM employee_contracts ec WHERE ec.user_id = u.user_id AND ec.status = 'Active' ORDER BY contract_id DESC LIMIT 1)
 FROM users u
-WHERE u.user_id IN (2, 3, 4, 6, 14, 19);
+WHERE u.user_id IN (3, 4, 6, 14, 19);
+
+-- Phụ cấp Trách nhiệm Giám Đốc (allowance_id = 6)
+INSERT INTO employee_allowances (user_id, allowance_id, contract_id, effective_date)
+SELECT 
+    u.user_id, 
+    6,
+    (SELECT contract_id FROM employee_contracts ec WHERE ec.user_id = u.user_id AND ec.status = 'Active' ORDER BY contract_id DESC LIMIT 1),
+    (SELECT start_date FROM employee_contracts ec WHERE ec.user_id = u.user_id AND ec.status = 'Active' ORDER BY contract_id DESC LIMIT 1)
+FROM users u
+WHERE u.user_id = 2;
 
 /* ================================================================
    MIGRATION V2: Shift & Overtime Management Module
@@ -1230,15 +1259,16 @@ SELECT
     ep.user_id,
     ep.tax_code,
     1,
-    COALESCE((SELECT COUNT(*) FROM dependents d WHERE d.user_id = ep.user_id AND d.status = 1), 0),
+    ep.dependent_count,
     15500000,
     6200000
 FROM employee_profiles ep
 WHERE ep.user_id IN (SELECT user_id FROM users WHERE status = 1)
 ON DUPLICATE KEY UPDATE 
-    dependent_count = COALESCE((SELECT COUNT(*) FROM dependents d WHERE d.user_id = ep.user_id AND d.status = 1), 0),
+    dependent_count     = ep.dependent_count,
     personal_deduction  = 15500000,
     dependent_deduction = 6200000;
+
 
 -- ══════════════════════════════════════════════════════
 -- SEED DATA: Kỳ lương mẫu
@@ -1472,4 +1502,4 @@ INSERT INTO payroll_configs (config_key, description, config_value, unit) VALUES
 ('MIN_REGIONAL_WAGE_4', 'Lương tối thiểu Vùng IV', 3450000.00, 'VNĐ'),
 
 -- 5. Số ngày công chuẩn trong tháng (Tùy công ty, thường là 22, 24 hoặc 26)
-('STANDARD_WORK_DAYS', 'Số ngày công chuẩn trong tháng', 22.00, 'Ngày');
+('STANDARD_WORK_DAYS', 'Số ngày công chuẩn trong tháng', 26.00, 'Ngày');

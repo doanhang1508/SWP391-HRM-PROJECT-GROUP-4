@@ -4,186 +4,82 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
 
+/**
+ * Model class đại diện cho bảng employee_contracts.
+ * Hỗ trợ cả Hợp đồng gốc (CONTRACT) và Phụ lục (ADDENDUM).
+ */
 public class EmployeeContract {
+
     private int contractId;
     private int userId;
     private int contractTypeId;
+    private int positionId;
+    private int departmentId;
+    private int salaryGradeId;
     private Date startDate;
     private Date endDate;
     private BigDecimal baseSalary;
-    private BigDecimal bhxhRate;
-    private BigDecimal bhytRate;
-    private BigDecimal bhtnRate;
-    private int taxCalcType;
-    private String status;
+    private int taxCalcType;         // 1=Lũy tiến, 2=Khấu trừ 10%, 3=Không thuế
+    private String filePath;
+    private String docType;          // 'CONTRACT' | 'ADDENDUM'
+    private Integer parentContractId;
+    private String addendumReason;
+    private String status;           // 'Active', 'Pending', 'Expired', 'Terminated'
+    private String signStatus;       // 'N/A', 'PENDING', 'SIGNED', 'REJECTED'
+    private Timestamp signedAt;
+    private String rejectReason;
     private Timestamp createdAt;
-    
-    // For joining data display
+    private Timestamp updatedAt;
+
+    // === Fields bổ sung từ JOIN (không có trong bảng, dùng cho hiển thị) ===
     private String contractTypeName;
-    private String employeeName;
+    private String positionName;
     private String departmentName;
-    private String employeeCode;
+    private String salaryGradeName;
+    private String fullName;         // Tên nhân viên
+
+    // =========================================================================
+    // Constructors
+    // =========================================================================
 
     public EmployeeContract() {}
 
-    public EmployeeContract(int contractId, int userId, int contractTypeId, Date startDate, Date endDate,
-                            BigDecimal baseSalary, BigDecimal bhxhRate, BigDecimal bhytRate, BigDecimal bhtnRate,
-                            int taxCalcType, String status, Timestamp createdAt) {
-        this.contractId = contractId;
-        this.userId = userId;
-        this.contractTypeId = contractTypeId;
-        this.startDate = startDate;
-        this.endDate = endDate;
-        this.baseSalary = baseSalary;
-        this.bhxhRate = bhxhRate;
-        this.bhytRate = bhytRate;
-        this.bhtnRate = bhtnRate;
-        this.taxCalcType = taxCalcType;
-        this.status = status;
-        this.createdAt = createdAt;
-    }
+    // =========================================================================
+    // Getters & Setters
+    // =========================================================================
 
-    public int getContractId() {
-        return contractId;
-    }
+    public int getContractId() { return contractId; }
+    public void setContractId(int contractId) { this.contractId = contractId; }
 
-    public void setContractId(int contractId) {
-        this.contractId = contractId;
-    }
+    public int getUserId() { return userId; }
+    public void setUserId(int userId) { this.userId = userId; }
 
-    public int getUserId() {
-        return userId;
-    }
+    public int getContractTypeId() { return contractTypeId; }
+    public void setContractTypeId(int contractTypeId) { this.contractTypeId = contractTypeId; }
 
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
+    public int getPositionId() { return positionId; }
+    public void setPositionId(int positionId) { this.positionId = positionId; }
 
-    public int getContractTypeId() {
-        return contractTypeId;
-    }
+    public int getDepartmentId() { return departmentId; }
+    public void setDepartmentId(int departmentId) { this.departmentId = departmentId; }
 
-    public void setContractTypeId(int contractTypeId) {
-        this.contractTypeId = contractTypeId;
-    }
+    public int getSalaryGradeId() { return salaryGradeId; }
+    public void setSalaryGradeId(int salaryGradeId) { this.salaryGradeId = salaryGradeId; }
 
-    public Date getStartDate() {
-        return startDate;
-    }
+    public Date getStartDate() { return startDate; }
+    public void setStartDate(Date startDate) { this.startDate = startDate; }
 
-    public void setStartDate(Date startDate) {
-        this.startDate = startDate;
-    }
+    public Date getEndDate() { return endDate; }
+    public void setEndDate(Date endDate) { this.endDate = endDate; }
 
-    public Date getEndDate() {
-        return endDate;
-    }
+    public BigDecimal getBaseSalary() { return baseSalary; }
+    public void setBaseSalary(BigDecimal baseSalary) { this.baseSalary = baseSalary; }
 
-    public void setEndDate(Date endDate) {
-        this.endDate = endDate;
-    }
+    public int getTaxCalcType() { return taxCalcType; }
+    public void setTaxCalcType(int taxCalcType) { this.taxCalcType = taxCalcType; }
 
-    public BigDecimal getBaseSalary() {
-        return baseSalary;
-    }
-
-    public void setBaseSalary(BigDecimal baseSalary) {
-        this.baseSalary = baseSalary;
-    }
-
-    public BigDecimal getBhxhRate() {
-        return bhxhRate;
-    }
-
-    public void setBhxhRate(BigDecimal bhxhRate) {
-        this.bhxhRate = bhxhRate;
-    }
-
-    public BigDecimal getBhytRate() {
-        return bhytRate;
-    }
-
-    public void setBhytRate(BigDecimal bhytRate) {
-        this.bhytRate = bhytRate;
-    }
-
-    public BigDecimal getBhtnRate() {
-        return bhtnRate;
-    }
-
-    public void setBhtnRate(BigDecimal bhtnRate) {
-        this.bhtnRate = bhtnRate;
-    }
-
-    public int getTaxCalcType() {
-        return taxCalcType;
-    }
-
-    public void setTaxCalcType(int taxCalcType) {
-        this.taxCalcType = taxCalcType;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public Timestamp getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Timestamp createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public String getContractTypeName() {
-        return contractTypeName;
-    }
-
-    public void setContractTypeName(String contractTypeName) {
-        this.contractTypeName = contractTypeName;
-    }
-
-    public String getEmployeeName() {
-        return employeeName;
-    }
-
-    public void setEmployeeName(String employeeName) {
-        this.employeeName = employeeName;
-    }
-
-    public String getDepartmentName() {
-        return departmentName;
-    }
-
-    public void setDepartmentName(String departmentName) {
-        this.departmentName = departmentName;
-    }
-
-    public String getEmployeeCode() {
-        return employeeCode;
-    }
-
-    public void setEmployeeCode(String employeeCode) {
-        this.employeeCode = employeeCode;
-    }
-
-    // ── Phụ lục hợp đồng (Addendum) fields ──────────────────────────────────
-    /** 'CONTRACT' hoặc 'ADDENDUM' */
-    private String docType = "CONTRACT";
-    /** contract_id của hợp đồng gốc (nếu đây là phụ lục) */
-    private Integer parentContractId;
-    /** Lý do tạo phụ lục: Tăng lương / Thăng tiến / Điều chuyển */
-    private String addendumReason;
-    /** 'N/A' | 'PENDING' | 'SIGNED' | 'REJECTED' */
-    private String signStatus = "N/A";
-    /** Thời điểm nhân viên bấm Xác nhận/Từ chối */
-    private Timestamp signedAt;
-    /** Lý do nhân viên từ chối ký phụ lục */
-    private String rejectReason;
+    public String getFilePath() { return filePath; }
+    public void setFilePath(String filePath) { this.filePath = filePath; }
 
     public String getDocType() { return docType; }
     public void setDocType(String docType) { this.docType = docType; }
@@ -194,6 +90,9 @@ public class EmployeeContract {
     public String getAddendumReason() { return addendumReason; }
     public void setAddendumReason(String addendumReason) { this.addendumReason = addendumReason; }
 
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
     public String getSignStatus() { return signStatus; }
     public void setSignStatus(String signStatus) { this.signStatus = signStatus; }
 
@@ -203,8 +102,51 @@ public class EmployeeContract {
     public String getRejectReason() { return rejectReason; }
     public void setRejectReason(String rejectReason) { this.rejectReason = rejectReason; }
 
-    /** Tiện ích: kiểm tra đây có phải phụ lục đang chờ ký không */
-    public boolean isPendingAddendum() {
-        return "ADDENDUM".equals(docType) && "PENDING".equals(signStatus);
+    public Timestamp getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+
+    public Timestamp getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Timestamp updatedAt) { this.updatedAt = updatedAt; }
+
+    // === JOIN fields ===
+
+    public String getContractTypeName() { return contractTypeName; }
+    public void setContractTypeName(String contractTypeName) { this.contractTypeName = contractTypeName; }
+
+    public String getPositionName() { return positionName; }
+    public void setPositionName(String positionName) { this.positionName = positionName; }
+
+    public String getDepartmentName() { return departmentName; }
+    public void setDepartmentName(String departmentName) { this.departmentName = departmentName; }
+
+    public String getSalaryGradeName() { return salaryGradeName; }
+    public void setSalaryGradeName(String salaryGradeName) { this.salaryGradeName = salaryGradeName; }
+
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
+
+    // =========================================================================
+    // Utility
+    // =========================================================================
+
+    public boolean isAddendum() {
+        return "ADDENDUM".equalsIgnoreCase(docType);
+    }
+
+    public boolean isActive() {
+        return "Active".equalsIgnoreCase(status);
+    }
+
+    public boolean isPending() {
+        return "Pending".equalsIgnoreCase(status);
+    }
+
+    @Override
+    public String toString() {
+        return "EmployeeContract{contractId=" + contractId
+                + ", userId=" + userId
+                + ", status=" + status
+                + ", docType=" + docType
+                + ", baseSalary=" + baseSalary + "}";
     }
 }

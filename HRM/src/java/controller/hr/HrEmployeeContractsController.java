@@ -8,6 +8,7 @@ import model.Department;
 import model.EmployeeProfile;
 import model.Position;
 import model.User;
+import model.SalaryGrade;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -23,6 +24,8 @@ import dao.InsuranceRateDAO;
 import model.EmployeeContract;
 import model.ContractType;
 import model.InsuranceRate;
+import dao.SalaryGradeDAO;
+import java.util.stream.Collectors;
 
 /**
  * HrEmployeeContractsController — Xem thông tin hợp đồng và lương của nhân viên (dành cho HR).
@@ -74,19 +77,25 @@ public class HrEmployeeContractsController extends HttpServlet {
             Department dept = null;
             Position pos = null;
 
-            for (Department d : deptDAO.getAll()) {
+            List<Department> allDepts = deptDAO.getAll();
+            List<Position> allPos = posDAO.getAll();
+            
+            for (Department d : allDepts) {
                 if (d.getDepartmentId() == employee.getDepartmentId()) {
                     dept = d;
                     break;
                 }
             }
 
-            for (Position p : posDAO.getAll()) {
+            for (Position p : allPos) {
                 if (p.getPositionId() == employee.getPositionId()) {
                     pos = p;
                     break;
                 }
             }
+            
+            request.setAttribute("departments", allDepts);
+            request.setAttribute("positions", allPos);
 
             // Load employee profile đầy đủ (hợp đồng, lương, bảo hiểm, ngân hàng)
             EmployeeProfileDAO profileDAO = new EmployeeProfileDAO();
@@ -102,10 +111,13 @@ public class HrEmployeeContractsController extends HttpServlet {
             InsuranceRateDAO irDAO = new InsuranceRateDAO();
             List<InsuranceRate> activeRates = irDAO.search(null, "active");
             
+            // Tìm currentContract ở controller — không để JSP tự lọc (đúng MVC)
+            EmployeeContract currentContract = null;
             int currentContractId = -1;
             if (contracts != null) {
                 for (EmployeeContract c : contracts) {
                     if ("Active".equals(c.getStatus()) || "Pending".equals(c.getStatus())) {
+                        currentContract = c;
                         currentContractId = c.getContractId();
                         break;
                     }
@@ -120,6 +132,7 @@ public class HrEmployeeContractsController extends HttpServlet {
             }
             
             request.setAttribute("contracts", contracts);
+            request.setAttribute("currentContract", currentContract);  // Controller tính sẵn, JSP chỉ dùng
             request.setAttribute("contractTypes", contractTypes);
             request.setAttribute("activeRates", activeRates);
             request.setAttribute("totalAllowance", totalAllowance);
@@ -128,6 +141,11 @@ public class HrEmployeeContractsController extends HttpServlet {
             dao.AllowanceDAO allowanceDAO = new dao.AllowanceDAO();
             List<model.Allowance> availableAllowances = allowanceDAO.getActive();
             request.setAttribute("availableAllowances", availableAllowances);
+
+            // Load salary grades (active only) for the contract form dropdown
+            SalaryGradeDAO sgDAO = new SalaryGradeDAO();
+            java.util.List<SalaryGrade> activeSalaryGrades = sgDAO.search(null, "active");
+            request.setAttribute("salaryGrades", activeSalaryGrades);
 
             request.setAttribute("employee", employee);
             request.setAttribute("empDept", dept);
@@ -158,6 +176,12 @@ public class HrEmployeeContractsController extends HttpServlet {
             try {
                 int userId = Integer.parseInt(request.getParameter("userId"));
                 
+                // HR Manager (role 2) chỉ được duyệt, không được tạo hợp đồng
+                if (currentRoleId == 2) {
+                    session.setAttribute("errorMsg", "Lỗi: HR Manager không có quyền tạo hợp đồng. Chỉ HR Staff mới có quyền này.");
+                    response.sendRedirect(request.getContextPath() + "/hr/employee-contracts?userId=" + userId);
+                    return;
+                }
                 if (currentRoleId == 5 && currentUser.getUserId() == userId) {
                     session.setAttribute("errorMsg", "Lỗi: HR Staff không được tự thao tác hợp đồng của chính mình.");
                     response.sendRedirect(request.getContextPath() + "/hr/employee-contracts?userId=" + userId);
@@ -169,25 +193,27 @@ public class HrEmployeeContractsController extends HttpServlet {
                 String endStr = request.getParameter("endDate");
                 java.sql.Date endDate = (endStr != null && !endStr.trim().isEmpty()) ? java.sql.Date.valueOf(endStr) : null;
                 
+                int positionId = Integer.parseInt(request.getParameter("positionId"));
+                int departmentId = Integer.parseInt(request.getParameter("departmentId"));
+                
                 java.math.BigDecimal baseSalary = new java.math.BigDecimal(request.getParameter("baseSalary").replaceAll(",", ""));
                 if (contractTypeId == 1) {
                     baseSalary = baseSalary.multiply(new java.math.BigDecimal("0.85"));
                 }
                 
-                java.math.BigDecimal bhxhRate = new java.math.BigDecimal(request.getParameter("bhxhRate"));
-                java.math.BigDecimal bhytRate = new java.math.BigDecimal(request.getParameter("bhytRate"));
-                java.math.BigDecimal bhtnRate = new java.math.BigDecimal(request.getParameter("bhtnRate"));
                 int taxCalcType = Integer.parseInt(request.getParameter("taxCalcType"));
+
+                int salaryGradeId = Integer.parseInt(request.getParameter("salaryGradeId"));
 
                 EmployeeContract c = new EmployeeContract();
                 c.setUserId(userId);
                 c.setContractTypeId(contractTypeId);
+                c.setPositionId(positionId);
+                c.setDepartmentId(departmentId);
+                c.setSalaryGradeId(salaryGradeId);
                 c.setStartDate(startDate);
                 c.setEndDate(endDate);
                 c.setBaseSalary(baseSalary);
-                c.setBhxhRate(bhxhRate);
-                c.setBhytRate(bhytRate);
-                c.setBhtnRate(bhtnRate);
                 c.setTaxCalcType(taxCalcType);
                 c.setStatus(currentRoleId == 5 ? "Pending" : "Active");
 
@@ -207,7 +233,20 @@ public class HrEmployeeContractsController extends HttpServlet {
                 model.EmployeeProfile ep = epDAO.getByUserId(userId);
                 if(ep != null) {
                     ep.setContractTypeId(contractTypeId);
+                    ep.setSalaryGradeId(salaryGradeId);
                     epDAO.update(ep);
+                }
+                
+                // Gửi thông báo cho HR Manager (role 2) nếu người tạo là HR Staff
+                if (currentRoleId == 5) {
+                    dao.UserDAO uDao = new dao.UserDAO();
+                    java.util.List<model.User> managers = uDao.searchUsers("", 2);
+                    dao.notificationDAO notifDao = new dao.notificationDAO();
+                    for (model.User m : managers) {
+                        notifDao.create(m.getUserId(), "contract", "Yêu cầu duyệt hợp đồng mới",
+                            "HR Staff " + currentUser.getFullName() + " vừa tạo một hợp đồng mới (Chờ duyệt) cho nhân viên ID " + userId + ".",
+                            "/hr/contracts");
+                    }
                 }
                 
                 session.setAttribute("successMsg", currentRoleId == 5 ? "Tạo hợp đồng thành công (Đang chờ duyệt)!" : "Thêm hợp đồng mới thành công!");
@@ -221,6 +260,12 @@ public class HrEmployeeContractsController extends HttpServlet {
             try {
                 int userId = Integer.parseInt(request.getParameter("userId"));
                 
+                // HR Manager (role 2) chỉ được duyệt, không được tạo phụ lục
+                if (currentRoleId == 2) {
+                    session.setAttribute("errorMsg", "Lỗi: HR Manager không có quyền tạo phụ lục hợp đồng.");
+                    response.sendRedirect(request.getContextPath() + "/hr/employee-contracts?userId=" + userId);
+                    return;
+                }
                 if (currentRoleId == 5 && currentUser.getUserId() == userId) {
                     session.setAttribute("errorMsg", "Lỗi: HR Staff không được tự tạo phụ lục cho chính mình.");
                     response.sendRedirect(request.getContextPath() + "/hr/employee-contracts?userId=" + userId);
@@ -236,20 +281,18 @@ public class HrEmployeeContractsController extends HttpServlet {
                 int contractTypeId = Integer.parseInt(request.getParameter("contractTypeId"));
                 String endStr = request.getParameter("endDate");
                 java.sql.Date endDate = (endStr != null && !endStr.trim().isEmpty()) ? java.sql.Date.valueOf(endStr) : null;
-                java.math.BigDecimal bhxhRate = new java.math.BigDecimal(request.getParameter("bhxhRate"));
-                java.math.BigDecimal bhytRate = new java.math.BigDecimal(request.getParameter("bhytRate"));
-                java.math.BigDecimal bhtnRate = new java.math.BigDecimal(request.getParameter("bhtnRate"));
                 int taxCalcType = Integer.parseInt(request.getParameter("taxCalcType"));
+                int positionId = Integer.parseInt(request.getParameter("positionId"));
+                int departmentId = Integer.parseInt(request.getParameter("departmentId"));
 
                 EmployeeContract addendum = new EmployeeContract();
                 addendum.setUserId(userId);
                 addendum.setContractTypeId(contractTypeId);
+                addendum.setPositionId(positionId);
+                addendum.setDepartmentId(departmentId);
                 addendum.setStartDate(startDate);
                 addendum.setEndDate(endDate);
                 addendum.setBaseSalary(baseSalary);
-                addendum.setBhxhRate(bhxhRate);
-                addendum.setBhytRate(bhytRate);
-                addendum.setBhtnRate(bhtnRate);
                 addendum.setTaxCalcType(taxCalcType);
                 addendum.setParentContractId(parentContractId);
                 addendum.setAddendumReason(addendumReason);

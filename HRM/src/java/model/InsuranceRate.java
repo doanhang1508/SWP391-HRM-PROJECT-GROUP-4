@@ -81,4 +81,19 @@ public class InsuranceRate {
 
     public boolean isStatus() { return status; }
     public void setStatus(boolean v) { this.status = v; }
+
+    /** Alias for getInsuranceName() — backward compatibility */
+    public String getName() { return insuranceName; }
+
+    /**
+     * Trả về loại đối tượng áp dụng: "Employee" hoặc "Company".
+     * Quy ước: insurance_rates trong HRM áp dụng cho Employee.
+     */
+    public String getAppliedTo() { return "Employee"; }
+
+    /**
+     * Trả về tỷ lệ % phần nhân viên đóng (employee_rate).
+     * Dùng để tính số tiền khấu trừ bảo hiểm từ lương nhân viên.
+     */
+    public BigDecimal getRatePercentage() { return employeeRate; }
 }

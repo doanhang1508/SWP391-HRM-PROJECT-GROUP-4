@@ -205,4 +205,13 @@ public class InsuranceRateDAO {
     public void delete(int id) {
         changeStatus(id, false);
     }
+
+    /**
+     * Lấy tất cả insurance rates đang hoạt động (status=1).
+     * Dùng bởi PayslipController và HrPayrollController để hiển thị
+     * chi tiết các khoản bảo hiểm nhân viên đóng.
+     */
+    public List<InsuranceRate> getAllActiveRates() {
+        return search(null, "active");
+    }
 }

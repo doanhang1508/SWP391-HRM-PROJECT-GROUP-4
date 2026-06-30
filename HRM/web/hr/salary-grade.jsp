@@ -270,7 +270,7 @@
                                 <tr>
                                     <th>#</th>
                                     <th>Tên Ngạch Lương</th>
-                                    <th>Lương Ngạch (₫/tháng)</th>
+                                    <th>Khoảng Lương (₫/tháng)</th>
                                     <th>Mô Tả</th>
                                     <th>Trạng Thái</th>
                                     <th style="text-align:center;">Thao Tác</th>
@@ -291,7 +291,7 @@
                                             </div>
                                         </td>
                                         <td class="money-cell">
-                                            <fmt:formatNumber value="${sg.baseSalary}" type="number" groupingUsed="true"/> ₫
+                                            <fmt:formatNumber value="${sg.minSalary}" type="number" groupingUsed="true"/> - <fmt:formatNumber value="${sg.maxSalary}" type="number" groupingUsed="true"/> ₫
                                         </td>
                                         <td>
                                             <div class="item-desc" title="${fn:escapeXml(sg.description)}">
@@ -317,7 +317,8 @@
                                                     onclick="openDetailModal(
                                                         ${sg.salaryGradeId},
                                                         '${fn:escapeXml(sg.gradeName)}',
-                                                        '${sg.baseSalary}',
+                                                        '${sg.minSalary}',
+                                                        '${sg.maxSalary}',
                                                         '${fn:escapeXml(sg.description)}',
                                                         '${sg.status}')">
                                                 <i class="fas fa-eye"></i>
@@ -326,7 +327,8 @@
                                             <button class="action-btn btn-edit"
                                                     onclick="openEditModal(${sg.salaryGradeId},
                                                                           '${fn:escapeXml(sg.gradeName)}',
-                                                                          '${sg.baseSalary}',
+                                                                          '${sg.minSalary}',
+                                                                          '${sg.maxSalary}',
                                                                           '${fn:escapeXml(sg.description)}')"
                                                     title="Chỉnh sửa" ${sg.status ? '' : 'disabled style="opacity:.4;cursor:not-allowed;"'}>
                                                 <i class="fas fa-pen"></i>
@@ -381,14 +383,13 @@
             <button class="modal-close" onclick="closeModal('detailModal')" style="color:rgba(255,255,255,.8);">&times;</button>
         </div>
 
-        <%-- Lương ngạch highlight --%>
         <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0;border-radius:12px;padding:16px 20px;margin-bottom:22px;display:flex;align-items:center;gap:14px;">
             <div style="width:44px;height:44px;background:#16a34a;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#fff;flex-shrink:0;">
                 <i class="fas fa-money-bill-wave"></i>
             </div>
             <div>
-                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#16a34a;margin-bottom:2px;">Lương Ngạch</div>
-                <div id="detailBaseSalary" style="font-family:'Be Vietnam Pro',sans-serif;font-size:1.6rem;font-weight:800;color:#15803d;line-height:1;"></div>
+                <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#16a34a;margin-bottom:2px;">Khoảng Lương</div>
+                <div id="detailBaseSalary" style="font-family:'Be Vietnam Pro',sans-serif;font-size:1.4rem;font-weight:800;color:#15803d;line-height:1;"></div>
             </div>
         </div>
 
@@ -423,10 +424,15 @@
                 <label class="form-label">Tên Ngạch Lương <span>*</span></label>
                 <input type="text" name="gradeName" class="form-control" placeholder="Ví dụ: Ngạch chuyên viên" required maxlength="100">
             </div>
-            <div class="form-group">
-                <label class="form-label">Lương Ngạch (₫/tháng) <span>*</span></label>
-                <input type="number" name="baseSalary" class="form-control" placeholder="Ví dụ: 12000000" required min="1" step="1000">
-                <div class="input-hint">Lương thực nhận theo ngạch, tính theo ngày công thực tế</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Lương Tối Thiểu (₫) <span>*</span></label>
+                    <input type="number" name="minSalary" class="form-control" placeholder="VD: 10000000" required min="1" step="1000">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Lương Tối Đa (₫) <span>*</span></label>
+                    <input type="number" name="maxSalary" class="form-control" placeholder="VD: 25000000" required min="1" step="1000">
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Mô Tả</label>
@@ -454,10 +460,15 @@
                 <label class="form-label">Tên Ngạch Lương <span>*</span></label>
                 <input type="text" name="gradeName" id="editGradeName" class="form-control" required maxlength="100">
             </div>
-            <div class="form-group">
-                <label class="form-label">Lương Ngạch (₫/tháng) <span>*</span></label>
-                <input type="number" name="baseSalary" id="editBaseSalary" class="form-control" required min="1" step="1000">
-                <div class="input-hint">Lương thực nhận theo ngạch, tính theo ngày công thực tế</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Lương Tối Thiểu (₫) <span>*</span></label>
+                    <input type="number" name="minSalary" id="editMinSalary" class="form-control" required min="1" step="1000">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Lương Tối Đa (₫) <span>*</span></label>
+                    <input type="number" name="maxSalary" id="editMaxSalary" class="form-control" required min="1" step="1000">
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Mô Tả</label>
@@ -517,13 +528,13 @@
 <script>
     // ── Detail Modal ─────────────────────────────────────────────────────
     var _detailData = {};
-    function openDetailModal(id, gradeName, baseSalary, desc, status) {
-        _detailData = { id: id, gradeName: gradeName, baseSalary: parseFloat(baseSalary), desc: desc, status: status === 'true' };
+    function openDetailModal(id, gradeName, minSalary, maxSalary, desc, status) {
+        _detailData = { id: id, gradeName: gradeName, minSalary: parseFloat(minSalary), maxSalary: parseFloat(maxSalary), desc: desc, status: status === 'true' };
         var fmt = function(n){ return new Intl.NumberFormat('vi-VN').format(Math.round(n)) + ' ₫'; };
 
         document.getElementById('detailName').textContent       = gradeName;
         document.getElementById('detailIdBadge').textContent    = '# ID: ' + id;
-        document.getElementById('detailBaseSalary').textContent = fmt(_detailData.baseSalary);
+        document.getElementById('detailBaseSalary').textContent = fmt(_detailData.minSalary) + " - " + fmt(_detailData.maxSalary);
         document.getElementById('detailDesc').textContent       = desc || 'Chưa có mô tả';
         document.getElementById('detailDesc').style.fontStyle   = desc ? 'normal' : 'italic';
         document.getElementById('detailDesc').style.color       = desc ? 'var(--navy)' : '#94a3b8';
@@ -545,17 +556,18 @@
         document.getElementById('detailModal').classList.add('show');
     }
     function openEditFromDetail() {
-        openEditModal(_detailData.id, _detailData.gradeName, _detailData.baseSalary, _detailData.desc);
+        openEditModal(_detailData.id, _detailData.gradeName, _detailData.minSalary, _detailData.maxSalary, _detailData.desc);
     }
 
     // ── Modal helpers ────────────────────────────────────────────────────
     function openAddModal() {
         document.getElementById('addModal').classList.add('show');
     }
-    function openEditModal(id, gradeName, baseSalary, desc) {
+    function openEditModal(id, gradeName, minSalary, maxSalary, desc) {
         document.getElementById('editId').value          = id;
         document.getElementById('editGradeName').value   = gradeName;
-        document.getElementById('editBaseSalary').value  = baseSalary;
+        document.getElementById('editMinSalary').value   = minSalary;
+        document.getElementById('editMaxSalary').value   = maxSalary;
         document.getElementById('editDesc').value        = desc;
         document.getElementById('editModal').classList.add('show');
     }
