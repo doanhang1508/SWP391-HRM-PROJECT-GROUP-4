@@ -38,4 +38,27 @@ public class WorkHistoryDAO {
         }
         return list;
     }
+
+    public void closeCurrentHistory(Connection conn, int userId, java.sql.Date effectiveDate) throws SQLException {
+        String sql = "UPDATE work_history SET end_date = DATE_SUB(?, INTERVAL 1 DAY), is_current = 0 " +
+                     "WHERE user_id = ? AND (is_current = 1 OR end_date IS NULL)";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDate(1, effectiveDate);
+            ps.setInt(2, userId);
+            ps.executeUpdate();
+        }
+    }
+
+    public void insertTransferHistory(Connection conn, int userId, String positionTitle, String departmentName, java.sql.Date startDate, String description) throws SQLException {
+        String sql = "INSERT INTO work_history (user_id, position_title, company_name, location, start_date, end_date, description, is_current) " +
+                     "VALUES (?, ?, ?, 'Nội bộ', ?, NULL, ?, 1)";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setString(2, positionTitle);
+            ps.setString(3, departmentName);
+            ps.setDate(4, startDate);
+            ps.setString(5, description);
+            ps.executeUpdate();
+        }
+    }
 }

@@ -6,6 +6,7 @@ import model.Department;
 import util.DBContext;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -417,6 +418,11 @@ public class TimesheetConfirmationDAO {
 
     public List<EmployeeTimesheetSummary> getDepartmentEmployeeSummary(int month, int year, int departmentId) {
         List<EmployeeTimesheetSummary> list = new ArrayList<>();
+        LocalDate firstDay = LocalDate.of(year, month, 1);
+        LocalDate lastDay = LocalDate.of(year, month, firstDay.lengthOfMonth());
+        java.sql.Date sqlFirstDay = java.sql.Date.valueOf(firstDay);
+        java.sql.Date sqlLastDay = java.sql.Date.valueOf(lastDay);
+
         String sql = "SELECT " +
                      "  u.user_id, " +
                      "  u.full_name, " +
@@ -434,6 +440,24 @@ public class TimesheetConfirmationDAO {
                      "LEFT JOIN attendance a ON u.user_id = a.user_id AND MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? " +
                      "LEFT JOIN timesheet_employee_confirmations tec ON u.user_id = tec.user_id AND tec.month = ? AND tec.year = ? " +
                      "WHERE u.department_id = ? AND u.role_id NOT IN (1, 4) " +
+                     "  AND ( " +
+                     "      EXISTS ( " +
+                     "          SELECT 1 FROM employee_contracts ec " +
+                     "          WHERE ec.user_id = u.user_id " +
+                     "            AND ec.start_date <= ? " +
+                     "            AND (ec.end_date IS NULL OR ec.end_date >= ?) " +
+                     "      ) " +
+                     "      OR ( " +
+                     "          NOT EXISTS (SELECT 1 FROM employee_contracts ec WHERE ec.user_id = u.user_id) " +
+                     "          AND u.status = 1 " +
+                     "      ) " +
+                     "      OR EXISTS ( " +
+                     "          SELECT 1 FROM attendance att " +
+                     "          WHERE att.user_id = u.user_id " +
+                     "            AND MONTH(att.work_date) = ? " +
+                     "            AND YEAR(att.work_date) = ? " +
+                     "      ) " +
+                     "  ) " +
                      "GROUP BY u.user_id, u.full_name, d.department_name, p.position_name " +
                      "ORDER BY u.full_name";
         try (Connection conn = DBContext.getConnection();
@@ -443,6 +467,10 @@ public class TimesheetConfirmationDAO {
             ps.setInt(3, month);
             ps.setInt(4, year);
             ps.setInt(5, departmentId);
+            ps.setDate(6, sqlLastDay);
+            ps.setDate(7, sqlFirstDay);
+            ps.setInt(8, month);
+            ps.setInt(9, year);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     EmployeeTimesheetSummary s = new EmployeeTimesheetSummary();

@@ -461,6 +461,12 @@
                                                             <i class="fas fa-check-double"></i> Xác nhận bảng công
                                                         </a>
                                                     </li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/manager/transfer-approvals"
+                                                                            class="sidebar-link ${param.activeMenu eq 'transfer-approvals' ? 'active' : ''}">
+                                                                            <i class="fas fa-tasks"></i> Phê duyệt điều chuyển
+                                                                        </a>
+                                                                    </li>
                                                     <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/hr/timesheet-approval"
                                                             class="sidebar-link ${param.activeMenu eq 'timesheet-approval' ? 'active' : ''}">
@@ -487,6 +493,12 @@
                                                             <i class="fas fa-door-open"></i> Duyệt đơn nghỉ việc
                                                         </a>
                                                     </li>
+                                                     <li class="sidebar-item">
+                                                         <a href="${pageContext.request.contextPath}/hr/transfer-requests"
+                                                             class="sidebar-link ${param.activeMenu eq 'transfer-list' || param.activeMenu eq 'transfer-create' ? 'active' : ''}">
+                                                             <i class="fas fa-exchange-alt"></i> Điều chuyển nhân sự
+                                                         </a>
+                                                     </li>
 
                                                 </c:if>
 
@@ -540,6 +552,12 @@
                                                                 <i class="fas fa-check-double"></i> Xác nhận bảng công
                                                             </a>
                                                         </li>
+                                                         <li class="sidebar-item">
+                                                             <a href="${pageContext.request.contextPath}/manager/transfer-approvals"
+                                                                 class="sidebar-link ${param.activeMenu eq 'transfer-approvals' ? 'active' : ''}">
+                                                                 <i class="fas fa-tasks"></i> Phê duyệt điều chuyển
+                                                             </a>
+                                                         </li>
 
                                                     </c:if>
 
@@ -641,6 +659,12 @@
                                                                         việc
                                                                     </a>
                                                                 </li>
+                                                                 <li class="sidebar-item">
+                                                                     <a href="${pageContext.request.contextPath}/hr/transfer-requests"
+                                                                         class="sidebar-link ${param.activeMenu eq 'transfer-list' || param.activeMenu eq 'transfer-create' ? 'active' : ''}">
+                                                                         <i class="fas fa-exchange-alt"></i> Điều chuyển nhân sự
+                                                                     </a>
+                                                                 </li>
 
                                                                 <li class="sidebar-menu-category">Cấu hình Chính sách
                                                                 </li>

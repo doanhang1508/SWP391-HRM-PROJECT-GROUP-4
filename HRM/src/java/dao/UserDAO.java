@@ -564,4 +564,20 @@ public class UserDAO {
         }
         return false;
     }
+
+    public java.util.List<User> getActiveEmployees() {
+        java.util.List<User> list = new java.util.ArrayList<>();
+        String sql = "SELECT * FROM users WHERE status = 1 AND role_id != 1 ORDER BY full_name";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapResultSetToUser(rs));
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi getActiveEmployees: " + e.getMessage());
+        }
+        return list;
+    }
 }
