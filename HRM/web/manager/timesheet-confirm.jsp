@@ -765,13 +765,9 @@
                                                     <tr>
                                                         <th>Mã NV</th>
                                                         <th>Họ tên nhân viên</th>
-                                                        <th>Phòng ban</th>
-                                                        <th>Chức vụ</th>
                                                         <th>Tổng ngày làm việc</th>
                                                         <th>Đi trễ (Lần)</th>
                                                         <th>Vắng (Lần)</th>
-                                                        <th>Tổng ngày nghỉ</th>
-                                                        <th>Tổng giờ tăng ca</th>
                                                         <th>Xác nhận cá nhân</th>
                                                         <th class="text-end">Hành động</th>
                                                     </tr>
@@ -780,23 +776,21 @@
                                                     <c:choose>
                                                         <c:when test="${empty empSummaryList}">
                                                             <tr>
-                                                                <td colspan="11" class="text-center py-4"
+                                                                <td colspan="7" class="text-center py-4"
                                                                     style="color:var(--muted)">Không tìm thấy nhân viên
                                                                     nào.</td>
                                                             </tr>
                                                         </c:when>
                                                         <c:otherwise>
                                                             <c:forEach var="emp" items="${empSummaryList}">
-                                                                <tr data-id="${emp.userId}" data-name="${emp.fullName}">
+                                                                <tr data-id="${emp.userId}" data-name="${emp.fullName}"
+                                                                    data-dept="${emp.departmentName}" data-pos="${emp.positionName}"
+                                                                    data-leave="${emp.totalLeaveDays}" data-ot="${emp.totalOTHours}">
                                                                     <td><strong>#${emp.userId}</strong></td>
                                                                     <td><strong>${emp.fullName}</strong></td>
-                                                                    <td>${emp.departmentName}</td>
-                                                                    <td>${emp.positionName}</td>
                                                                     <td>${emp.totalWorkDays}</td>
                                                                     <td><span class="badge bg-warning text-dark rounded-pill">${emp.lateCount}</span></td>
                                                                     <td><span class="badge bg-danger rounded-pill">${emp.absentCount}</span></td>
-                                                                    <td>${emp.totalLeaveDays}</td>
-                                                                    <td>${emp.totalOTHours}</td>
                                                                     <td>
                                                                         <c:choose>
                                                                             <c:when test="${emp.confirmed}">
@@ -814,7 +808,7 @@
                                                                     <td class="text-end">
                                                                         <button type="button" class="btn-a btn-view"
                                                                             onclick="showDetails(${emp.userId}, '${emp.fullName}')">
-                                                                            <i class="fas fa-eye"></i> Xem
+                                                                            <i class="fas fa-eye"></i> Chi tiết
                                                                         </button>
                                                                     </td>
                                                                 </tr>
@@ -850,6 +844,34 @@
                                                             data-bs-dismiss="modal" aria-label="Close"></button>
                                                     </div>
                                                     <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                                                        <!-- Summary stats row -->
+                                                        <div id="modalSummaryStats" class="row g-2 mb-3">
+                                                            <div class="col-6 col-md-3">
+                                                                <div class="p-2 rounded text-center" style="background:#f0fdf4;border:1px solid #bbf7d0;">
+                                                                    <div class="fw-bold text-success" style="font-size:1.2rem;" id="msDept">-</div>
+                                                                    <div class="text-muted" style="font-size:.75rem;">Phòng ban</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-6 col-md-3">
+                                                                <div class="p-2 rounded text-center" style="background:#eff6ff;border:1px solid #bfdbfe;">
+                                                                    <div class="fw-bold text-primary" style="font-size:1.2rem;" id="msPos">-</div>
+                                                                    <div class="text-muted" style="font-size:.75rem;">Chức vụ</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-6 col-md-3">
+                                                                <div class="p-2 rounded text-center" style="background:#fefce8;border:1px solid #fde68a;">
+                                                                    <div class="fw-bold text-warning" style="font-size:1.2rem;" id="msLeave">-</div>
+                                                                    <div class="text-muted" style="font-size:.75rem;">Tổng ngày nghỉ</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-6 col-md-3">
+                                                                <div class="p-2 rounded text-center" style="background:#fdf4ff;border:1px solid #e9d5ff;">
+                                                                    <div class="fw-bold text-purple" style="font-size:1.2rem;color:#7c3aed;" id="msOT">-</div>
+                                                                    <div class="text-muted" style="font-size:.75rem;">Tổng giờ OT</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <!-- Attendance detail table -->
                                                         <div class="table-responsive">
                                                             <table class="tbl table table-hover">
                                                                 <thead>
@@ -895,7 +917,18 @@
                                             ];
 
                                             function showDetails(userId, fullName) {
+                                                const row = document.querySelector('#empTableBody tr[data-id="' + userId + '"]');
+                                                const dept  = row ? (row.dataset.dept || '-') : '-';
+                                                const pos   = row ? (row.dataset.pos  || '-') : '-';
+                                                const leave = row ? (row.dataset.leave || '0') : '0';
+                                                const ot    = row ? (row.dataset.ot   || '0') : '0';
+
                                                 document.getElementById('modalEmpName').innerText = fullName + ' (ID: #' + userId + ')';
+                                                document.getElementById('msDept').innerText  = dept;
+                                                document.getElementById('msPos').innerText   = pos;
+                                                document.getElementById('msLeave').innerText = leave + ' ngày';
+                                                document.getElementById('msOT').innerText    = ot + ' giờ';
+
                                                 const tbody = document.getElementById('modalDetailBody');
                                                 tbody.innerHTML = '';
 
