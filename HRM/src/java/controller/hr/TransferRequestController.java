@@ -220,6 +220,13 @@ public class TransferRequestController extends HttpServlet {
                 return;
             }
 
+            // 6b. New position must NOT be Trưởng phòng (2)
+            if (newPositionId == 2) {
+                request.setAttribute("errorMessage", "Không thể điều chuyển nhân viên lên làm Trưởng phòng.");
+                request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
+                return;
+            }
+
             // 7. Validate position-role mapping
             boolean isValidMapping = true;
             if (newRoleId == 8) { // Accountant

@@ -175,7 +175,9 @@
                                 <select id="newPositionId" name="newPositionId" class="form-control" onchange="updateNewRoles()" required disabled>
                                     <option value="">-- Chọn chức vụ mới --</option>
                                     <c:forEach items="${positions}" var="p">
-                                        <option value="${p.positionId}">${p.positionName}</option>
+                                        <c:if test="${p.positionId != 2}">
+                                            <option value="${p.positionId}">${p.positionName}</option>
+                                        </c:if>
                                     </c:forEach>
                                 </select>
                             </div>
@@ -217,11 +219,11 @@
 
 <script>
     const deptPositions = {
-        1: [1, 2, 3, 7, 8],   // Hành chính: Giám đốc, Trưởng phòng, Phó phòng, Chuyên viên, Nhân viên
-        2: [2, 3, 7, 8],      // Nhân sự: Trưởng phòng, Phó phòng, Chuyên viên, Nhân viên
-        3: [2, 3, 6, 7, 8],   // Kế toán: Trưởng phòng, Phó phòng, Kế toán trưởng, Chuyên viên, Nhân viên
-        4: [2, 3, 7, 8],      // Kinh doanh: Trưởng phòng, Phó phòng, Chuyên viên, Nhân viên
-        5: [4, 5, 9]          // Xưởng sản xuất: Quản đốc, Tổ trưởng, Công nhân
+        1: [1, 3, 7, 8],   // Hành chính: Giám đốc, Phó phòng, Chuyên viên, Nhân viên
+        2: [3, 7, 8],      // Nhân sự: Phó phòng, Chuyên viên, Nhân viên
+        3: [3, 6, 7, 8],   // Kế toán: Phó phòng, Kế toán trưởng, Chuyên viên, Nhân viên
+        4: [3, 7, 8],      // Kinh doanh: Phó phòng, Chuyên viên, Nhân viên
+        5: [4, 5, 9]       // Xưởng sản xuất: Quản đốc, Tổ trưởng, Công nhân
     };
 
     let originalPositions = [];
