@@ -331,15 +331,15 @@
                                                 <td>
                                                     <div class="emp-cell">
                                                         <c:set var="initials" value=""/>
-                                                        <c:if test="${not empty c.employeeName}">
-                                                            <c:set var="parts" value="${fn:split(c.employeeName, ' ')}"/>
+                                                        <c:if test="${not empty c.fullName}">
+                                                            <c:set var="parts" value="${fn:split(c.fullName, ' ')}"/>
                                                             <c:set var="lastPart" value="${parts[fn:length(parts) - 1]}"/>
                                                             <c:set var="initials" value="${fn:substring(lastPart, 0, 1)}"/>
                                                         </c:if>
                                                         <div class="emp-avatar">${initials}</div>
                                                         <div class="emp-info">
-                                                            <div class="emp-name">${c.employeeName}</div>
-                                                            <div class="emp-code">${c.employeeCode}</div>
+                                                            <div class="emp-name">${c.fullName}</div>
+                                                            <div class="emp-code">NV${c.userId}</div>
                                                         </div>
                                                     </div>
                                                 </td>

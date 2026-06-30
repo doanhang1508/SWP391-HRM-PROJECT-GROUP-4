@@ -215,11 +215,11 @@
                                             <td>
                                                 <div class="emp-cell">
                                                     <div class="emp-avatar">
-                                                        <c:if test="${not empty c.employeeName}">${fn:substring(c.employeeName,fn:length(c.employeeName)-1,fn:length(c.employeeName))}</c:if>
+                                                        <c:if test="${not empty c.fullName}">${fn:substring(c.fullName,fn:length(c.fullName)-1,fn:length(c.fullName))}</c:if>
                                                     </div>
                                                     <div>
-                                                        <div class="emp-name">${c.employeeName}</div>
-                                                        <div class="emp-code">${c.employeeCode}</div>
+                                                        <div class="emp-name">${c.fullName}</div>
+                                                        <div class="emp-code">NV${c.userId}</div>
                                                     </div>
                                                 </div>
                                             </td>
@@ -236,7 +236,7 @@
                                             </td>
                                             <td>${not empty c.departmentName ? c.departmentName : '—'}</td>
                                             <td style="font-weight:700;color:#059669;">
-                                                <fmt:formatNumber value="${c.grossSalary != null ? c.grossSalary : c.baseSalary}" type="number" groupingUsed="true"/> đ
+                                                <fmt:formatNumber value="${c.baseSalary}" type="number" groupingUsed="true"/> đ
                                             </td>
                                             <td><fmt:formatDate value="${c.startDate}" pattern="dd/MM/yyyy"/></td>
                                             <td>
@@ -276,7 +276,7 @@
                                                             </button>
                                                         </form>
                                                         <button type="button" class="action-btn btn-reject-icon"
-                                                                onclick="openRejectModal(${c.contractId}, ${c.userId}, '${fn:escapeXml(c.employeeName)}')"
+                                                                onclick="openRejectModal(${c.contractId}, ${c.userId}, '${fn:escapeXml(c.fullName)}')"
                                                                 title="Từ chối">
                                                             <i class="fas fa-times"></i>
                                                         </button>

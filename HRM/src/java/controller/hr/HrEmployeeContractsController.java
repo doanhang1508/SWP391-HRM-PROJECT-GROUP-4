@@ -323,7 +323,7 @@ public class HrEmployeeContractsController extends HttpServlet {
             try {
                 if (currentRoleId != 2 && currentRoleId != 1 && currentRoleId != 4) {
                     session.setAttribute("errorMsg", "Lỗi: Bạn không có quyền phê duyệt hợp đồng.");
-                    response.sendRedirect(request.getContextPath() + "/hr/contract-list");
+                    response.sendRedirect(request.getContextPath() + "/hr/contracts");
                     return;
                 }
                 int contractId = Integer.parseInt(request.getParameter("contractId"));
@@ -335,11 +335,11 @@ public class HrEmployeeContractsController extends HttpServlet {
                 } else {
                     session.setAttribute("errorMsg", "Phê duyệt thất bại. Hợp đồng có thể đã bị xóa.");
                 }
-                response.sendRedirect(request.getContextPath() + "/hr/contract-list");
+                response.sendRedirect(request.getContextPath() + "/hr/contracts");
             } catch (Exception e) {
                 e.printStackTrace();
                 session.setAttribute("errorMsg", "Lỗi hệ thống khi phê duyệt hợp đồng.");
-                response.sendRedirect(request.getContextPath() + "/hr/contract-list");
+                response.sendRedirect(request.getContextPath() + "/hr/contracts");
             }
         }
     }

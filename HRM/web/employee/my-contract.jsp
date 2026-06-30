@@ -324,8 +324,8 @@
                             data-start="<fmt:formatDate value='${c.startDate}' pattern='dd/MM/yyyy'/>"
                             data-end="<c:choose><c:when test='${not empty c.endDate}'><fmt:formatDate value='${c.endDate}' pattern='dd/MM/yyyy'/></c:when><c:otherwise>Không giới hạn</c:otherwise></c:choose>"
                             data-base="<fmt:formatNumber value='${c.baseSalary}' type='number' groupingUsed='true'/>"
-                            data-gross="<fmt:formatNumber value='${c.grossSalary}' type='number' groupingUsed='true'/>"
-                            data-tax="${c.taxCalcTypeName}"
+                            data-gross="<fmt:formatNumber value='${c.baseSalary}' type='number' groupingUsed='true'/>"
+                            data-tax="${c.taxCalcType == 1 ? 'Theo biểu lũy tiến' : (c.taxCalcType == 2 ? 'Khấu trừ 10%' : 'Miễn thuế')}"
                             data-status="${c.status}">
                             <td style="padding: 16px; font-size: 0.875rem; color: #1a1a1a; font-weight: 600; border-bottom: 1px solid #f3f4f6;">
                                 <c:choose>
@@ -343,7 +343,7 @@
                                 <c:choose><c:when test="${not empty c.endDate}"><fmt:formatDate value="${c.endDate}" pattern="dd/MM/yyyy"/></c:when><c:otherwise>Không giới hạn</c:otherwise></c:choose>
                             </td>
                             <td style="padding: 16px; font-size: 0.875rem; color: #1a1a1a; font-weight: 600; border-bottom: 1px solid #f3f4f6;">
-                                <fmt:formatNumber value="${c.grossSalary}" type="number" groupingUsed="true"/> đ
+                                <fmt:formatNumber value="${c.baseSalary}" type="number" groupingUsed="true"/> đ
                             </td>
                             <td style="padding: 16px; font-size: 0.875rem; border-bottom: 1px solid #f3f4f6;">
                                 <c:choose>
