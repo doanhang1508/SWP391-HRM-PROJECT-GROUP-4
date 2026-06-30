@@ -859,8 +859,8 @@
                                                                 </div>
                                                             </div>
                                                             <div class="col-6 col-md-3">
-                                                                <div class="p-2 rounded text-center" style="background:#fefce8;border:1px solid #fde68a;">
-                                                                    <div class="fw-bold text-warning" style="font-size:1.2rem;" id="msLeave">-</div>
+                                                                <div class="p-2 rounded text-center" style="background:var(--ng-l);border:1px solid rgba(239, 68, 68, 0.2);">
+                                                                    <div class="fw-bold" style="font-size:1.2rem;color:var(--ng);" id="msLeave">-</div>
                                                                     <div class="text-muted" style="font-size:.75rem;">Tổng ngày nghỉ</div>
                                                                 </div>
                                                             </div>
