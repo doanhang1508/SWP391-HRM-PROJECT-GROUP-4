@@ -162,7 +162,8 @@ public class HrResignationApprovalController extends HttpServlet {
         }
 
         // Bước 2: Transaction vô hiệu hóa tài khoản + cập nhật employment_status_id=4
-        boolean deactivated = userDAO.approveResignation(rr.getUserId());
+        //         + chuyển hợp đồng Active → Terminated (end_date = desired_last_date)
+        boolean deactivated = userDAO.approveResignation(rr.getUserId(), rr.getDesiredLastDate());
 
         if (deactivated) {
             session.setAttribute("successMessage",

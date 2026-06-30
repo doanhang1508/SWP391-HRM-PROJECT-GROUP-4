@@ -401,6 +401,13 @@ public class PayrollDAO {
         java.sql.Date sqlFirstDay = java.sql.Date.valueOf(firstDay);
         java.sql.Date sqlLastDay = java.sql.Date.valueOf(lastDay);
 
+        // Điều kiện eligibility cho nhân viên status=0:
+        // - Còn có attendance / shift trong tháng (đã làm việc thực tế), HOẶC
+        // - Hợp đồng lao động còn overlap với tháng (start_date <= lastDay AND end_date >= firstDay)
+        //   → bao gồm nhân viên nghỉ giữa tháng (Case 2: end_date trong tháng này)
+        //   → loại nhân viên nghỉ trước tháng (Case 1: end_date < firstDay)
+        // Không dùng work_history — bảng đó là CV/lý lịch cá nhân, không phản ánh
+        // quan hệ hợp đồng lao động thực tế với công ty.
         String sql = "SELECT DISTINCT u.user_id " +
                      "FROM users u " +
                      "LEFT JOIN employee_profiles ep ON u.user_id = ep.user_id " +
@@ -423,10 +430,10 @@ public class PayrollDAO {
                      "                 AND es.work_date >= ? AND es.work_date <= ? " +
                      "           ) " +
                      "           OR EXISTS ( " +
-                     "               SELECT 1 FROM work_history wh " +
-                     "               WHERE wh.user_id = u.user_id " +
-                     "                 AND (wh.end_date >= ? OR wh.end_date IS NULL) " +
-                     "                 AND wh.start_date <= ? " +
+                     "               SELECT 1 FROM employee_contracts ec " +
+                     "               WHERE ec.user_id = u.user_id " +
+                     "                 AND ec.start_date <= ? " +
+                     "                 AND (ec.end_date IS NULL OR ec.end_date >= ?) " +
                      "           ) " +
                      "           OR EXISTS ( " +
                      "               SELECT 1 FROM employee_rewards_disciplines erd " +
@@ -440,15 +447,17 @@ public class PayrollDAO {
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
+            // params: attendance(1-2), shift_assignments(3-4), employee_shifts(5-6),
+            //         employee_contracts(7=lastDay, 8=firstDay), rewards(9=firstDay)
             ps.setDate(1, sqlFirstDay);
             ps.setDate(2, sqlLastDay);
             ps.setDate(3, sqlFirstDay);
             ps.setDate(4, sqlLastDay);
             ps.setDate(5, sqlFirstDay);
             ps.setDate(6, sqlLastDay);
-            ps.setDate(7, sqlFirstDay);
-            ps.setDate(8, sqlLastDay);
-            ps.setDate(9, sqlFirstDay);
+            ps.setDate(7, sqlLastDay);   // ec.start_date <= lastDay
+            ps.setDate(8, sqlFirstDay);  // ec.end_date >= firstDay
+            ps.setDate(9, sqlFirstDay);  // erd.applied_date >= firstDay
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -691,7 +700,14 @@ public class PayrollDAO {
             int roleId = (salaryInfo != null) ? salaryInfo.roleId : -1;
             
             EmployeeContractDAO ecDAO = new EmployeeContractDAO();
-            EmployeeContract activeContract = ecDAO.getActiveContract(userId);
+            // Dùng getContractAsOf (lọc theo ngày cuối tháng) thay vì getActiveContract (lọc theo status).
+            // Lý do: nhân viên nghỉ giữa kỳ (Case 2) có hợp đồng đã chuyển Terminated nhưng
+            // vẫn cần lấy đúng base_salary/tax_calc_type từ hợp đồng đó để tính lương.
+            // getActiveContract() sẽ trả về null → fallback sai. getContractAsOf() trả về đúng.
+            java.time.LocalDate lastDayLocal = java.time.LocalDate.of(year, month, 1)
+                    .with(java.time.temporal.TemporalAdjusters.lastDayOfMonth());
+            java.sql.Date sqlLastDayOfMonth = java.sql.Date.valueOf(lastDayLocal);
+            EmployeeContract activeContract = ecDAO.getContractAsOf(userId, sqlLastDayOfMonth);
             
             BigDecimal baseSalary = BigDecimal.ZERO;
             int taxCalcType = 1;

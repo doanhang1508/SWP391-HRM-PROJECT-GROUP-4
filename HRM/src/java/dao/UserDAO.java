@@ -453,17 +453,31 @@ public class UserDAO {
     }
 
     /**
-     * Approve đơn xin nghỉ việc của nhân viên (self-resignation).
-     * Transaction gồm 2 bước:
-     *   1. UPDATE users SET status = 0
-     *   2. UPDATE employee_profiles SET employment_status_id = 4 (Đã nghỉ việc)
+     * Transaction duyệt đơn nghỉ việc. Gồm 3 bước trong cùng 1 transaction:
+     * 1. Vô hiệu hóa tài khoản (users.status = 0)
+     * 2. Cập nhật trạng thái nhân sự → "Đã nghỉ việc" (employee_profiles.employment_status_id = 4)
+     * 3. Chuyển hợp đồng đang Active sang Terminated với end_date = lastWorkingDate
+     *
+     * Bước 3 bắt buộc để:
+     * - getAllEligibleEmployeeIds() loại đúng nhân viên nghỉ trước kỳ lương (Case 1).
+     * - getContractAsOf() vẫn tìm được hợp đồng cho nhân viên nghỉ giữa kỳ (Case 2).
+     *
      * KHÔNG insert vào employee_rewards_disciplines (khác với terminateEmployee).
      * Rollback toàn bộ nếu bất kỳ bước nào lỗi.
      *
-     * @param userId user_id của nhân viên xin nghỉ
+     * @param userId          user_id của nhân viên xin nghỉ
+     * @param lastWorkingDate ngày làm việc cuối cùng (= desired_last_date từ resignation_requests)
      * @return true nếu transaction thành công
      */
-    public boolean approveResignation(int userId) {
+    public boolean approveResignation(int userId, java.sql.Date lastWorkingDate) {
+        // Null-safety: nếu desired_last_date bị null (edge case dữ liệu cũ),
+        // dùng ngày hiện tại để tránh để hợp đồng open-ended mãi.
+        if (lastWorkingDate == null) {
+            lastWorkingDate = new java.sql.Date(System.currentTimeMillis());
+            System.err.println("[PAYROLL WARNING] approveResignation: lastWorkingDate is null for userId="
+                    + userId + ". Defaulting to today: " + lastWorkingDate);
+        }
+
         DBContext dbContext = new DBContext();
         Connection conn = null;
         try {
@@ -487,7 +501,25 @@ public class UserDAO {
                 ps2.executeUpdate();
             }
 
-            conn.commit(); // Commit Transaction
+            // 3. Chuyển hợp đồng Active sang Terminated với end_date = lastWorkingDate.
+            //    Điều kiện: chỉ áp dụng cho hợp đồng active chưa có end_date
+            //    hoặc có end_date sau ngày nghỉ (tránh update nhầm hợp đồng đã hết hạn đúng trước đó).
+            String updateContractSql =
+                    "UPDATE employee_contracts " +
+                    "SET status = 'Terminated', end_date = ? " +
+                    "WHERE user_id = ? " +
+                    "  AND status = 'Active' " +
+                    "  AND (end_date IS NULL OR end_date > ?)";
+            try (PreparedStatement ps3 = conn.prepareStatement(updateContractSql)) {
+                ps3.setDate(1, lastWorkingDate);
+                ps3.setInt(2, userId);
+                ps3.setDate(3, lastWorkingDate);
+                int contractsUpdated = ps3.executeUpdate();
+                System.out.println("[PAYROLL INFO] approveResignation: userId=" + userId
+                        + " — terminated " + contractsUpdated + " contract(s), end_date=" + lastWorkingDate);
+            }
+
+            conn.commit(); // Commit Transaction — cả 3 bước
             return true;
 
         } catch (Exception e) {

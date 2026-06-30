@@ -118,6 +118,47 @@ public class EmployeeContractDAO {
     }
 
     /**
+     * Lấy hợp đồng đang có hiệu lực vào một ngày cụ thể, bất kể status.
+     * Dùng riêng cho luồng tính lương (PayrollDAO.generatePayrollDraft).
+     *
+     * Lý do KHÔNG lọc theo status:
+     * - Khi HR duyệt đơn nghỉ việc, hợp đồng chuyển sang status='Terminated' ngay lập tức.
+     * - Nhân viên nghỉ giữa kỳ (Case 2) vẫn cần lấy đúng base_salary/tax_calc_type từ
+     *   hợp đồng đã Terminated đó để tính lương đến ngày nghỉ.
+     * - Nếu dùng getActiveContract() (lọc status='Active') sẽ trả về null cho case này
+     *   → rơi vào fallback sai (salary_grades.min_salary, taxCalcType=1 mặc định).
+     *
+     * @param userId    user_id của nhân viên
+     * @param asOfDate  ngày cần kiểm tra (thường = ngày cuối tháng lương)
+     * @return hợp đồng hiệu lực vào ngày đó, hoặc null nếu không có
+     */
+    public EmployeeContract getContractAsOf(int userId, java.sql.Date asOfDate) {
+        String sql = "SELECT ec.*, ct.type_name, p.position_name, d.department_name, sg.grade_name " +
+                     "FROM employee_contracts ec " +
+                     "LEFT JOIN contract_types ct ON ec.contract_type_id = ct.contract_type_id " +
+                     "LEFT JOIN positions p ON ec.position_id = p.position_id " +
+                     "LEFT JOIN departments d ON ec.department_id = d.department_id " +
+                     "LEFT JOIN salary_grades sg ON ec.salary_grade_id = sg.salary_grade_id " +
+                     "WHERE ec.user_id = ? " +
+                     "  AND ec.start_date <= ? " +
+                     "  AND (ec.end_date IS NULL OR ec.end_date >= ?) " +
+                     "ORDER BY ec.start_date DESC, ec.contract_id DESC " +
+                     "LIMIT 1";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setDate(2, asOfDate);
+            ps.setDate(3, asOfDate);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapRow(rs);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
      * Lấy phụ lục đang chờ nhân viên xác nhận (sign_status = 'PENDING').
      */
     public EmployeeContract getPendingAddendum(int userId) {
