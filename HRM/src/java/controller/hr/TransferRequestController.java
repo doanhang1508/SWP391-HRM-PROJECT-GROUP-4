@@ -185,6 +185,44 @@ public class TransferRequestController extends HttpServlet {
                 return;
             }
 
+            // Validate that the new position belongs to the selected new department
+            boolean validDeptPosRelation = false;
+            switch (newDepartmentId) {
+                case 1: // Hành chính
+                    if (newPositionId == 1 || newPositionId == 2 || newPositionId == 3 || newPositionId == 7 || newPositionId == 8) {
+                        validDeptPosRelation = true;
+                    }
+                    break;
+                case 2: // Nhân sự
+                    if (newPositionId == 2 || newPositionId == 3 || newPositionId == 7 || newPositionId == 8) {
+                        validDeptPosRelation = true;
+                    }
+                    break;
+                case 3: // Kế toán
+                    if (newPositionId == 2 || newPositionId == 3 || newPositionId == 6 || newPositionId == 7 || newPositionId == 8) {
+                        validDeptPosRelation = true;
+                    }
+                    break;
+                case 4: // Kinh doanh
+                    if (newPositionId == 2 || newPositionId == 3 || newPositionId == 7 || newPositionId == 8) {
+                        validDeptPosRelation = true;
+                    }
+                    break;
+                case 5: // Xưởng sản xuất
+                    if (newPositionId == 4 || newPositionId == 5 || newPositionId == 9) {
+                        validDeptPosRelation = true;
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+            if (!validDeptPosRelation) {
+                request.setAttribute("errorMessage", "Chức vụ mới được chọn không phù hợp với phòng ban mới.");
+                request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
+                return;
+            }
+
             // Create request model
             TransferRequest req = new TransferRequest();
             req.setEmployeeId(employeeId);

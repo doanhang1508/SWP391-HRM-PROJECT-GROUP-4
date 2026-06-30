@@ -148,7 +148,7 @@
                         <div class="form-col">
                             <div class="form-group">
                                 <label class="form-label" for="newDepartmentId">Phòng ban mới *</label>
-                                <select id="newDepartmentId" name="newDepartmentId" class="form-control" required>
+                                <select id="newDepartmentId" name="newDepartmentId" class="form-control" onchange="updateNewPositions()" required>
                                     <option value="">-- Chọn phòng ban mới --</option>
                                     <c:forEach items="${departments}" var="d">
                                         <option value="${d.departmentId}">${d.departmentName}</option>
@@ -159,7 +159,7 @@
                         <div class="form-col">
                             <div class="form-group">
                                 <label class="form-label" for="newPositionId">Chức vụ mới *</label>
-                                <select id="newPositionId" name="newPositionId" class="form-control" required>
+                                <select id="newPositionId" name="newPositionId" class="form-control" required disabled>
                                     <option value="">-- Chọn chức vụ mới --</option>
                                     <c:forEach items="${positions}" var="p">
                                         <option value="${p.positionId}">${p.positionName}</option>
@@ -192,6 +192,27 @@
 </div>
 
 <script>
+    const deptPositions = {
+        1: [1, 2, 3, 7, 8],   // Hành chính: Giám đốc, Trưởng phòng, Phó phòng, Chuyên viên, Nhân viên
+        2: [2, 3, 7, 8],      // Nhân sự: Trưởng phòng, Phó phòng, Chuyên viên, Nhân viên
+        3: [2, 3, 6, 7, 8],   // Kế toán: Trưởng phòng, Phó phòng, Kế toán trưởng, Chuyên viên, Nhân viên
+        4: [2, 3, 7, 8],      // Kinh doanh: Trưởng phòng, Phó phòng, Chuyên viên, Nhân viên
+        5: [4, 5, 9]          // Xưởng sản xuất: Quản đốc, Tổ trưởng, Công nhân
+    };
+
+    let originalPositions = [];
+
+    window.addEventListener('DOMContentLoaded', (event) => {
+        var posSelect = document.getElementById("newPositionId");
+        for (var i = 0; i < posSelect.options.length; i++) {
+            var opt = posSelect.options[i];
+            originalPositions.push({
+                value: opt.value,
+                text: opt.text
+            });
+        }
+    });
+
     function updateEmployeeDetails() {
         var select = document.getElementById("employeeSelect");
         var selectedOption = select.options[select.selectedIndex];
@@ -201,6 +222,42 @@
         
         document.getElementById("currentDeptInput").value = dept;
         document.getElementById("currentPosInput").value = pos;
+    }
+
+    function updateNewPositions() {
+        var deptSelect = document.getElementById("newDepartmentId");
+        var posSelect = document.getElementById("newPositionId");
+        var selectedDept = deptSelect.value;
+
+        if (!selectedDept) {
+            posSelect.innerHTML = '<option value="">-- Chọn chức vụ mới --</option>';
+            posSelect.disabled = true;
+            return;
+        }
+
+        posSelect.disabled = false;
+        var validPosIds = deptPositions[selectedDept] || [];
+
+        // Clear existing options
+        posSelect.innerHTML = '';
+
+        // Add placeholder option
+        var placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.text = "-- Chọn chức vụ mới --";
+        posSelect.appendChild(placeholder);
+
+        // Add valid options
+        originalPositions.forEach(function(opt) {
+            if (opt.value === "") return;
+            var posId = parseInt(opt.value);
+            if (validPosIds.includes(posId)) {
+                var newOpt = document.createElement("option");
+                newOpt.value = opt.value;
+                newOpt.text = opt.text;
+                posSelect.appendChild(newOpt);
+            }
+        });
     }
 </script>
 
