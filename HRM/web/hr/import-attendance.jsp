@@ -166,16 +166,14 @@
                         <label>Tháng import</label>
                         <select name="importMonth" required>
                             <c:forEach begin="1" end="12" var="m">
-                                <option value="${m}" ${m == currentMonth ? 'selected' : ''}>Tháng ${m}</option>
+                                <option value="${m}" ${m == currentMonth ? 'selected' : ''} ${m != currentMonth ? 'disabled' : ''}>Tháng ${m}</option>
                             </c:forEach>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>Năm</label>
                         <select name="importYear" required>
-                            <option value="2026">2026</option>
-                            <option value="2025">2025</option>
-                            <option value="2024">2024</option>
+                            <option value="${currentYear}" selected>${currentYear}</option>
                         </select>
                     </div>
                 </div>
