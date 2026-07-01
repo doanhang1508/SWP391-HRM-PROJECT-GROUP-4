@@ -164,16 +164,18 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Tháng import</label>
-                        <select name="importMonth" required>
+                        <select name="importMonth" id="importMonthSelect" required>
                             <c:forEach begin="1" end="12" var="m">
-                                <option value="${m}" ${m == currentMonth ? 'selected' : ''} ${m != currentMonth ? 'disabled' : ''}>Tháng ${m}</option>
+                                <option value="${m}" ${m == currentMonth ? 'selected' : ''}>Tháng ${m}</option>
                             </c:forEach>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>Năm</label>
-                        <select name="importYear" required>
-                            <option value="${currentYear}" selected>${currentYear}</option>
+                        <select name="importYear" id="importYearSelect" required>
+                            <option value="2026" ${2026 == currentYear ? 'selected' : ''}>2026</option>
+                            <option value="2025" ${2025 == currentYear ? 'selected' : ''}>2025</option>
+                            <option value="2024" ${2024 == currentYear ? 'selected' : ''}>2024</option>
                         </select>
                     </div>
                 </div>
@@ -231,6 +233,22 @@
         fileInput.files = e.dataTransfer.files;
         fileInput.dispatchEvent(new Event('change'));
     });
+
+    const importMonthSelect = document.getElementById('importMonthSelect');
+    const importYearSelect = document.getElementById('importYearSelect');
+    const sysCurrentMonth = ${currentMonth};
+    const sysCurrentYear = ${currentYear};
+
+    function validateSelection() {
+        if (parseInt(importMonthSelect.value) !== sysCurrentMonth || parseInt(importYearSelect.value) !== sysCurrentYear) {
+            alert("Hệ thống chỉ cho phép import chấm công cho tháng hiện tại (" + sysCurrentMonth + "/" + sysCurrentYear + "). Bạn không thể chọn tháng/năm khác!");
+            importMonthSelect.value = sysCurrentMonth;
+            importYearSelect.value = sysCurrentYear;
+        }
+    }
+
+    importMonthSelect.addEventListener('change', validateSelection);
+    importYearSelect.addEventListener('change', validateSelection);
 </script>
 
 <jsp:include page="../footer.jsp" />
