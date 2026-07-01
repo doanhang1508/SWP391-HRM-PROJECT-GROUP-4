@@ -6,6 +6,9 @@ import model.KpiEvaluation;
 import model.KpiEvaluationItem;
 import model.KpiComment;
 import model.User;
+import model.EmployeeContract;
+import dao.EmployeeContractDAO;
+import dao.RewardDisciplineDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -16,6 +19,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Calendar;
 
 @WebServlet(name = "ManagerKpiApprovalController", urlPatterns = {"/manager/kpi-approvals"})
 public class ManagerKpiApprovalController extends HttpServlet {
@@ -155,42 +159,35 @@ public class ManagerKpiApprovalController extends HttpServlet {
                 
                 boolean updated = kpiDAO.updateEvaluationStatus(evaluationId, targetStatus, user.getUserId(), note);
                 if (updated) {
-                    String redirectSuccessParam = targetStatus.toLowerCase();
-                    if ("APPROVED".equals(targetStatus) && eval.getWeightedScore() >= 9.0) {
+                    if ("APPROVED".equals(targetStatus)) {
                         try {
-                            KpiCycle cycle = kpiDAO.getCycleById(eval.getCycleId());
-                            int month = 1;
-                            int year = 2026;
-                            if (cycle != null && cycle.getEndDate() != null) {
-                                java.time.LocalDate localEndDate = cycle.getEndDate().toLocalDate();
-                                month = localEndDate.getMonthValue();
-                                year = localEndDate.getYear();
-                            }
-                            
-                            dao.PayrollDAO payrollDAO = new dao.PayrollDAO();
-                            dao.PayrollDAO.EmployeeSalaryInfo salaryInfo = payrollDAO.getEmployeeSalaryInfo(eval.getEmployeeId());
-                            java.math.BigDecimal baseSalary = java.math.BigDecimal.ZERO;
-                            if (salaryInfo != null && salaryInfo.baseSalary != null) {
-                                baseSalary = salaryInfo.baseSalary;
-                            } else {
-                                dao.EmployeeContractDAO ecDAO = new dao.EmployeeContractDAO();
-                                model.EmployeeContract activeContract = ecDAO.getActiveContract(eval.getEmployeeId());
-                                if (activeContract != null && activeContract.getBaseSalary() != null) {
-                                    baseSalary = activeContract.getBaseSalary();
+                            // Integrate with Payroll System
+                            EmployeeContractDAO contractDAO = new EmployeeContractDAO();
+                            EmployeeContract contract = contractDAO.getActiveContract(eval.getEmployeeId());
+                            if (contract != null && contract.getBaseSalary() != null) {
+                                KpiCycle cycle = kpiDAO.getCycleById(eval.getCycleId());
+                                int month = 0;
+                                int year = 0;
+                                if (cycle != null && cycle.getEndDate() != null) {
+                                    Calendar cal = Calendar.getInstance();
+                                    cal.setTime(cycle.getEndDate());
+                                    month = cal.get(Calendar.MONTH) + 1;
+                                    year = cal.get(Calendar.YEAR);
+                                }
+                                
+                                if (month > 0 && year > 0) {
+                                    RewardDisciplineDAO rdDAO = new RewardDisciplineDAO();
+                                    // Pass kpiScore as a ratio (e.g. 8.5/10 = 0.85)
+                                    rdDAO.calculateKPIBonus(eval.getEmployeeId(), month, year, contract.getBaseSalary(), eval.getScore() / 10.0);
                                 }
                             }
-                            
-                            if (baseSalary.compareTo(java.math.BigDecimal.ZERO) > 0) {
-                                dao.RewardDisciplineDAO rdDAO = new dao.RewardDisciplineDAO();
-                                double kpiFraction = eval.getWeightedScore() / 10.0;
-                                rdDAO.calculateKPIBonus(eval.getEmployeeId(), month, year, baseSalary, kpiFraction);
-                                redirectSuccessParam = "approved_with_reward";
-                            }
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            // Optional: handle failure without blocking approval success
                         }
                     }
-                    response.sendRedirect(request.getContextPath() + "/manager/kpi-approvals?cycleId=" + eval.getCycleId() + "&success=" + redirectSuccessParam);
+
+                    response.sendRedirect(request.getContextPath() + "/manager/kpi-approvals?cycleId=" + eval.getCycleId() + "&success=" + targetStatus.toLowerCase());
                     return;
                 }
             }
