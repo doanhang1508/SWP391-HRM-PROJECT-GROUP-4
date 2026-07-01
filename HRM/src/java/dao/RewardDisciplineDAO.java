@@ -425,7 +425,19 @@ public class RewardDisciplineDAO {
         erd.setUserId(userId);
         erd.setRewardDisciplineId(rdKpi != null ? rdKpi.getId() : 1);
         erd.setAmount(actualBonus);
-        erd.setNote("KPI Score: " + (kpiScore * 100) + "%");
+        
+        double pct = kpiScore * 100;
+        String formattedPct;
+        if (pct == (long) pct) {
+            formattedPct = String.format("%d", (long) pct);
+        } else {
+            formattedPct = String.format(java.util.Locale.US, "%.1f", pct);
+            if (formattedPct.endsWith(".0")) {
+                formattedPct = formattedPct.substring(0, formattedPct.length() - 2);
+            }
+        }
+        erd.setNote("KPI Score: " + formattedPct + "%");
+        
         erd.setAppliedDate(Date.valueOf(LocalDate.of(year, month, 28)));
         this.insertManualRecord(erd);
     }

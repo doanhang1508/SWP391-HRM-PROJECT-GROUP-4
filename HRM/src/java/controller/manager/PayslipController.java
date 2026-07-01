@@ -367,7 +367,8 @@ public class PayslipController extends HttpServlet {
                 if ("Reward".equalsIgnoreCase(erd.getType())) {
                     if (!firstBonus) json.append(",");
                     json.append("{");
-                    String note = erd.getNote() != null ? " - " + erd.getNote() : "";
+                    String noteVal = formatNoteSafe(erd.getNote());
+                    String note = !noteVal.isEmpty() ? " - " + noteVal : "";
                     json.append("\"name\":\"").append(escapeHtml(erd.getRewardDisciplineName() + note)).append("\",");
                     json.append("\"amount\":").append(erd.getAmount());
                     json.append("}");
@@ -382,7 +383,8 @@ public class PayslipController extends HttpServlet {
                 if ("Discipline".equalsIgnoreCase(erd.getType())) {
                     if (!firstDed) json.append(",");
                     json.append("{");
-                    String note = erd.getNote() != null ? " - " + erd.getNote() : "";
+                    String noteVal = formatNoteSafe(erd.getNote());
+                    String note = !noteVal.isEmpty() ? " - " + noteVal : "";
                     json.append("\"name\":\"").append(escapeHtml(erd.getRewardDisciplineName() + note)).append("\",");
                     json.append("\"amount\":").append(erd.getAmount());
                     json.append("}");
@@ -405,6 +407,30 @@ public class PayslipController extends HttpServlet {
             e.printStackTrace();
             response.getWriter().write("{\"error\": \"Server error\"}");
         }
+    }
+
+    private String formatNoteSafe(String note) {
+        if (note == null) return "";
+        if (note.contains("KPI Score:")) {
+            try {
+                java.util.regex.Pattern p = java.util.regex.Pattern.compile("KPI Score:\\s*([0-9.]+)\\s*%");
+                java.util.regex.Matcher m = p.matcher(note);
+                if (m.find()) {
+                    double val = Double.parseDouble(m.group(1));
+                    String formattedVal;
+                    if (val == (long) val) {
+                        formattedVal = String.format("%d", (long) val);
+                    } else {
+                        formattedVal = String.format(java.util.Locale.US, "%.1f", val);
+                        if (formattedVal.endsWith(".0")) {
+                            formattedVal = formattedVal.substring(0, formattedVal.length() - 2);
+                        }
+                    }
+                    return "KPI Score: " + formattedVal + "%";
+                }
+            } catch (Exception ignored) {}
+        }
+        return note;
     }
 
     private String escapeHtml(String val) {
