@@ -32,6 +32,48 @@
     .badge-soft.LATE { background: #fef3c7; color: #d97706; }
     .badge-soft.ABSENT { background: #fee2e2; color: #dc2626; }
     
+    /* Pagination Styles */
+    .pagination-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 24px;
+        padding-top: 16px;
+        border-top: 1px solid #e2e8f0;
+    }
+    .pagination-info {
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+    .pagination-buttons {
+        display: flex;
+        gap: 8px;
+    }
+    .btn-pag {
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        background: #fff;
+        color: #1e293b;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+    .btn-pag:hover:not(.disabled) {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+        color: #1e293b;
+    }
+    .btn-pag.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+    
     @media(max-width:768px){.main-content{width:100%!important;padding:20px 16px!important;}}
 </style>
 
@@ -205,24 +247,31 @@
                 </table>
             </div>
 
-            <!-- Pagination -->
-            <c:if test="${totalPages > 1}">
-                <nav aria-label="Page navigation" class="mt-4">
-                    <ul class="pagination justify-content-center">
-                        <li class="page-item ${currentPage == 1 ? 'disabled' : ''}">
-                            <a class="page-link" href="?action=detail&month=${selectedMonth}&year=${selectedYear}&userName=${selectedUserName}&workDate=${selectedWorkDate}&page=${currentPage - 1}">Trước</a>
-                        </li>
-                        <c:forEach begin="1" end="${totalPages}" var="i">
-                            <li class="page-item ${currentPage == i ? 'active' : ''}">
-                                <a class="page-link" href="?action=detail&month=${selectedMonth}&year=${selectedYear}&userName=${selectedUserName}&workDate=${selectedWorkDate}&page=${i}">${i}</a>
-                            </li>
-                        </c:forEach>
-                        <li class="page-item ${currentPage == totalPages ? 'disabled' : ''}">
-                            <a class="page-link" href="?action=detail&month=${selectedMonth}&year=${selectedYear}&userName=${selectedUserName}&workDate=${selectedWorkDate}&page=${currentPage + 1}">Sau</a>
-                        </li>
-                    </ul>
-                </nav>
-            </c:if>
+            <!-- Pagination container -->
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    <c:choose>
+                        <c:when test="${empty totalRecords || totalRecords == 0}">
+                            Hiển thị 0 - 0 trong số 0 bản ghi.
+                        </c:when>
+                        <c:otherwise>
+                            Hiển thị ${(currentPage - 1) * 15 + 1} - ${currentPage * 15 > totalRecords ? totalRecords : currentPage * 15} trong số ${totalRecords} bản ghi.
+                        </c:otherwise>
+                    </c:choose>
+                </div>
+                <div class="pagination-buttons">
+                    <a href="?action=detail&month=${selectedMonth}&year=${selectedYear}&userName=${selectedUserName}&workDate=${selectedWorkDate}&page=${currentPage - 1}" 
+                       class="btn-pag ${currentPage == 1 ? 'disabled' : ''}" 
+                       title="Trang trước">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                    <a href="?action=detail&month=${selectedMonth}&year=${selectedYear}&userName=${selectedUserName}&workDate=${selectedWorkDate}&page=${currentPage + 1}" 
+                       class="btn-pag ${currentPage == totalPages || totalPages == 0 ? 'disabled' : ''}" 
+                       title="Trang sau">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 </div>

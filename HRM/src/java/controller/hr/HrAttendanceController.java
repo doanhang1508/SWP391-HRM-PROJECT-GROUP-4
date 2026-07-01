@@ -94,6 +94,7 @@ public class HrAttendanceController extends HttpServlet {
         request.setAttribute("summaryList", summaryList);
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
+        request.setAttribute("totalRecords", totalRecords);
         
         request.getRequestDispatcher("/hr/attendance-summary.jsp").forward(request, response);
     }
@@ -134,6 +135,7 @@ public class HrAttendanceController extends HttpServlet {
         request.setAttribute("detailList", detailList);
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
+        request.setAttribute("totalRecords", totalRecords);
         
         request.getRequestDispatcher("/hr/attendance-detail.jsp").forward(request, response);
     }
