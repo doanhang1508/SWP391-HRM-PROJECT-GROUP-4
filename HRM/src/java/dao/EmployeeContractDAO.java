@@ -412,6 +412,47 @@ public class EmployeeContractDAO {
     }
 
     /**
+     * Thêm phụ lục hợp đồng (ADDENDUM) dùng chung Connection từ bên ngoài.
+     * Dùng trong approveTransferRequest() để đảm bảo cùng 1 transaction.
+     * status='Active', sign_status='SIGNED' vì ADDENDUM từ điều chuyển đã qua duyệt quản lý.
+     *
+     * @param conn Connection đang dùng (đã setAutoCommit(false))
+     * @param c    EmployeeContract object chứa dữ liệu ADDENDUM
+     * @return true nếu insert thành công
+     */
+    public boolean insertAddendumInTransaction(Connection conn, EmployeeContract c) throws SQLException {
+        String sql = "INSERT INTO employee_contracts " +
+                     "(user_id, contract_type_id, position_id, department_id, salary_grade_id, " +
+                     " start_date, end_date, base_salary, tax_calc_type, " +
+                     " doc_type, parent_contract_id, addendum_reason, status, sign_status, signed_at) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ADDENDUM', ?, ?, 'Active', 'SIGNED', NOW())";
+        try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setInt(1, c.getUserId());
+            ps.setInt(2, c.getContractTypeId());
+            ps.setInt(3, c.getPositionId());
+            ps.setInt(4, c.getDepartmentId());
+            ps.setInt(5, c.getSalaryGradeId() > 0 ? c.getSalaryGradeId() : 1);
+            ps.setDate(6, c.getStartDate());
+            if (c.getEndDate() != null) ps.setDate(7, c.getEndDate());
+            else ps.setNull(7, java.sql.Types.DATE);
+            ps.setBigDecimal(8, c.getBaseSalary());
+            ps.setInt(9, c.getTaxCalcType());
+            if (c.getParentContractId() != null) ps.setInt(10, c.getParentContractId());
+            else ps.setNull(10, java.sql.Types.INTEGER);
+            ps.setString(11, c.getAddendumReason());
+
+            int rows = ps.executeUpdate();
+            if (rows > 0) {
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    if (keys.next()) c.setContractId(keys.getInt(1));
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Thêm phụ lục hợp đồng (ADDENDUM).
      * Sau khi insert, contractId được set lại vào object.
      */

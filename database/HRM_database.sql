@@ -482,8 +482,49 @@ CREATE TABLE employee_rewards_disciplines (
     FOREIGN KEY (reward_discipline_id) REFERENCES reward_disciplines(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- ── transfer_requests: Điều chuyển nội bộ (Internal Transfer) ──────────────
+-- Tích hợp từ: transfer_request_migration.sql + transfer_salary_migration.sql
+CREATE TABLE IF NOT EXISTS transfer_requests (
+    transfer_request_id INT AUTO_INCREMENT PRIMARY KEY,
+    employee_id         INT         NOT NULL,
+    old_department_id   INT         NULL,
+    old_position_id     INT         NULL,
+    old_role_id         INT         NULL,
+    new_department_id   INT         NOT NULL,
+    new_position_id     INT         NOT NULL,
+    new_role_id         INT         NOT NULL,
+    -- Lớp 2: Thông tin lương mới (tuỳ chọn — NULL = giữ nguyên lương hiện tại)
+    new_salary_grade_id INT         NULL
+                        COMMENT 'Ngạch lương mới (NULL = giữ nguyên ngạch lương từ hợp đồng active)',
+    new_base_salary     DECIMAL(15,2) NULL
+                        COMMENT 'Lương cơ bản mới (NULL = giữ nguyên). Bắt buộc nếu new_salary_grade_id != NULL',
+    reason              TEXT        NOT NULL,
+    effective_date      DATE        NOT NULL,
+    status              ENUM('PENDING','APPROVED','REJECTED','CANCELLED') NOT NULL DEFAULT 'PENDING',
+    requested_by        INT         NOT NULL,
+    approved_by         INT         NULL,
+    approved_at         TIMESTAMP   NULL,
+    reject_reason       TEXT        NULL,
+    created_at          TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP   DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_transfer_employee  FOREIGN KEY (employee_id)       REFERENCES users(user_id)       ON DELETE CASCADE,
+    CONSTRAINT fk_transfer_old_dept  FOREIGN KEY (old_department_id) REFERENCES departments(department_id) ON DELETE SET NULL,
+    CONSTRAINT fk_transfer_old_pos   FOREIGN KEY (old_position_id)   REFERENCES positions(position_id)    ON DELETE SET NULL,
+    CONSTRAINT fk_transfer_old_role  FOREIGN KEY (old_role_id)       REFERENCES roles(role_id)            ON DELETE SET NULL,
+    CONSTRAINT fk_transfer_new_dept  FOREIGN KEY (new_department_id) REFERENCES departments(department_id) ON DELETE CASCADE,
+    CONSTRAINT fk_transfer_new_pos   FOREIGN KEY (new_position_id)   REFERENCES positions(position_id)    ON DELETE CASCADE,
+    CONSTRAINT fk_transfer_new_role  FOREIGN KEY (new_role_id)       REFERENCES roles(role_id)            ON DELETE CASCADE,
+    CONSTRAINT fk_transfer_requester FOREIGN KEY (requested_by)      REFERENCES users(user_id)       ON DELETE CASCADE,
+    CONSTRAINT fk_transfer_approver  FOREIGN KEY (approved_by)       REFERENCES users(user_id)       ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX idx_transfer_employee ON transfer_requests(employee_id);
+CREATE INDEX idx_transfer_status   ON transfer_requests(status);
+
 -- 3. BẬT LẠI KIỂM TRA KHÓA NGOẠI
 SET FOREIGN_KEY_CHECKS = 1;
+
 
 -- =========================================================================
 -- =========================== SEED DATA ===================================

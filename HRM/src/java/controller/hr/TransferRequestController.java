@@ -3,11 +3,13 @@ package controller.hr;
 import dao.DepartmentDAO;
 import dao.PositionDAO;
 import dao.RoleDAO;
+import dao.SalaryGradeDAO;
 import dao.TransferRequestDAO;
 import dao.UserDAO;
 import model.Department;
 import model.Position;
 import model.Role;
+import model.SalaryGrade;
 import model.TransferRequest;
 import model.User;
 
@@ -19,21 +21,77 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.List;
 
+// ============================================================================
+// [FIX #5] Mapping vai trò – chức vụ – phòng ban dưới dạng constant rõ ràng
+// Thay thế các if/else hard-code số ID trước đây
+//
+// Quy tắc: Khi newRoleId thuộc nhóm X, phải thuộc đúng departmentId và positionId tương ứng.
+// Danh sách ID phòng ban:
+//   1=Hành chính, 2=Nhân sự, 3=Kế toán, 4=Kinh doanh, 5=Xưởng sản xuất
+// Danh sách ID chức vụ:
+//   1=Giám đốc, 2=Trưởng phòng, 3=Phó phòng, 4=Quản đốc, 5=Tổ trưởng,
+//   6=Kế toán trưởng, 7=Chuyên viên, 8=Nhân viên, 9=Công nhân
+// Danh sách roleId:
+//   1=Admin, 2=HR Manager, 3=Factory Manager, 4=Director, 5=HR Staff,
+//   6=Department Manager, 7=Employee, 8=Accountant
+// ============================================================================
+
 @WebServlet(name = "TransferRequestController", urlPatterns = {
         "/hr/transfer-request/create",
+        "/hr/transfer-request/cancel",  // [FIX #4] Endpoint mới để hủy request
         "/hr/transfer-requests"
 })
 public class TransferRequestController extends HttpServlet {
 
+    // ── [FIX #5] Mapping constants — rõ tên, dễ bảo trì ────────────────────
+
+    // Role 8 (Accountant): chỉ được ở phòng 3 (Kế toán)
+    private static final int ROLE_ACCOUNTANT = 8;
+    private static final int DEPT_ACCOUNTANT = 3; // Phòng Kế toán
+
+    // Các positionId hợp lệ cho Accountant: 6=Kế toán trưởng, 7=Chuyên viên, 8=Nhân viên
+    private static final int[] POS_ACCOUNTANT_VALID = {6, 7, 8};
+
+    // Role 5 (HR Staff): chỉ được ở phòng 2 (Nhân sự)
+    private static final int ROLE_HR_STAFF = 5;
+    private static final int DEPT_HR_STAFF = 2; // Phòng Nhân sự
+
+    // Các positionId hợp lệ cho HR Staff: 7=Chuyên viên, 8=Nhân viên
+    private static final int[] POS_HR_STAFF_VALID = {7, 8};
+
+    // Role 7 (Employee): tùy phòng ban
+    private static final int ROLE_EMPLOYEE = 7;
+    private static final int DEPT_XUONG = 5; // Phòng Xưởng sản xuất
+
+    // Employee trong Xưởng: positionId 5=Tổ trưởng, 9=Công nhân
+    private static final int[] POS_EMPLOYEE_XUONG_VALID = {5, 9};
+
+    // Employee văn phòng (không phải Xưởng): positionId 3=Phó phòng, 7=Chuyên viên, 8=Nhân viên
+    private static final int[] POS_EMPLOYEE_OFFICE_VALID = {3, 7, 8};
+
+    // Các roleId bị cấm gán qua luồng điều chuyển thường:
+    // 1=Admin, 2=HR Manager, 3=Factory Manager, 4=Director, 6=Department Manager
+    private static final int[] BLOCKED_NEW_ROLE_IDS = {1, 2, 3, 4, 6};
+
+    // roleId quản lý không được là nhân viên bị điều chuyển:
+    // 1=Admin, 2=HR Manager, 3=Factory Manager, 6=Department Manager
+    private static final int[] BLOCKED_CURRENT_ROLE_IDS = {1, 2, 3, 6};
+
+    // positionId bị cấm điều chuyển: 2=Trưởng phòng
+    private static final int POS_TRUONG_PHONG = 2;
+
+    // ── DAO fields ───────────────────────────────────────────────────────────
     private final TransferRequestDAO trDAO = new TransferRequestDAO();
     private final UserDAO userDAO = new UserDAO();
     private final DepartmentDAO deptDAO = new DepartmentDAO();
     private final PositionDAO posDAO = new PositionDAO();
     private final RoleDAO roleDAO = new RoleDAO();
+    private final SalaryGradeDAO salaryGradeDAO = new SalaryGradeDAO(); // [FIX #2]
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -57,17 +115,7 @@ public class TransferRequestController extends HttpServlet {
         String path = request.getServletPath();
 
         if ("/hr/transfer-request/create".equals(path)) {
-            // Load lists
-            List<User> employees = userDAO.getActiveEmployees();
-            List<Department> departments = deptDAO.getAll();
-            List<Position> positions = posDAO.getAll();
-            List<Role> roles = roleDAO.getAllRoles();
-
-            request.setAttribute("employees", employees);
-            request.setAttribute("departments", departments);
-            request.setAttribute("positions", positions);
-            request.setAttribute("roles", roles);
-
+            loadCreateFormData(request);
             request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
         } else {
             // List view
@@ -99,163 +147,173 @@ public class TransferRequestController extends HttpServlet {
         String path = request.getServletPath();
         if ("/hr/transfer-request/create".equals(path)) {
             handleCreateRequest(request, response, currentUser);
+        } else if ("/hr/transfer-request/cancel".equals(path)) {
+            // [FIX #4] Xử lý hủy yêu cầu điều chuyển
+            handleCancelRequest(request, response, currentUser);
         } else {
             response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         }
     }
 
+    /** Load dữ liệu cần thiết cho form tạo request */
+    private void loadCreateFormData(HttpServletRequest request) {
+        request.setAttribute("employees", userDAO.getActiveEmployees());
+        request.setAttribute("departments", deptDAO.getAll());
+        request.setAttribute("positions", posDAO.getAll());
+        request.setAttribute("roles", roleDAO.getAllRoles());
+        request.setAttribute("salaryGrades", salaryGradeDAO.getAll()); // [FIX #2]
+    }
+
     private void handleCreateRequest(HttpServletRequest request, HttpServletResponse response, User currentUser)
             throws ServletException, IOException {
 
-        String employeeIdStr = request.getParameter("employeeId");
+        String employeeIdStr      = request.getParameter("employeeId");
         String newDepartmentIdStr = request.getParameter("newDepartmentId");
-        String newPositionIdStr = request.getParameter("newPositionId");
-        String newRoleIdStr = request.getParameter("newRoleId");
-        String reason = request.getParameter("reason");
-        String effectiveDateStr = request.getParameter("effectiveDate");
+        String newPositionIdStr   = request.getParameter("newPositionId");
+        String newRoleIdStr       = request.getParameter("newRoleId");
+        String reason             = request.getParameter("reason");
+        String effectiveDateStr   = request.getParameter("effectiveDate");
+        // [FIX #2] Thông tin lương mới — optional
+        String newSalaryGradeIdStr = request.getParameter("newSalaryGradeId");
+        String newBaseSalaryStr    = request.getParameter("newBaseSalary");
 
-        // Reload data just in case of validation failure
-        List<User> employees = userDAO.getActiveEmployees();
-        List<Department> departments = deptDAO.getAll();
-        List<Position> positions = posDAO.getAll();
-        List<Role> roles = roleDAO.getAllRoles();
-        request.setAttribute("employees", employees);
-        request.setAttribute("departments", departments);
-        request.setAttribute("positions", positions);
-        request.setAttribute("roles", roles);
+        // Reload data để hiển thị lại khi có lỗi validation
+        loadCreateFormData(request);
 
-        // Validation
+        // ── Validate các trường bắt buộc ─────────────────────────────────────
         if (employeeIdStr == null || employeeIdStr.isEmpty() ||
             newDepartmentIdStr == null || newDepartmentIdStr.isEmpty() ||
             newPositionIdStr == null || newPositionIdStr.isEmpty() ||
             newRoleIdStr == null || newRoleIdStr.isEmpty() ||
             reason == null || reason.trim().isEmpty() ||
             effectiveDateStr == null || effectiveDateStr.isEmpty()) {
-            
+
             request.setAttribute("errorMessage", "Vui lòng nhập đầy đủ các trường thông tin bắt buộc.");
             request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
             return;
         }
 
         try {
-            int employeeId = Integer.parseInt(employeeIdStr);
+            int employeeId      = Integer.parseInt(employeeIdStr);
             int newDepartmentId = Integer.parseInt(newDepartmentIdStr);
-            int newPositionId = Integer.parseInt(newPositionIdStr);
-            int newRoleId = Integer.parseInt(newRoleIdStr);
-            Date effectiveDate = Date.valueOf(effectiveDateStr);
+            int newPositionId   = Integer.parseInt(newPositionIdStr);
+            int newRoleId       = Integer.parseInt(newRoleIdStr);
+            Date effectiveDate  = Date.valueOf(effectiveDateStr);
+
+            // ── [Lớp 1 & 2] Parse thông tin lương mới — optional ─────────────────
+            // Lớp 1 (mặc định): cả 2 đều null → lúc approve, kế thừa từ hợp đồng active hiện tại
+            // Lớp 2 (optional): nếu chọn ngạch mới → bắt buộc phải nhập lương cơ bản mới
+            Integer newSalaryGradeId = null;
+            BigDecimal newBaseSalary = null;
+
+            boolean hasNewGrade  = newSalaryGradeIdStr != null && !newSalaryGradeIdStr.trim().isEmpty();
+            boolean hasNewSalary = newBaseSalaryStr    != null && !newBaseSalaryStr.trim().isEmpty();
+
+            if (hasNewGrade) {
+                newSalaryGradeId = Integer.parseInt(newSalaryGradeIdStr.trim());
+                if (newSalaryGradeId <= 0) {
+                    newSalaryGradeId = null; // Reset nếu giá trị không hợp lệ
+                }
+            }
+
+            if (hasNewSalary) {
+                newBaseSalary = new BigDecimal(newBaseSalaryStr.trim());
+                if (newBaseSalary.compareTo(BigDecimal.ZERO) <= 0) {
+                    request.setAttribute("errorMessage", "Mức lương cơ bản mới phải lớn hơn 0.");
+                    request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
+                    return;
+                }
+            }
+
+            // Cross-validation: chọn ngạch mới nhưng thiếu lương cơ bản
+            if (newSalaryGradeId != null && newBaseSalary == null) {
+                request.setAttribute("errorMessage",
+                    "Vui lòng nhập Lương cơ bản mới khi đã chọn Ngạch lương mới.");
+                request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
+                return;
+            }
+            // Ngược lại: nhập lương nhưng không chọn ngạch → chấp nhận, coi như Lớp 2 một phần
+            // (Trường hợp này không xảy ra trong UI do field lương chỉ hiện khi chọn ngạch)
+
 
             User employee = userDAO.getUserById(employeeId);
-            
-            // 1. Employee must be active
+
+            // 1. Nhân viên phải đang active
             if (employee == null || employee.getStatus() != 1) {
                 request.setAttribute("errorMessage", "Nhân viên không tồn tại hoặc đã nghỉ việc.");
                 request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
                 return;
             }
 
-            // 2. Employee must NOT be Admin, HR Manager, Department Manager, Factory Manager or Trưởng phòng (positionId = 2)
+            // 2. Không điều chuyển nhân viên thuộc nhóm quản lý cấp cao
+            // [FIX #5] Dùng constant BLOCKED_CURRENT_ROLE_IDS thay vì hard-code
             int currentRole = employee.getRoleId();
-            int currentPos = employee.getPositionId();
-            if (currentRole == 1 || currentRole == 2 || currentRole == 3 || currentRole == 6 || currentPos == 2) {
+            int currentPos  = employee.getPositionId();
+            if (containsId(BLOCKED_CURRENT_ROLE_IDS, currentRole) || currentPos == POS_TRUONG_PHONG) {
                 request.setAttribute("errorMessage", "Nhân viên thuộc nhóm quản lý hoặc có vai trò đặc biệt không được phép điều chuyển bằng phiếu này.");
                 request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
                 return;
             }
 
-            // Check if effective date is in the past
-            LocalDate today = LocalDate.now();
-            if (effectiveDate.toLocalDate().isBefore(today)) {
+            // 3. Ngày hiệu lực không được là ngày quá khứ
+            if (effectiveDate.toLocalDate().isBefore(LocalDate.now())) {
                 request.setAttribute("errorMessage", "Ngày hiệu lực không được nhỏ hơn ngày hôm nay.");
                 request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
                 return;
             }
 
-            // 3. Employee must NOT have another transfer request PENDING
+            // 4. Không có request đang PENDING cho nhân viên này
             if (trDAO.hasPendingRequest(employeeId)) {
                 request.setAttribute("errorMessage", "Nhân viên đã có một yêu cầu điều chuyển đang chờ duyệt.");
                 request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
                 return;
             }
 
-            // 4. New department, position, role must exist
-            boolean deptExists = false;
-            for (Department d : departments) {
-                if (d.getDepartmentId() == newDepartmentId) {
-                    deptExists = true;
-                    break;
-                }
-            }
-            boolean posExists = false;
-            for (Position p : positions) {
-                if (p.getPositionId() == newPositionId) {
-                    posExists = true;
-                    break;
-                }
-            }
-            boolean roleExists = false;
-            for (Role r : roles) {
-                if (r.getRoleId() == newRoleId) {
-                    roleExists = true;
-                    break;
-                }
-            }
-
+            // 5. Phòng ban, chức vụ, vai trò mới phải tồn tại trong DB
+            List<Department> departments = deptDAO.getAll();
+            List<Position>   positions   = posDAO.getAll();
+            List<Role>       roles       = roleDAO.getAllRoles();
+            boolean deptExists = false, posExists = false, roleExists = false;
+            for (Department d : departments) if (d.getDepartmentId() == newDepartmentId) { deptExists = true; break; }
+            for (Position p  : positions)   if (p.getPositionId()   == newPositionId)   { posExists  = true; break; }
+            for (Role r      : roles)       if (r.getRoleId()       == newRoleId)       { roleExists = true; break; }
             if (!deptExists || !posExists || !roleExists) {
                 request.setAttribute("errorMessage", "Phòng ban, chức vụ hoặc vai trò mới được chọn không hợp lệ.");
                 request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
                 return;
             }
 
-            // 5. Department/position/role new must NOT be identical to current
-            if (employee.getDepartmentId() == newDepartmentId && employee.getPositionId() == newPositionId && employee.getRoleId() == newRoleId) {
+            // 6. Thông tin mới phải khác với hiện tại (ít nhất 1 trong 3)
+            if (employee.getDepartmentId() == newDepartmentId
+                    && employee.getPositionId() == newPositionId
+                    && employee.getRoleId() == newRoleId) {
                 request.setAttribute("errorMessage", "Thông tin phòng ban, chức vụ và vai trò mới trùng khớp hoàn toàn với hiện tại.");
                 request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
                 return;
             }
 
-            // 6. New role must NOT be Admin (1), HR Manager (2), Department Manager (6), Factory Manager (3) (and block Director 4 too)
-            if (newRoleId == 1 || newRoleId == 2 || newRoleId == 3 || newRoleId == 4 || newRoleId == 6) {
+            // 7. [FIX #5] Không được gán role cấp cao qua luồng điều chuyển này
+            if (containsId(BLOCKED_NEW_ROLE_IDS, newRoleId)) {
                 request.setAttribute("errorMessage", "Không thể phân quyền Admin hoặc Quản lý cho nhân viên qua luồng điều chuyển này.");
                 request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
                 return;
             }
 
-            // 6b. New position must NOT be Trưởng phòng (2)
-            if (newPositionId == 2) {
-                request.setAttribute("errorMessage", "Không thể điều chuyển nhân viên lên làm Trưởng phòng.");
+            // 8. [FIX #5] Không điều chuyển lên Trưởng phòng
+            if (newPositionId == POS_TRUONG_PHONG) {
+                request.setAttribute("errorMessage", "Không thể điều chuyển nhân viên lên làm Trưởng phòng qua luồng này.");
                 request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
                 return;
             }
 
-            // 7. Validate position-role mapping
-            boolean isValidMapping = true;
-            if (newRoleId == 8) { // Accountant
-                if (newDepartmentId != 3 || (newPositionId != 6 && newPositionId != 7 && newPositionId != 8)) {
-                    isValidMapping = false;
-                }
-            } else if (newRoleId == 5) { // HR Staff
-                if (newDepartmentId != 2 || (newPositionId != 7 && newPositionId != 8)) {
-                    isValidMapping = false;
-                }
-            } else if (newRoleId == 7) { // Employee
-                if (newDepartmentId == 5) { // Xưởng
-                    if (newPositionId != 5 && newPositionId != 9) {
-                        isValidMapping = false;
-                    }
-                } else { // Office
-                    if (newPositionId != 3 && newPositionId != 7 && newPositionId != 8) {
-                        isValidMapping = false;
-                    }
-                }
-            }
-
-            if (!isValidMapping) {
+            // 9. [FIX #5] Validate mapping role–position–department (dùng constant có tên rõ ràng)
+            if (!isValidRoleDeptPosMapping(newRoleId, newDepartmentId, newPositionId)) {
                 request.setAttribute("errorMessage", "Vai trò mới được chọn không phù hợp với chức vụ hoặc phòng ban mới.");
                 request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
                 return;
             }
 
-            // Create request model
+            // Tạo đối tượng request
             TransferRequest req = new TransferRequest();
             req.setEmployeeId(employeeId);
             req.setOldDepartmentId(employee.getDepartmentId());
@@ -267,6 +325,9 @@ public class TransferRequestController extends HttpServlet {
             req.setReason(reason.trim());
             req.setEffectiveDate(effectiveDate);
             req.setRequestedBy(currentUser.getUserId());
+            // [FIX #2] Gán lương mới nếu có
+            req.setNewSalaryGradeId(newSalaryGradeId);
+            req.setNewBaseSalary(newBaseSalary);
 
             boolean success = trDAO.createTransferRequest(req);
             if (success) {
@@ -277,8 +338,71 @@ public class TransferRequestController extends HttpServlet {
             }
 
         } catch (IllegalArgumentException e) {
-            request.setAttribute("errorMessage", "Định dạng ngày hiệu lực không hợp lệ.");
+            request.setAttribute("errorMessage", "Định dạng ngày hiệu lực hoặc số lương không hợp lệ.");
             request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
         }
+    }
+
+    /**
+     * [FIX #4] Xử lý hủy yêu cầu điều chuyển PENDING.
+     * Chỉ cho phép:
+     *   - Người tạo request (HR Staff/Manager đã tạo) hủy request của mình
+     *   - Admin (roleId=1) hoặc HR Manager (roleId=2) hủy bất kỳ request PENDING
+     */
+    private void handleCancelRequest(HttpServletRequest request, HttpServletResponse response, User currentUser)
+            throws ServletException, IOException {
+        String requestIdStr = request.getParameter("requestId");
+        if (requestIdStr == null || requestIdStr.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/hr/transfer-requests?msg=cancel_error");
+            return;
+        }
+
+        try {
+            int requestId = Integer.parseInt(requestIdStr);
+            boolean success = trDAO.cancelTransferRequest(requestId, currentUser.getUserId(), currentUser.getRoleId());
+            if (success) {
+                response.sendRedirect(request.getContextPath() + "/hr/transfer-requests?msg=cancel_success");
+            } else {
+                // Thất bại: có thể request không còn PENDING hoặc không có quyền
+                response.sendRedirect(request.getContextPath() + "/hr/transfer-requests?msg=cancel_error");
+            }
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/hr/transfer-requests?msg=cancel_error");
+        }
+    }
+
+    // ── [FIX #5] Helper methods thay thế if/else hard-code ──────────────────
+
+    /**
+     * Kiểm tra xem một ID có nằm trong mảng không.
+     */
+    private boolean containsId(int[] arr, int id) {
+        for (int v : arr) if (v == id) return true;
+        return false;
+    }
+
+    /**
+     * [FIX #5] Kiểm tra mapping hợp lệ giữa role mới, phòng ban mới, chức vụ mới.
+     * Dùng constant có comment tên rõ ràng thay vì hard-code số ID rải rác.
+     */
+    private boolean isValidRoleDeptPosMapping(int newRoleId, int newDepartmentId, int newPositionId) {
+        if (newRoleId == ROLE_ACCOUNTANT) {
+            // Accountant chỉ được ở phòng Kế toán với các chức vụ tương ứng
+            return newDepartmentId == DEPT_ACCOUNTANT && containsId(POS_ACCOUNTANT_VALID, newPositionId);
+        } else if (newRoleId == ROLE_HR_STAFF) {
+            // HR Staff chỉ được ở phòng Nhân sự với các chức vụ tương ứng
+            return newDepartmentId == DEPT_HR_STAFF && containsId(POS_HR_STAFF_VALID, newPositionId);
+        } else if (newRoleId == ROLE_EMPLOYEE) {
+            if (newDepartmentId == DEPT_XUONG) {
+                // Employee trong Xưởng: Tổ trưởng (5) hoặc Công nhân (9)
+                return containsId(POS_EMPLOYEE_XUONG_VALID, newPositionId);
+            } else {
+                // Employee văn phòng: Phó phòng (3), Chuyên viên (7), Nhân viên (8)
+                return containsId(POS_EMPLOYEE_OFFICE_VALID, newPositionId);
+            }
+        }
+        // Nếu roleId không thuộc các nhóm đã kiểm tra → mặc định cho phép
+        // (các role bị chặn đã được validate ở bước trước)
+        return true;
     }
 }

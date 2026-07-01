@@ -67,6 +67,10 @@
     .transfer-arrow { color: var(--muted); margin: 0 6px; font-size: 0.8rem; }
     .btn-action { display: inline-flex; align-items: center; gap: 6px; background: rgba(59, 130, 246, 0.08); color: var(--blue); border: none; padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: .78rem; text-decoration: none; transition: all .2s; }
     .btn-action:hover { background: var(--blue); color: #fff; }
+    /* [FIX #4] Nút Hủy request */
+    .btn-cancel-req { display: inline-flex; align-items: center; gap: 6px; background: rgba(239, 68, 68, 0.08); color: var(--ng); border: none; padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: .78rem; cursor: pointer; transition: all .2s; font-family: 'Inter', sans-serif; }
+    .btn-cancel-req:hover { background: var(--ng); color: #fff; }
+    .td-actions { display: flex; flex-direction: column; gap: 6px; }
 
     .text-empty { text-align: center; color: var(--muted); padding: 40px 0; font-style: italic; }
 
@@ -104,6 +108,18 @@
             <div class="alert alert-success">
                 <i class="fas fa-check-circle" style="font-size:1.2rem;"></i>
                 Gửi yêu cầu điều chuyển nội bộ thành công! Chờ bộ phận quản lý phê duyệt.
+            </div>
+        </c:if>
+        <c:if test="${param.msg eq 'cancel_success'}">
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle" style="font-size:1.2rem;"></i>
+                Yêu cầu điều chuyển đã được hủy thành công.
+            </div>
+        </c:if>
+        <c:if test="${param.msg eq 'cancel_error'}">
+            <div class="alert" style="background:#fee2e2;border:1px solid #fecdd3;color:#9f1239;">
+                <i class="fas fa-exclamation-circle" style="font-size:1.2rem;"></i>
+                Không thể hủy yêu cầu. Yêu cầu có thể không còn ở trạng thái Chờ duyệt hoặc bạn không có quyền hủy.
             </div>
         </c:if>
 
@@ -172,9 +188,24 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <a href="${pageContext.request.contextPath}/hr/employee-work-history?userId=${tr.employeeId}" class="btn-action" title="Xem lịch sử công tác">
-                                                <i class="fas fa-history"></i> Lịch sử
-                                            </a>
+                                            <div class="td-actions">
+                                                <a href="${pageContext.request.contextPath}/hr/employee-work-history?userId=${tr.employeeId}" class="btn-action" title="Xem lịch sử công tác">
+                                                    <i class="fas fa-history"></i> Lịch sử
+                                                </a>
+                                                <%-- [FIX #4] Nút Hủy: hiện khi PENDING và (người tạo == currentUser HOẶC Admin/HR Manager) --%>
+                                                <c:if test="${tr.status eq 'PENDING'}">
+                                                    <c:set var="cu" value="${sessionScope.currentUser}" />
+                                                    <c:if test="${tr.requestedBy eq cu.userId or cu.roleId eq 1 or cu.roleId eq 2}">
+                                                        <form method="post" action="${pageContext.request.contextPath}/hr/transfer-request/cancel"
+                                                              onsubmit="return confirm('Bạn có chắc chắn muốn HỦY yêu cầu điều chuyển này không?');" style="margin:0">
+                                                            <input type="hidden" name="requestId" value="${tr.transferRequestId}">
+                                                            <button type="submit" class="btn-cancel-req" title="Hủy yêu cầu">
+                                                                <i class="fas fa-ban"></i> Hủy yêu cầu
+                                                            </button>
+                                                        </form>
+                                                    </c:if>
+                                                </c:if>
+                                            </div>
                                         </td>
                                     </tr>
                                 </c:forEach>

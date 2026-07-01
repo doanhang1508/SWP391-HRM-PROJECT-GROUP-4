@@ -18,6 +18,7 @@
         --muted:   #64748b;
         --pri:     #6366f1;
         --pri-dark:#4f46e5;
+        --warn:    #f59e0b;
     }
     * { box-sizing: border-box; }
     body { background: var(--bg); font-family: 'Inter', sans-serif; color: var(--text); }
@@ -56,6 +57,45 @@
     /* SUBMIT BTN */
     .btn-submit { background: var(--pri); color: #fff; border: none; padding: 14px 20px; border-radius: 10px; font-weight: 700; font-size: .95rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all .2s; font-family: 'Inter', sans-serif; width: 100%; margin-top: 10px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2); }
     .btn-submit:hover { background: var(--pri-dark); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(99, 102, 241, 0.3); }
+
+    /* ── EMPLOYEE PICKER ───────────────────────────────────────────────────── */
+    .emp-picker { position: relative; }
+    .emp-search-wrap { position: relative; }
+    .emp-search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: .9rem; pointer-events: none; transition: color .2s; }
+    .emp-search-input { width: 100%; padding: 12px 40px 12px 40px; border: 1px solid var(--border); border-radius: 10px; font-size: .9rem; font-family: 'Inter', sans-serif; outline: none; transition: all .2s; background: #f8fafc; color: var(--text); cursor: pointer; }
+    .emp-search-input:focus { border-color: var(--pri); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15); background: #fff; }
+    .emp-search-input.has-value { background: #fff; }
+    .emp-clear-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; border-radius: 6px; display: none; font-size: .85rem; transition: all .15s; }
+    .emp-clear-btn:hover { background: #f1f5f9; color: var(--ng, #ef4444); }
+    .emp-clear-btn.visible { display: flex; align-items: center; }
+
+    .emp-dropdown { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 30px rgba(10,37,64,0.12); z-index: 999; max-height: 320px; overflow-y: auto; display: none; scroll-behavior: smooth; }
+    .emp-dropdown.open { display: block; animation: dropFadeIn .15s ease; }
+    @keyframes dropFadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+    .emp-dropdown::-webkit-scrollbar { width: 5px; } .emp-dropdown::-webkit-scrollbar-track { background: #f8fafc; } .emp-dropdown::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    .emp-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; cursor: pointer; transition: background .12s; border-bottom: 1px solid #f8fafc; }
+    .emp-item:last-child { border-bottom: none; }
+    .emp-item:hover, .emp-item.focused { background: rgba(99,102,241,0.06); }
+    .emp-item.focused { outline: none; }
+    .emp-avatar { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .85rem; color: #fff; flex-shrink: 0; letter-spacing: .5px; }
+    .emp-info { flex: 1; min-width: 0; }
+    .emp-name { font-weight: 600; font-size: .875rem; color: var(--navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .emp-meta { font-size: .72rem; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .emp-id-badge { font-size: .7rem; font-weight: 700; background: #f1f5f9; color: #64748b; padding: 2px 7px; border-radius: 5px; flex-shrink: 0; }
+    .emp-no-result { padding: 24px; text-align: center; color: var(--muted); font-size: .875rem; font-style: italic; }
+
+    /* Card hiển thị nhân viên đã chọn */
+    .emp-selected-card { display: none; margin-top: 10px; padding: 14px 16px; background: linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(62,207,142,0.05) 100%); border: 1.5px solid rgba(99,102,241,0.25); border-radius: 12px; align-items: center; gap: 12px; animation: dropFadeIn .2s ease; }
+    .emp-selected-card.show { display: flex; }
+    .emp-selected-avatar { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; color: #fff; flex-shrink: 0; }
+    .emp-selected-info { flex: 1; }
+    .emp-selected-name { font-weight: 700; font-size: .95rem; color: var(--navy); }
+    .emp-selected-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .emp-tag { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+    .emp-tag-dept { background: rgba(99,102,241,0.1); color: #4f46e5; }
+    .emp-tag-pos  { background: rgba(16,185,129,0.1); color: #059669; }
+    .emp-tag-id   { background: #f1f5f9; color: #64748b; }
 
     @media (max-width:900px) {
         .page-main { padding: 20px 16px; }
@@ -103,58 +143,51 @@
 
                 <form action="${pageContext.request.contextPath}/hr/transfer-request/create" method="post">
                     
-                    <!-- EMPLOYEE SELECT -->
+                    <!-- EMPLOYEE PICKER (Searchable Combobox) -->
                     <div class="form-group">
-                        <label class="form-label" for="employeeSelect">Chọn nhân viên điều chuyển *</label>
-                        <select id="employeeSelect" name="employeeId" class="form-control" onchange="updateEmployeeDetails()" required>
-                            <option value="">-- Chọn nhân viên --</option>
-                            <c:forEach items="${employees}" var="emp">
+                        <label class="form-label" for="empSearchInput">Chọn nhân viên điều chuyển <span style="color:var(--ng,#ef4444)">*</span></label>
+
+                        <%-- Hidden input thực sự dùng cho form submit --%>
+                        <input type="hidden" id="employeeId" name="employeeId" required>
+
+                        <%-- Dữ liệu nhân viên được render dưới dạng JSON ẩn --%>
+                        <script id="empData" type="application/json">
+                        [
+                            <c:forEach items="${employees}" var="emp" varStatus="loop">
                                 <c:set var="empDeptName" value="Chưa phân phòng" />
-                                <c:forEach items="${departments}" var="d">
-                                    <c:if test="${d.departmentId == emp.departmentId}">
-                                        <c:set var="empDeptName" value="${d.departmentName}" />
-                                    </c:if>
-                                </c:forEach>
-                                
+                                <c:forEach items="${departments}" var="d"><c:if test="${d.departmentId == emp.departmentId}"><c:set var="empDeptName" value="${d.departmentName}" /></c:if></c:forEach>
                                 <c:set var="empPosName" value="Chưa phân chức vụ" />
-                                <c:forEach items="${positions}" var="p">
-                                    <c:if test="${p.positionId == emp.positionId}">
-                                        <c:set var="empPosName" value="${p.positionName}" />
-                                    </c:if>
-                                </c:forEach>
-
+                                <c:forEach items="${positions}" var="p"><c:if test="${p.positionId == emp.positionId}"><c:set var="empPosName" value="${p.positionName}" /></c:if></c:forEach>
                                 <c:set var="empRoleName" value="Nhân viên" />
-                                <c:forEach items="${roles}" var="r">
-                                    <c:if test="${r.roleId == emp.roleId}">
-                                        <c:set var="empRoleName" value="${r.roleName}" />
-                                    </c:if>
-                                </c:forEach>
-                                <option value="${emp.userId}" data-dept="${empDeptName}" data-pos="${empPosName}" data-role-id="${emp.roleId}" data-role="${empRoleName}">${emp.fullName} (#${emp.userId})</option>
+                                <c:forEach items="${roles}" var="r"><c:if test="${r.roleId == emp.roleId}"><c:set var="empRoleName" value="${r.roleName}" /></c:if></c:forEach>
+                                {"id":${emp.userId},"name":"${emp.fullName}","dept":"${empDeptName}","pos":"${empPosName}","role":"${empRoleName}","roleId":${emp.roleId}}<c:if test="${!loop.last}">,</c:if>
                             </c:forEach>
-                        </select>
+                        ]
+                        </script>
+
+                        <div class="emp-picker" id="empPicker">
+                            <div class="emp-search-wrap">
+                                <i class="fas fa-search emp-search-icon" id="empSearchIcon"></i>
+                                <input type="text" id="empSearchInput" class="emp-search-input"
+                                       placeholder="Tìm theo tên hoặc mã nhân viên..."
+                                       autocomplete="off" spellcheck="false">
+                                <button type="button" class="emp-clear-btn" id="empClearBtn" title="Xóa lựa chọn">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="emp-dropdown" id="empDropdown" role="listbox"></div>
+                        </div>
+
+                        <%-- Card hiển thị nhân viên đã chọn --%>
+                        <div class="emp-selected-card" id="empSelectedCard">
+                            <div class="emp-selected-avatar" id="empSelectedAvatar"></div>
+                            <div class="emp-selected-info">
+                                <div class="emp-selected-name" id="empSelectedName"></div>
+                                <div class="emp-selected-tags" id="empSelectedTags"></div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- CURRENT DEPT, POSITION & ROLE (READONLY) -->
-                    <div class="form-row">
-                        <div class="form-col">
-                            <div class="form-group">
-                                <label class="form-label">Phòng ban hiện tại</label>
-                                <input type="text" id="currentDeptInput" class="form-control" readonly placeholder="Chưa chọn">
-                            </div>
-                        </div>
-                        <div class="form-col">
-                            <div class="form-group">
-                                <label class="form-label">Chức vụ hiện tại</label>
-                                <input type="text" id="currentPosInput" class="form-control" readonly placeholder="Chưa chọn">
-                            </div>
-                        </div>
-                        <div class="form-col">
-                            <div class="form-group">
-                                <label class="form-label">Quyền hạn hiện tại (Role)</label>
-                                <input type="text" id="currentRoleInput" class="form-control" readonly placeholder="Chưa chọn">
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- NEW DEPT, POSITION & ROLE -->
                     <div class="form-row">
@@ -194,6 +227,41 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- SALARY CHANGE (OPTIONAL) -->
+                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                            <i class="fas fa-coins" style="color: var(--warn); font-size: 1rem;"></i>
+                            <span style="font-weight: 700; font-size: .875rem; color: var(--navy);">Điều chỉnh lương (tuỳ chọn)</span>
+                            <span style="font-size: .75rem; color: var(--muted); font-style: italic;">— Để trống nếu giữ nguyên lương hiện tại</span>
+                        </div>
+                        <%-- Lớp 2: Chọn ngạch lương mới --%>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" for="newSalaryGradeId">Ngạch lương mới</label>
+                            <select id="newSalaryGradeId" name="newSalaryGradeId" class="form-control"
+                                    onchange="updateSalarySection()">
+                                <option value="">-- Giữ nguyên ngạch lương --</option>
+                                <c:forEach items="${salaryGrades}" var="sg">
+                                    <c:if test="${sg.status}">
+                                        <option value="${sg.salaryGradeId}">${sg.gradeName}</option>
+                                    </c:if>
+                                </c:forEach>
+                            </select>
+                        </div>
+                        <%-- Lương cơ bản mới: ẩn mặc định, hiện + bắt buộc khi chọn ngạch mới --%>
+                        <div id="baseSalaryWrapper" style="display: none; margin-top: 14px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" for="newBaseSalary">
+                                    Lương cơ bản mới (VNĐ) <span style="color: var(--ng);">*</span>
+                                    <span style="font-size: .75rem; color: var(--muted); font-weight: 400;">— Bắt buộc khi thay đổi ngạch lương</span>
+                                </label>
+                                <input type="number" id="newBaseSalary" name="newBaseSalary" class="form-control"
+                                       min="1" step="100000"
+                                       placeholder="VD: 12000000">
+                            </div>
+                        </div>
+                    </div>
+
 
                     <!-- EFFECTIVE DATE -->
                     <div class="form-group">
@@ -364,6 +432,29 @@
         // Auto select if only one valid option
         if (validRoleIds.length === 1) {
             roleSelect.value = validRoleIds[0];
+        }
+    }
+
+    /**
+     * Lớp 2 — Hiện/ẩn input lương cơ bản mới theo ngạch lương được chọn.
+     * - Nếu không chọn ngạch → ẩn input, xóa required (Lớp 1: giữ nguyên lương cũ)
+     * - Nếu chọn ngạch mới  → hiện input + đặt required (bắt buộc nhập lương mới)
+     */
+    function updateSalarySection() {
+        var gradeSelect   = document.getElementById('newSalaryGradeId');
+        var wrapper       = document.getElementById('baseSalaryWrapper');
+        var salaryInput   = document.getElementById('newBaseSalary');
+
+        if (gradeSelect.value) {
+            // Đã chọn ngạch → hiện ô lương, đặt required
+            wrapper.style.display = 'block';
+            salaryInput.required  = true;
+            salaryInput.focus();
+        } else {
+            // Không chọn ngạch → ẩn ô lương, bỏ required, xóa giá trị cũ
+            wrapper.style.display = 'none';
+            salaryInput.required  = false;
+            salaryInput.value     = '';
         }
     }
 </script>

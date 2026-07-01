@@ -1,5 +1,6 @@
 package model;
 
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
 
@@ -28,6 +29,9 @@ public class TransferRequest {
     private String oldRoleName;
     private int newRoleId;
     private String newRoleName;
+    // [FIX #2] Thông tin lương mới — nullable, null = giữ nguyên lương hiện tại
+    private Integer newSalaryGradeId;
+    private BigDecimal newBaseSalary;
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
@@ -241,5 +245,22 @@ public class TransferRequest {
 
     public void setNewRoleName(String newRoleName) {
         this.newRoleName = newRoleName;
+    }
+
+    // [FIX #2] Getters/Setters cho thông tin lương mới (optional)
+    public Integer getNewSalaryGradeId() {
+        return newSalaryGradeId;
+    }
+
+    public void setNewSalaryGradeId(Integer newSalaryGradeId) {
+        this.newSalaryGradeId = newSalaryGradeId;
+    }
+
+    public BigDecimal getNewBaseSalary() {
+        return newBaseSalary;
+    }
+
+    public void setNewBaseSalary(BigDecimal newBaseSalary) {
+        this.newBaseSalary = newBaseSalary;
     }
 }
