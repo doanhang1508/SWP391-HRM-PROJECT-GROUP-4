@@ -44,7 +44,7 @@
                         <option value="">-- Tất cả mẫu đánh giá --</option>
                         <option value="all_depts" ${param.deptId == 'all_depts' ? 'selected' : ''}>Chung (Áp dụng cho mọi phòng ban)</option>
                         <c:forEach var="dept" items="${departments}">
-                            <option value="${dept.departmentId}" ${param.deptId == dept.departmentId ? 'selected' : ''}>${dept.departmentName}</option>
+                            <option value="${dept.departmentId}" ${param.deptId == dept.departmentId.toString() ? 'selected' : ''}>${dept.departmentName}</option>
                         </c:forEach>
                     </select>
                 </div>
