@@ -315,20 +315,217 @@
                 text: opt.text
             });
         }
+        initEmployeePicker();
     });
 
-    function updateEmployeeDetails() {
-        var select = document.getElementById("employeeSelect");
-        var selectedOption = select.options[select.selectedIndex];
-        
-        var dept = selectedOption.getAttribute("data-dept") || "";
-        var pos = selectedOption.getAttribute("data-pos") || "";
-        var role = selectedOption.getAttribute("data-role") || "";
-        
-        document.getElementById("currentDeptInput").value = dept;
-        document.getElementById("currentPosInput").value = pos;
-        document.getElementById("currentRoleInput").value = role;
+    // ═══════════════════════════════════════════════════════════════════════
+    // EMPLOYEE PICKER — Searchable Combobox
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // Bảng màu avatar theo vần đầu (10 màu gradient)
+    const AVATAR_COLORS = [
+        '#6366f1','#3b82f6','#10b981','#f59e0b','#ef4444',
+        '#8b5cf6','#06b6d4','#84cc16','#f97316','#ec4899'
+    ];
+
+    function getAvatarColor(name) {
+        var code = 0;
+        for (var i = 0; i < name.length; i++) code += name.charCodeAt(i);
+        return AVATAR_COLORS[code % AVATAR_COLORS.length];
     }
+
+    function getInitials(name) {
+        var parts = name.trim().split(/\s+/);
+        if (parts.length === 1) return parts[0][0].toUpperCase();
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
+    var empList       = [];
+    var filteredList  = [];
+    var focusedIndex  = -1;
+    var selectedEmp   = null;
+    var pickerOpen    = false;
+
+    function initEmployeePicker() {
+        try {
+            empList = JSON.parse(document.getElementById('empData').textContent);
+        } catch(e) { empList = []; }
+
+        var searchInput  = document.getElementById('empSearchInput');
+        var dropdown     = document.getElementById('empDropdown');
+        var clearBtn     = document.getElementById('empClearBtn');
+        var hiddenInput  = document.getElementById('employeeId');
+
+        // Mở dropdown khi focus/click vào ô tìm kiếm
+        searchInput.addEventListener('focus', function() {
+            filteredList = empList.slice();
+            renderDropdown(searchInput.value.trim());
+            openDropdown();
+        });
+
+        // Lọc realtime khi gõ
+        searchInput.addEventListener('input', function() {
+            var q = this.value.trim().toLowerCase();
+            filteredList = empList.filter(function(e) {
+                return e.name.toLowerCase().includes(q) || String(e.id).includes(q);
+            });
+            focusedIndex = -1;
+            renderDropdown(this.value.trim());
+            openDropdown();
+            clearBtn.classList.toggle('visible', this.value.length > 0);
+        });
+
+        // Keyboard navigation
+        searchInput.addEventListener('keydown', function(e) {
+            if (!pickerOpen) return;
+            var items = dropdown.querySelectorAll('.emp-item');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                focusedIndex = Math.min(focusedIndex + 1, items.length - 1);
+                updateFocus(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                focusedIndex = Math.max(focusedIndex - 1, 0);
+                updateFocus(items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (focusedIndex >= 0 && focusedIndex < filteredList.length) {
+                    selectEmployee(filteredList[focusedIndex]);
+                }
+            } else if (e.key === 'Escape') {
+                closeDropdown();
+                searchInput.blur();
+            }
+        });
+
+        // Nút xóa lựa chọn
+        clearBtn.addEventListener('click', function() {
+            clearSelection();
+            searchInput.focus();
+        });
+
+        // Đóng dropdown khi click ngoài
+        document.addEventListener('click', function(e) {
+            if (!document.getElementById('empPicker').contains(e.target)) {
+                closeDropdown();
+            }
+        });
+    }
+
+    function renderDropdown(query) {
+        var dropdown = document.getElementById('empDropdown');
+        if (filteredList.length === 0) {
+            dropdown.innerHTML = '<div class="emp-no-result"><i class="fas fa-search" style="margin-right:6px;opacity:.4;"></i>Không tìm thấy nhân viên phù hợp</div>';
+            return;
+        }
+        var html = '';
+        filteredList.forEach(function(emp, idx) {
+            var color    = getAvatarColor(emp.name);
+            var initials = getInitials(emp.name);
+            var highlight = query ? highlightMatch(emp.name, query) : emp.name;
+            html += '<div class="emp-item" data-idx="' + idx + '" role="option">'
+                  +   '<div class="emp-avatar" style="background:' + color + '">' + initials + '</div>'
+                  +   '<div class="emp-info">'
+                  +     '<div class="emp-name">' + highlight + '</div>'
+                  +     '<div class="emp-meta"><i class="fas fa-building" style="margin-right:4px;opacity:.6;"></i>' + escHtml(emp.dept) + ' &nbsp;·&nbsp; <i class="fas fa-briefcase" style="margin-right:4px;opacity:.6;"></i>' + escHtml(emp.pos) + '</div>'
+                  +   '</div>'
+                  +   '<span class="emp-id-badge">#' + emp.id + '</span>'
+                  + '</div>';
+        });
+        dropdown.innerHTML = html;
+
+        // Gắn sự kiện click cho từng item
+        dropdown.querySelectorAll('.emp-item').forEach(function(item) {
+            item.addEventListener('mousedown', function(e) {
+                e.preventDefault(); // ngăn input blur trước khi click xử lý
+                var idx = parseInt(this.getAttribute('data-idx'));
+                selectEmployee(filteredList[idx]);
+            });
+            item.addEventListener('mouseover', function() {
+                focusedIndex = parseInt(this.getAttribute('data-idx'));
+                updateFocus(dropdown.querySelectorAll('.emp-item'));
+            });
+        });
+    }
+
+    function highlightMatch(text, query) {
+        var safe = escHtml(text);
+        var safeQ = query.replace(/[.*+?^$\{\}()|[\]\\]/g, '\\$&');
+        return safe.replace(new RegExp('(' + safeQ + ')', 'gi'), '<mark style="background:rgba(99,102,241,0.18);color:inherit;border-radius:2px;padding:0 1px;">$1</mark>');
+    }
+
+    function escHtml(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function updateFocus(items) {
+        items.forEach(function(item, i) {
+            item.classList.toggle('focused', i === focusedIndex);
+        });
+        if (focusedIndex >= 0 && items[focusedIndex]) {
+            items[focusedIndex].scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    function selectEmployee(emp) {
+        selectedEmp = emp;
+        document.getElementById('employeeId').value = emp.id;
+        document.getElementById('empSearchInput').value = emp.name + ' (#' + emp.id + ')';
+        document.getElementById('empSearchInput').classList.add('has-value');
+        document.getElementById('empClearBtn').classList.add('visible');
+        closeDropdown();
+        showSelectedCard(emp);
+        // Cập nhật thông tin phòng ban/chức vụ hiện tại để controller có thể validate
+        // (không cần hiển thị readonly inputs riêng nữa — card đã đủ)
+        currentEmpRoleId = emp.roleId;
+    }
+
+    function showSelectedCard(emp) {
+        var card    = document.getElementById('empSelectedCard');
+        var avatar  = document.getElementById('empSelectedAvatar');
+        var name    = document.getElementById('empSelectedName');
+        var tags    = document.getElementById('empSelectedTags');
+        var color   = getAvatarColor(emp.name);
+        var initials = getInitials(emp.name);
+
+        avatar.style.background = color;
+        avatar.textContent = initials;
+        name.textContent = emp.name;
+        tags.innerHTML =
+            '<span class="emp-tag emp-tag-id"><i class="fas fa-id-badge"></i>#' + emp.id + '</span>'
+          + '<span class="emp-tag emp-tag-dept"><i class="fas fa-building"></i>' + escHtml(emp.dept) + '</span>'
+          + '<span class="emp-tag emp-tag-pos"><i class="fas fa-briefcase"></i>' + escHtml(emp.pos) + '</span>';
+
+        card.classList.add('show');
+    }
+
+    function clearSelection() {
+        selectedEmp = null;
+        currentEmpRoleId = null;
+        document.getElementById('employeeId').value = '';
+        document.getElementById('empSearchInput').value = '';
+        document.getElementById('empSearchInput').classList.remove('has-value');
+        document.getElementById('empClearBtn').classList.remove('visible');
+        document.getElementById('empSelectedCard').classList.remove('show');
+        filteredList = empList.slice();
+        focusedIndex = -1;
+        renderDropdown('');
+    }
+
+    function openDropdown() {
+        document.getElementById('empDropdown').classList.add('open');
+        pickerOpen = true;
+    }
+
+    function closeDropdown() {
+        document.getElementById('empDropdown').classList.remove('open');
+        pickerOpen = false;
+        focusedIndex = -1;
+    }
+
+    // Biến lưu roleId của nhân viên đang được chọn (dùng bởi updateNewRoles)
+    var currentEmpRoleId = null;
+
 
     function updateNewPositions() {
         var deptSelect = document.getElementById("newDepartmentId");
