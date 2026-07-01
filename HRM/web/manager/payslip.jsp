@@ -503,7 +503,7 @@
 
                         const baseWorkedEl = document.getElementById('modalBaseWorkedSalary');
                         if (baseWorkedEl && data.baseWorkedSalary !== undefined) {
-                            baseWorkedEl.textContent = new Intl.NumberFormat('vi-VN').format(data.baseWorkedSalary) + ' ₫';
+                            baseWorkedEl.textContent = new Intl.NumberFormat('vi-VN').format(Math.round(data.baseWorkedSalary)) + ' ₫';
                         }
                         
                         let allowHtml = '';
@@ -511,7 +511,7 @@
                             data.allowances.forEach(a => {
                                 allowHtml += `<div class="d-flex justify-content-between text-muted">
                                     <span>- \${a.name}:</span>
-                                    <span>+ \${new Intl.NumberFormat('vi-VN').format(a.amount)} ₫</span>
+                                    <span>+ \${new Intl.NumberFormat('vi-VN').format(Math.round(a.amount))} ₫</span>
                                 </div>`;
                             });
                         } else {
@@ -524,7 +524,7 @@
                             data.bonuses.forEach(b => {
                                 bonusHtml += `<div class="d-flex justify-content-between text-muted">
                                     <span>- \${b.name}:</span>
-                                    <span>+ \${new Intl.NumberFormat('vi-VN').format(b.amount)} ₫</span>
+                                    <span>+ \${new Intl.NumberFormat('vi-VN').format(Math.round(b.amount))} ₫</span>
                                 </div>`;
                             });
                         } else {
@@ -537,7 +537,7 @@
                             data.insurances.forEach(i => {
                                 insHtml += `<div class="d-flex justify-content-between text-muted">
                                     <span>- \${i.name}:</span>
-                                    <span>- \${new Intl.NumberFormat('vi-VN').format(i.amount)} ₫</span>
+                                    <span>- \${new Intl.NumberFormat('vi-VN').format(Math.round(i.amount))} ₫</span>
                                 </div>`;
                             });
                         } else {
@@ -550,7 +550,7 @@
                             data.deductions.forEach(d => {
                                 dedHtml += `<div class="d-flex justify-content-between text-muted">
                                     <span>- \${d.name}:</span>
-                                    <span>- \${new Intl.NumberFormat('vi-VN').format(d.amount)} ₫</span>
+                                    <span>- \${new Intl.NumberFormat('vi-VN').format(Math.round(d.amount))} ₫</span>
                                 </div>`;
                             });
                         } else {
@@ -563,13 +563,13 @@
                             let taxHtml = '';
                             taxHtml += `<div class="d-flex justify-content-between text-muted" style="font-size: 0.8rem;">
                                 <span>- Khấu trừ bản thân (Tính thuế):</span>
-                                <span>\${new Intl.NumberFormat('vi-VN').format(data.taxProfile.personalDeduction)} ₫</span>
+                                <span>\${new Intl.NumberFormat('vi-VN').format(Math.round(data.taxProfile.personalDeduction))} ₫</span>
                             </div>`;
                             if (data.taxProfile.dependentCount > 0) {
                                 let depTotal = data.taxProfile.dependentDeduction * data.taxProfile.dependentCount;
                                 taxHtml += `<div class="d-flex justify-content-between text-muted" style="font-size: 0.8rem;">
                                     <span>- Khấu trừ phụ thuộc (\${data.taxProfile.dependentCount} người):</span>
-                                    <span>\${new Intl.NumberFormat('vi-VN').format(depTotal)} ₫</span>
+                                    <span>\${new Intl.NumberFormat('vi-VN').format(Math.round(depTotal))} ₫</span>
                                 </div>`;
                             } else {
                                 taxHtml += `<div class="d-flex justify-content-between text-muted" style="font-size: 0.8rem;">
