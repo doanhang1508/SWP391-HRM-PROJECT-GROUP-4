@@ -359,9 +359,24 @@ public class PayslipController extends HttpServlet {
             }
             json.append("],");
 
-            json.append("\"deductions\":[");
+            json.append("\"bonuses\":[");
             RewardDisciplineDAO rdDAO = new RewardDisciplineDAO();
             List<EmployeeRewardDiscipline> erdRecords = rdDAO.getRecordsByUserIdAndMonthYear(requestedUserId, month, year);
+            boolean firstBonus = true;
+            for (EmployeeRewardDiscipline erd : erdRecords) {
+                if ("Reward".equalsIgnoreCase(erd.getType())) {
+                    if (!firstBonus) json.append(",");
+                    json.append("{");
+                    String note = erd.getNote() != null ? " - " + erd.getNote() : "";
+                    json.append("\"name\":\"").append(escapeHtml(erd.getRewardDisciplineName() + note)).append("\",");
+                    json.append("\"amount\":").append(erd.getAmount());
+                    json.append("}");
+                    firstBonus = false;
+                }
+            }
+            json.append("],");
+
+            json.append("\"deductions\":[");
             boolean firstDed = true;
             for (EmployeeRewardDiscipline erd : erdRecords) {
                 if ("Discipline".equalsIgnoreCase(erd.getType())) {

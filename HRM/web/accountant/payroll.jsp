@@ -487,10 +487,12 @@
                                     <span class="text-muted">Phụ cấp:</span>
                                     <span class="fw-semibold text-dark text-success" id="modalAllowance">+ 0 ₫</span>
                                 </div>
+                                <div id="modalAllowanceDetails" style="padding-left: 15px; font-size: 0.8rem; display: none;"></div>
                                 <div class="d-flex justify-content-between">
                                     <span class="text-muted">Thưởng:</span>
                                     <span class="fw-semibold text-dark text-success" id="modalBonus">+ 0 ₫</span>
                                 </div>
+                                <div id="modalBonusDetails" style="padding-left: 15px; font-size: 0.8rem; display: none;"></div>
                                 <hr style="margin: 10px 0; border-color: rgba(16,185,129,.2);">
                                 <div class="d-flex justify-content-between fw-bold text-dark" style="font-size: 0.95rem;">
                                     <span>Lương Gross:</span>
@@ -511,6 +513,7 @@
                                     <span class="text-muted">Bảo hiểm xã hội:</span>
                                     <span class="fw-semibold text-dark text-danger" id="modalInsurance">- 0 ₫</span>
                                 </div>
+                                <div id="modalInsuranceDetails" style="padding-left: 15px; font-size: 0.8rem; display: none;"></div>
                                 <div class="d-flex justify-content-between">
                                     <span class="text-muted">Thuế TNCN:</span>
                                     <span class="fw-semibold text-dark text-danger" id="modalTax">- 0 ₫</span>
@@ -663,6 +666,21 @@ document.addEventListener("DOMContentLoaded", function() {
                 taxDetailsEl.innerHTML = '<div class="text-muted fst-italic">Đang tải...</div>';
                 taxDetailsEl.style.display = 'block';
             }
+            let allowanceDetailsEl = document.getElementById('modalAllowanceDetails');
+            if (allowanceDetailsEl) {
+                allowanceDetailsEl.innerHTML = '<div class="text-muted fst-italic">Đang tải...</div>';
+                allowanceDetailsEl.style.display = 'block';
+            }
+            let bonusDetailsEl = document.getElementById('modalBonusDetails');
+            if (bonusDetailsEl) {
+                bonusDetailsEl.innerHTML = '<div class="text-muted fst-italic">Đang tải...</div>';
+                bonusDetailsEl.style.display = 'block';
+            }
+            let insuranceDetailsEl = document.getElementById('modalInsuranceDetails');
+            if (insuranceDetailsEl) {
+                insuranceDetailsEl.innerHTML = '<div class="text-muted fst-italic">Đang tải...</div>';
+                insuranceDetailsEl.style.display = 'block';
+            }
             let baseWorkedEl = document.getElementById('modalBaseWorkedSalary');
             if (baseWorkedEl) {
                 baseWorkedEl.innerHTML = '<span class="text-muted fst-italic" style="font-size: 0.8rem;">Đang tải...</span>';
@@ -685,6 +703,51 @@ document.addEventListener("DOMContentLoaded", function() {
 
                     if (baseWorkedEl && data.baseWorkedSalary !== undefined) {
                         baseWorkedEl.textContent = new Intl.NumberFormat('vi-VN').format(data.baseWorkedSalary) + ' ₫';
+                    }
+
+                    if (allowanceDetailsEl) {
+                        let allowHtml = '';
+                        if (data.allowances && data.allowances.length > 0) {
+                            data.allowances.forEach(a => {
+                                allowHtml += `<div class="d-flex justify-content-between text-muted">
+                                    <span>- \${a.name}:</span>
+                                    <span>+ \${new Intl.NumberFormat('vi-VN').format(a.amount)} ₫</span>
+                                </div>`;
+                            });
+                        } else {
+                            allowHtml = '<div class="text-muted fst-italic">Không có</div>';
+                        }
+                        allowanceDetailsEl.innerHTML = allowHtml;
+                    }
+
+                    if (bonusDetailsEl) {
+                        let bonusHtml = '';
+                        if (data.bonuses && data.bonuses.length > 0) {
+                            data.bonuses.forEach(b => {
+                                bonusHtml += `<div class="d-flex justify-content-between text-muted">
+                                    <span>- \${b.name}:</span>
+                                    <span>+ \${new Intl.NumberFormat('vi-VN').format(b.amount)} ₫</span>
+                                </div>`;
+                            });
+                        } else {
+                            bonusHtml = '<div class="text-muted fst-italic">Không có</div>';
+                        }
+                        bonusDetailsEl.innerHTML = bonusHtml;
+                    }
+
+                    if (insuranceDetailsEl) {
+                        let insHtml = '';
+                        if (data.insurances && data.insurances.length > 0) {
+                            data.insurances.forEach(i => {
+                                insHtml += `<div class="d-flex justify-content-between text-muted">
+                                    <span>- \${i.name}:</span>
+                                    <span>- \${new Intl.NumberFormat('vi-VN').format(i.amount)} ₫</span>
+                                </div>`;
+                            });
+                        } else {
+                            insHtml = '<div class="text-muted fst-italic">Không có</div>';
+                        }
+                        insuranceDetailsEl.innerHTML = insHtml;
                     }
 
                     if (deductionDetailsEl) {

@@ -5,6 +5,9 @@ import model.KpiCycle;
 import model.KpiEvaluation;
 import model.KpiEvaluationItem;
 import model.User;
+import model.EmployeeContract;
+import dao.EmployeeContractDAO;
+import dao.RewardDisciplineDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -15,6 +18,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Calendar;
 
 @WebServlet(name = "ManagerKpiApprovalController", urlPatterns = {"/manager/kpi-approvals"})
 public class ManagerKpiApprovalController extends HttpServlet {
@@ -125,6 +129,34 @@ public class ManagerKpiApprovalController extends HttpServlet {
                 
                 boolean updated = kpiDAO.updateEvaluationStatus(evaluationId, targetStatus, user.getUserId(), note);
                 if (updated) {
+                    if ("APPROVED".equals(targetStatus)) {
+                        try {
+                            // Integrate with Payroll System
+                            EmployeeContractDAO contractDAO = new EmployeeContractDAO();
+                            EmployeeContract contract = contractDAO.getActiveContract(eval.getEmployeeId());
+                            if (contract != null && contract.getBaseSalary() != null) {
+                                KpiCycle cycle = kpiDAO.getCycleById(eval.getCycleId());
+                                int month = 0;
+                                int year = 0;
+                                if (cycle != null && cycle.getEndDate() != null) {
+                                    Calendar cal = Calendar.getInstance();
+                                    cal.setTime(cycle.getEndDate());
+                                    month = cal.get(Calendar.MONTH) + 1;
+                                    year = cal.get(Calendar.YEAR);
+                                }
+                                
+                                if (month > 0 && year > 0) {
+                                    RewardDisciplineDAO rdDAO = new RewardDisciplineDAO();
+                                    // Pass kpiScore as a ratio (e.g. 8.5/10 = 0.85)
+                                    rdDAO.calculateKPIBonus(eval.getEmployeeId(), month, year, contract.getBaseSalary(), eval.getScore() / 10.0);
+                                }
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            // Optional: handle failure without blocking approval success
+                        }
+                    }
+
                     response.sendRedirect(request.getContextPath() + "/manager/kpi-approvals?cycleId=" + eval.getCycleId() + "&success=" + targetStatus.toLowerCase());
                     return;
                 }

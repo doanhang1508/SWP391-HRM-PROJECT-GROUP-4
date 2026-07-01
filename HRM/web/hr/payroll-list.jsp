@@ -723,6 +723,7 @@
                                     <span class="text-muted">Thưởng:</span>
                                     <span class="fw-semibold text-dark text-success" id="modalBonus">+ 0 ₫</span>
                                 </div>
+                                <div id="modalBonusDetails" style="padding-left: 15px; font-size: 0.8rem; display: none;"></div>
                                 <hr style="margin: 10px 0; border-color: rgba(16,185,129,.2);">
                                 <div class="d-flex justify-content-between fw-bold text-dark" style="font-size: 0.95rem;">
                                     <span>Lương Gross:</span>
@@ -933,6 +934,8 @@ document.addEventListener("DOMContentLoaded", function() {
             
             document.getElementById('modalAllowanceDetails').innerHTML = '<div class="text-muted fst-italic">Đang tải...</div>';
             document.getElementById('modalAllowanceDetails').style.display = 'block';
+            document.getElementById('modalBonusDetails').innerHTML = '<div class="text-muted fst-italic">Đang tải...</div>';
+            document.getElementById('modalBonusDetails').style.display = 'block';
             document.getElementById('modalInsuranceDetails').innerHTML = '<div class="text-muted fst-italic">Đang tải...</div>';
             document.getElementById('modalInsuranceDetails').style.display = 'block';
             document.getElementById('modalDeductionDetails').innerHTML = '<div class="text-muted fst-italic">Đang tải...</div>';
@@ -969,6 +972,19 @@ document.addEventListener("DOMContentLoaded", function() {
                         allowHtml = '<div class="text-muted fst-italic">Không có</div>';
                     }
                     document.getElementById('modalAllowanceDetails').innerHTML = allowHtml;
+
+                    let bonusHtml = '';
+                    if (data.bonuses && data.bonuses.length > 0) {
+                        data.bonuses.forEach(b => {
+                            bonusHtml += `<div class="d-flex justify-content-between text-muted">
+                                <span>- \${b.name}:</span>
+                                <span>+ \${new Intl.NumberFormat('vi-VN').format(b.amount)} ₫</span>
+                            </div>`;
+                        });
+                    } else {
+                        bonusHtml = '<div class="text-muted fst-italic">Không có</div>';
+                    }
+                    document.getElementById('modalBonusDetails').innerHTML = bonusHtml;
 
                     let insHtml = '';
                     if (data.insurances && data.insurances.length > 0) {
