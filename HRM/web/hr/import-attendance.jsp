@@ -200,10 +200,7 @@
             <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">
                 Bạn có thể xem chi tiết dữ liệu công của các nhân viên và thực hiện Khóa công sau khi import dữ liệu thành công.
             </p>
-            
-            <a href="${pageContext.request.contextPath}/hr/timesheet-lock" class="btn-import" style="background:#10b981; text-decoration:none; margin-top:0;">
-                <i class="fas fa-eye"></i> Tới Bảng Công
-            </a>
+
         </div>
     </div>
 </div>
