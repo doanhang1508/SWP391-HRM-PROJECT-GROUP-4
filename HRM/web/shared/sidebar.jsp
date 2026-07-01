@@ -483,7 +483,13 @@
                                                                     <li class="sidebar-item">
                                                                         <a href="${pageContext.request.contextPath}/manager/transfer-approvals"
                                                                             class="sidebar-link ${param.activeMenu eq 'transfer-approvals' ? 'active' : ''}">
-                                                                            <i class="fas fa-tasks"></i> Phê duyệt điều chuyển
+                                                                            <i class="fas fa-tasks"></i> Phê duyệt điều chuyển (B1)
+                                                                        </a>
+                                                                    </li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/manager/hr-transfer-confirm"
+                                                                            class="sidebar-link ${param.activeMenu eq 'hr-transfer-confirm' ? 'active' : ''}">
+                                                                            <i class="fas fa-check-double"></i> Xác nhận cuối điều chuyển
                                                                         </a>
                                                                     </li>
                                                     <li class="sidebar-item">

@@ -419,20 +419,6 @@
 
                     <!-- TABLE CARD -->
                     <div class="card-table">
-                        <c:choose>
-                            <c:when test="${viewMode eq 'DEPT_HEAD_APPROVE'}">
-                                <div class="mode-chip dept-head">
-                                    <i class="fas fa-user-tie"></i> Bạn đang xử lý: Bước 2 — Phê duyệt Trưởng phòng (Đơn
-                                    NHÂN VIÊN ĐÃ XÁC NHẬN)
-                                </div>
-                            </c:when>
-                            <c:otherwise>
-                                <div class="mode-chip hr-mgr">
-                                    <i class="fas fa-user-shield"></i> Bạn đang xử lý: Bước 2 — Xác nhận cuối HR Manager
-                                    (Đơn ĐÃ QUA TRƯỞNG PHÒNG)
-                                </div>
-                            </c:otherwise>
-                        </c:choose>
 
                         <div class="table-responsive">
                             <table class="tbl">
@@ -442,10 +428,7 @@
                                         <th style="width:22%">Phòng ban (Cũ → Mới)</th>
                                         <th style="width:22%">Chức vụ (Cũ → Mới)</th>
                                         <th style="width:11%">Ngày hiệu lực</th>
-                                        <th style="width:13%">Người tạo đơn</th>
-                                        <c:if test="${viewMode eq 'HR_CONFIRM'}">
-                                            <th style="width:13%">Trưởng phòng duyệt</th>
-                                        </c:if>
+                                        <th style="width:14%">Người tạo đơn</th>
                                         <th style="width:5%">TT</th>
                                         <th style="width:12%">Hành động</th>
                                     </tr>
@@ -454,15 +437,10 @@
                                     <c:choose>
                                         <c:when test="${empty approvals}">
                                             <tr>
-                                                <td colspan="8" class="text-empty">
+                                                <td colspan="7" class="text-empty">
                                                     <i class="fas fa-inbox"
                                                         style="font-size:2rem;display:block;margin-bottom:8px;"></i>
-                                                    <c:choose>
-                                                        <c:when test="${viewMode eq 'DEPT_HEAD_APPROVE'}">Không có yêu
-                                                            cầu điều chuyển nào đang chờ bạn phê duyệt.</c:when>
-                                                        <c:otherwise>Không có yêu cầu nào đang chờ xác nhận cuối.
-                                                        </c:otherwise>
-                                                    </c:choose>
+                                                    Không có yêu cầu điều chuyển nào đang chờ bạn phê duyệt.
                                                 </td>
                                             </tr>
                                         </c:when>
@@ -496,15 +474,7 @@
                                                                 pattern="dd/MM/yyyy HH:mm" />
                                                         </div>
                                                     </td>
-                                                    <c:if test="${viewMode eq 'HR_CONFIRM'}">
-                                                        <td>
-                                                            <strong>${tr.managerApprovedByName}</strong>
-                                                            <div style="font-size:0.72rem;color:var(--muted)">
-                                                                <fmt:formatDate value="${tr.managerApprovedAt}"
-                                                                    pattern="dd/MM/yyyy HH:mm" />
-                                                            </div>
-                                                        </td>
-                                                    </c:if>
+
                                                     <td>
                                                         <c:choose>
                                                             

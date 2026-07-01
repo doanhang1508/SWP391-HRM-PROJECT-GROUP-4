@@ -179,34 +179,6 @@
             </div>
         </c:if>
 
-        <!-- WORKFLOW BANNER -->
-        <div class="workflow-banner">
-            <div class="workflow-step">
-                <div class="step-num waiting"><i class="fas fa-user-tie"></i></div>
-                <div class="step-label waiting">HR tạo đơn</div>
-            </div>
-            <span class="step-arrow">→</span>
-            <div class="workflow-step">
-                <div class="step-num active">1</div>
-                <div class="step-label active">Bạn xác nhận</div>
-            </div>
-            <span class="step-arrow">→</span>
-            <div class="workflow-step">
-                <div class="step-num waiting">2</div>
-                <div class="step-label waiting">Trưởng phòng duyệt</div>
-            </div>
-            <span class="step-arrow">→</span>
-            <div class="workflow-step">
-                <div class="step-num waiting">3</div>
-                <div class="step-label waiting">HR Manager duyệt cuối</div>
-            </div>
-            <span class="step-arrow">→</span>
-            <div class="workflow-step">
-                <div class="step-num waiting"><i class="fas fa-check"></i></div>
-                <div class="step-label waiting">Hoàn tất</div>
-            </div>
-        </div>
-
         <!-- CONTENT -->
         <c:choose>
             <c:when test="${empty pendingTransfers}">
