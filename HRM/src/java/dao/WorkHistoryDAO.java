@@ -13,7 +13,8 @@ public class WorkHistoryDAO {
 
     public List<WorkHistory> getByUserId(int userId) {
         List<WorkHistory> list = new ArrayList<>();
-        String sql = "SELECT * FROM work_history WHERE user_id = ? ORDER BY start_date DESC";
+        String sql = "SELECT * FROM work_history WHERE user_id = ? ORDER BY is_current DESC, start_date DESC, history_id DESC";
+
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -40,7 +41,9 @@ public class WorkHistoryDAO {
     }
 
     public void closeCurrentHistory(Connection conn, int userId, java.sql.Date effectiveDate) throws SQLException {
-        String sql = "UPDATE work_history SET end_date = DATE_SUB(?, INTERVAL 1 DAY), is_current = 0 " +
+        String sql = "UPDATE work_history SET " +
+                     "end_date = GREATEST(start_date, DATE_SUB(?, INTERVAL 1 DAY)), " +
+                     "is_current = 0 " +
                      "WHERE user_id = ? AND (is_current = 1 OR end_date IS NULL)";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setDate(1, effectiveDate);
@@ -48,6 +51,7 @@ public class WorkHistoryDAO {
             ps.executeUpdate();
         }
     }
+
 
     public void insertTransferHistory(Connection conn, int userId, String positionTitle, String departmentName, java.sql.Date startDate, String description) throws SQLException {
         String sql = "INSERT INTO work_history (user_id, position_title, company_name, location, start_date, end_date, description, is_current) " +
