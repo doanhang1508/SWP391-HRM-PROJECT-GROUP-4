@@ -106,6 +106,14 @@ public class ImportAttendanceController extends HttpServlet {
                 return;
             }
 
+            int currentMonth = LocalDate.now().getMonthValue();
+            int currentYear = LocalDate.now().getYear();
+            if (year != currentYear || month != currentMonth) {
+                session.setAttribute("errorMessage", "Hệ thống chỉ cho phép import chấm công cho tháng hiện tại (" + currentMonth + "/" + currentYear + ").");
+                response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
+                return;
+            }
+
             if (attendanceDAO.isMonthLocked(month, year)) {
                 session.setAttribute("errorMessage",
                         "Tháng " + month + "/" + year + " đã bị khóa. Không thể import.");
