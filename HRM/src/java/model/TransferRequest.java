@@ -34,6 +34,10 @@ public class TransferRequest {
     private BigDecimal newBaseSalary;
     private Timestamp createdAt;
     private Timestamp updatedAt;
+    // [2-STEP] Bước 1: Trưởng phòng duyệt
+    private Integer managerApprovedBy; // nullable
+    private String  managerApprovedByName;
+    private Timestamp managerApprovedAt; // nullable
 
     public TransferRequest() {
     }
@@ -262,5 +266,30 @@ public class TransferRequest {
 
     public void setNewBaseSalary(BigDecimal newBaseSalary) {
         this.newBaseSalary = newBaseSalary;
+    }
+
+    // [2-STEP] Getters/Setters cho thông tin duyệt bước 1 (Trưởng phòng)
+    public Integer getManagerApprovedBy() {
+        return managerApprovedBy;
+    }
+
+    public void setManagerApprovedBy(Integer managerApprovedBy) {
+        this.managerApprovedBy = managerApprovedBy;
+    }
+
+    public String getManagerApprovedByName() {
+        return managerApprovedByName;
+    }
+
+    public void setManagerApprovedByName(String managerApprovedByName) {
+        this.managerApprovedByName = managerApprovedByName;
+    }
+
+    public Timestamp getManagerApprovedAt() {
+        return managerApprovedAt;
+    }
+
+    public void setManagerApprovedAt(Timestamp managerApprovedAt) {
+        this.managerApprovedAt = managerApprovedAt;
     }
 }

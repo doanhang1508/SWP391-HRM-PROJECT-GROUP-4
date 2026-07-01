@@ -331,6 +331,13 @@ public class TransferRequestController extends HttpServlet {
 
             boolean success = trDAO.createTransferRequest(req);
             if (success) {
+                // [2-STEP] Gửi notification cho Trưởng phòng hiện tại của nhân viên
+                // req.getTransferRequestId() = 0 tại đây vì insert không trả về ID
+                // → Lấy ID mới nhất của nhân viên đó
+                int newRequestId = trDAO.getLatestRequestIdForEmployee(employeeId);
+                if (newRequestId > 0) {
+                    trDAO.sendDeptHeadNotification(newRequestId, employeeId, employee.getDepartmentId(), employee.getFullName());
+                }
                 response.sendRedirect(request.getContextPath() + "/hr/transfer-requests?msg=create_success");
             } else {
                 request.setAttribute("errorMessage", "Có lỗi xảy ra khi tạo yêu cầu điều chuyển. Vui lòng thử lại.");

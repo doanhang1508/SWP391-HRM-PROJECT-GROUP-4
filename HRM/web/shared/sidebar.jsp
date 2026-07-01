@@ -820,8 +820,14 @@
                                                                             <i class="fas fa-check-double"></i> Xác nhận
                                                                             bảng công
                                                                         </a>
-                                                                    </li>
-
+                                                                     </li>
+                                                                     <li class="sidebar-menu-category">Điều chuyển</li>
+                                                                     <li class="sidebar-item">
+                                                                         <a href="${pageContext.request.contextPath}/manager/transfer-approvals"
+                                                                             class="sidebar-link ${param.activeMenu eq 'transfer-approvals' ? 'active' : ''}">
+                                                                             <i class="fas fa-exchange-alt"></i> Phê duyệt điều chuyển
+                                                                         </a>
+                                                                     </li>
                                                                 </c:if>
 
                                                                 <%-- ══════ EMPLOYEE (roleId=7) ══════ --%>

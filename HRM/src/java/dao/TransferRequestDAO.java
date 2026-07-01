@@ -14,7 +14,28 @@ import java.util.List;
 
 public class TransferRequestDAO {
 
+    // ── [2-STEP] Base SQL dùng chung cho tất cả query SELECT ──────────────────
+    private static final String BASE_SELECT_SQL =
+        "SELECT tr.*, u.full_name AS employee_name, " +
+        "d1.department_name AS old_dept_name, d2.department_name AS new_dept_name, " +
+        "p1.position_name AS old_pos_name, p2.position_name AS new_pos_name, " +
+        "r1.role_name AS old_role_name, r2.role_name AS new_role_name, " +
+        "ur.full_name AS requester_name, ua.full_name AS approver_name, " +
+        "um.full_name AS manager_approver_name " +
+        "FROM transfer_requests tr " +
+        "JOIN users u ON tr.employee_id = u.user_id " +
+        "LEFT JOIN departments d1 ON tr.old_department_id = d1.department_id " +
+        "LEFT JOIN departments d2 ON tr.new_department_id = d2.department_id " +
+        "LEFT JOIN positions p1 ON tr.old_position_id = p1.position_id " +
+        "LEFT JOIN positions p2 ON tr.new_position_id = p2.position_id " +
+        "LEFT JOIN roles r1 ON tr.old_role_id = r1.role_id " +
+        "LEFT JOIN roles r2 ON tr.new_role_id = r2.role_id " +
+        "JOIN users ur ON tr.requested_by = ur.user_id " +
+        "LEFT JOIN users ua ON tr.approved_by = ua.user_id " +
+        "LEFT JOIN users um ON tr.manager_approved_by = um.user_id ";
+
     public boolean createTransferRequest(TransferRequest req) {
+
         // Bao gồm new_salary_grade_id và new_base_salary (nullable — null = giữ nguyên lương)
         String sql = "INSERT INTO transfer_requests " +
                      "(employee_id, old_department_id, old_position_id, old_role_id, " +
@@ -51,22 +72,7 @@ public class TransferRequestDAO {
 
     public List<TransferRequest> getAllTransferRequests() {
         List<TransferRequest> list = new ArrayList<>();
-        String sql = "SELECT tr.*, u.full_name AS employee_name, " +
-                     "d1.department_name AS old_dept_name, d2.department_name AS new_dept_name, " +
-                     "p1.position_name AS old_pos_name, p2.position_name AS new_pos_name, " +
-                     "r1.role_name AS old_role_name, r2.role_name AS new_role_name, " +
-                     "ur.full_name AS requester_name, ua.full_name AS approver_name " +
-                     "FROM transfer_requests tr " +
-                     "JOIN users u ON tr.employee_id = u.user_id " +
-                     "LEFT JOIN departments d1 ON tr.old_department_id = d1.department_id " +
-                     "LEFT JOIN departments d2 ON tr.new_department_id = d2.department_id " +
-                     "LEFT JOIN positions p1 ON tr.old_position_id = p1.position_id " +
-                     "LEFT JOIN positions p2 ON tr.new_position_id = p2.position_id " +
-                     "LEFT JOIN roles r1 ON tr.old_role_id = r1.role_id " +
-                     "LEFT JOIN roles r2 ON tr.new_role_id = r2.role_id " +
-                     "JOIN users ur ON tr.requested_by = ur.user_id " +
-                     "LEFT JOIN users ua ON tr.approved_by = ua.user_id " +
-                     "ORDER BY tr.created_at DESC";
+        String sql = BASE_SELECT_SQL + "ORDER BY tr.created_at DESC";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -80,22 +86,7 @@ public class TransferRequestDAO {
     }
 
     public TransferRequest getById(int id) {
-        String sql = "SELECT tr.*, u.full_name AS employee_name, " +
-                     "d1.department_name AS old_dept_name, d2.department_name AS new_dept_name, " +
-                     "p1.position_name AS old_pos_name, p2.position_name AS new_pos_name, " +
-                     "r1.role_name AS old_role_name, r2.role_name AS new_role_name, " +
-                     "ur.full_name AS requester_name, ua.full_name AS approver_name " +
-                     "FROM transfer_requests tr " +
-                     "JOIN users u ON tr.employee_id = u.user_id " +
-                     "LEFT JOIN departments d1 ON tr.old_department_id = d1.department_id " +
-                     "LEFT JOIN departments d2 ON tr.new_department_id = d2.department_id " +
-                     "LEFT JOIN positions p1 ON tr.old_position_id = p1.position_id " +
-                     "LEFT JOIN positions p2 ON tr.new_position_id = p2.position_id " +
-                     "LEFT JOIN roles r1 ON tr.old_role_id = r1.role_id " +
-                     "LEFT JOIN roles r2 ON tr.new_role_id = r2.role_id " +
-                     "JOIN users ur ON tr.requested_by = ur.user_id " +
-                     "LEFT JOIN users ua ON tr.approved_by = ua.user_id " +
-                     "WHERE tr.transfer_request_id = ?";
+        String sql = BASE_SELECT_SQL + "WHERE tr.transfer_request_id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
@@ -110,23 +101,12 @@ public class TransferRequestDAO {
         return null;
     }
 
+    /**
+     * [2-STEP] Lấy danh sách đơn PENDING của phòng ban cụ thể (Trưởng phòng xử lý bước 1).
+     */
     public List<TransferRequest> getPendingRequestsForManager(int managerDepartmentId) {
         List<TransferRequest> list = new ArrayList<>();
-        String sql = "SELECT tr.*, u.full_name AS employee_name, " +
-                     "d1.department_name AS old_dept_name, d2.department_name AS new_dept_name, " +
-                     "p1.position_name AS old_pos_name, p2.position_name AS new_pos_name, " +
-                     "r1.role_name AS old_role_name, r2.role_name AS new_role_name, " +
-                     "ur.full_name AS requester_name, ua.full_name AS approver_name " +
-                     "FROM transfer_requests tr " +
-                     "JOIN users u ON tr.employee_id = u.user_id " +
-                     "LEFT JOIN departments d1 ON tr.old_department_id = d1.department_id " +
-                     "LEFT JOIN departments d2 ON tr.new_department_id = d2.department_id " +
-                     "LEFT JOIN positions p1 ON tr.old_position_id = p1.position_id " +
-                     "LEFT JOIN positions p2 ON tr.new_position_id = p2.position_id " +
-                     "LEFT JOIN roles r1 ON tr.old_role_id = r1.role_id " +
-                     "LEFT JOIN roles r2 ON tr.new_role_id = r2.role_id " +
-                     "JOIN users ur ON tr.requested_by = ur.user_id " +
-                     "LEFT JOIN users ua ON tr.approved_by = ua.user_id " +
+        String sql = BASE_SELECT_SQL +
                      "WHERE tr.status = 'PENDING' AND tr.old_department_id = ? " +
                      "ORDER BY tr.created_at DESC";
         try (Connection conn = DBContext.getConnection();
@@ -136,6 +116,26 @@ public class TransferRequestDAO {
                 while (rs.next()) {
                     list.add(mapRow(rs));
                 }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * [2-STEP] Lấy danh sách đơn MANAGER_APPROVED (HR Manager xác nhận bước 2).
+     */
+    public List<TransferRequest> getManagerApprovedRequests() {
+        List<TransferRequest> list = new ArrayList<>();
+        String sql = BASE_SELECT_SQL +
+                     "WHERE tr.status = 'MANAGER_APPROVED' " +
+                     "ORDER BY tr.manager_approved_at ASC";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapRow(rs));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -157,15 +157,63 @@ public class TransferRequestDAO {
         return false;
     }
 
+    /**
+     * [2-STEP] Lấy ID của đơn điều chuyển mới nhất (PENDING) của một nhân viên.
+     * Dùng ngay sau khi createTransferRequest() để lấy ID cho notification.
+     */
+    public int getLatestRequestIdForEmployee(int employeeId) {
+        String sql = "SELECT transfer_request_id FROM transfer_requests " +
+                     "WHERE employee_id = ? AND status = 'PENDING' " +
+                     "ORDER BY created_at DESC LIMIT 1";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     public boolean rejectTransferRequest(int requestId, int approverId, String rejectReason) {
-        String sql = "UPDATE transfer_requests SET status = 'REJECTED', approved_by = ?, approved_at = NOW(), reject_reason = ?, updated_at = NOW() " +
-                     "WHERE transfer_request_id = ? AND status = 'PENDING'";
+        // Trưởng phòng từ chối PENDING → REJECTED
+        // HR Manager từ chối MANAGER_APPROVED → HR_REJECTED
+        String sql = "UPDATE transfer_requests SET " +
+                     "status = CASE WHEN status = 'PENDING' THEN 'REJECTED' ELSE 'HR_REJECTED' END, " +
+                     "approved_by = ?, approved_at = NOW(), reject_reason = ?, updated_at = NOW() " +
+                     "WHERE transfer_request_id = ? AND status IN ('PENDING', 'MANAGER_APPROVED')";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, approverId);
             ps.setString(2, rejectReason);
             ps.setInt(3, requestId);
             return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * [2-STEP BƯỚC 1] Trưởng phòng duyệt: PENDING → MANAGER_APPROVED.
+     * Sau đó gửi notification cho HR Manager.
+     */
+    public boolean managerApproveTransferRequest(int requestId, int managerId) {
+        String sql = "UPDATE transfer_requests " +
+                     "SET status = 'MANAGER_APPROVED', manager_approved_by = ?, manager_approved_at = NOW(), updated_at = NOW() " +
+                     "WHERE transfer_request_id = ? AND status = 'PENDING'";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, managerId);
+            ps.setInt(2, requestId);
+            boolean ok = ps.executeUpdate() > 0;
+            if (ok) {
+                // Gửi notification cho HR Manager sau khi cập nhật thành công
+                sendNotificationToHRManagers(requestId);
+            }
+            return ok;
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -269,8 +317,9 @@ public class TransferRequestDAO {
             if (req == null) {
                 throw new SQLException("Transfer Request not found: " + requestId);
             }
-            if (!"PENDING".equals(req.getStatus())) {
-                throw new SQLException("Transfer Request is not PENDING (status=" + req.getStatus() + ")");
+            // [2-STEP] Chỉ thực thi khi đã qua bước duyệt của Trưởng phòng
+            if (!"MANAGER_APPROVED".equals(req.getStatus())) {
+                throw new SQLException("Transfer Request chưa được Trưởng phòng duyệt (status=" + req.getStatus() + ")");
             }
 
             // ── Bước 2: Lấy tên phòng ban, chức vụ, vai trò để ghi work_history ──
@@ -549,6 +598,74 @@ public class TransferRequestDAO {
         tr.setRejectReason(rs.getString("reject_reason"));
         tr.setCreatedAt(rs.getTimestamp("created_at"));
         tr.setUpdatedAt(rs.getTimestamp("updated_at"));
+        // [2-STEP] Đọc thông tin duyệt bước 1 (Trưởng phòng)
+        int mgrBy = rs.getInt("manager_approved_by");
+        tr.setManagerApprovedBy(rs.wasNull() ? null : mgrBy);
+        tr.setManagerApprovedByName(rs.getString("manager_approver_name"));
+        tr.setManagerApprovedAt(rs.getTimestamp("manager_approved_at"));
         return tr;
+    }
+
+    // ── [2-STEP] Notification Helpers ────────────────────────────────────────
+
+    /**
+     * Gửi notification cho Trưởng phòng hiện tại của nhân viên khi HR Staff tạo đơn.
+     * Gọi sau khi INSERT thành công, ngoài transaction.
+     */
+    public void sendDeptHeadNotification(int requestId, int employeeId, int oldDeptId, String employeeName) {
+        try {
+            notificationDAO notifDAO = new notificationDAO();
+            String detailLink = "/manager/transfer-approval-detail?id=" + requestId;
+            // Tìm Trưởng phòng hiện tại (role 3=Factory Manager hoặc role 6=Dept Manager, cùng phòng ban)
+            String findManagerSql = "SELECT user_id FROM users " +
+                                    "WHERE department_id = ? AND role_id IN (3, 6) AND status = 1 " +
+                                    "ORDER BY user_id ASC LIMIT 1";
+            try (Connection conn = DBContext.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(findManagerSql)) {
+                ps.setInt(1, oldDeptId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        int deptHeadId = rs.getInt("user_id");
+                        notifDAO.create(
+                            deptHeadId,
+                            "transfer",
+                            "Yêu cầu điều chuyển cần phê duyệt",
+                            "Nhân viên " + employeeName + " có yêu cầu điều chuyển nội bộ #" + requestId + " đang chờ bạn phê duyệt bước 1.",
+                            detailLink
+                        );
+                    }
+                    // Nếu không tìm thấy Trưởng phòng — đơn vẫn PENDING, HR Manager có thể xử lý thay
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[TransferRequestDAO] Lỗi gửi notification Trưởng phòng requestId=" + requestId + ": " + e.getMessage());
+        }
+    }
+
+    /**
+     * [2-STEP] Gửi notification cho tất cả HR Manager (role 2) khi Trưởng phòng duyệt bước 1.
+     */
+    private void sendNotificationToHRManagers(int requestId) {
+        try {
+            notificationDAO notifDAO = new notificationDAO();
+            String detailLink = "/manager/transfer-approval-detail?id=" + requestId;
+            String findHRSql = "SELECT user_id FROM users WHERE role_id = 2 AND status = 1";
+            try (Connection conn = DBContext.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(findHRSql);
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int hrManagerId = rs.getInt("user_id");
+                    notifDAO.create(
+                        hrManagerId,
+                        "transfer",
+                        "Yêu cầu điều chuyển đã qua bước duyệt Trưởng phòng",
+                        "Yêu cầu điều chuyển nội bộ #" + requestId + " đã được Trưởng phòng phê duyệt. Vui lòng xác nhận lần cuối.",
+                        detailLink
+                    );
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[TransferRequestDAO] Lỗi gửi notification HR Manager requestId=" + requestId + ": " + e.getMessage());
+        }
     }
 }
