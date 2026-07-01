@@ -1,15 +1,15 @@
 package controller.hr;
 
 import dao.DepartmentDAO;
+import dao.AllowanceDAO;
 import dao.PositionDAO;
 import dao.RoleDAO;
-import dao.SalaryGradeDAO;
 import dao.TransferRequestDAO;
 import dao.UserDAO;
+import model.Allowance;
 import model.Department;
 import model.Position;
 import model.Role;
-import model.SalaryGrade;
 import model.TransferRequest;
 import model.User;
 
@@ -24,7 +24,10 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 // ============================================================================
 // [FIX #5] Mapping vai trò – chức vụ – phòng ban dưới dạng constant rõ ràng
@@ -91,7 +94,7 @@ public class TransferRequestController extends HttpServlet {
     private final DepartmentDAO deptDAO = new DepartmentDAO();
     private final PositionDAO posDAO = new PositionDAO();
     private final RoleDAO roleDAO = new RoleDAO();
-    private final SalaryGradeDAO salaryGradeDAO = new SalaryGradeDAO(); // [FIX #2]
+    private final AllowanceDAO allowanceDAO = new AllowanceDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -157,11 +160,40 @@ public class TransferRequestController extends HttpServlet {
 
     /** Load dữ liệu cần thiết cho form tạo request */
     private void loadCreateFormData(HttpServletRequest request) {
-        request.setAttribute("employees", userDAO.getActiveEmployees());
+        List<User> employees = userDAO.getActiveEmployees();
+        request.setAttribute("employees", employees);
         request.setAttribute("departments", deptDAO.getAll());
         request.setAttribute("positions", posDAO.getAll());
         request.setAttribute("roles", roleDAO.getAllRoles());
-        request.setAttribute("salaryGrades", salaryGradeDAO.getAll()); // [FIX #2]
+        // [NEW FLOW] Phụ cấp theo phụ lục thay thế ngạch lương
+        request.setAttribute("availableAllowances", allowanceDAO.getActive());
+        // Ngày hiệu lực mặc định = ngày 1 của tháng sau
+        LocalDate nextMonthFirstDay = LocalDate.now().plusMonths(1).withDayOfMonth(1);
+        request.setAttribute("nextMonthFirstDay", nextMonthFirstDay.toString());
+
+        // [NEW] Build JSON map {empId: {salary, allowanceIds}} để JS pre-fill form khi chọn nhân viên
+        StringBuilder empSalaryJson = new StringBuilder("{");
+        boolean first = true;
+        for (User emp : employees) {
+            int uid = emp.getUserId();
+            BigDecimal salary = allowanceDAO.getActiveBaseSalaryByEmployee(uid);
+            List<Integer> aIds = allowanceDAO.getActiveAllowanceIdsByEmployee(uid);
+
+            if (!first) empSalaryJson.append(",");
+            first = false;
+            empSalaryJson.append("\"").append(uid).append("\": {");
+            empSalaryJson.append("\"salary\": ");
+            if (salary != null) empSalaryJson.append(salary.toPlainString());
+            else empSalaryJson.append("null");
+            empSalaryJson.append(", \"allowanceIds\": [");
+            for (int i = 0; i < aIds.size(); i++) {
+                if (i > 0) empSalaryJson.append(",");
+                empSalaryJson.append(aIds.get(i));
+            }
+            empSalaryJson.append("]}");
+        }
+        empSalaryJson.append("}");
+        request.setAttribute("empSalaryData", empSalaryJson.toString());
     }
 
     private void handleCreateRequest(HttpServletRequest request, HttpServletResponse response, User currentUser)
@@ -172,10 +204,9 @@ public class TransferRequestController extends HttpServlet {
         String newPositionIdStr   = request.getParameter("newPositionId");
         String newRoleIdStr       = request.getParameter("newRoleId");
         String reason             = request.getParameter("reason");
-        String effectiveDateStr   = request.getParameter("effectiveDate");
-        // [FIX #2] Thông tin lương mới — optional
-        String newSalaryGradeIdStr = request.getParameter("newSalaryGradeId");
+        // [NEW FLOW] newBaseSalary optional, effectiveDate được backend tự set
         String newBaseSalaryStr    = request.getParameter("newBaseSalary");
+        String[] allowanceIdParams = request.getParameterValues("allowanceIds");
 
         // Reload data để hiển thị lại khi có lỗi validation
         loadCreateFormData(request);
@@ -185,8 +216,7 @@ public class TransferRequestController extends HttpServlet {
             newDepartmentIdStr == null || newDepartmentIdStr.isEmpty() ||
             newPositionIdStr == null || newPositionIdStr.isEmpty() ||
             newRoleIdStr == null || newRoleIdStr.isEmpty() ||
-            reason == null || reason.trim().isEmpty() ||
-            effectiveDateStr == null || effectiveDateStr.isEmpty()) {
+            reason == null || reason.trim().isEmpty()) {
 
             request.setAttribute("errorMessage", "Vui lòng nhập đầy đủ các trường thông tin bắt buộc.");
             request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
@@ -198,43 +228,40 @@ public class TransferRequestController extends HttpServlet {
             int newDepartmentId = Integer.parseInt(newDepartmentIdStr);
             int newPositionId   = Integer.parseInt(newPositionIdStr);
             int newRoleId       = Integer.parseInt(newRoleIdStr);
-            Date effectiveDate  = Date.valueOf(effectiveDateStr);
 
-            // ── [Lớp 1 & 2] Parse thông tin lương mới — optional ─────────────────
-            // Lớp 1 (mặc định): cả 2 đều null → lúc approve, kế thừa từ hợp đồng active hiện tại
-            // Lớp 2 (optional): nếu chọn ngạch mới → bắt buộc phải nhập lương cơ bản mới
-            Integer newSalaryGradeId = null;
+            // [NEW FLOW] Backend tự tính ngày hiệu lực = ngày 1 của tháng sau
+            LocalDate nextMonthFirstDay = LocalDate.now().plusMonths(1).withDayOfMonth(1);
+            Date effectiveDate = Date.valueOf(nextMonthFirstDay);
+
+            // [NEW FLOW] Parse lương mới — optional (null = giữ nguyên lương hiện tại)
             BigDecimal newBaseSalary = null;
-
-            boolean hasNewGrade  = newSalaryGradeIdStr != null && !newSalaryGradeIdStr.trim().isEmpty();
-            boolean hasNewSalary = newBaseSalaryStr    != null && !newBaseSalaryStr.trim().isEmpty();
-
-            if (hasNewGrade) {
-                newSalaryGradeId = Integer.parseInt(newSalaryGradeIdStr.trim());
-                if (newSalaryGradeId <= 0) {
-                    newSalaryGradeId = null; // Reset nếu giá trị không hợp lệ
-                }
-            }
-
+            boolean hasNewSalary = newBaseSalaryStr != null && !newBaseSalaryStr.trim().isEmpty();
             if (hasNewSalary) {
-                newBaseSalary = new BigDecimal(newBaseSalaryStr.trim());
-                if (newBaseSalary.compareTo(BigDecimal.ZERO) <= 0) {
-                    request.setAttribute("errorMessage", "Mức lương cơ bản mới phải lớn hơn 0.");
+                try {
+                    newBaseSalary = new BigDecimal(newBaseSalaryStr.trim());
+
+                    if (newBaseSalary.compareTo(BigDecimal.ZERO) <= 0) {
+                        request.setAttribute("errorMessage", "Mức lương cơ bản mới phải lớn hơn 0.");
+                        request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
+                        return;
+                    }
+                } catch (NumberFormatException e2) {
+                    request.setAttribute("errorMessage", "Lương cơ bản mới không đúng định dạng số.");
                     request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
                     return;
                 }
             }
 
-            // Cross-validation: chọn ngạch mới nhưng thiếu lương cơ bản
-            if (newSalaryGradeId != null && newBaseSalary == null) {
-                request.setAttribute("errorMessage",
-                    "Vui lòng nhập Lương cơ bản mới khi đã chọn Ngạch lương mới.");
-                request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
-                return;
+            // [NEW FLOW] Parse allowanceIds — list rỗng nếu không chọn
+            List<Integer> allowanceIds = new ArrayList<>();
+            if (allowanceIdParams != null) {
+                for (String idStr : allowanceIdParams) {
+                    try {
+                        int aid = Integer.parseInt(idStr.trim());
+                        if (aid > 0) allowanceIds.add(aid);
+                    } catch (NumberFormatException ignored) {}
+                }
             }
-            // Ngược lại: nhập lương nhưng không chọn ngạch → chấp nhận, coi như Lớp 2 một phần
-            // (Trường hợp này không xảy ra trong UI do field lương chỉ hiện khi chọn ngạch)
-
 
             User employee = userDAO.getUserById(employeeId);
 
@@ -246,7 +273,6 @@ public class TransferRequestController extends HttpServlet {
             }
 
             // 2. Không điều chuyển nhân viên thuộc nhóm quản lý cấp cao
-            // [FIX #5] Dùng constant BLOCKED_CURRENT_ROLE_IDS thay vì hard-code
             int currentRole = employee.getRoleId();
             int currentPos  = employee.getPositionId();
             if (containsId(BLOCKED_CURRENT_ROLE_IDS, currentRole) || currentPos == POS_TRUONG_PHONG) {
@@ -255,21 +281,14 @@ public class TransferRequestController extends HttpServlet {
                 return;
             }
 
-            // 3. Ngày hiệu lực không được là ngày quá khứ
-            if (effectiveDate.toLocalDate().isBefore(LocalDate.now())) {
-                request.setAttribute("errorMessage", "Ngày hiệu lực không được nhỏ hơn ngày hôm nay.");
+            // 3. Không có request đang xử lý cho nhân viên này
+            if (trDAO.hasPendingOrInProgressRequest(employeeId)) {
+                request.setAttribute("errorMessage", "Nhân viên đã có một yêu cầu điều chuyển đang trong quá trình xử lý (chờ xác nhận hoặc duyệt).");
                 request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
                 return;
             }
 
-            // 4. Không có request đang PENDING cho nhân viên này
-            if (trDAO.hasPendingRequest(employeeId)) {
-                request.setAttribute("errorMessage", "Nhân viên đã có một yêu cầu điều chuyển đang chờ duyệt.");
-                request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
-                return;
-            }
-
-            // 5. Phòng ban, chức vụ, vai trò mới phải tồn tại trong DB
+            // 4. Phòng ban, chức vụ, vai trò mới phải tồn tại trong DB
             List<Department> departments = deptDAO.getAll();
             List<Position>   positions   = posDAO.getAll();
             List<Role>       roles       = roleDAO.getAllRoles();
@@ -283,7 +302,7 @@ public class TransferRequestController extends HttpServlet {
                 return;
             }
 
-            // 6. Thông tin mới phải khác với hiện tại (ít nhất 1 trong 3)
+            // 5. Thông tin mới phải khác với hiện tại (ít nhất 1 trong 3)
             if (employee.getDepartmentId() == newDepartmentId
                     && employee.getPositionId() == newPositionId
                     && employee.getRoleId() == newRoleId) {
@@ -292,21 +311,21 @@ public class TransferRequestController extends HttpServlet {
                 return;
             }
 
-            // 7. [FIX #5] Không được gán role cấp cao qua luồng điều chuyển này
+            // 6. [FIX #5] Không được gán role cấp cao qua luồng điều chuyển này
             if (containsId(BLOCKED_NEW_ROLE_IDS, newRoleId)) {
                 request.setAttribute("errorMessage", "Không thể phân quyền Admin hoặc Quản lý cho nhân viên qua luồng điều chuyển này.");
                 request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
                 return;
             }
 
-            // 8. [FIX #5] Không điều chuyển lên Trưởng phòng
+            // 7. [FIX #5] Không điều chuyển lên Trưởng phòng
             if (newPositionId == POS_TRUONG_PHONG) {
                 request.setAttribute("errorMessage", "Không thể điều chuyển nhân viên lên làm Trưởng phòng qua luồng này.");
                 request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
                 return;
             }
 
-            // 9. [FIX #5] Validate mapping role–position–department (dùng constant có tên rõ ràng)
+            // 8. [FIX #5] Validate mapping role–position–department
             if (!isValidRoleDeptPosMapping(newRoleId, newDepartmentId, newPositionId)) {
                 request.setAttribute("errorMessage", "Vai trò mới được chọn không phù hợp với chức vụ hoặc phòng ban mới.");
                 request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
@@ -325,18 +344,15 @@ public class TransferRequestController extends HttpServlet {
             req.setReason(reason.trim());
             req.setEffectiveDate(effectiveDate);
             req.setRequestedBy(currentUser.getUserId());
-            // [FIX #2] Gán lương mới nếu có
-            req.setNewSalaryGradeId(newSalaryGradeId);
+            // [NEW FLOW] Chỉ set lương mới nếu có; không dùng newSalaryGradeId nữa
             req.setNewBaseSalary(newBaseSalary);
 
-            boolean success = trDAO.createTransferRequest(req);
+            boolean success = trDAO.createTransferRequestWithAllowances(req, allowanceIds);
             if (success) {
-                // [2-STEP] Gửi notification cho Trưởng phòng hiện tại của nhân viên
-                // req.getTransferRequestId() = 0 tại đây vì insert không trả về ID
-                // → Lấy ID mới nhất của nhân viên đó
+                // [NEW FLOW] Gửi notification cho Nhân viên được điều chuyển
                 int newRequestId = trDAO.getLatestRequestIdForEmployee(employeeId);
                 if (newRequestId > 0) {
-                    trDAO.sendDeptHeadNotification(newRequestId, employeeId, employee.getDepartmentId(), employee.getFullName());
+                    trDAO.sendEmployeeNotificationOnCreate(newRequestId, employeeId, employee.getFullName());
                 }
                 response.sendRedirect(request.getContextPath() + "/hr/transfer-requests?msg=create_success");
             } else {
@@ -345,10 +361,12 @@ public class TransferRequestController extends HttpServlet {
             }
 
         } catch (IllegalArgumentException e) {
-            request.setAttribute("errorMessage", "Định dạng ngày hiệu lực hoặc số lương không hợp lệ.");
+            request.setAttribute("errorMessage", "Định dạng số không hợp lệ.");
             request.getRequestDispatcher("/hr/transfer-request-create.jsp").forward(request, response);
         }
     }
+
+
 
     /**
      * [FIX #4] Xử lý hủy yêu cầu điều chuyển PENDING.

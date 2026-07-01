@@ -422,8 +422,8 @@
                         <c:choose>
                             <c:when test="${viewMode eq 'DEPT_HEAD_APPROVE'}">
                                 <div class="mode-chip dept-head">
-                                    <i class="fas fa-user-tie"></i> Bạn đang xử lý: Bước 1 — Phê duyệt Trưởng phòng (Đơn
-                                    CHỜ DUYỆT)
+                                    <i class="fas fa-user-tie"></i> Bạn đang xử lý: Bước 2 — Phê duyệt Trưởng phòng (Đơn
+                                    NHÂN VIÊN ĐÃ XÁC NHẬN)
                                 </div>
                             </c:when>
                             <c:otherwise>
@@ -508,9 +508,9 @@
                                                     <td>
                                                         <c:choose>
                                                             
-                                                            <c:when test="${tr.status eq 'PENDING'}">
+                                                            <c:when test="${tr.status eq 'EMPLOYEE_CONFIRMED'}">
                                                                 <span class="badge-s b-pending"><i
-                                                                        class="far fa-clock"></i> Chờ TP</span>
+                                                                        class="fas fa-user-check"></i> NV xác nhận</span>
                                                             </c:when>
                                                             
                                                             <c:when test="${tr.status eq 'MANAGER_APPROVED'}">

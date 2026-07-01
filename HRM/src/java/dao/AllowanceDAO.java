@@ -211,4 +211,51 @@ public class AllowanceDAO {
             e.printStackTrace();
         }
     }
+
+    /**
+     * Lấy danh sách allowance_id đang được hưởng của một nhân viên
+     * (lấy từ hợp đồng Active mới nhất — dùng để pre-check trong form phụ lục / điều chuyển).
+     */
+    public List<Integer> getActiveAllowanceIdsByEmployee(int userId) {
+        List<Integer> ids = new java.util.ArrayList<>();
+        // Lấy từ hợp đồng Active mới nhất của nhân viên
+        String sql = "SELECT ea.allowance_id " +
+                     "FROM employee_allowances ea " +
+                     "JOIN employee_contracts ec ON ea.contract_id = ec.contract_id " +
+                     "WHERE ea.user_id = ? AND ec.status = 'Active' " +
+                     "ORDER BY ec.start_date DESC, ec.contract_id DESC";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) ids.add(rs.getInt("allowance_id"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ids;
+    }
+
+    /**
+     * Lấy lương cơ bản hiện tại (từ hợp đồng Active mới nhất) của nhân viên.
+     * Trả về null nếu không có hợp đồng Active.
+     */
+    public java.math.BigDecimal getActiveBaseSalaryByEmployee(int userId) {
+        String sql = "SELECT base_salary FROM employee_contracts " +
+                     "WHERE user_id = ? AND status = 'Active' " +
+                     "ORDER BY start_date DESC, contract_id DESC LIMIT 1";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getBigDecimal("base_salary");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }
+
+
+

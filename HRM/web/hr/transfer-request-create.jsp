@@ -1,5 +1,6 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
 <c:set var="pageTitle" value="Tạo Yêu Cầu Điều Chuyển" scope="request" />
 <jsp:include page="../header.jsp" />
@@ -57,6 +58,19 @@
     /* SUBMIT BTN */
     .btn-submit { background: var(--pri); color: #fff; border: none; padding: 14px 20px; border-radius: 10px; font-weight: 700; font-size: .95rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all .2s; font-family: 'Inter', sans-serif; width: 100%; margin-top: 10px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2); }
     .btn-submit:hover { background: var(--pri-dark); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(99, 102, 241, 0.3); }
+
+    /* ADDENDUM BLOCK — style lấy từ employee-contracts.jsp */
+    .addendum-block { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px; margin-bottom: 16px; }
+    .addendum-block-title { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-weight: 700; font-size: .9rem; color: var(--navy); border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+    .addendum-block-title i { color: #0d9488; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-grid .form-group { margin-bottom: 0; }
+    .form-grid .form-group.full { grid-column: 1 / -1; }
+    /* Allowance check grid — lấy đúng từ employee-contracts.jsp */
+    .allowance-check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 180px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px; background: #f8fafc; }
+    .allowance-check-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; }
+    .allowance-check-item label { font-size: 0.82rem; color: #374151; cursor: pointer; flex: 1; }
+    .alw-amount { font-size: 0.75rem; color: #059669; font-weight: 600; }
 
     /* ── EMPLOYEE PICKER ───────────────────────────────────────────────────── */
     .emp-picker { position: relative; }
@@ -164,6 +178,9 @@
                             </c:forEach>
                         ]
                         </script>
+                        <%-- Dữ liệu lương + phụ cấp hiện tại của từng nhân viên (để pre-fill form) --%>
+                        <script id="empSalaryData" type="application/json">${empSalaryData}</script>
+
 
                         <div class="emp-picker" id="empPicker">
                             <div class="emp-search-wrap">
@@ -228,51 +245,65 @@
                         </div>
                     </div>
 
-                    <!-- SALARY CHANGE (OPTIONAL) -->
-                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px;">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
-                            <i class="fas fa-coins" style="color: var(--warn); font-size: 1rem;"></i>
-                            <span style="font-weight: 700; font-size: .875rem; color: var(--navy);">Điều chỉnh lương (tuỳ chọn)</span>
-                            <span style="font-size: .75rem; color: var(--muted); font-style: italic;">— Để trống nếu giữ nguyên lương hiện tại</span>
+                    <!-- ADDENDUM BLOCK: Thông tin phụ lục hợp đồng đi kèm -->
+                    <div class="addendum-block">
+                        <div class="addendum-block-title">
+                            <i class="fas fa-file-alt"></i>
+                            Thông tin phụ lục hợp đồng đi kèm
                         </div>
-                        <%-- Lớp 2: Chọn ngạch lương mới --%>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label class="form-label" for="newSalaryGradeId">Ngạch lương mới</label>
-                            <select id="newSalaryGradeId" name="newSalaryGradeId" class="form-control"
-                                    onchange="updateSalarySection()">
-                                <option value="">-- Giữ nguyên ngạch lương --</option>
-                                <c:forEach items="${salaryGrades}" var="sg">
-                                    <c:if test="${sg.status}">
-                                        <option value="${sg.salaryGradeId}">${sg.gradeName}</option>
-                                    </c:if>
-                                </c:forEach>
-                            </select>
-                        </div>
-                        <%-- Lương cơ bản mới: ẩn mặc định, hiện + bắt buộc khi chọn ngạch mới --%>
-                        <div id="baseSalaryWrapper" style="display: none; margin-top: 14px;">
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label class="form-label" for="newBaseSalary">
-                                    Lương cơ bản mới (VNĐ) <span style="color: var(--ng);">*</span>
-                                    <span style="font-size: .75rem; color: var(--muted); font-weight: 400;">— Bắt buộc khi thay đổi ngạch lương</span>
-                                </label>
-                                <input type="number" id="newBaseSalary" name="newBaseSalary" class="form-control"
-                                       min="1" step="100000"
-                                       placeholder="VD: 12000000">
+                        <div class="form-grid">
+
+                            <%-- Ngày hiệu lực phụ lục — backend tự set = ngày đầu tháng sau, readonly --%>
+                            <div class="form-group">
+                                <label class="form-label">Ngày hiệu lực phụ lục <span style="color:#dc2626">*</span></label>
+                                <input type="date"
+                                       id="effectiveDate"
+                                       name="effectiveDate"
+                                       class="form-control"
+                                       value="${nextMonthFirstDay}"
+                                       readonly
+                                       required>
                             </div>
+
+                            <%-- Lương cơ bản mới — optional --%>
+                            <div class="form-group">
+                                <label class="form-label">Lương cơ bản mới (đ)</label>
+                                <input type="text"
+                                       id="newBaseSalary"
+                                       name="newBaseSalary"
+                                       class="form-control"
+                                       placeholder="Để trống nếu giữ nguyên lương hiện tại">
+                            </div>
+
+
+                            <%-- Lý do / Nội dung phụ lục — required --%>
+                            <div class="form-group full">
+                                <label class="form-label">Lý do / Nội dung phụ lục <span style="color:#dc2626">*</span></label>
+                                <textarea id="reason"
+                                          name="reason"
+                                          class="form-control"
+                                          rows="3"
+                                          placeholder="Mô tả lý do điều chuyển, thay đổi phòng ban/chức vụ/lương/phụ cấp..."
+                                          required></textarea>
+                            </div>
+
+                            <%-- Phụ cấp áp dụng theo phụ lục — lấy đúng style từ employee-contracts.jsp --%>
+                            <c:if test="${not empty availableAllowances}">
+                                <div class="form-group full">
+                                    <label class="form-label">Phụ cấp áp dụng theo phụ lục</label>
+                                    <div class="allowance-check-grid">
+                                        <c:forEach var="alw" items="${availableAllowances}">
+                                            <div class="allowance-check-item">
+                                                <input type="checkbox" name="allowanceIds" value="${alw.allowanceId}" id="tr_alw_${alw.allowanceId}">
+                                                <label for="tr_alw_${alw.allowanceId}"><c:out value="${alw.allowanceName}"/></label>
+                                                <span class="alw-amount"><fmt:formatNumber value="${alw.amount}" type="number" groupingUsed="true"/>đ</span>
+                                            </div>
+                                        </c:forEach>
+                                    </div>
+                                </div>
+                            </c:if>
+
                         </div>
-                    </div>
-
-
-                    <!-- EFFECTIVE DATE -->
-                    <div class="form-group">
-                        <label class="form-label" for="effectiveDate">Ngày có hiệu lực *</label>
-                        <input type="date" id="effectiveDate" name="effectiveDate" class="form-control" required>
-                    </div>
-
-                    <!-- REASON -->
-                    <div class="form-group">
-                        <label class="form-label" for="reason">Lý do điều chuyển *</label>
-                        <textarea id="reason" name="reason" class="form-control" placeholder="Mô tả lý do điều chuyển nhân sự chi tiết..." required></textarea>
                     </div>
 
                     <!-- SUBMIT BUTTON -->
@@ -475,9 +506,9 @@
         document.getElementById('empClearBtn').classList.add('visible');
         closeDropdown();
         showSelectedCard(emp);
-        // Cập nhật thông tin phòng ban/chức vụ hiện tại để controller có thể validate
-        // (không cần hiển thị readonly inputs riêng nữa — card đã đủ)
         currentEmpRoleId = emp.roleId;
+        // [NEW] Pre-fill lương và phụ cấp của nhân viên được chọn
+        prefillContractData(emp.id);
     }
 
     function showSelectedCard(emp) {
@@ -510,6 +541,10 @@
         filteredList = empList.slice();
         focusedIndex = -1;
         renderDropdown('');
+        // [NEW] Xóa pre-fill lương và bỏ tick phụ cấp
+        var salaryInput = document.getElementById('newBaseSalary');
+        if (salaryInput) salaryInput.value = '';
+        document.querySelectorAll('input[name="allowanceIds"]').forEach(function(cb){ cb.checked = false; });
     }
 
     function openDropdown() {
@@ -525,6 +560,32 @@
 
     // Biến lưu roleId của nhân viên đang được chọn (dùng bởi updateNewRoles)
     var currentEmpRoleId = null;
+    // [NEW] JSON map lương + phụ cấp của từng nhân viên
+    var empSalaryMap = {};
+    try { empSalaryMap = JSON.parse(document.getElementById('empSalaryData').textContent); } catch(e) {}
+
+    /**
+     * [NEW] Pre-fill lương cơ bản (raw value) và tick các phụ cấp hiện tại khi chọn nhân viên.
+     */
+    function prefillContractData(empId) {
+        var data = empSalaryMap[String(empId)];
+        // -- Pre-fill lương (số trơn, không format dấu chấm để tương thích Servlet BigDecimal parser) --
+        var salaryInput = document.getElementById('newBaseSalary');
+        if (salaryInput) {
+            if (data && data.salary != null) {
+                salaryInput.value = data.salary;
+            } else {
+                salaryInput.value = '';
+            }
+        }
+        // -- Pre-check phụ cấp --
+        var activeIds = (data && data.allowanceIds) ? data.allowanceIds : [];
+        document.querySelectorAll('input[name="allowanceIds"]').forEach(function(cb) {
+            cb.checked = activeIds.indexOf(Number(cb.value)) !== -1;
+        });
+    }
+
+
 
 
     function updateNewPositions() {
@@ -632,28 +693,7 @@
         }
     }
 
-    /**
-     * Lớp 2 — Hiện/ẩn input lương cơ bản mới theo ngạch lương được chọn.
-     * - Nếu không chọn ngạch → ẩn input, xóa required (Lớp 1: giữ nguyên lương cũ)
-     * - Nếu chọn ngạch mới  → hiện input + đặt required (bắt buộc nhập lương mới)
-     */
-    function updateSalarySection() {
-        var gradeSelect   = document.getElementById('newSalaryGradeId');
-        var wrapper       = document.getElementById('baseSalaryWrapper');
-        var salaryInput   = document.getElementById('newBaseSalary');
-
-        if (gradeSelect.value) {
-            // Đã chọn ngạch → hiện ô lương, đặt required
-            wrapper.style.display = 'block';
-            salaryInput.required  = true;
-            salaryInput.focus();
-        } else {
-            // Không chọn ngạch → ẩn ô lương, bỏ required, xóa giá trị cũ
-            wrapper.style.display = 'none';
-            salaryInput.required  = false;
-            salaryInput.value     = '';
-        }
-    }
+    // [REMOVED] updateSalarySection() đã bị xóa — không còn ngạch lương trong form điều chuyển.
 </script>
 
 <jsp:include page="../footer.jsp" />

@@ -218,6 +218,22 @@
                     <div>${req.reason}</div>
                 </div>
 
+                <!-- EMPLOYEE CONFIRMATION STATUS -->
+                <c:choose>
+                    <c:when test="${req.employeeConfirmedAt != null}">
+                        <div class="reason-box" style="border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.04);">
+                            <div class="reason-box-title" style="color: var(--ok-dark);"><i class="fas fa-user-check"></i> Nhân viên đã xác nhận đồng ý</div>
+                            <div>Vào lúc: <strong><fmt:formatDate value="${req.employeeConfirmedAt}" pattern="dd/MM/yyyy HH:mm" /></strong></div>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="reason-box" style="border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.04);">
+                            <div class="reason-box-title" style="color: #92400e;"><i class="far fa-clock"></i> Chưa có phản hồi từ nhân viên</div>
+                            <div>Nhân viên chưa xác nhận hoặc từ chối yêu cầu này.</div>
+                        </div>
+                    </c:otherwise>
+                </c:choose>
+
                 <!-- VIEW WORK HISTORY LINK -->
                 <div class="form-group" style="text-align: center; margin-bottom: 24px;">
                     <a href="${pageContext.request.contextPath}/manager/employee-work-history?userId=${req.employeeId}" target="_blank" style="color: var(--blue); font-weight: 700; text-decoration: none; font-size: 0.88rem;">
@@ -229,7 +245,7 @@
 
                 <!-- DYNAMIC ACTION FORMS BASED ON STATUS -->
                 <c:choose>
-                    <%-- 1. Request is closed --%>
+                    <%-- 1. Hoàn tất --%>
                     <c:when test="${req.status eq 'APPROVED'}">
                         <div class="status-banner approved">
                             <i class="fas fa-check-circle"></i> Yêu cầu điều chuyển đã được hoàn tất phê duyệt &amp; thực thi.
@@ -237,15 +253,28 @@
                     </c:when>
                     <c:when test="${req.status eq 'REJECTED'}">
                         <div class="status-banner rejected">
-                            <i class="fas fa-times-circle"></i> Yêu cầu đã bị từ chối bởi Trưởng phòng.
+                            <i class="fas fa-times-circle"></i> Yêu cầu đã bị từ chối.
                             <c:if test="${not empty req.rejectReason}">
                                 <div style="font-weight:normal; font-size:0.85rem; margin-top:6px;">Lý do: ${req.rejectReason}</div>
+                            </c:if>
+                        </div>
+                    </c:when>
+                    <c:when test="${req.status eq 'EMPLOYEE_REJECTED'}">
+                        <div class="status-banner rejected">
+                            <i class="fas fa-user-times"></i> Nhân viên đã từ chối yêu cầu điều chuyển.
+                            <c:if test="${not empty req.employeeRejectReason}">
+                                <div style="font-weight:normal; font-size:0.85rem; margin-top:6px;">Lý do: ${req.employeeRejectReason}</div>
                             </c:if>
                         </div>
                     </c:when>
                     <c:when test="${req.status eq 'CANCELLED'}">
                         <div class="status-banner rejected" style="background:#e2e8f0; color:#475569; border-color:#cbd5e1;">
                             <i class="fas fa-ban"></i> Yêu cầu đã được huỷ bỏ bởi người tạo.
+                        </div>
+                    </c:when>
+                    <c:when test="${req.status eq 'PENDING'}">
+                        <div class="status-banner pending-hr">
+                            <i class="fas fa-user-clock"></i> Đang chờ nhân viên xác nhận. Bạn chưa thể phê duyệt ở bước này.
                         </div>
                     </c:when>
 
@@ -256,14 +285,36 @@
                         </div>
                     </c:when>
 
-                    <%-- 3. Actionable for Manager --%>
-                    <c:when test="${req.status eq 'PENDING'}">
+                    <%-- 3. Trưởng phòng có thể dưỳt (EMPLOYEE_CONFIRMED) khi role != HR Manager --%>
+                    <c:when test="${req.status eq 'EMPLOYEE_CONFIRMED' and currentRoleId != 2}">
                         <div style="display: flex; gap: 16px;">
                             <div style="flex: 1;">
-                                <form action="${pageContext.request.contextPath}/manager/transfer-approval/approve" method="post" onsubmit="return confirm('Bạn xác nhận DUYỆT yêu cầu điều chuyển này? Hồ sơ nhân viên và hợp đồng sẽ được thực thi cập nhật ngay lập tức.');">
+                                <form action="${pageContext.request.contextPath}/manager/transfer-approval/approve" method="post" onsubmit="return confirm('Bạn xác nhận DUYỆT bước 1? Đơn sẽ chuyển tiếp cho HR Manager xem xét lần cuối.');">
                                     <input type="hidden" name="requestId" value="${req.transferRequestId}">
                                     <button type="submit" class="btn-approve">
-                                        <i class="fas fa-check-circle"></i> Đồng ý duyệt
+                                        <i class="fas fa-check-circle"></i> Duyệt bước 1 (chuyển HR Manager)
+                                    </button>
+                                </form>
+                            </div>
+                            <div style="flex: 1;">
+                                <button type="button" class="btn-reject" onclick="toggleRejectForm()">
+                                    <i class="fas fa-times-circle"></i> Từ chối duyệt
+                                </button>
+                            </div>
+                        </div>
+                    </c:when>
+
+                    <%-- 4. HR Manager duyệt cuối (MANAGER_APPROVED) --%>
+                    <c:when test="${req.status eq 'MANAGER_APPROVED' and currentRoleId eq 2}">
+                        <div style="margin-bottom:16px; padding:12px 16px; background:rgba(59,130,246,0.07); border:1px solid rgba(59,130,246,0.2); border-radius:10px; font-size:0.85rem; color:#1e40af;">
+                            <i class="fas fa-info-circle"></i> Trưởng phòng đã duyệt. Yêu cầu đang chờ bạn xác nhận lần cuối. Khi phê duyệt, hồ sơ nhân viên và hợp đồng sẽ được cập nhật ngay.
+                        </div>
+                        <div style="display: flex; gap: 16px;">
+                            <div style="flex: 1;">
+                                <form action="${pageContext.request.contextPath}/manager/transfer-approval/approve" method="post" onsubmit="return confirm('Bạn xác nhận PHÊ DUYỆT CUỐI cùng? Hồ sơ nhân viên và hợp đồng sẽ được thực thi cập nhật ngay lập tức.');">
+                                    <input type="hidden" name="requestId" value="${req.transferRequestId}">
+                                    <button type="submit" class="btn-approve">
+                                        <i class="fas fa-check-circle"></i> Phê duyệt cuối (thực thi)
                                     </button>
                                 </form>
                             </div>

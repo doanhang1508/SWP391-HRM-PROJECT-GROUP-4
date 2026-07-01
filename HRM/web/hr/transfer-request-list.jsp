@@ -59,9 +59,12 @@
 
     /* BADGES */
     .badge-s { padding: 5px 12px; border-radius: 6px; font-weight: 700; font-size: .72rem; display: inline-flex; align-items: center; gap: 6px; }
-    .b-pending { background: var(--warn-l); color: var(--warn); }
-    .b-approved { background: var(--ok-l); color: var(--ok); }
-    .b-rejected { background: var(--ng-l); color: var(--ng); }
+    .b-pending   { background: var(--warn-l); color: var(--warn); }
+    .b-emp-conf  { background: rgba(99, 102, 241, 0.1); color: #4f46e5; }
+    .b-emp-rej   { background: var(--ng-l); color: var(--ng); }
+    .b-mgr-appr  { background: rgba(59, 130, 246, 0.1); color: #1d4ed8; }
+    .b-approved  { background: var(--ok-l); color: var(--ok); }
+    .b-rejected  { background: var(--ng-l); color: var(--ng); }
     .b-cancelled { background: rgba(100, 116, 139, 0.1); color: #475569; }
 
     .transfer-arrow { color: var(--muted); margin: 0 6px; font-size: 0.8rem; }
@@ -167,19 +170,28 @@
                                         </td>
                                         <td>
                                              <c:choose>
-                                                 <c:when test="${tr.status eq 'PENDING' or tr.status eq 'MANAGER_APPROVED'}">
-                                                     <span class="badge-s b-pending"><i class="far fa-clock"></i> Chờ duyệt</span>
-                                                 </c:when>
-                                                 <c:when test="${tr.status eq 'APPROVED'}">
-                                                     <span class="badge-s b-approved"><i class="fas fa-check"></i> Đã duyệt</span>
-                                                 </c:when>
-                                                 <c:when test="${tr.status eq 'REJECTED' or tr.status eq 'HR_REJECTED'}">
-                                                     <span class="badge-s b-rejected" title="${tr.rejectReason}"><i class="fas fa-times"></i> Bị từ chối</span>
-                                                 </c:when>
-                                                 <c:otherwise>
-                                                     <span class="badge-s b-cancelled"><i class="fas fa-ban"></i> Đã huỷ</span>
-                                                 </c:otherwise>
-                                             </c:choose>
+                                              <c:when test="${tr.status eq 'PENDING'}">
+                                                  <span class="badge-s b-pending"><i class="far fa-clock"></i> Chờ NV xác nhận</span>
+                                              </c:when>
+                                              <c:when test="${tr.status eq 'EMPLOYEE_CONFIRMED'}">
+                                                  <span class="badge-s b-emp-conf"><i class="fas fa-user-check"></i> NV đã xác nhận</span>
+                                              </c:when>
+                                              <c:when test="${tr.status eq 'MANAGER_APPROVED'}">
+                                                  <span class="badge-s b-mgr-appr"><i class="fas fa-thumbs-up"></i> TP đã duyệt</span>
+                                              </c:when>
+                                              <c:when test="${tr.status eq 'APPROVED'}">
+                                                  <span class="badge-s b-approved"><i class="fas fa-check"></i> Đã duyệt</span>
+                                              </c:when>
+                                              <c:when test="${tr.status eq 'EMPLOYEE_REJECTED'}">
+                                                  <span class="badge-s b-emp-rej" title="${tr.employeeRejectReason}"><i class="fas fa-user-times"></i> NV từ chối</span>
+                                              </c:when>
+                                              <c:when test="${tr.status eq 'REJECTED' or tr.status eq 'HR_REJECTED'}">
+                                                  <span class="badge-s b-rejected" title="${tr.rejectReason}"><i class="fas fa-times"></i> Bị từ chối</span>
+                                              </c:when>
+                                              <c:otherwise>
+                                                  <span class="badge-s b-cancelled"><i class="fas fa-ban"></i> Đã huỷ</span>
+                                              </c:otherwise>
+                                          </c:choose>
                                         </td>
                                         <td>
                                             ${tr.requestedByName}
@@ -192,19 +204,19 @@
                                                 <a href="${pageContext.request.contextPath}/hr/employee-work-history?userId=${tr.employeeId}" class="btn-action" title="Xem lịch sử công tác">
                                                     <i class="fas fa-history"></i> Lịch sử
                                                 </a>
-                                                <%-- [FIX #4] Nút Hủy: hiện khi PENDING và (người tạo == currentUser HOẶC Admin/HR Manager) --%>
-                                                <c:if test="${tr.status eq 'PENDING'}">
-                                                    <c:set var="cu" value="${sessionScope.currentUser}" />
-                                                    <c:if test="${tr.requestedBy eq cu.userId or cu.roleId eq 1 or cu.roleId eq 2}">
-                                                        <form method="post" action="${pageContext.request.contextPath}/hr/transfer-request/cancel"
-                                                              onsubmit="return confirm('Bạn có chắc chắn muốn HỦY yêu cầu điều chuyển này không?');" style="margin:0">
-                                                            <input type="hidden" name="requestId" value="${tr.transferRequestId}">
-                                                            <button type="submit" class="btn-cancel-req" title="Hủy yêu cầu">
-                                                                <i class="fas fa-ban"></i> Hủy yêu cầu
-                                                            </button>
-                                                        </form>
-                                                    </c:if>
-                                                </c:if>
+                                                 <%-- [FIX #4] Nút Hủy: hiện khi PENDING và (người tạo == currentUser HOẶC Admin/HR Manager) --%>
+                                                 <c:if test="${tr.status eq 'PENDING' or tr.status eq 'EMPLOYEE_CONFIRMED'}">
+                                                     <c:set var="cu" value="${sessionScope.currentUser}" />
+                                                     <c:if test="${tr.requestedBy eq cu.userId or cu.roleId eq 1 or cu.roleId eq 2}">
+                                                         <form method="post" action="${pageContext.request.contextPath}/hr/transfer-request/cancel"
+                                                               onsubmit="return confirm('Bạn có chắc chắn muốn HỦY yêu cầu điều chuyển này không?');" style="margin:0">
+                                                             <input type="hidden" name="requestId" value="${tr.transferRequestId}">
+                                                             <button type="submit" class="btn-cancel-req" title="Hủy yêu cầu">
+                                                                 <i class="fas fa-ban"></i> Hủy yêu cầu
+                                                             </button>
+                                                         </form>
+                                                     </c:if>
+                                                 </c:if>
                                             </div>
                                         </td>
                                     </tr>

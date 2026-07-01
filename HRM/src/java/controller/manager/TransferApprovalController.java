@@ -15,9 +15,10 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Luồng phê duyệt 1 bước đơn giản:
- *   Trưởng phòng của phòng ban cũ (role 3/6, hoặc HR Manager role 2 nếu quản lý phòng ban cũ)
- *   duyệt PENDING → APPROVED (thực thi DB trực tiếp) hoặc từ chối PENDING → REJECTED.
+ * [NEW FLOW] Luồng phê duyệt điều chuyển 3 bước:
+ *   Bước 1: Trưởng phòng cũ (role 3/6) duyệt EMPLOYEE_CONFIRMED → MANAGER_APPROVED
+ *   Bước 2: HR Manager (role 2) phê duyệt cuối MANAGER_APPROVED → APPROVED (thực thi DB)
+ *   Hoặc từ chối: EMPLOYEE_CONFIRMED/MANAGER_APPROVED → REJECTED
  */
 @WebServlet(name = "TransferApprovalController", urlPatterns = {
         "/manager/transfer-approvals",
@@ -115,9 +116,17 @@ public class TransferApprovalController extends HttpServlet {
                                 User currentUser, int roleId)
             throws ServletException, IOException {
 
-        // Lấy tất cả yêu cầu điều chuyển đang PENDING của phòng ban của manager hiện tại
-        List<TransferRequest> pendingList = trDAO.getPendingRequestsForManager(currentUser.getDepartmentId());
-        request.setAttribute("approvals", pendingList);
+        List<TransferRequest> approvalList;
+        if (roleId == ROLE_HR_MANAGER) {
+            // HR Manager xem đơn đã qua Trưởng phòng (MANAGER_APPROVED)
+            approvalList = trDAO.getManagerApprovedRequests();
+            request.setAttribute("viewMode", "HR_CONFIRM");
+        } else {
+            // Trưởng phòng (role 3/6) xem đơn nhân viên đã xác nhận (EMPLOYEE_CONFIRMED)
+            approvalList = trDAO.getEmployeeConfirmedRequestsForManager(currentUser.getDepartmentId());
+            request.setAttribute("viewMode", "DEPT_HEAD_APPROVE");
+        }
+        request.setAttribute("approvals", approvalList);
         request.getRequestDispatcher("/manager/transfer-approval-list.jsp").forward(request, response);
     }
 
@@ -141,15 +150,21 @@ public class TransferApprovalController extends HttpServlet {
                 return;
             }
 
-            // Kiểm tra xem manager hiện tại có đúng là quản lý phòng ban cũ của nhân viên không
-            if (currentUser.getDepartmentId() != tr.getOldDepartmentId()) {
+            // HR Manager có thể xem tất cả; Trưởng phòng chỉ được xem phòng mình quản lý
+            if (roleId != ROLE_HR_MANAGER && currentUser.getDepartmentId() != tr.getOldDepartmentId()) {
                 response.sendError(HttpServletResponse.SC_FORBIDDEN,
                         "Bạn không có quyền xem yêu cầu của phòng ban khác.");
                 return;
             }
 
-            // Nếu đơn không còn PENDING thì chuyển sang chế độ chỉ đọc
-            if (!"PENDING".equals(tr.getStatus())) {
+            // Nếu đơn không ở trạng thái có thể hành động thì chuyển sang chế độ chỉ đọc
+            boolean canAct;
+            if (roleId == ROLE_HR_MANAGER) {
+                canAct = "MANAGER_APPROVED".equals(tr.getStatus());
+            } else {
+                canAct = "EMPLOYEE_CONFIRMED".equals(tr.getStatus());
+            }
+            if (!canAct) {
                 request.setAttribute("readOnly", true);
             }
 
@@ -169,23 +184,36 @@ public class TransferApprovalController extends HttpServlet {
                                int id, TransferRequest tr)
             throws IOException {
 
-        if (!"PENDING".equals(tr.getStatus())) {
-            session.setAttribute("errorMessage", "Yêu cầu đã được xử lý hoặc không ở trạng thái Chờ duyệt.");
-            response.sendRedirect(request.getContextPath() + "/manager/transfer-approvals");
-            return;
-        }
-
-        if (currentUser.getDepartmentId() != tr.getOldDepartmentId()) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền xử lý yêu cầu của phòng ban khác.");
-            return;
-        }
-
-        // Thực thi duyệt trực tiếp từ PENDING thành APPROVED và cập nhật hồ sơ, tạo phụ lục hợp đồng
-        boolean ok = trDAO.approveTransferRequest(id, currentUser.getUserId());
-        if (ok) {
-            session.setAttribute("successMessage", "Đã phê duyệt và thực thi điều chuyển nhân viên thành công.");
+        if (roleId == ROLE_HR_MANAGER) {
+            // HR Manager duyệt cuối: MANAGER_APPROVED → APPROVED (thực thi DB)
+            if (!"MANAGER_APPROVED".equals(tr.getStatus())) {
+                session.setAttribute("errorMessage", "Yêu cầu chưa ở trạng thái chờ duyệt của HR Manager.");
+                response.sendRedirect(request.getContextPath() + "/manager/transfer-approvals");
+                return;
+            }
+            boolean ok = trDAO.approveTransferRequest(id, currentUser.getUserId());
+            if (ok) {
+                session.setAttribute("successMessage", "Đã phê duyệt và thực thi điều chuyển nhân viên thành công.");
+            } else {
+                session.setAttribute("errorMessage", "Phê duyệt thất bại. Vui lòng kiểm tra lại hệ thống (nhân viên có thể chưa có hợp đồng active).");
+            }
         } else {
-            session.setAttribute("errorMessage", "Phê duyệt thất bại. Vui lòng kiểm tra lại hệ thống (nhân viên có thể chưa có hợp đồng active).");
+            // Trưởng phòng duyệt bước 1: EMPLOYEE_CONFIRMED → MANAGER_APPROVED
+            if (!"EMPLOYEE_CONFIRMED".equals(tr.getStatus())) {
+                session.setAttribute("errorMessage", "Yêu cầu chưa ở trạng thái chờ Trưởng phòng duyệt.");
+                response.sendRedirect(request.getContextPath() + "/manager/transfer-approvals");
+                return;
+            }
+            if (currentUser.getDepartmentId() != tr.getOldDepartmentId()) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền xử lý yêu cầu của phòng ban khác.");
+                return;
+            }
+            boolean ok = trDAO.managerApproveTransferRequest(id, currentUser.getUserId());
+            if (ok) {
+                session.setAttribute("successMessage", "Đã duyệt bước 1 thành công. Đơn đang chờ HR Manager xác nhận lần cuối.");
+            } else {
+                session.setAttribute("errorMessage", "Duyệt bước 1 thất bại. Vui lòng kiểm tra lại.");
+            }
         }
 
         response.sendRedirect(request.getContextPath() + "/manager/transfer-approvals");
@@ -203,13 +231,15 @@ public class TransferApprovalController extends HttpServlet {
             return;
         }
 
-        if (!"PENDING".equals(tr.getStatus())) {
-            session.setAttribute("errorMessage", "Yêu cầu đã được xử lý hoặc không ở trạng thái Chờ duyệt.");
+        // Kiểm tra trạng thái hợp lệ để từ chối
+        if (!"EMPLOYEE_CONFIRMED".equals(tr.getStatus()) && !"MANAGER_APPROVED".equals(tr.getStatus())) {
+            session.setAttribute("errorMessage", "Yêu cầu đã được xử lý hoặc không ở trạng thái có thể từ chối.");
             response.sendRedirect(request.getContextPath() + "/manager/transfer-approvals");
             return;
         }
 
-        if (currentUser.getDepartmentId() != tr.getOldDepartmentId()) {
+        // Trưởng phòng chỉ từ chối được đơn của phòng mình
+        if (roleId != ROLE_HR_MANAGER && currentUser.getDepartmentId() != tr.getOldDepartmentId()) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền xử lý yêu cầu của phòng ban khác.");
             return;
         }

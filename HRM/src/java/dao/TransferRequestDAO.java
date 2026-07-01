@@ -14,7 +14,7 @@ import java.util.List;
 
 public class TransferRequestDAO {
 
-    // ── [2-STEP] Base SQL dùng chung cho tất cả query SELECT ──────────────────
+    // ── [NEW FLOW] Base SQL dùng chung cho tất cả query SELECT ──────────────────
     private static final String BASE_SELECT_SQL =
         "SELECT tr.*, u.full_name AS employee_name, " +
         "d1.department_name AS old_dept_name, d2.department_name AS new_dept_name, " +
@@ -70,6 +70,83 @@ public class TransferRequestDAO {
         return false;
     }
 
+    /**
+     * [NEW FLOW] Tạo phiếu điều chuyển kèm danh sách phụ cấp.
+     * Insert vào transfer_requests + transfer_request_allowances trong 1 transaction.
+     * allowanceIds rỗng = không có phụ cấp (chấp nhận).
+     */
+    public boolean createTransferRequestWithAllowances(TransferRequest req, List<Integer> allowanceIds) {
+        String sqlInsertReq = "INSERT INTO transfer_requests " +
+                "(employee_id, old_department_id, old_position_id, old_role_id, " +
+                " new_department_id, new_position_id, new_role_id, " +
+                " new_base_salary, " +
+                " reason, effective_date, status, requested_by) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?)";
+        String sqlInsertAlw = "INSERT INTO transfer_request_allowances (transfer_request_id, allowance_id) VALUES (?, ?)";
+
+        Connection conn = null;
+        try {
+            conn = DBContext.getConnection();
+            conn.setAutoCommit(false);
+
+            int requestId;
+            try (PreparedStatement ps = conn.prepareStatement(sqlInsertReq,
+                    java.sql.Statement.RETURN_GENERATED_KEYS)) {
+                ps.setInt(1, req.getEmployeeId());
+                if (req.getOldDepartmentId() > 0) ps.setInt(2, req.getOldDepartmentId());
+                else ps.setNull(2, java.sql.Types.INTEGER);
+                if (req.getOldPositionId() > 0) ps.setInt(3, req.getOldPositionId());
+                else ps.setNull(3, java.sql.Types.INTEGER);
+                if (req.getOldRoleId() != null && req.getOldRoleId() > 0) ps.setInt(4, req.getOldRoleId());
+                else ps.setNull(4, java.sql.Types.INTEGER);
+                ps.setInt(5, req.getNewDepartmentId());
+                ps.setInt(6, req.getNewPositionId());
+                ps.setInt(7, req.getNewRoleId());
+                if (req.getNewBaseSalary() != null) ps.setBigDecimal(8, req.getNewBaseSalary());
+                else ps.setNull(8, java.sql.Types.DECIMAL);
+                ps.setString(9, req.getReason());
+                ps.setDate(10, req.getEffectiveDate());
+                ps.setInt(11, req.getRequestedBy());
+                ps.executeUpdate();
+
+                try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+                    if (!generatedKeys.next()) {
+                        conn.rollback();
+                        return false;
+                    }
+                    requestId = generatedKeys.getInt(1);
+                }
+            }
+
+            // Insert phụ cấp nếu có
+            if (allowanceIds != null && !allowanceIds.isEmpty()) {
+                try (PreparedStatement ps2 = conn.prepareStatement(sqlInsertAlw)) {
+                    for (int aid : allowanceIds) {
+                        ps2.setInt(1, requestId);
+                        ps2.setInt(2, aid);
+                        ps2.addBatch();
+                    }
+                    ps2.executeBatch();
+                }
+            }
+
+            conn.commit();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ignored) {}
+            }
+        } finally {
+            if (conn != null) {
+                try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ignored) {}
+            }
+        }
+        return false;
+    }
+
+
+
     public List<TransferRequest> getAllTransferRequests() {
         List<TransferRequest> list = new ArrayList<>();
         String sql = BASE_SELECT_SQL + "ORDER BY tr.created_at DESC";
@@ -102,13 +179,35 @@ public class TransferRequestDAO {
     }
 
     /**
-     * [2-STEP] Lấy danh sách đơn PENDING của phòng ban cụ thể (Trưởng phòng xử lý bước 1).
+     * [NEW FLOW Bước 1] Lấy danh sách đơn PENDING của nhân viên cụ thể (NV xác nhận).
      */
-    public List<TransferRequest> getPendingRequestsForManager(int managerDepartmentId) {
+    public List<TransferRequest> getPendingForEmployee(int employeeId) {
         List<TransferRequest> list = new ArrayList<>();
         String sql = BASE_SELECT_SQL +
-                     "WHERE tr.status = 'PENDING' AND tr.old_department_id = ? " +
+                     "WHERE tr.status = 'PENDING' AND tr.employee_id = ? " +
                      "ORDER BY tr.created_at DESC";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    /**
+     * [NEW FLOW Bước 1] Lấy danh sách đơn EMPLOYEE_CONFIRMED của phòng ban cụ thể (Trưởng phòng xử lý).
+     */
+    public List<TransferRequest> getEmployeeConfirmedRequestsForManager(int managerDepartmentId) {
+        List<TransferRequest> list = new ArrayList<>();
+        String sql = BASE_SELECT_SQL +
+                     "WHERE tr.status = 'EMPLOYEE_CONFIRMED' AND tr.old_department_id = ? " +
+                     "ORDER BY tr.employee_confirmed_at ASC";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, managerDepartmentId);
@@ -143,8 +242,13 @@ public class TransferRequestDAO {
         return list;
     }
 
-    public boolean hasPendingRequest(int employeeId) {
-        String sql = "SELECT 1 FROM transfer_requests WHERE employee_id = ? AND status = 'PENDING'";
+    /**
+     * Kiểm tra nhân viên có đơn điều chuyển đang trong quá trình xử lý không.
+     * (PENDING, EMPLOYEE_CONFIRMED, hoặc MANAGER_APPROVED)
+     */
+    public boolean hasPendingOrInProgressRequest(int employeeId) {
+        String sql = "SELECT 1 FROM transfer_requests WHERE employee_id = ? " +
+                     "AND status IN ('PENDING','EMPLOYEE_CONFIRMED','MANAGER_APPROVED')";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, employeeId);
@@ -158,7 +262,16 @@ public class TransferRequestDAO {
     }
 
     /**
-     * [2-STEP] Lấy ID của đơn điều chuyển mới nhất (PENDING) của một nhân viên.
+     * Giữ được khả năng tương thích ngược với các nơi gọi hasPendingRequest cũ.
+     * @deprecated Dùng hasPendingOrInProgressRequest() thay thế
+     */
+    @Deprecated
+    public boolean hasPendingRequest(int employeeId) {
+        return hasPendingOrInProgressRequest(employeeId);
+    }
+
+    /**
+     * [NEW FLOW] Lấy ID của đơn điều chuyển mới nhất (PENDING) của một nhân viên.
      * Dùng ngay sau khi createTransferRequest() để lấy ID cho notification.
      */
     public int getLatestRequestIdForEmployee(int employeeId) {
@@ -178,9 +291,10 @@ public class TransferRequestDAO {
     }
 
     public boolean rejectTransferRequest(int requestId, int approverId, String rejectReason) {
+        // Trưởng phòng từ chối từ EMPLOYEE_CONFIRMED; HR Manager từ chối từ MANAGER_APPROVED
         String sql = "UPDATE transfer_requests SET " +
                      "status = 'REJECTED', approved_by = ?, approved_at = NOW(), reject_reason = ?, updated_at = NOW() " +
-                     "WHERE transfer_request_id = ? AND status = 'PENDING'";
+                     "WHERE transfer_request_id = ? AND status IN ('EMPLOYEE_CONFIRMED','MANAGER_APPROVED')";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, approverId);
@@ -194,13 +308,69 @@ public class TransferRequestDAO {
     }
 
     /**
-     * [2-STEP BƯỚC 1] Trưởng phòng duyệt: PENDING → MANAGER_APPROVED.
+     * [NEW FLOW Bước 1] Nhân viên XÁC NHẬN đồng ý: PENDING → EMPLOYEE_CONFIRMED.
+     * Sau đó gửi notification cho Trưởng phòng của phòng ban cũ.
+     */
+    public boolean employeeConfirmTransfer(int requestId, int employeeId) {
+        String sql = "UPDATE transfer_requests " +
+                     "SET status = 'EMPLOYEE_CONFIRMED', employee_confirmed_at = NOW(), updated_at = NOW() " +
+                     "WHERE transfer_request_id = ? AND employee_id = ? AND status = 'PENDING'";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, requestId);
+            ps.setInt(2, employeeId);
+            boolean ok = ps.executeUpdate() > 0;
+            if (ok) {
+                // Lấy thông tin đơn để gửi notification
+                TransferRequest req = getById(requestId);
+                if (req != null) {
+                    sendDeptHeadNotificationOnConfirm(requestId, req.getOldDepartmentId(), req.getEmployeeName());
+                }
+            }
+            return ok;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * [NEW FLOW Bước 1] Nhân viên TỪ CHỐI điều chuyển: PENDING → EMPLOYEE_REJECTED.
+     * Gửi notification cho HR Staff người tạo đơn.
+     */
+    public boolean employeeRejectTransfer(int requestId, int employeeId, String rejectReason) {
+        String sql = "UPDATE transfer_requests " +
+                     "SET status = 'EMPLOYEE_REJECTED', employee_reject_reason = ?, updated_at = NOW() " +
+                     "WHERE transfer_request_id = ? AND employee_id = ? AND status = 'PENDING'";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, rejectReason);
+            ps.setInt(2, requestId);
+            ps.setInt(3, employeeId);
+            boolean ok = ps.executeUpdate() > 0;
+            if (ok) {
+                // Gửi notification cho HR Staff người tạo đơn
+                TransferRequest req = getById(requestId);
+                if (req != null) {
+                    sendNotificationToRequester(requestId, req.getRequestedBy(),
+                        req.getEmployeeName(), rejectReason);
+                }
+            }
+            return ok;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * [NEW FLOW Bước 2] Trưởng phòng duyệt: EMPLOYEE_CONFIRMED → MANAGER_APPROVED.
      * Sau đó gửi notification cho HR Manager.
      */
     public boolean managerApproveTransferRequest(int requestId, int managerId) {
         String sql = "UPDATE transfer_requests " +
                      "SET status = 'MANAGER_APPROVED', manager_approved_by = ?, manager_approved_at = NOW(), updated_at = NOW() " +
-                     "WHERE transfer_request_id = ? AND status = 'PENDING'";
+                     "WHERE transfer_request_id = ? AND status = 'EMPLOYEE_CONFIRMED'";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, managerId);
@@ -232,11 +402,11 @@ public class TransferRequestDAO {
         boolean isAdminOrHRManager = (cancelledByRoleId == 1 || cancelledByRoleId == 2);
         String sql;
         if (isAdminOrHRManager) {
-            // Admin/HR Manager có thể hủy bất kỳ request PENDING nào
+            // Admin/HR Manager có thể hủy đơn PENDING hoặc EMPLOYEE_CONFIRMED
             sql = "UPDATE transfer_requests SET status = 'CANCELLED', updated_at = NOW() " +
-                  "WHERE transfer_request_id = ? AND status = 'PENDING'";
+                  "WHERE transfer_request_id = ? AND status IN ('PENDING','EMPLOYEE_CONFIRMED')";
         } else {
-            // Người tạo chỉ được hủy request của chính mình
+            // Người tạo chỉ được hủy request PENDING của chính mình (chưa qua bước NV xác nhận)
             sql = "UPDATE transfer_requests SET status = 'CANCELLED', updated_at = NOW() " +
                   "WHERE transfer_request_id = ? AND status = 'PENDING' AND requested_by = ?";
         }
@@ -314,9 +484,9 @@ public class TransferRequestDAO {
             if (req == null) {
                 throw new SQLException("Transfer Request not found: " + requestId);
             }
-            // Chỉ thực thi khi đơn ở trạng thái PENDING
-            if (!"PENDING".equals(req.getStatus())) {
-                throw new SQLException("Transfer Request is not PENDING (status=" + req.getStatus() + ")");
+            // Chỉ thực thi khi đơn ở trạng thái MANAGER_APPROVED
+            if (!"MANAGER_APPROVED".equals(req.getStatus())) {
+                throw new SQLException("Transfer Request is not MANAGER_APPROVED (status=" + req.getStatus() + ")");
             }
 
             // ── Bước 2: Lấy tên phòng ban, chức vụ, vai trò để ghi work_history ──
@@ -600,20 +770,49 @@ public class TransferRequestDAO {
         tr.setManagerApprovedBy(rs.wasNull() ? null : mgrBy);
         tr.setManagerApprovedByName(rs.getString("manager_approver_name"));
         tr.setManagerApprovedAt(rs.getTimestamp("manager_approved_at"));
+        // [NEW FLOW] Đọc thông tin xác nhận của Nhân viên
+        tr.setEmployeeConfirmedAt(rs.getTimestamp("employee_confirmed_at"));
+        tr.setEmployeeRejectReason(rs.getString("employee_reject_reason"));
         return tr;
     }
 
-    // ── [2-STEP] Notification Helpers ────────────────────────────────────────
+    // ── Notification Helpers ──────────────────────────────────────────────────
 
     /**
-     * Gửi notification cho Trưởng phòng hiện tại của nhân viên khi HR Staff tạo đơn.
-     * Gọi sau khi INSERT thành công, ngoài transaction.
+     * [NEW FLOW] Gửi notification cho Nhân viên khi HR Staff tạo đơn điều chuyển.
+     * Đây là bước đầu tiên trong luồng mới: NV cần xác nhận.
      */
+    public void sendEmployeeNotificationOnCreate(int requestId, int employeeId, String employeeName) {
+        try {
+            notificationDAO notifDAO = new notificationDAO();
+            notifDAO.create(
+                employeeId,
+                "transfer",
+                "Bạn có yêu cầu điều chuyển cần xác nhận",
+                "Hệ thống vừa tạo yêu cầu điều chuyển nội bộ #" + requestId + " cho bạn. Vui lòng xác nhận đồng ý hoặc từ chối.",
+                "/employee/transfer-confirm"
+            );
+        } catch (Exception e) {
+            System.err.println("[TransferRequestDAO] Lỗi gửi notification nhân viên requestId=" + requestId + ": " + e.getMessage());
+        }
+    }
+
+    /**
+     * [COMPAT] Giữ lại để không phá code cũ, nhưng redirect về sendEmployeeNotificationOnCreate.
+     * @deprecated Dùng sendEmployeeNotificationOnCreate() theo luồng mới
+     */
+    @Deprecated
     public void sendDeptHeadNotification(int requestId, int employeeId, int oldDeptId, String employeeName) {
+        sendEmployeeNotificationOnCreate(requestId, employeeId, employeeName);
+    }
+
+    /**
+     * [NEW FLOW] Gửi notification cho Trưởng phòng khi Nhân viên xác nhận đồng ý.
+     */
+    private void sendDeptHeadNotificationOnConfirm(int requestId, int oldDeptId, String employeeName) {
         try {
             notificationDAO notifDAO = new notificationDAO();
             String detailLink = "/manager/transfer-approval-detail?id=" + requestId;
-            // Tìm Trưởng phòng hiện tại (role 3=Factory Manager hoặc role 6=Dept Manager, cùng phòng ban)
             String findManagerSql = "SELECT user_id FROM users " +
                                     "WHERE department_id = ? AND role_id IN (3, 6) AND status = 1 " +
                                     "ORDER BY user_id ASC LIMIT 1";
@@ -627,11 +826,11 @@ public class TransferRequestDAO {
                             deptHeadId,
                             "transfer",
                             "Yêu cầu điều chuyển cần phê duyệt",
-                            "Nhân viên " + employeeName + " có yêu cầu điều chuyển nội bộ #" + requestId + " đang chờ bạn phê duyệt bước 1.",
+                            "Nhân viên " + employeeName + " đã xác nhận yêu cầu điều chuyển nội bộ #" + requestId + ". Vui lòng phê duyệt bước 1.",
                             detailLink
                         );
                     }
-                    // Nếu không tìm thấy Trưởng phòng — đơn vẫn PENDING, HR Manager có thể xử lý thay
+                    // Nếu không tìm thấy Trưởng phòng — đơn vẫn EMPLOYEE_CONFIRMED, HR Manager có thể xử lý thay
                 }
             }
         } catch (Exception e) {
@@ -640,7 +839,27 @@ public class TransferRequestDAO {
     }
 
     /**
-     * [2-STEP] Gửi notification cho tất cả HR Manager (role 2) khi Trưởng phòng duyệt bước 1.
+     * [NEW FLOW] Gửi notification cho HR Staff người tạo đơn khi Nhân viên từ chối.
+     */
+    private void sendNotificationToRequester(int requestId, int requestedBy, String employeeName, String rejectReason) {
+        try {
+            notificationDAO notifDAO = new notificationDAO();
+            notifDAO.create(
+                requestedBy,
+                "transfer",
+                "Nhân viên đã từ chối điều chuyển",
+                "Nhân viên " + employeeName + " đã từ chối yêu cầu điều chuyển nội bộ #" + requestId +
+                (rejectReason != null && !rejectReason.isEmpty() ? ". Lý do: " + rejectReason : "") + ".",
+                "/hr/transfer-requests"
+            );
+        } catch (Exception e) {
+            System.err.println("[TransferRequestDAO] Lỗi gửi notification HR Staff requestId=" + requestId + ": " + e.getMessage());
+        }
+    }
+
+
+    /**
+     * [NEW FLOW] Gửi notification cho tất cả HR Manager (role 2) khi Trưởng phòng duyệt bước 1.
      */
     private void sendNotificationToHRManagers(int requestId) {
         try {

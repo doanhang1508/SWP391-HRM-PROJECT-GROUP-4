@@ -38,6 +38,9 @@ public class TransferRequest {
     private Integer managerApprovedBy; // nullable
     private String  managerApprovedByName;
     private Timestamp managerApprovedAt; // nullable
+    // [NEW FLOW] Bước 0: Nhân viên xác nhận
+    private Timestamp employeeConfirmedAt; // nullable
+    private String    employeeRejectReason; // nullable
 
     public TransferRequest() {
     }
@@ -291,5 +294,22 @@ public class TransferRequest {
 
     public void setManagerApprovedAt(Timestamp managerApprovedAt) {
         this.managerApprovedAt = managerApprovedAt;
+    }
+
+    // [NEW FLOW] Getters/Setters cho thông tin xác nhận của Nhân viên
+    public Timestamp getEmployeeConfirmedAt() {
+        return employeeConfirmedAt;
+    }
+
+    public void setEmployeeConfirmedAt(Timestamp employeeConfirmedAt) {
+        this.employeeConfirmedAt = employeeConfirmedAt;
+    }
+
+    public String getEmployeeRejectReason() {
+        return employeeRejectReason;
+    }
+
+    public void setEmployeeRejectReason(String employeeRejectReason) {
+        this.employeeRejectReason = employeeRejectReason;
     }
 }

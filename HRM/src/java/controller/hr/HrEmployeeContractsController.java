@@ -185,6 +185,9 @@ public class HrEmployeeContractsController extends HttpServlet {
             dao.AllowanceDAO allowanceDAO = new dao.AllowanceDAO();
             List<model.Allowance> availableAllowances = allowanceDAO.getActive();
             request.setAttribute("availableAllowances", availableAllowances);
+            List<Integer> currentAllowanceIds = allowanceDAO.getActiveAllowanceIdsByEmployee(userId);
+            request.setAttribute("currentAllowanceIds", currentAllowanceIds);
+
 
             // Load salary grades (active only) for the contract form dropdown
             SalaryGradeDAO sgDAO = new SalaryGradeDAO();

@@ -870,6 +870,12 @@
                                                                                 làm việc
                                                                             </a>
                                                                         </li>
+                                                                        <li class="sidebar-item">
+                                                                            <a href="${pageContext.request.contextPath}/employee/transfer-confirm"
+                                                                                class="sidebar-link ${param.activeMenu eq 'transfer-confirm' ? 'active' : ''}">
+                                                                                <i class="fas fa-exchange-alt"></i> Xác nhận điều chuyển
+                                                                            </a>
+                                                                        </li>
 
                                                                         <li class="sidebar-menu-category">Phúc lợi &
                                                                             Nghỉ phép</li>
