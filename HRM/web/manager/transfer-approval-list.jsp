@@ -507,18 +507,22 @@
                                                     </c:if>
                                                     <td>
                                                         <c:choose>
+                                                            
                                                             <c:when test="${tr.status eq 'PENDING'}">
                                                                 <span class="badge-s b-pending"><i
                                                                         class="far fa-clock"></i> Chờ TP</span>
                                                             </c:when>
+                                                            
                                                             <c:when test="${tr.status eq 'MANAGER_APPROVED'}">
                                                                 <span class="badge-s b-mgr-appr"><i
                                                                         class="fas fa-user-check"></i> TP duyệt</span>
                                                             </c:when>
+                                                            
                                                             <c:when test="${tr.status eq 'APPROVED'}">
                                                                 <span class="badge-s b-approved"><i
                                                                         class="fas fa-check"></i> Hoàn tất</span>
                                                             </c:when>
+                                                            
                                                             <c:otherwise>
                                                                 <span class="badge-s b-rejected"><i
                                                                         class="fas fa-times"></i> Từ chối</span>
