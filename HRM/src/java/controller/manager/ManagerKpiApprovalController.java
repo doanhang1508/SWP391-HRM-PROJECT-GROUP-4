@@ -4,6 +4,7 @@ import dao.KpiDAO;
 import model.KpiCycle;
 import model.KpiEvaluation;
 import model.KpiEvaluationItem;
+import model.KpiComment;
 import model.User;
 import model.EmployeeContract;
 import dao.EmployeeContractDAO;
@@ -92,6 +93,7 @@ public class ManagerKpiApprovalController extends HttpServlet {
                 request.setAttribute("detailItems", detailItems);
                 request.setAttribute("statusHistory", kpiDAO.getStatusHistory(viewId));
                 request.setAttribute("auditLogs", kpiDAO.getAuditLogs(viewId));
+                request.setAttribute("comments", kpiDAO.getComments(viewId));
             }
         }
 
@@ -119,6 +121,34 @@ public class ManagerKpiApprovalController extends HttpServlet {
         String action = request.getParameter("action");
         String evaluationIdStr = request.getParameter("evaluationId");
         String note = request.getParameter("note");
+
+        if ("addComment".equals(action)) {
+            String commentText = request.getParameter("commentText");
+            if (evaluationIdStr != null && !evaluationIdStr.isEmpty() && commentText != null && !commentText.trim().isEmpty()) {
+                int evaluationId = Integer.parseInt(evaluationIdStr);
+                KpiEvaluation eval = kpiDAO.getEvaluationById(evaluationId);
+                if (eval != null) {
+                    KpiComment comment = new KpiComment();
+                    comment.setEvaluationId(evaluationId);
+                    comment.setUserId(user.getUserId());
+                    comment.setCommentText(commentText.trim());
+                    
+                    String type = "MANAGER";
+                    if (user.getRoleId() == 1 || user.getRoleId() == 2 || user.getRoleId() == 4) {
+                        type = "REVIEWER";
+                    }
+                    comment.setType(type);
+
+                    boolean success = kpiDAO.insertComment(comment);
+                    if (success) {
+                        response.sendRedirect(request.getContextPath() + "/manager/kpi-approvals?cycleId=" + eval.getCycleId() + "&viewId=" + evaluationId + "&success=comment_added");
+                        return;
+                    }
+                }
+            }
+            response.sendRedirect(request.getContextPath() + "/manager/kpi-approvals?error=comment_failed");
+            return;
+        }
 
         if (evaluationIdStr != null && !evaluationIdStr.isEmpty() && action != null) {
             int evaluationId = Integer.parseInt(evaluationIdStr);

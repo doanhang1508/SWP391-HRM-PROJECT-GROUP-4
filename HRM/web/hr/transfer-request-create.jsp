@@ -18,6 +18,7 @@
         --muted:   #64748b;
         --pri:     #6366f1;
         --pri-dark:#4f46e5;
+        --warn:    #f59e0b;
     }
     * { box-sizing: border-box; }
     body { background: var(--bg); font-family: 'Inter', sans-serif; color: var(--text); }
@@ -56,6 +57,45 @@
     /* SUBMIT BTN */
     .btn-submit { background: var(--pri); color: #fff; border: none; padding: 14px 20px; border-radius: 10px; font-weight: 700; font-size: .95rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all .2s; font-family: 'Inter', sans-serif; width: 100%; margin-top: 10px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2); }
     .btn-submit:hover { background: var(--pri-dark); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(99, 102, 241, 0.3); }
+
+    /* ── EMPLOYEE PICKER ───────────────────────────────────────────────────── */
+    .emp-picker { position: relative; }
+    .emp-search-wrap { position: relative; }
+    .emp-search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: .9rem; pointer-events: none; transition: color .2s; }
+    .emp-search-input { width: 100%; padding: 12px 40px 12px 40px; border: 1px solid var(--border); border-radius: 10px; font-size: .9rem; font-family: 'Inter', sans-serif; outline: none; transition: all .2s; background: #f8fafc; color: var(--text); cursor: pointer; }
+    .emp-search-input:focus { border-color: var(--pri); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15); background: #fff; }
+    .emp-search-input.has-value { background: #fff; }
+    .emp-clear-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; border-radius: 6px; display: none; font-size: .85rem; transition: all .15s; }
+    .emp-clear-btn:hover { background: #f1f5f9; color: var(--ng, #ef4444); }
+    .emp-clear-btn.visible { display: flex; align-items: center; }
+
+    .emp-dropdown { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 30px rgba(10,37,64,0.12); z-index: 999; max-height: 320px; overflow-y: auto; display: none; scroll-behavior: smooth; }
+    .emp-dropdown.open { display: block; animation: dropFadeIn .15s ease; }
+    @keyframes dropFadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+    .emp-dropdown::-webkit-scrollbar { width: 5px; } .emp-dropdown::-webkit-scrollbar-track { background: #f8fafc; } .emp-dropdown::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    .emp-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; cursor: pointer; transition: background .12s; border-bottom: 1px solid #f8fafc; }
+    .emp-item:last-child { border-bottom: none; }
+    .emp-item:hover, .emp-item.focused { background: rgba(99,102,241,0.06); }
+    .emp-item.focused { outline: none; }
+    .emp-avatar { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .85rem; color: #fff; flex-shrink: 0; letter-spacing: .5px; }
+    .emp-info { flex: 1; min-width: 0; }
+    .emp-name { font-weight: 600; font-size: .875rem; color: var(--navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .emp-meta { font-size: .72rem; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .emp-id-badge { font-size: .7rem; font-weight: 700; background: #f1f5f9; color: #64748b; padding: 2px 7px; border-radius: 5px; flex-shrink: 0; }
+    .emp-no-result { padding: 24px; text-align: center; color: var(--muted); font-size: .875rem; font-style: italic; }
+
+    /* Card hiển thị nhân viên đã chọn */
+    .emp-selected-card { display: none; margin-top: 10px; padding: 14px 16px; background: linear-gradient(135deg, rgba(99,102,241,0.06) 0%, rgba(62,207,142,0.05) 100%); border: 1.5px solid rgba(99,102,241,0.25); border-radius: 12px; align-items: center; gap: 12px; animation: dropFadeIn .2s ease; }
+    .emp-selected-card.show { display: flex; }
+    .emp-selected-avatar { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; color: #fff; flex-shrink: 0; }
+    .emp-selected-info { flex: 1; }
+    .emp-selected-name { font-weight: 700; font-size: .95rem; color: var(--navy); }
+    .emp-selected-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .emp-tag { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+    .emp-tag-dept { background: rgba(99,102,241,0.1); color: #4f46e5; }
+    .emp-tag-pos  { background: rgba(16,185,129,0.1); color: #059669; }
+    .emp-tag-id   { background: #f1f5f9; color: #64748b; }
 
     @media (max-width:900px) {
         .page-main { padding: 20px 16px; }
@@ -103,58 +143,51 @@
 
                 <form action="${pageContext.request.contextPath}/hr/transfer-request/create" method="post">
                     
-                    <!-- EMPLOYEE SELECT -->
+                    <!-- EMPLOYEE PICKER (Searchable Combobox) -->
                     <div class="form-group">
-                        <label class="form-label" for="employeeSelect">Chọn nhân viên điều chuyển *</label>
-                        <select id="employeeSelect" name="employeeId" class="form-control" onchange="updateEmployeeDetails()" required>
-                            <option value="">-- Chọn nhân viên --</option>
-                            <c:forEach items="${employees}" var="emp">
+                        <label class="form-label" for="empSearchInput">Chọn nhân viên điều chuyển <span style="color:var(--ng,#ef4444)">*</span></label>
+
+                        <%-- Hidden input thực sự dùng cho form submit --%>
+                        <input type="hidden" id="employeeId" name="employeeId" required>
+
+                        <%-- Dữ liệu nhân viên được render dưới dạng JSON ẩn --%>
+                        <script id="empData" type="application/json">
+                        [
+                            <c:forEach items="${employees}" var="emp" varStatus="loop">
                                 <c:set var="empDeptName" value="Chưa phân phòng" />
-                                <c:forEach items="${departments}" var="d">
-                                    <c:if test="${d.departmentId == emp.departmentId}">
-                                        <c:set var="empDeptName" value="${d.departmentName}" />
-                                    </c:if>
-                                </c:forEach>
-                                
+                                <c:forEach items="${departments}" var="d"><c:if test="${d.departmentId == emp.departmentId}"><c:set var="empDeptName" value="${d.departmentName}" /></c:if></c:forEach>
                                 <c:set var="empPosName" value="Chưa phân chức vụ" />
-                                <c:forEach items="${positions}" var="p">
-                                    <c:if test="${p.positionId == emp.positionId}">
-                                        <c:set var="empPosName" value="${p.positionName}" />
-                                    </c:if>
-                                </c:forEach>
-
+                                <c:forEach items="${positions}" var="p"><c:if test="${p.positionId == emp.positionId}"><c:set var="empPosName" value="${p.positionName}" /></c:if></c:forEach>
                                 <c:set var="empRoleName" value="Nhân viên" />
-                                <c:forEach items="${roles}" var="r">
-                                    <c:if test="${r.roleId == emp.roleId}">
-                                        <c:set var="empRoleName" value="${r.roleName}" />
-                                    </c:if>
-                                </c:forEach>
-                                <option value="${emp.userId}" data-dept="${empDeptName}" data-pos="${empPosName}" data-role-id="${emp.roleId}" data-role="${empRoleName}">${emp.fullName} (#${emp.userId})</option>
+                                <c:forEach items="${roles}" var="r"><c:if test="${r.roleId == emp.roleId}"><c:set var="empRoleName" value="${r.roleName}" /></c:if></c:forEach>
+                                {"id":${emp.userId},"name":"${emp.fullName}","dept":"${empDeptName}","pos":"${empPosName}","role":"${empRoleName}","roleId":${emp.roleId}}<c:if test="${!loop.last}">,</c:if>
                             </c:forEach>
-                        </select>
+                        ]
+                        </script>
+
+                        <div class="emp-picker" id="empPicker">
+                            <div class="emp-search-wrap">
+                                <i class="fas fa-search emp-search-icon" id="empSearchIcon"></i>
+                                <input type="text" id="empSearchInput" class="emp-search-input"
+                                       placeholder="Tìm theo tên hoặc mã nhân viên..."
+                                       autocomplete="off" spellcheck="false">
+                                <button type="button" class="emp-clear-btn" id="empClearBtn" title="Xóa lựa chọn">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="emp-dropdown" id="empDropdown" role="listbox"></div>
+                        </div>
+
+                        <%-- Card hiển thị nhân viên đã chọn --%>
+                        <div class="emp-selected-card" id="empSelectedCard">
+                            <div class="emp-selected-avatar" id="empSelectedAvatar"></div>
+                            <div class="emp-selected-info">
+                                <div class="emp-selected-name" id="empSelectedName"></div>
+                                <div class="emp-selected-tags" id="empSelectedTags"></div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- CURRENT DEPT, POSITION & ROLE (READONLY) -->
-                    <div class="form-row">
-                        <div class="form-col">
-                            <div class="form-group">
-                                <label class="form-label">Phòng ban hiện tại</label>
-                                <input type="text" id="currentDeptInput" class="form-control" readonly placeholder="Chưa chọn">
-                            </div>
-                        </div>
-                        <div class="form-col">
-                            <div class="form-group">
-                                <label class="form-label">Chức vụ hiện tại</label>
-                                <input type="text" id="currentPosInput" class="form-control" readonly placeholder="Chưa chọn">
-                            </div>
-                        </div>
-                        <div class="form-col">
-                            <div class="form-group">
-                                <label class="form-label">Quyền hạn hiện tại (Role)</label>
-                                <input type="text" id="currentRoleInput" class="form-control" readonly placeholder="Chưa chọn">
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- NEW DEPT, POSITION & ROLE -->
                     <div class="form-row">
@@ -194,6 +227,41 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- SALARY CHANGE (OPTIONAL) -->
+                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                            <i class="fas fa-coins" style="color: var(--warn); font-size: 1rem;"></i>
+                            <span style="font-weight: 700; font-size: .875rem; color: var(--navy);">Điều chỉnh lương (tuỳ chọn)</span>
+                            <span style="font-size: .75rem; color: var(--muted); font-style: italic;">— Để trống nếu giữ nguyên lương hiện tại</span>
+                        </div>
+                        <%-- Lớp 2: Chọn ngạch lương mới --%>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" for="newSalaryGradeId">Ngạch lương mới</label>
+                            <select id="newSalaryGradeId" name="newSalaryGradeId" class="form-control"
+                                    onchange="updateSalarySection()">
+                                <option value="">-- Giữ nguyên ngạch lương --</option>
+                                <c:forEach items="${salaryGrades}" var="sg">
+                                    <c:if test="${sg.status}">
+                                        <option value="${sg.salaryGradeId}">${sg.gradeName}</option>
+                                    </c:if>
+                                </c:forEach>
+                            </select>
+                        </div>
+                        <%-- Lương cơ bản mới: ẩn mặc định, hiện + bắt buộc khi chọn ngạch mới --%>
+                        <div id="baseSalaryWrapper" style="display: none; margin-top: 14px;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" for="newBaseSalary">
+                                    Lương cơ bản mới (VNĐ) <span style="color: var(--ng);">*</span>
+                                    <span style="font-size: .75rem; color: var(--muted); font-weight: 400;">— Bắt buộc khi thay đổi ngạch lương</span>
+                                </label>
+                                <input type="number" id="newBaseSalary" name="newBaseSalary" class="form-control"
+                                       min="1" step="100000"
+                                       placeholder="VD: 12000000">
+                            </div>
+                        </div>
+                    </div>
+
 
                     <!-- EFFECTIVE DATE -->
                     <div class="form-group">
@@ -247,20 +315,217 @@
                 text: opt.text
             });
         }
+        initEmployeePicker();
     });
 
-    function updateEmployeeDetails() {
-        var select = document.getElementById("employeeSelect");
-        var selectedOption = select.options[select.selectedIndex];
-        
-        var dept = selectedOption.getAttribute("data-dept") || "";
-        var pos = selectedOption.getAttribute("data-pos") || "";
-        var role = selectedOption.getAttribute("data-role") || "";
-        
-        document.getElementById("currentDeptInput").value = dept;
-        document.getElementById("currentPosInput").value = pos;
-        document.getElementById("currentRoleInput").value = role;
+    // ═══════════════════════════════════════════════════════════════════════
+    // EMPLOYEE PICKER — Searchable Combobox
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // Bảng màu avatar theo vần đầu (10 màu gradient)
+    const AVATAR_COLORS = [
+        '#6366f1','#3b82f6','#10b981','#f59e0b','#ef4444',
+        '#8b5cf6','#06b6d4','#84cc16','#f97316','#ec4899'
+    ];
+
+    function getAvatarColor(name) {
+        var code = 0;
+        for (var i = 0; i < name.length; i++) code += name.charCodeAt(i);
+        return AVATAR_COLORS[code % AVATAR_COLORS.length];
     }
+
+    function getInitials(name) {
+        var parts = name.trim().split(/\s+/);
+        if (parts.length === 1) return parts[0][0].toUpperCase();
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
+    var empList       = [];
+    var filteredList  = [];
+    var focusedIndex  = -1;
+    var selectedEmp   = null;
+    var pickerOpen    = false;
+
+    function initEmployeePicker() {
+        try {
+            empList = JSON.parse(document.getElementById('empData').textContent);
+        } catch(e) { empList = []; }
+
+        var searchInput  = document.getElementById('empSearchInput');
+        var dropdown     = document.getElementById('empDropdown');
+        var clearBtn     = document.getElementById('empClearBtn');
+        var hiddenInput  = document.getElementById('employeeId');
+
+        // Mở dropdown khi focus/click vào ô tìm kiếm
+        searchInput.addEventListener('focus', function() {
+            filteredList = empList.slice();
+            renderDropdown(searchInput.value.trim());
+            openDropdown();
+        });
+
+        // Lọc realtime khi gõ
+        searchInput.addEventListener('input', function() {
+            var q = this.value.trim().toLowerCase();
+            filteredList = empList.filter(function(e) {
+                return e.name.toLowerCase().includes(q) || String(e.id).includes(q);
+            });
+            focusedIndex = -1;
+            renderDropdown(this.value.trim());
+            openDropdown();
+            clearBtn.classList.toggle('visible', this.value.length > 0);
+        });
+
+        // Keyboard navigation
+        searchInput.addEventListener('keydown', function(e) {
+            if (!pickerOpen) return;
+            var items = dropdown.querySelectorAll('.emp-item');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                focusedIndex = Math.min(focusedIndex + 1, items.length - 1);
+                updateFocus(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                focusedIndex = Math.max(focusedIndex - 1, 0);
+                updateFocus(items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (focusedIndex >= 0 && focusedIndex < filteredList.length) {
+                    selectEmployee(filteredList[focusedIndex]);
+                }
+            } else if (e.key === 'Escape') {
+                closeDropdown();
+                searchInput.blur();
+            }
+        });
+
+        // Nút xóa lựa chọn
+        clearBtn.addEventListener('click', function() {
+            clearSelection();
+            searchInput.focus();
+        });
+
+        // Đóng dropdown khi click ngoài
+        document.addEventListener('click', function(e) {
+            if (!document.getElementById('empPicker').contains(e.target)) {
+                closeDropdown();
+            }
+        });
+    }
+
+    function renderDropdown(query) {
+        var dropdown = document.getElementById('empDropdown');
+        if (filteredList.length === 0) {
+            dropdown.innerHTML = '<div class="emp-no-result"><i class="fas fa-search" style="margin-right:6px;opacity:.4;"></i>Không tìm thấy nhân viên phù hợp</div>';
+            return;
+        }
+        var html = '';
+        filteredList.forEach(function(emp, idx) {
+            var color    = getAvatarColor(emp.name);
+            var initials = getInitials(emp.name);
+            var highlight = query ? highlightMatch(emp.name, query) : emp.name;
+            html += '<div class="emp-item" data-idx="' + idx + '" role="option">'
+                  +   '<div class="emp-avatar" style="background:' + color + '">' + initials + '</div>'
+                  +   '<div class="emp-info">'
+                  +     '<div class="emp-name">' + highlight + '</div>'
+                  +     '<div class="emp-meta"><i class="fas fa-building" style="margin-right:4px;opacity:.6;"></i>' + escHtml(emp.dept) + ' &nbsp;·&nbsp; <i class="fas fa-briefcase" style="margin-right:4px;opacity:.6;"></i>' + escHtml(emp.pos) + '</div>'
+                  +   '</div>'
+                  +   '<span class="emp-id-badge">#' + emp.id + '</span>'
+                  + '</div>';
+        });
+        dropdown.innerHTML = html;
+
+        // Gắn sự kiện click cho từng item
+        dropdown.querySelectorAll('.emp-item').forEach(function(item) {
+            item.addEventListener('mousedown', function(e) {
+                e.preventDefault(); // ngăn input blur trước khi click xử lý
+                var idx = parseInt(this.getAttribute('data-idx'));
+                selectEmployee(filteredList[idx]);
+            });
+            item.addEventListener('mouseover', function() {
+                focusedIndex = parseInt(this.getAttribute('data-idx'));
+                updateFocus(dropdown.querySelectorAll('.emp-item'));
+            });
+        });
+    }
+
+    function highlightMatch(text, query) {
+        var safe = escHtml(text);
+        var safeQ = query.replace(/[.*+?^$\{\}()|[\]\\]/g, '\\$&');
+        return safe.replace(new RegExp('(' + safeQ + ')', 'gi'), '<mark style="background:rgba(99,102,241,0.18);color:inherit;border-radius:2px;padding:0 1px;">$1</mark>');
+    }
+
+    function escHtml(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function updateFocus(items) {
+        items.forEach(function(item, i) {
+            item.classList.toggle('focused', i === focusedIndex);
+        });
+        if (focusedIndex >= 0 && items[focusedIndex]) {
+            items[focusedIndex].scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    function selectEmployee(emp) {
+        selectedEmp = emp;
+        document.getElementById('employeeId').value = emp.id;
+        document.getElementById('empSearchInput').value = emp.name + ' (#' + emp.id + ')';
+        document.getElementById('empSearchInput').classList.add('has-value');
+        document.getElementById('empClearBtn').classList.add('visible');
+        closeDropdown();
+        showSelectedCard(emp);
+        // Cập nhật thông tin phòng ban/chức vụ hiện tại để controller có thể validate
+        // (không cần hiển thị readonly inputs riêng nữa — card đã đủ)
+        currentEmpRoleId = emp.roleId;
+    }
+
+    function showSelectedCard(emp) {
+        var card    = document.getElementById('empSelectedCard');
+        var avatar  = document.getElementById('empSelectedAvatar');
+        var name    = document.getElementById('empSelectedName');
+        var tags    = document.getElementById('empSelectedTags');
+        var color   = getAvatarColor(emp.name);
+        var initials = getInitials(emp.name);
+
+        avatar.style.background = color;
+        avatar.textContent = initials;
+        name.textContent = emp.name;
+        tags.innerHTML =
+            '<span class="emp-tag emp-tag-id"><i class="fas fa-id-badge"></i>#' + emp.id + '</span>'
+          + '<span class="emp-tag emp-tag-dept"><i class="fas fa-building"></i>' + escHtml(emp.dept) + '</span>'
+          + '<span class="emp-tag emp-tag-pos"><i class="fas fa-briefcase"></i>' + escHtml(emp.pos) + '</span>';
+
+        card.classList.add('show');
+    }
+
+    function clearSelection() {
+        selectedEmp = null;
+        currentEmpRoleId = null;
+        document.getElementById('employeeId').value = '';
+        document.getElementById('empSearchInput').value = '';
+        document.getElementById('empSearchInput').classList.remove('has-value');
+        document.getElementById('empClearBtn').classList.remove('visible');
+        document.getElementById('empSelectedCard').classList.remove('show');
+        filteredList = empList.slice();
+        focusedIndex = -1;
+        renderDropdown('');
+    }
+
+    function openDropdown() {
+        document.getElementById('empDropdown').classList.add('open');
+        pickerOpen = true;
+    }
+
+    function closeDropdown() {
+        document.getElementById('empDropdown').classList.remove('open');
+        pickerOpen = false;
+        focusedIndex = -1;
+    }
+
+    // Biến lưu roleId của nhân viên đang được chọn (dùng bởi updateNewRoles)
+    var currentEmpRoleId = null;
+
 
     function updateNewPositions() {
         var deptSelect = document.getElementById("newDepartmentId");
@@ -364,6 +629,29 @@
         // Auto select if only one valid option
         if (validRoleIds.length === 1) {
             roleSelect.value = validRoleIds[0];
+        }
+    }
+
+    /**
+     * Lớp 2 — Hiện/ẩn input lương cơ bản mới theo ngạch lương được chọn.
+     * - Nếu không chọn ngạch → ẩn input, xóa required (Lớp 1: giữ nguyên lương cũ)
+     * - Nếu chọn ngạch mới  → hiện input + đặt required (bắt buộc nhập lương mới)
+     */
+    function updateSalarySection() {
+        var gradeSelect   = document.getElementById('newSalaryGradeId');
+        var wrapper       = document.getElementById('baseSalaryWrapper');
+        var salaryInput   = document.getElementById('newBaseSalary');
+
+        if (gradeSelect.value) {
+            // Đã chọn ngạch → hiện ô lương, đặt required
+            wrapper.style.display = 'block';
+            salaryInput.required  = true;
+            salaryInput.focus();
+        } else {
+            // Không chọn ngạch → ẩn ô lương, bỏ required, xóa giá trị cũ
+            wrapper.style.display = 'none';
+            salaryInput.required  = false;
+            salaryInput.value     = '';
         }
     }
 </script>

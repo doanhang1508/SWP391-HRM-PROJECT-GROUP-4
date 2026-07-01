@@ -14,7 +14,9 @@ public class KpiDAO {
 
     public List<KpiTemplate> getAllTemplates() {
         List<KpiTemplate> list = new ArrayList<>();
-        String sql = "SELECT * FROM kpi_templates ORDER BY template_id DESC";
+        String sql = "SELECT t.*, d.department_name FROM kpi_templates t "
+                   + "LEFT JOIN departments d ON t.department_id = d.department_id "
+                   + "ORDER BY t.template_id DESC";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -28,7 +30,9 @@ public class KpiDAO {
     }
 
     public KpiTemplate getTemplateById(int templateId) {
-        String sql = "SELECT * FROM kpi_templates WHERE template_id = ?";
+        String sql = "SELECT t.*, d.department_name FROM kpi_templates t "
+                   + "LEFT JOIN departments d ON t.department_id = d.department_id "
+                   + "WHERE t.template_id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, templateId);
@@ -61,13 +65,18 @@ public class KpiDAO {
     }
 
     public int insertTemplate(KpiTemplate template) {
-        String sql = "INSERT INTO kpi_templates (name, description, status, created_by) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO kpi_templates (name, description, status, created_by, department_id) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, template.getName());
             ps.setString(2, template.getDescription());
             ps.setInt(3, template.getStatus());
             ps.setInt(4, template.getCreatedBy());
+            if (template.getDepartmentId() != null) {
+                ps.setInt(5, template.getDepartmentId());
+            } else {
+                ps.setNull(5, java.sql.Types.INTEGER);
+            }
             ps.executeUpdate();
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (rs.next()) {
@@ -81,13 +90,18 @@ public class KpiDAO {
     }
 
     public void updateTemplate(KpiTemplate template) {
-        String sql = "UPDATE kpi_templates SET name = ?, description = ?, status = ? WHERE template_id = ?";
+        String sql = "UPDATE kpi_templates SET name = ?, description = ?, status = ?, department_id = ? WHERE template_id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, template.getName());
             ps.setString(2, template.getDescription());
             ps.setInt(3, template.getStatus());
-            ps.setInt(4, template.getTemplateId());
+            if (template.getDepartmentId() != null) {
+                ps.setInt(4, template.getDepartmentId());
+            } else {
+                ps.setNull(4, java.sql.Types.INTEGER);
+            }
+            ps.setInt(5, template.getTemplateId());
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -294,6 +308,8 @@ public class KpiDAO {
 
     public List<KpiEvaluation> getEvaluationsByCycleAndManager(int cycleId, int managerId) {
         List<KpiEvaluation> list = new ArrayList<>();
+        // Match evaluations either by direct manager_id assignment,
+        // OR by department (fallback when manager_id was not set during init).
         String sql = "SELECT e.*, u.full_name AS employee_name, u.username AS employee_code, " +
                      "m.full_name AS manager_name, c.name AS cycle_name, d.department_name " +
                      "FROM kpi_evaluations e " +
@@ -301,12 +317,20 @@ public class KpiDAO {
                      "LEFT JOIN users m ON e.manager_id = m.user_id " +
                      "JOIN kpi_cycles c ON e.cycle_id = c.cycle_id " +
                      "LEFT JOIN departments d ON u.department_id = d.department_id " +
-                     "WHERE e.cycle_id = ? AND e.manager_id = ? " +
+                     "WHERE e.cycle_id = ? " +
+                     "  AND ( " +
+                     "    e.manager_id = ? " +
+                     "    OR ( " +
+                     "      e.manager_id IS NULL " +
+                     "      AND u.department_id = (SELECT department_id FROM users WHERE user_id = ? AND department_id IS NOT NULL) " +
+                     "    ) " +
+                     "  ) " +
                      "ORDER BY u.full_name ASC";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, cycleId);
             ps.setInt(2, managerId);
+            ps.setInt(3, managerId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     list.add(mapEvaluationWithHelpers(rs));
@@ -721,7 +745,7 @@ public class KpiDAO {
     // ==========================================
 
     private KpiTemplate mapTemplate(ResultSet rs) throws SQLException {
-        return new KpiTemplate(
+        KpiTemplate t = new KpiTemplate(
             rs.getInt("template_id"),
             rs.getString("name"),
             rs.getString("description"),
@@ -729,6 +753,16 @@ public class KpiDAO {
             rs.getTimestamp("created_at"),
             rs.getInt("created_by")
         );
+        int deptId = rs.getInt("department_id");
+        if (rs.wasNull()) {
+            t.setDepartmentId(null);
+        } else {
+            t.setDepartmentId(deptId);
+        }
+        try {
+            t.setDepartmentName(rs.getString("department_name"));
+        } catch (SQLException ignored) {}
+        return t;
     }
 
     private KpiTemplateItem mapTemplateItem(ResultSet rs) throws SQLException {
@@ -845,134 +879,249 @@ public class KpiDAO {
         return al;
     }
 
+    public List<KpiTemplateItem> getTemplateItemsForEmployee(int employeeDepartmentId, int defaultTemplateId) {
+        if (employeeDepartmentId > 0) {
+            String sql = "SELECT template_id FROM kpi_templates "
+                       + "WHERE department_id = ? AND status = 1 "
+                       + "ORDER BY template_id DESC LIMIT 1";
+            try (Connection conn = DBContext.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, employeeDepartmentId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        int deptTemplateId = rs.getInt("template_id");
+                        List<KpiTemplateItem> items = getTemplateItems(deptTemplateId);
+                        if (!items.isEmpty()) {
+                            return items;
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return getTemplateItems(defaultTemplateId);
+    }
+
     /**
      * Initializes evaluations and default evaluation items for all active employees for a given cycle.
+     * Each employee is processed independently so one failure does not block the others.
      */
     public boolean initializeEvaluationsForCycle(int cycleId) {
         KpiCycle cycle = getCycleById(cycleId);
         if (cycle == null) return false;
 
-        List<KpiTemplateItem> templateItems = getTemplateItems(cycle.getTemplateId());
-        if (templateItems.isEmpty()) return false;
+        List<KpiTemplateItem> defaultTemplateItems = getTemplateItems(cycle.getTemplateId());
+        if (defaultTemplateItems.isEmpty()) return false;
 
-        Connection conn = null;
-        try {
-            conn = DBContext.getConnection();
-            conn.setAutoCommit(false);
-
-            // Fetch all active employees (excluding admin)
-            String empSql = "SELECT user_id, department_id, role_id FROM users WHERE status = 1 AND role_id != 1";
-            List<User> employees = new ArrayList<>();
-            try (PreparedStatement psEmp = conn.prepareStatement(empSql);
-                 ResultSet rsEmp = psEmp.executeQuery()) {
-                while (rsEmp.next()) {
-                    User u = new User();
-                    u.setUserId(rsEmp.getInt("user_id"));
-                    u.setDepartmentId(rsEmp.getInt("department_id"));
-                    u.setRoleId(rsEmp.getInt("role_id"));
-                    employees.add(u);
-                }
+        // Load all active non-admin employees
+        List<User> employees = new ArrayList<>();
+        String empSql = "SELECT user_id, department_id, role_id FROM users WHERE status = 1 AND role_id != 1";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(empSql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                User u = new User();
+                u.setUserId(rs.getInt("user_id"));
+                u.setDepartmentId(rs.getInt("department_id"));
+                u.setRoleId(rs.getInt("role_id"));
+                employees.add(u);
             }
-
-            // Find Director's ID for managing Managers/Factory Managers
-            int directorId = 0;
-            String dirSql = "SELECT user_id FROM users WHERE role_id = 4 AND status = 1 LIMIT 1";
-            try (PreparedStatement psDir = conn.prepareStatement(dirSql);
-                 ResultSet rsDir = psDir.executeQuery()) {
-                if (rsDir.next()) {
-                    directorId = rsDir.getInt("user_id");
-                }
-            }
-
-            for (User emp : employees) {
-                // Check if already initialized
-                String checkSql = "SELECT evaluation_id FROM kpi_evaluations WHERE cycle_id = ? AND employee_id = ?";
-                boolean exists = false;
-                try (PreparedStatement psCheck = conn.prepareStatement(checkSql)) {
-                    psCheck.setInt(1, cycleId);
-                    psCheck.setInt(2, emp.getUserId());
-                    try (ResultSet rsCheck = psCheck.executeQuery()) {
-                        if (rsCheck.next()) {
-                            exists = true;
-                        }
-                    }
-                }
-
-                if (exists) continue;
-
-                // Find manager
-                int managerId = 0;
-                if (emp.getRoleId() == 3 || emp.getRoleId() == 6) {
-                    // Manager of Manager is Director
-                    managerId = directorId;
-                } else {
-                    // Search for Manager/Factory Manager in same department
-                    String mgrSql = "SELECT user_id FROM users WHERE department_id = ? AND role_id IN (3, 6) AND status = 1 LIMIT 1";
-                    try (PreparedStatement psMgr = conn.prepareStatement(mgrSql)) {
-                        psMgr.setInt(1, emp.getDepartmentId());
-                        try (ResultSet rsMgr = psMgr.executeQuery()) {
-                            if (rsMgr.next()) {
-                                managerId = rsMgr.getInt("user_id");
-                            }
-                        }
-                    }
-                }
-
-                // Insert evaluation
-                String insertEvalSql = "INSERT INTO kpi_evaluations (cycle_id, employee_id, manager_id, status, created_by) VALUES (?, ?, ?, 'DRAFT', ?)";
-                int evalId = -1;
-                try (PreparedStatement psInsertEval = conn.prepareStatement(insertEvalSql, Statement.RETURN_GENERATED_KEYS)) {
-                    psInsertEval.setInt(1, cycleId);
-                    psInsertEval.setInt(2, emp.getUserId());
-                    if (managerId > 0) {
-                        psInsertEval.setInt(3, managerId);
-                    } else {
-                        psInsertEval.setNull(3, Types.INTEGER);
-                    }
-                    psInsertEval.setInt(4, cycle.getCreatedBy());
-                    psInsertEval.executeUpdate();
-                    try (ResultSet rsKey = psInsertEval.getGeneratedKeys()) {
-                        if (rsKey.next()) {
-                            evalId = rsKey.getInt(1);
-                        }
-                    }
-                }
-
-                // Insert default items
-                if (evalId > 0) {
-                    String insertItemSql = "INSERT INTO kpi_evaluation_items (evaluation_id, template_item_id, score, comment) VALUES (?, ?, 0.0, '')";
-                    try (PreparedStatement psInsertItem = conn.prepareStatement(insertItemSql)) {
-                        for (KpiTemplateItem item : templateItems) {
-                            psInsertItem.setInt(1, evalId);
-                            psInsertItem.setInt(2, item.getItemId());
-                            psInsertItem.addBatch();
-                        }
-                        psInsertItem.executeBatch();
-                    }
-                }
-            }
-
-            conn.commit();
-            return true;
         } catch (SQLException e) {
             e.printStackTrace();
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
+            return false;
+        }
+
+        // Find Director's ID (manager for Managers/Factory Managers)
+        int directorId = 0;
+        String dirSql = "SELECT user_id FROM users WHERE role_id = 4 AND status = 1 LIMIT 1";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(dirSql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                directorId = rs.getInt("user_id");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        int successCount = 0;
+        for (User emp : employees) {
+            // Skip if evaluation already exists for this employee in this cycle
+            String checkSql = "SELECT evaluation_id FROM kpi_evaluations WHERE cycle_id = ? AND employee_id = ?";
+            boolean exists = false;
+            try (Connection conn = DBContext.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(checkSql)) {
+                ps.setInt(1, cycleId);
+                ps.setInt(2, emp.getUserId());
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) exists = true;
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                continue;
+            }
+            if (exists) {
+                successCount++;
+                continue;
+            }
+
+            // Determine manager for this employee
+            int managerId = 0;
+            if (emp.getRoleId() == 3 || emp.getRoleId() == 6) {
+                // Managers and Factory Managers are managed by the Director
+                managerId = directorId;
+            } else {
+                // Find a Manager or Department Manager in the same department
+                String mgrSql = "SELECT user_id FROM users WHERE department_id = ? AND role_id IN (3, 6) AND status = 1 LIMIT 1";
+                try (Connection conn = DBContext.getConnection();
+                     PreparedStatement ps = conn.prepareStatement(mgrSql)) {
+                    ps.setInt(1, emp.getDepartmentId());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            managerId = rs.getInt("user_id");
+                        }
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                // Fallback: if no manager found in dept, assign to HR Manager (role 2) or HR Staff (role 5)
+                if (managerId == 0) {
+                    String fallbackSql = "SELECT user_id FROM users WHERE role_id IN (2, 5) AND status = 1 LIMIT 1";
+                    try (Connection conn = DBContext.getConnection();
+                         PreparedStatement ps = conn.prepareStatement(fallbackSql);
+                         ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            managerId = rs.getInt("user_id");
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.setAutoCommit(true);
-                    conn.close();
+
+            // Insert evaluation for this employee (each in its own connection/transaction)
+            int evalId = -1;
+            String insertEvalSql = "INSERT INTO kpi_evaluations (cycle_id, employee_id, manager_id, status, created_by) VALUES (?, ?, ?, 'DRAFT', ?)";
+            try (Connection conn = DBContext.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(insertEvalSql, Statement.RETURN_GENERATED_KEYS)) {
+                ps.setInt(1, cycleId);
+                ps.setInt(2, emp.getUserId());
+                if (managerId > 0) {
+                    ps.setInt(3, managerId);
+                } else {
+                    ps.setNull(3, Types.INTEGER);
+                }
+                ps.setInt(4, cycle.getCreatedBy());
+                ps.executeUpdate();
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) evalId = rs.getInt(1);
+                }
+            } catch (SQLException e) {
+                // Duplicate key or other error for this employee: skip silently
+                e.printStackTrace();
+                continue;
+            }
+
+            // Insert default evaluation items for each template criterion
+            if (evalId > 0) {
+                List<KpiTemplateItem> templateItems = getTemplateItemsForEmployee(emp.getDepartmentId(), cycle.getTemplateId());
+                if (templateItems.isEmpty()) {
+                    templateItems = defaultTemplateItems;
+                }
+                String insertItemSql = "INSERT INTO kpi_evaluation_items (evaluation_id, template_item_id, score, comment) VALUES (?, ?, 0.0, '')";
+                try (Connection conn = DBContext.getConnection();
+                     PreparedStatement ps = conn.prepareStatement(insertItemSql)) {
+                    for (KpiTemplateItem item : templateItems) {
+                        ps.setInt(1, evalId);
+                        ps.setInt(2, item.getItemId());
+                        ps.addBatch();
+                    }
+                    ps.executeBatch();
+                    successCount++;
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
             }
         }
-        return false;
+
+        return successCount > 0;
+    }
+
+    public List<KpiEvaluation> getEvaluationsHistory(Integer month, Integer year, Integer departmentId, Integer managerId, boolean viewAllCompany) {
+        List<KpiEvaluation> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            "SELECT e.*, u.full_name AS employee_name, u.username AS employee_code, " +
+            "m.full_name AS manager_name, c.name AS cycle_name, d.department_name " +
+            "FROM kpi_evaluations e " +
+            "JOIN users u ON e.employee_id = u.user_id " +
+            "LEFT JOIN users m ON e.manager_id = m.user_id " +
+            "JOIN kpi_cycles c ON e.cycle_id = c.cycle_id " +
+            "LEFT JOIN departments d ON u.department_id = d.department_id " +
+            "WHERE e.status IN ('SUBMITTED', 'APPROVED') "
+        );
+
+        List<Object> params = new ArrayList<>();
+
+        if (month != null && month > 0) {
+            sql.append("AND (MONTH(c.start_date) = ? OR MONTH(c.end_date) = ?) ");
+            params.add(month);
+            params.add(month);
+        }
+        if (year != null && year > 0) {
+            sql.append("AND (YEAR(c.start_date) = ? OR YEAR(c.end_date) = ?) ");
+            params.add(year);
+            params.add(year);
+        }
+        if (departmentId != null && departmentId > 0) {
+            sql.append("AND u.department_id = ? ");
+            params.add(departmentId);
+        }
+        if (!viewAllCompany && managerId != null && managerId > 0) {
+            sql.append("AND (e.manager_id = ? OR u.department_id = (SELECT department_id FROM users WHERE user_id = ? AND department_id IS NOT NULL)) ");
+            params.add(managerId);
+            params.add(managerId);
+        }
+
+        sql.append("ORDER BY c.end_date DESC, d.department_name ASC, u.full_name ASC");
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapEvaluationWithHelpers(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<Integer> getUniqueCycleYears() {
+        List<Integer> list = new ArrayList<>();
+        String sql = "SELECT DISTINCT YEAR(start_date) as yr FROM kpi_cycles " +
+                     "UNION " +
+                     "SELECT DISTINCT YEAR(end_date) as yr FROM kpi_cycles " +
+                     "ORDER BY yr DESC";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                int yr = rs.getInt("yr");
+                if (yr > 0 && !list.contains(yr)) {
+                    list.add(yr);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        if (list.isEmpty()) {
+            list.add(java.util.Calendar.getInstance().get(java.util.Calendar.YEAR));
+        }
+        return list;
     }
 }

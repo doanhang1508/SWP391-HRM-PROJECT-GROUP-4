@@ -84,6 +84,13 @@
     .btn-reject:hover { background: var(--ng-dark); transform: translateY(-1px); box-shadow: 0 6px 15px rgba(239, 68, 68, 0.3); }
 
     .divider { height: 1px; background: var(--border); margin: 24px 0; }
+    .btn-back { display: inline-flex; align-items: center; gap: 8px; background: rgba(100,116,139,0.1); color: var(--muted); border: none; padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: .85rem; text-decoration: none; transition: all .2s; }
+    .btn-back:hover { background: #e2e8f0; color: var(--text); }
+    
+    .status-banner { text-align: center; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 0.95rem; margin-top: 12px; }
+    .status-banner.approved { background: rgba(16, 185, 129, 0.1); color: var(--ok-dark); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-banner.rejected { background: rgba(239, 68, 68, 0.1); color: var(--ng-dark); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .status-banner.pending-hr { background: rgba(99, 102, 241, 0.1); color: var(--pri-dark); border: 1px solid rgba(99, 102, 241, 0.3); }
 
     @media (max-width:900px) {
         .page-main { padding: 20px 16px; }
@@ -105,14 +112,15 @@
                 <div class="breadcrumb">
                     <a href="${pageContext.request.contextPath}/home"><i class="fas fa-home"></i> Trang chủ</a>
                     <span>/</span>
-                    <a href="${pageContext.request.contextPath}/dashboard">Bảng điều khiển</a>
-                    <span>/</span>
                     <a href="${pageContext.request.contextPath}/manager/transfer-approvals">Phê duyệt</a>
                     <span>/</span>
                     <span>Chi tiết yêu cầu</span>
                 </div>
                 <h1><i class="fas fa-clipboard-list" style="color:var(--pri);margin-right:10px;font-size:1.3rem;"></i>Chi Tiết Yêu Cầu Điều Chuyển</h1>
             </div>
+            <a href="${pageContext.request.contextPath}/manager/transfer-approvals" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Quay lại danh sách
+            </a>
         </div>
 
         <c:if test="${not empty sessionScope.errorMessage}">
@@ -192,6 +200,18 @@
                     </div>
                 </div>
 
+                <!-- SALARY CHANGE IF APPLICABLE -->
+                <c:if test="${req.newSalaryGradeId != null}">
+                    <div class="reason-box" style="border-color: rgba(99,102,241,0.3); background: rgba(99,102,241,0.04);">
+                        <div class="reason-box-title" style="color: var(--pri);"><i class="fas fa-coins"></i> Thay đổi ngạch lương</div>
+                        <div>Ngạch mới: <strong>#${req.newSalaryGradeId}</strong>
+                        <c:if test="${req.newBaseSalary != null}">
+                            — Lương cơ bản mới: <strong><fmt:formatNumber value="${req.newBaseSalary}" type="currency" currencySymbol="" minFractionDigits="0" maxFractionDigits="0" /> VNĐ</strong>
+                        </c:if>
+                        </div>
+                    </div>
+                </c:if>
+
                 <!-- REASON BOX -->
                 <div class="reason-box">
                     <div class="reason-box-title"><i class="far fa-comment-alt"></i> Lý do điều chuyển</div>
@@ -207,25 +227,54 @@
 
                 <div class="divider"></div>
 
-                <!-- ACTION FORMS -->
-                <div style="display: flex; gap: 16px;">
-                    <!-- APPROVE FORM -->
-                    <div style="flex: 1;">
-                        <form action="${pageContext.request.contextPath}/manager/transfer-approval/approve" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn PHÊ DUYỆT yêu cầu điều chuyển này? Hành động này sẽ thay đổi hồ sơ nhân viên ngay lập tức.');">
-                            <input type="hidden" name="requestId" value="${req.transferRequestId}">
-                            <button type="submit" class="btn-approve">
-                                <i class="fas fa-check-circle"></i> Đồng ý duyệt
-                            </button>
-                        </form>
-                    </div>
+                <!-- DYNAMIC ACTION FORMS BASED ON STATUS -->
+                <c:choose>
+                    <%-- 1. Request is closed --%>
+                    <c:when test="${req.status eq 'APPROVED'}">
+                        <div class="status-banner approved">
+                            <i class="fas fa-check-circle"></i> Yêu cầu điều chuyển đã được hoàn tất phê duyệt &amp; thực thi.
+                        </div>
+                    </c:when>
+                    <c:when test="${req.status eq 'REJECTED'}">
+                        <div class="status-banner rejected">
+                            <i class="fas fa-times-circle"></i> Yêu cầu đã bị từ chối bởi Trưởng phòng.
+                            <c:if test="${not empty req.rejectReason}">
+                                <div style="font-weight:normal; font-size:0.85rem; margin-top:6px;">Lý do: ${req.rejectReason}</div>
+                            </c:if>
+                        </div>
+                    </c:when>
+                    <c:when test="${req.status eq 'CANCELLED'}">
+                        <div class="status-banner rejected" style="background:#e2e8f0; color:#475569; border-color:#cbd5e1;">
+                            <i class="fas fa-ban"></i> Yêu cầu đã được huỷ bỏ bởi người tạo.
+                        </div>
+                    </c:when>
 
-                    <!-- REJECT MODAL BUTTON / TOGGLE -->
-                    <div style="flex: 1;">
-                        <button type="button" class="btn-reject" onclick="toggleRejectForm()">
-                            <i class="fas fa-times-circle"></i> Từ chối duyệt
-                        </button>
-                    </div>
-                </div>
+                    <%-- 2. Read only notice --%>
+                    <c:when test="${readOnly}">
+                        <div class="status-banner pending-hr" style="background: #fffbeb; color: #b45309; border-color: #fde68a;">
+                            <i class="fas fa-eye"></i> Bạn đang xem ở chế độ chỉ đọc.
+                        </div>
+                    </c:when>
+
+                    <%-- 3. Actionable for Manager --%>
+                    <c:when test="${req.status eq 'PENDING'}">
+                        <div style="display: flex; gap: 16px;">
+                            <div style="flex: 1;">
+                                <form action="${pageContext.request.contextPath}/manager/transfer-approval/approve" method="post" onsubmit="return confirm('Bạn xác nhận DUYỆT yêu cầu điều chuyển này? Hồ sơ nhân viên và hợp đồng sẽ được thực thi cập nhật ngay lập tức.');">
+                                    <input type="hidden" name="requestId" value="${req.transferRequestId}">
+                                    <button type="submit" class="btn-approve">
+                                        <i class="fas fa-check-circle"></i> Đồng ý duyệt
+                                    </button>
+                                </form>
+                            </div>
+                            <div style="flex: 1;">
+                                <button type="button" class="btn-reject" onclick="toggleRejectForm()">
+                                    <i class="fas fa-times-circle"></i> Từ chối duyệt
+                                </button>
+                            </div>
+                        </div>
+                    </c:when>
+                </c:choose>
 
                 <!-- REJECT FORM (HIDDEN BY DEFAULT) -->
                 <div id="rejectFormContainer" style="display: none; margin-top: 24px; padding: 20px; border: 1px solid var(--border); border-radius: 12px; background: #fffbeb;">
@@ -238,8 +287,8 @@
                         </div>
                         
                         <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                            <button type="button" class="btn-history" style="background: #e2e8f0; color: #475569;" onclick="toggleRejectForm()">Huỷ bỏ</button>
-                            <button type="submit" class="btn-reject" style="width: auto;">Xác nhận từ chối</button>
+                            <button type="button" class="btn-back" style="background: #e2e8f0; color: #475569; padding: 8px 16px;" onclick="toggleRejectForm()">Huỷ bỏ</button>
+                            <button type="submit" class="btn-reject" style="width: auto; padding: 8px 20px;">Xác nhận từ chối</button>
                         </div>
                     </form>
                 </div>

@@ -14,6 +14,11 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Luồng phê duyệt 1 bước đơn giản:
+ *   Trưởng phòng của phòng ban cũ (role 3/6, hoặc HR Manager role 2 nếu quản lý phòng ban cũ)
+ *   duyệt PENDING → APPROVED (thực thi DB trực tiếp) hoặc từ chối PENDING → REJECTED.
+ */
 @WebServlet(name = "TransferApprovalController", urlPatterns = {
         "/manager/transfer-approvals",
         "/manager/transfer-approval-detail",
@@ -23,6 +28,10 @@ import java.util.List;
 public class TransferApprovalController extends HttpServlet {
 
     private final TransferRequestDAO trDAO = new TransferRequestDAO();
+
+    private static final int ROLE_FACTORY_MANAGER = 3;
+    private static final int ROLE_DEPT_MANAGER    = 6;
+    private static final int ROLE_HR_MANAGER      = 2;
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -37,8 +46,8 @@ public class TransferApprovalController extends HttpServlet {
         User currentUser = (User) session.getAttribute("currentUser");
         int roleId = currentUser.getRoleId();
 
-        // Admin (1), HR Manager (2), Factory Manager (3), Department Manager (6)
-        if (roleId != 1 && roleId != 2 && roleId != 3 && roleId != 6) {
+        // Chỉ cho phép các vai trò quản lý
+        if (roleId != ROLE_HR_MANAGER && roleId != ROLE_FACTORY_MANAGER && roleId != ROLE_DEPT_MANAGER) {
             response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }
@@ -46,51 +55,9 @@ public class TransferApprovalController extends HttpServlet {
         String path = request.getServletPath();
 
         if ("/manager/transfer-approvals".equals(path)) {
-            List<TransferRequest> approvals;
-            if (roleId == 1 || roleId == 2) {
-                // Admin/HR Manager can see all pending requests
-                // Let's load all transfer requests and filter for PENDING, or use a filtered query
-                approvals = trDAO.getAllTransferRequests();
-                approvals.removeIf(req -> !"PENDING".equals(req.getStatus()));
-            } else {
-                // Factory Manager (3) / Department Manager (6) can see pending requests in their department
-                approvals = trDAO.getPendingRequestsForManager(currentUser.getDepartmentId());
-            }
-
-            request.setAttribute("approvals", approvals);
-            request.getRequestDispatcher("/manager/transfer-approval-list.jsp").forward(request, response);
-
+            handleListView(request, response, currentUser, roleId);
         } else if ("/manager/transfer-approval-detail".equals(path)) {
-            String idStr = request.getParameter("id");
-            if (idStr == null || idStr.isEmpty()) {
-                response.sendRedirect(request.getContextPath() + "/manager/transfer-approvals");
-                return;
-            }
-
-            try {
-                int id = Integer.parseInt(idStr);
-                TransferRequest tr = trDAO.getById(id);
-
-                if (tr == null) {
-                    session.setAttribute("errorMessage", "Yêu cầu điều chuyển không tồn tại.");
-                    response.sendRedirect(request.getContextPath() + "/manager/transfer-approvals");
-                    return;
-                }
-
-                // Check access control
-                if (roleId == 3 || roleId == 6) {
-                    if (tr.getOldDepartmentId() != currentUser.getDepartmentId()) {
-                        response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền xem yêu cầu của phòng ban khác.");
-                        return;
-                    }
-                }
-
-                request.setAttribute("req", tr);
-                request.getRequestDispatcher("/manager/transfer-approval-detail.jsp").forward(request, response);
-
-            } catch (NumberFormatException e) {
-                response.sendRedirect(request.getContextPath() + "/manager/transfer-approvals");
-            }
+            handleDetailView(request, response, currentUser, roleId);
         }
     }
 
@@ -107,8 +74,7 @@ public class TransferApprovalController extends HttpServlet {
         User currentUser = (User) session.getAttribute("currentUser");
         int roleId = currentUser.getRoleId();
 
-        // Admin (1), HR Manager (2), Factory Manager (3), Department Manager (6)
-        if (roleId != 1 && roleId != 2 && roleId != 3 && roleId != 6) {
+        if (roleId != ROLE_HR_MANAGER && roleId != ROLE_FACTORY_MANAGER && roleId != ROLE_DEPT_MANAGER) {
             response.sendRedirect(request.getContextPath() + "/dashboard");
             return;
         }
@@ -132,48 +98,129 @@ public class TransferApprovalController extends HttpServlet {
                 return;
             }
 
-            if (!"PENDING".equals(tr.getStatus())) {
-                session.setAttribute("errorMessage", "Yêu cầu này đã được xử lý rồi (Trạng thái: " + tr.getStatus() + ").");
-                response.sendRedirect(request.getContextPath() + "/manager/transfer-approvals");
-                return;
-            }
-
-            // Check access control
-            if (roleId == 3 || roleId == 6) {
-                if (tr.getOldDepartmentId() != currentUser.getDepartmentId()) {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền xử lý yêu cầu của phòng ban khác.");
-                    return;
-                }
-            }
-
             if ("/manager/transfer-approval/approve".equals(path)) {
-                boolean success = trDAO.approveTransferRequest(id, currentUser.getUserId());
-                if (success) {
-                    session.setAttribute("successMessage", "Đã phê duyệt yêu cầu điều chuyển thành công.");
-                } else {
-                    session.setAttribute("errorMessage", "Phê duyệt thất bại. Vui lòng kiểm tra lại hệ thống.");
-                }
-                response.sendRedirect(request.getContextPath() + "/manager/transfer-approvals");
-
+                handleApprove(request, response, session, currentUser, roleId, id, tr);
             } else if ("/manager/transfer-approval/reject".equals(path)) {
-                String rejectReason = request.getParameter("rejectReason");
-                if (rejectReason == null || rejectReason.trim().isEmpty()) {
-                    session.setAttribute("errorMessage", "Vui lòng nhập lý do từ chối.");
-                    response.sendRedirect(request.getContextPath() + "/manager/transfer-approval-detail?id=" + id);
-                    return;
-                }
-
-                boolean success = trDAO.rejectTransferRequest(id, currentUser.getUserId(), rejectReason.trim());
-                if (success) {
-                    session.setAttribute("successMessage", "Đã từ chối yêu cầu điều chuyển.");
-                } else {
-                    session.setAttribute("errorMessage", "Từ chối yêu cầu thất bại.");
-                }
-                response.sendRedirect(request.getContextPath() + "/manager/transfer-approvals");
+                handleReject(request, response, session, currentUser, roleId, id, tr);
             }
 
         } catch (NumberFormatException e) {
             response.sendRedirect(request.getContextPath() + "/manager/transfer-approvals");
         }
+    }
+
+    // ─── GET handlers ────────────────────────────────────────────────────────
+
+    private void handleListView(HttpServletRequest request, HttpServletResponse response,
+                                User currentUser, int roleId)
+            throws ServletException, IOException {
+
+        // Lấy tất cả yêu cầu điều chuyển đang PENDING của phòng ban của manager hiện tại
+        List<TransferRequest> pendingList = trDAO.getPendingRequestsForManager(currentUser.getDepartmentId());
+        request.setAttribute("approvals", pendingList);
+        request.getRequestDispatcher("/manager/transfer-approval-list.jsp").forward(request, response);
+    }
+
+    private void handleDetailView(HttpServletRequest request, HttpServletResponse response,
+                                  User currentUser, int roleId)
+            throws ServletException, IOException {
+
+        String idStr = request.getParameter("id");
+        if (idStr == null || idStr.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/manager/transfer-approvals");
+            return;
+        }
+
+        try {
+            int id = Integer.parseInt(idStr);
+            TransferRequest tr = trDAO.getById(id);
+
+            if (tr == null) {
+                request.getSession().setAttribute("errorMessage", "Yêu cầu điều chuyển không tồn tại.");
+                response.sendRedirect(request.getContextPath() + "/manager/transfer-approvals");
+                return;
+            }
+
+            // Kiểm tra xem manager hiện tại có đúng là quản lý phòng ban cũ của nhân viên không
+            if (currentUser.getDepartmentId() != tr.getOldDepartmentId()) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN,
+                        "Bạn không có quyền xem yêu cầu của phòng ban khác.");
+                return;
+            }
+
+            // Nếu đơn không còn PENDING thì chuyển sang chế độ chỉ đọc
+            if (!"PENDING".equals(tr.getStatus())) {
+                request.setAttribute("readOnly", true);
+            }
+
+            request.setAttribute("req", tr);
+            request.setAttribute("currentRoleId", roleId);
+            request.getRequestDispatcher("/manager/transfer-approval-detail.jsp").forward(request, response);
+
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/manager/transfer-approvals");
+        }
+    }
+
+    // ─── POST handlers ───────────────────────────────────────────────────────
+
+    private void handleApprove(HttpServletRequest request, HttpServletResponse response,
+                               HttpSession session, User currentUser, int roleId,
+                               int id, TransferRequest tr)
+            throws IOException {
+
+        if (!"PENDING".equals(tr.getStatus())) {
+            session.setAttribute("errorMessage", "Yêu cầu đã được xử lý hoặc không ở trạng thái Chờ duyệt.");
+            response.sendRedirect(request.getContextPath() + "/manager/transfer-approvals");
+            return;
+        }
+
+        if (currentUser.getDepartmentId() != tr.getOldDepartmentId()) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền xử lý yêu cầu của phòng ban khác.");
+            return;
+        }
+
+        // Thực thi duyệt trực tiếp từ PENDING thành APPROVED và cập nhật hồ sơ, tạo phụ lục hợp đồng
+        boolean ok = trDAO.approveTransferRequest(id, currentUser.getUserId());
+        if (ok) {
+            session.setAttribute("successMessage", "Đã phê duyệt và thực thi điều chuyển nhân viên thành công.");
+        } else {
+            session.setAttribute("errorMessage", "Phê duyệt thất bại. Vui lòng kiểm tra lại hệ thống (nhân viên có thể chưa có hợp đồng active).");
+        }
+
+        response.sendRedirect(request.getContextPath() + "/manager/transfer-approvals");
+    }
+
+    private void handleReject(HttpServletRequest request, HttpServletResponse response,
+                              HttpSession session, User currentUser, int roleId,
+                              int id, TransferRequest tr)
+            throws IOException {
+
+        String rejectReason = request.getParameter("rejectReason");
+        if (rejectReason == null || rejectReason.trim().isEmpty()) {
+            session.setAttribute("errorMessage", "Vui lòng nhập lý do từ chối.");
+            response.sendRedirect(request.getContextPath() + "/manager/transfer-approval-detail?id=" + id);
+            return;
+        }
+
+        if (!"PENDING".equals(tr.getStatus())) {
+            session.setAttribute("errorMessage", "Yêu cầu đã được xử lý hoặc không ở trạng thái Chờ duyệt.");
+            response.sendRedirect(request.getContextPath() + "/manager/transfer-approvals");
+            return;
+        }
+
+        if (currentUser.getDepartmentId() != tr.getOldDepartmentId()) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền xử lý yêu cầu của phòng ban khác.");
+            return;
+        }
+
+        boolean ok = trDAO.rejectTransferRequest(id, currentUser.getUserId(), rejectReason.trim());
+        if (ok) {
+            session.setAttribute("successMessage", "Đã từ chối yêu cầu điều chuyển.");
+        } else {
+            session.setAttribute("errorMessage", "Từ chối thất bại. Vui lòng kiểm tra lại.");
+        }
+
+        response.sendRedirect(request.getContextPath() + "/manager/transfer-approvals");
     }
 }
