@@ -219,9 +219,7 @@
             <a href="${pageContext.request.contextPath}${profilePrefix}/employee-contracts?userId=${employee.userId}" class="nav-tab active"><i class="fas fa-file-contract"></i> Hợp đồng & Lương</a>
         </div>
 
-<c:if test="${sessionScope.currentUser.roleId == 2}">
-<div class="role-notice"><i class="fas fa-info-circle"></i> HR Manager chi co quyen phe duyet. Viec tao moi do HR Staff thuc hien.</div>
-</c:if>
+
 
 <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 16px;">
     <h3 style="font-size: 1.1rem; font-weight: 700; color: #1a1a1a; margin: 0;"><i class="fas fa-file-contract" style="color: #6b7280; margin-right: 6px;"></i> Chi tiết Hợp đồng Hiện tại</h3>
@@ -549,6 +547,66 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')document.que
 function prefillSalary(sel){var b=sel.options[sel.selectedIndex].getAttribute('data-base');if(b)document.getElementById('baseSalaryInput').value=b;}
 function updateSalaryHint(sel){var h=document.getElementById('salaryHint');if(h){h.textContent=(sel.value=='1')?'Hop dong thu viec: luong thuc nhan = 85% luong nhap.':'';h.style.color='#d97706';}}
 
+// Ràng buộc chọn Ngày bắt đầu từ mùng 1 tháng sau trở đi
+document.addEventListener("DOMContentLoaded", function() {
+    var today = new Date();
+    var nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    var yyyy = nextMonth.getFullYear();
+    var mm = String(nextMonth.getMonth() + 1).padStart(2, '0');
+    var dd = String(nextMonth.getDate()).padStart(2, '0');
+    var minDateStr = yyyy + '-' + mm + '-' + dd;
+    
+    document.querySelectorAll('input[name="startDate"]').forEach(function(input) {
+        input.setAttribute('min', minDateStr);
+    });
+
+    // Tự động tính ngày kết thúc hợp đồng
+    var typeSel = document.querySelector('select[name="contractTypeId"]');
+    var startIn = document.querySelector('#createContractModal input[name="startDate"]');
+    if (typeSel && startIn) {
+        typeSel.addEventListener('change', autoCalculateEndDate);
+        startIn.addEventListener('change', autoCalculateEndDate);
+    }
+});
+
+function autoCalculateEndDate() {
+    var typeSel = document.querySelector('select[name="contractTypeId"]');
+    var startIn = document.querySelector('#createContractModal input[name="startDate"]');
+    var endIn = document.querySelector('#createContractModal input[name="endDate"]');
+    
+    if (!typeSel || !startIn || !endIn || !startIn.value || typeSel.value == "") return;
+    
+    var typeText = typeSel.options[typeSel.selectedIndex].text.toLowerCase();
+    var startDate = new Date(startIn.value);
+    if (isNaN(startDate)) return;
+    
+    var endDate = new Date(startDate);
+    var updated = false;
+    
+    var yearMatch = typeText.match(/(\d+)\s*năm/);
+    if (yearMatch) {
+        endDate.setFullYear(endDate.getFullYear() + parseInt(yearMatch[1]));
+        endDate.setDate(endDate.getDate() - 1); // Trừ đi 1 ngày (VD: 01/08/2026 -> 31/07/2029)
+        updated = true;
+    } else {
+        var monthMatch = typeText.match(/(\d+)\s*tháng/);
+        if (monthMatch) {
+            endDate.setMonth(endDate.getMonth() + parseInt(monthMatch[1]));
+            endDate.setDate(endDate.getDate() - 1);
+            updated = true;
+        } else if (typeText.includes("không thời hạn") || typeText.includes("vô thời hạn")) {
+            endIn.value = ""; // Xóa ngày kết thúc nếu vô thời hạn
+            return;
+        }
+    }
+    
+    if (updated) {
+        var yyyy = endDate.getFullYear();
+        var mm = String(endDate.getMonth() + 1).padStart(2, '0');
+        var dd = String(endDate.getDate()).padStart(2, '0');
+        endIn.value = yyyy + '-' + mm + '-' + dd;
+    }
+}
 </script>
 
 <jsp:include page="../footer.jsp" />

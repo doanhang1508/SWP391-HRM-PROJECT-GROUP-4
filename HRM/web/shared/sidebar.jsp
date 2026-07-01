@@ -1,6 +1,13 @@
 <%@page contentType="text/html" pageEncoding="UTF-8" %>
     <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-
+<%
+    int pendingContractsCount = 0;
+    if (session.getAttribute("currentUser") != null) {
+        model.User cu = (model.User) session.getAttribute("currentUser");
+        pendingContractsCount = new dao.EmployeeContractDAO().getPendingSignContracts(cu.getUserId()).size();
+    }
+    request.setAttribute("pendingContractsCount", pendingContractsCount);
+%>
         <style>
             /* ─── SIDEBAR BASE ─────────────────────────────────── */
             .admin-sidebar {
@@ -888,6 +895,16 @@
                                                                             </a>
                                                                         </li>
                                                                         <li class="sidebar-item">
+                                                                            <a href="${pageContext.request.contextPath}/employee/contract-signing"
+                                                                                class="sidebar-link ${param.activeMenu eq 'contract-signing' ? 'active' : ''}">
+                                                                                <i class="fas fa-pen-nib"></i>
+                                                                                Xác nhận Hợp đồng
+                                                                                <c:if test="${pendingContractsCount > 0}">
+                                                                                    <span style="background: #dc2626; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.65rem; margin-left: auto;">${pendingContractsCount}</span>
+                                                                                </c:if>
+                                                                            </a>
+                                                                        </li>
+                                                                        <li class="sidebar-item">
                                                                             <a href="${pageContext.request.contextPath}/employee/my-contract"
                                                                                 class="sidebar-link ${param.activeMenu eq 'my-contract' ? 'active' : ''}">
                                                                                 <i class="fas fa-file-signature"></i>
@@ -925,7 +942,7 @@
                                                                             <li class="sidebar-menu-category">Tài khoản
                                                                             </li>
                                                                             <c:if
-                                                                                test="${sessionScope.currentUser.roleId != 7 && sessionScope.currentUser.roleId != 1}">
+                                                                                test="${sessionScope.currentUser.roleId != 7 && sessionScope.currentUser.roleId != 1 && sessionScope.currentUser.roleId != 4}">
                                                                                 <li class="sidebar-item">
                                                                                     <a href="${pageContext.request.contextPath}/employee/timesheet"
                                                                                         class="sidebar-link ${param.activeMenu eq 'personal-timesheet' ? 'active' : ''}">
@@ -946,6 +963,16 @@
                                                                                             <i
                                                                                                 class="fas fa-file-invoice-dollar"></i>
                                                                                             Phiếu lương
+                                                                                        </a>
+                                                                                    </li>
+                                                                                    <li class="sidebar-item">
+                                                                                        <a href="${pageContext.request.contextPath}/employee/contract-signing"
+                                                                                            class="sidebar-link ${param.activeMenu eq 'contract-signing' ? 'active' : ''}">
+                                                                                            <i class="fas fa-pen-nib"></i>
+                                                                                            Xác nhận Hợp đồng
+                                                                                            <c:if test="${pendingContractsCount > 0}">
+                                                                                                <span style="background: #dc2626; color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.65rem; margin-left: auto;">${pendingContractsCount}</span>
+                                                                                            </c:if>
                                                                                         </a>
                                                                                     </li>
                                                                                     <li class="sidebar-item">

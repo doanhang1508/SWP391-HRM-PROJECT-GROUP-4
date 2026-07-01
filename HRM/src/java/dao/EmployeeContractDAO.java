@@ -140,6 +140,8 @@ public class EmployeeContractDAO {
                      "LEFT JOIN departments d ON ec.department_id = d.department_id " +
                      "LEFT JOIN salary_grades sg ON ec.salary_grade_id = sg.salary_grade_id " +
                      "WHERE ec.user_id = ? " +
+                     "  AND ec.status IN ('Active', 'Terminated') " +
+                     "  AND ec.sign_status IN ('SIGNED', 'N/A') " +
                      "  AND ec.start_date <= ? " +
                      "  AND (ec.end_date IS NULL OR ec.end_date >= ?) " +
                      "ORDER BY ec.start_date DESC, ec.contract_id DESC " +
@@ -159,27 +161,32 @@ public class EmployeeContractDAO {
     }
 
     /**
-     * Lấy phụ lục đang chờ nhân viên xác nhận (sign_status = 'PENDING').
+     * Lấy danh sách các hợp đồng/phụ lục đang chờ nhân viên xác nhận (sign_status = 'PENDING').
+     * Lưu ý: Chỉ lấy các hợp đồng đã được duyệt nội dung (Active) hoặc đang chờ nội dung (Pending) tuỳ luồng.
+     * Luồng của chúng ta: HR duyệt -> Active, sign_status = PENDING -> NV thấy và Ký.
      */
-    public EmployeeContract getPendingAddendum(int userId) {
+    public List<EmployeeContract> getPendingSignContracts(int userId) {
+        List<EmployeeContract> list = new ArrayList<>();
         String sql = "SELECT ec.*, ct.type_name, p.position_name, d.department_name, sg.grade_name " +
                      "FROM employee_contracts ec " +
                      "LEFT JOIN contract_types ct ON ec.contract_type_id = ct.contract_type_id " +
                      "LEFT JOIN positions p ON ec.position_id = p.position_id " +
                      "LEFT JOIN departments d ON ec.department_id = d.department_id " +
                      "LEFT JOIN salary_grades sg ON ec.salary_grade_id = sg.salary_grade_id " +
-                     "WHERE ec.user_id = ? AND ec.doc_type = 'ADDENDUM' AND ec.sign_status = 'PENDING' " +
-                     "ORDER BY ec.created_at DESC LIMIT 1";
+                     "WHERE ec.user_id = ? AND ec.sign_status = 'PENDING' " +
+                     "ORDER BY ec.created_at DESC";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return mapRow(rs);
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return null;
+        return list;
     }
 
     // =========================================================================
@@ -318,8 +325,13 @@ public class EmployeeContractDAO {
         List<Object> params = new ArrayList<>();
 
         if (statusFilter != null && !statusFilter.isEmpty() && !"all".equalsIgnoreCase(statusFilter)) {
-            sql.append("AND ec.status = ? ");
-            params.add(statusFilter);
+            if ("approved".equalsIgnoreCase(statusFilter)) {
+                sql.append("AND ec.status = 'Active' ");
+            } else if ("rejected".equalsIgnoreCase(statusFilter)) {
+                sql.append("AND ec.status = 'Rejected' ");
+            } else {
+                sql.append("AND ec.status = 'Pending' ");
+            }
         } else {
             // Mặc định chỉ hiển thị Pending
             sql.append("AND ec.status = 'Pending' ");
@@ -383,7 +395,7 @@ public class EmployeeContractDAO {
         String sql = "INSERT INTO employee_contracts " +
                      "(user_id, contract_type_id, position_id, department_id, salary_grade_id, " +
                      " start_date, end_date, base_salary, tax_calc_type, status, doc_type, sign_status) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'CONTRACT', 'N/A')";
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'CONTRACT', 'PENDING')";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, c.getUserId());
@@ -519,6 +531,15 @@ public class EmployeeContractDAO {
                     ps2.setInt(2, userId);
                     ps2.executeUpdate();
                 }
+
+                // Đóng (Terminate) các hợp đồng đang Active cũ của nhân viên này
+                String sqlTerminateOld = "UPDATE employee_contracts SET status = 'Terminated' " +
+                                         "WHERE user_id = ? AND status = 'Active' AND contract_id != ?";
+                try (PreparedStatement ps3 = conn.prepareStatement(sqlTerminateOld)) {
+                    ps3.setInt(1, userId);
+                    ps3.setInt(2, contractId);
+                    ps3.executeUpdate();
+                }
                 return true;
             }
         } catch (Exception e) {
@@ -532,7 +553,7 @@ public class EmployeeContractDAO {
      * Lưu lý do từ chối vào cột reject_reason.
      */
     public boolean rejectContract(int contractId, String reason) {
-        String sql = "UPDATE employee_contracts SET status = 'Terminated', reject_reason = ? " +
+        String sql = "UPDATE employee_contracts SET status = 'Rejected', reject_reason = ? " +
                      "WHERE contract_id = ? AND status = 'Pending'";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {

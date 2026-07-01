@@ -169,24 +169,7 @@
             </div>
         </div>
 
-        <c:if test="${not empty pendingAddendum}">
-            <div class="addendum-banner">
-                <div class="banner-icon"><i class="fas fa-file-signature"></i></div>
-                <div class="banner-body">
-                    <div class="banner-title">Bạn có 01 Phụ lục hợp đồng đang chờ xác nhận</div>
-                    <div class="banner-desc">
-                        Phụ lục số <strong>PL-<fmt:formatNumber value="${pendingAddendum.contractId}" pattern="0000"/></strong>
-                        có hiệu lực từ ngày <strong><fmt:formatDate value="${pendingAddendum.startDate}" pattern="dd/MM/yyyy"/></strong>.<br/>
-                        Lý do: <em>${pendingAddendum.addendumReason}</em><br/>
-                        <span style="color: #d97706;">Mức lương mới: <strong><fmt:formatNumber value="${pendingAddendum.baseSalary}" type="number" groupingUsed="true"/> VNĐ</strong></span>
-                    </div>
-                    <div class="banner-actions">
-                        <button class="btn-sign" onclick="confirmSign(${pendingAddendum.contractId})">&#10003; Xác nhận ký</button>
-                        <button class="btn-reject" onclick="openRejectModal(${pendingAddendum.contractId})">&#10005; Từ chối</button>
-                    </div>
-                </div>
-            </div>
-        </c:if>
+
 
         <c:if test="${not empty msg}">
             <div class="toast-msg ${msg == 'signed' ? 'toast-success' : (msg == 'rejected' ? 'toast-info' : 'toast-error')}" id="toastMsg">
@@ -375,29 +358,7 @@
     </div>
 </div>
 
-<!-- Modal: Từ chối Phụ lục -->
-<div class="modal-overlay" id="rejectModal">
-    <div class="modal-box">
-        <div class="modal-title"><i class="fas fa-times-circle" style="color:#dc2626;"></i> Xác nhận Từ chối Phụ lục</div>
-        <div class="modal-desc">Vui lòng cho biết lý do bạn không đồng ý với điều khoản phụ lục này.</div>
-        <textarea class="modal-textarea" id="rejectReasonInput" placeholder="Nhập lý do từ chối..."></textarea>
-        <form id="rejectForm" method="POST" action="${pageContext.request.contextPath}/employee/my-contract">
-            <input type="hidden" name="action" value="REJECTED">
-            <input type="hidden" name="contractId" id="rejectContractId">
-            <input type="hidden" name="rejectReason" id="rejectReasonHidden">
-            <div class="modal-actions">
-                <button type="button" class="btn-outline" onclick="closeRejectModal()">Hủy</button>
-                <button type="submit" class="btn-reject" onclick="submitReject(event)">Xác nhận Từ chối</button>
-            </div>
-        </form>
-    </div>
-</div>
 
-<!-- Form ẩn: Xác nhận ký -->
-<form id="signForm" method="POST" action="${pageContext.request.contextPath}/employee/my-contract" style="display:none;">
-    <input type="hidden" name="action" value="SIGNED">
-    <input type="hidden" name="contractId" id="signContractId">
-</form>
 
 <!-- Modal Xem Chi Tiết Hợp Đồng (Lịch sử) -->
 <div id="myContractDetailModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center;">
@@ -434,24 +395,7 @@
 </div>
 
 <script>
-    function confirmSign(contractId) {
-        if (confirm('Bạn xác nhận Đồng ý ký phụ lục hợp đồng này?')) {
-            document.getElementById('signContractId').value = contractId;
-            document.getElementById('signForm').submit();
-        }
-    }
-    function openRejectModal(contractId) {
-        document.getElementById('rejectContractId').value = contractId;
-        document.getElementById('rejectModal').classList.add('open');
-    }
-    function closeRejectModal() {
-        document.getElementById('rejectModal').classList.remove('open');
-    }
-    function submitReject(e) {
-        const reason = document.getElementById('rejectReasonInput').value.trim();
-        if (!reason) { e.preventDefault(); alert('Vui lòng nhập lý do từ chối.'); return; }
-        document.getElementById('rejectReasonHidden').value = reason;
-    }
+
     const toast = document.getElementById('toastMsg');
     if (toast) setTimeout(() => toast.style.display = 'none', 5000);
 

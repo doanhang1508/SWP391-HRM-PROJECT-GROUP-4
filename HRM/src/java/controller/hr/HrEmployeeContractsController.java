@@ -347,12 +347,11 @@ public class HrEmployeeContractsController extends HttpServlet {
                 ecDAO.insertAddendum(addendum);
                 
                 // Get the generated contractId for the addendum to insert allowances
-                EmployeeContract newlyCreatedAddendum = ecDAO.getPendingAddendum(userId);
-                if (newlyCreatedAddendum != null) {
+                if (addendum.getContractId() > 0) {
                     String[] allowanceIds = request.getParameterValues("allowanceIds");
                     if (allowanceIds != null && allowanceIds.length > 0) {
                         dao.AllowanceDAO alwDAO = new dao.AllowanceDAO();
-                        alwDAO.insertEmployeeAllowances(userId, newlyCreatedAddendum.getContractId(), newlyCreatedAddendum.getStartDate(), allowanceIds);
+                        alwDAO.insertEmployeeAllowances(userId, addendum.getContractId(), addendum.getStartDate(), allowanceIds);
                     }
                 }
                 

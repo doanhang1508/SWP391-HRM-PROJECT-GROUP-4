@@ -35,8 +35,8 @@ public class MyContractController extends HttpServlet {
         // Lịch sử hợp đồng
         List<EmployeeContract> contracts = ecDAO.getByUserId(userId);
 
-        // Hợp đồng đang hiệu lực
-        EmployeeContract activeContract = ecDAO.getActiveContract(userId);
+        // Hợp đồng đang hiệu lực (lấy chính xác theo ngày hôm nay)
+        EmployeeContract activeContract = ecDAO.getContractAsOf(userId, new java.sql.Date(System.currentTimeMillis()));
 
         // Tính tổng phụ cấp và lương Gross dự kiến cho hợp đồng hiện tại
         double totalAllowance = 0;
@@ -92,9 +92,6 @@ public class MyContractController extends HttpServlet {
             }
         }
 
-        // Phụ lục đang chờ ký (nếu có) — hiển thị banner
-        EmployeeContract pendingAddendum = ecDAO.getPendingAddendum(userId);
-
         // Hồ sơ nhân viên
         EmployeeProfileDAO epDAO = new EmployeeProfileDAO();
         EmployeeProfile empProfile = epDAO.getByUserId(userId);
@@ -104,49 +101,12 @@ public class MyContractController extends HttpServlet {
         request.setAttribute("totalAllowance", totalAllowance);
         request.setAttribute("allowanceList", allowanceList);
         request.setAttribute("grossSalary", grossSalary);
-        request.setAttribute("pendingAddendum", pendingAddendum);
         request.setAttribute("empProfile", empProfile);
 
-        // Thông báo kết quả sau khi ký/từ chối
+        // Thông báo kết quả
         String msg = request.getParameter("msg");
         if (msg != null) request.setAttribute("msg", msg);
 
         request.getRequestDispatcher("/employee/my-contract.jsp").forward(request, response);
-    }
-
-    /**
-     * Xử lý nhân viên Xác nhận (SIGNED) hoặc Từ chối (REJECTED) phụ lục.
-     */
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("currentUser") == null) {
-            response.sendRedirect(request.getContextPath() + "/login");
-            return;
-        }
-
-        User currentUser = (User) session.getAttribute("currentUser");
-        int userId = currentUser.getUserId();
-
-        String action       = request.getParameter("action");       // "SIGNED" | "REJECTED"
-        String contractIdStr = request.getParameter("contractId");
-        String rejectReason = request.getParameter("rejectReason"); // chỉ khi REJECTED
-
-        if (action == null || contractIdStr == null) {
-            response.sendRedirect(request.getContextPath() + "/employee/my-contract?msg=error");
-            return;
-        }
-
-        try {
-            int contractId = Integer.parseInt(contractIdStr);
-            EmployeeContractDAO ecDAO = new EmployeeContractDAO();
-            boolean ok = ecDAO.updateSignStatus(contractId, userId, action, rejectReason);
-            String msg = ok ? (action.equals("SIGNED") ? "signed" : "rejected") : "error";
-            response.sendRedirect(request.getContextPath() + "/employee/my-contract?msg=" + msg);
-        } catch (NumberFormatException e) {
-            response.sendRedirect(request.getContextPath() + "/employee/my-contract?msg=error");
-        }
     }
 }
