@@ -1,4 +1,4 @@
- package dao;
+package dao;
 
 import model.Attendance;
 import model.AttendanceClaim;
@@ -32,39 +32,49 @@ public class AttendanceDAO {
      *
      * @return số bản ghi đã insert thành công
      */
-    public int bulkImportAttendance(List<Attendance> records) {
+    /**
+     * Bulk upsert danh sách chấm công từ file Excel (SQL Server MERGE).
+     * @return int[]{insertCount, updateCount}
+     */
+    public int[] bulkImportAttendance(List<Attendance> records) {
         String sql = "INSERT INTO attendance " +
-                     "(user_id, shift_id, work_date, check_in, check_out, status, overtime_hrs, ot_reason, created_at) " +
+                     "  (user_id, shift_id, work_date, check_in, check_out, status, overtime_hrs, ot_reason, created_at) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW()) " +
                      "ON DUPLICATE KEY UPDATE " +
-                     "shift_id=VALUES(shift_id), check_in=VALUES(check_in), check_out=VALUES(check_out), " +
-                     "status=VALUES(status), overtime_hrs=VALUES(overtime_hrs), ot_reason=VALUES(ot_reason)";
-        int successCount = 0;
+                     "  check_in = VALUES(check_in), check_out = VALUES(check_out), " +
+                     "  status = VALUES(status), overtime_hrs = VALUES(overtime_hrs), " +
+                     "  ot_reason = VALUES(ot_reason)";
+        int insertCount = 0;
+        int updateCount = 0;
         DBContext dbContext = new DBContext();
-        try (Connection conn = dbContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = dbContext.getConnection()) {
             conn.setAutoCommit(false);
-            for (Attendance a : records) {
-                ps.setInt(1, a.getUserId());
-                ps.setInt(2, a.getShiftId());
-                ps.setDate(3, a.getWorkDate());
-                ps.setTime(4, a.getCheckIn());
-                ps.setTime(5, a.getCheckOut());
-                ps.setString(6, a.getStatus());
-                ps.setDouble(7, a.getOvertimeHrs());
-                ps.setString(8, a.getOtReason());
-                ps.addBatch();
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                for (Attendance a : records) {
+                    ps.setInt(1, a.getUserId());
+                    ps.setInt(2, a.getShiftId());
+                    ps.setDate(3, a.getWorkDate());
+                    ps.setTime(4, a.getCheckIn());
+                    ps.setTime(5, a.getCheckOut());
+                    ps.setString(6, a.getStatus());
+                    ps.setDouble(7, a.getOvertimeHrs());
+                    ps.setString(8, a.getOtReason());
+                    
+                    int res = ps.executeUpdate();
+                    if (res == 1) {
+                        insertCount++;
+                    } else if (res == 2) {
+                        updateCount++;
+                    }
+                }
             }
-            int[] results = ps.executeBatch();
             conn.commit();
-            for (int r : results) {
-                if (r > 0) successCount++;
-            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return successCount;
+        return new int[]{insertCount, updateCount};
     }
+
 
     /**
      * Kiểm tra tháng đó đã bị lock chưa trước khi import.
@@ -998,7 +1008,7 @@ public class AttendanceDAO {
                      "FROM users u " +
                      "LEFT JOIN employee_profiles ep ON u.user_id = ep.user_id " +
                      "LEFT JOIN departments d ON ep.department_id = d.department_id " +
-                     "LEFT JOIN attendance a ON u.user_id = a.user_id AND MONTH(a.work_date)=? AND YEAR(a.work_date)=? " +
+                     "JOIN attendance a ON u.user_id = a.user_id AND MONTH(a.work_date)=? AND YEAR(a.work_date)=? " +
                      "WHERE u.role_id NOT IN (1, 4) " +
                      "GROUP BY u.user_id, u.full_name, d.department_name " +
                      "ORDER BY u.full_name LIMIT ? OFFSET ?";
