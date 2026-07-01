@@ -1491,31 +1491,239 @@ CREATE TABLE IF NOT EXISTS kpi_audit_logs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Seed default criteria and template
-INSERT INTO kpi_templates (name, description, status, created_by) 
-VALUES ('Mẫu đánh giá KPI Văn Phòng', 'Tiêu chuẩn đánh giá KPI khối văn phòng, bộ phận hỗ trợ.', 1, 1);
+-- ── KPI Templates ──
+INSERT INTO kpi_templates 
+(template_id, name, description, status, created_by, department_id)
+VALUES
 
-SET @tpl_id = LAST_INSERT_ID();
+(1, 'KPI Khối Hành Chính',
+ 'Mẫu KPI đánh giá hiệu quả làm việc của khối hành chính',
+ 1, 1, 1),
 
-INSERT INTO kpi_template_items (template_id, criterion_name, description, weight) VALUES
-(@tpl_id, 'Chất lượng công việc', 'Mức độ hoàn thành công việc theo tiêu chuẩn chất lượng yêu cầu', 25.00),
-(@tpl_id, 'Tiến độ công việc', 'Hoàn thành công việc đúng thời hạn cam kết', 25.00),
-(@tpl_id, 'Ý thức tổ chức kỷ luật', 'Chấp hành nội quy lao động, thời gian làm việc và quy trình', 15.00),
-(@tpl_id, 'Kỹ năng giao tiếp & làm việc nhóm', 'Hợp tác hỗ trợ đồng nghiệp, giao tiếp hiệu quả', 15.00),
-(@tpl_id, 'Sáng kiến & Cải tiến', 'Có đề xuất sáng kiến cải tiến nâng cao năng suất hiệu quả', 20.00);
+(2, 'KPI Khối Nhân Sự',
+ 'Mẫu KPI đánh giá hiệu quả công việc phòng nhân sự',
+ 1, 1, 2),
 
--- Seed default criteria and template for Factory/Workshop
-INSERT INTO kpi_templates (name, description, status, created_by) 
-VALUES ('Mẫu đánh giá KPI Nhà Xưởng / Khối Sản Xuất', 'Tiêu chuẩn đánh giá sản lượng, an toàn và chuyên cần cho khối sản xuất.', 1, 1);
+(3, 'KPI Khối Kế Toán',
+ 'Mẫu KPI đánh giá hiệu quả công việc phòng kế toán',
+ 1, 1, 3),
 
-SET @tpl_factory_id = LAST_INSERT_ID();
+(4, 'KPI Khối Kinh Doanh',
+ 'Mẫu KPI đánh giá hiệu quả hoạt động kinh doanh và doanh số',
+ 1, 1, 4),
 
-INSERT INTO kpi_template_items (template_id, criterion_name, description, weight) VALUES
-(@tpl_factory_id, 'Năng suất sản xuất', 'Tỷ lệ hoàn thành sản lượng được giao', 40.00),
-(@tpl_factory_id, 'Chất lượng sản phẩm', 'Hạn chế lỗi sản phẩm, tuân thủ đúng quy trình công nghệ', 20.00),
-(@tpl_factory_id, 'An toàn lao động & vệ sinh 5S', 'Chấp hành quy tắc an toàn lao động, sắp xếp nơi làm việc gọn gàng', 15.00),
-(@tpl_factory_id, 'Kỷ luật & Chuyên cần', 'Đi làm đầy đủ, đúng giờ, không vi phạm kỷ luật', 15.00),
-(@tpl_factory_id, 'Bảo quản máy móc thiết bị', 'Vận hành đúng quy trình, giữ gìn tài sản chung', 10.00);
+(5, 'KPI Xưởng Sản Xuất',
+ 'Mẫu KPI đánh giá năng suất, chất lượng và hiệu quả sản xuất',
+ 1, 1, 5),
 
+(6, 'Mẫu KPI Chung',
+ 'Mẫu KPI áp dụng chung cho toàn bộ nhân viên trong công ty',
+ 1, 1, NULL);
+
+-- =============================================================
+-- KPI TEMPLATE ITEMS
+-- =============================================================
+
+INSERT INTO kpi_template_items
+(template_id, criterion_name, description, weight)
+VALUES
+
+-- =============================================================
+-- 1. KPI KHỐI HÀNH CHÍNH
+-- =============================================================
+
+(1, 'Hiệu quả xử lý công việc hành chính',
+ 'Hoàn thành đầy đủ công việc hành chính đúng thời hạn, đảm bảo tiến độ công việc',
+ 25),
+
+(1, 'Quản lý hồ sơ, văn bản và tài liệu',
+ 'Lưu trữ, cập nhật hồ sơ, công văn đúng quy định, hạn chế sai sót',
+ 15),
+
+(1, 'Tuân thủ quy trình và nội quy công ty',
+ 'Thực hiện đúng quy trình hành chính, bảo mật và quy định nội bộ',
+ 15),
+
+(1, 'Chất lượng phục vụ các phòng ban',
+ 'Hỗ trợ các bộ phận nhanh chóng, chuyên nghiệp, đảm bảo sự hài lòng',
+ 15),
+
+(1, 'Quản lý tài sản và trang thiết bị',
+ 'Theo dõi, kiểm kê và sử dụng tài sản văn phòng hiệu quả',
+ 10),
+
+(1, 'Quản lý chi phí hành chính',
+ 'Kiểm soát chi phí văn phòng, đề xuất giải pháp tiết kiệm',
+ 10),
+
+(1, 'Cải tiến quy trình hành chính',
+ 'Đề xuất giải pháp nâng cao hiệu quả hoạt động',
+ 5),
+
+
+-- =============================================================
+-- 2. KPI KHỐI NHÂN SỰ
+-- =============================================================
+
+(2, 'Tuyển dụng và đáp ứng nhân sự',
+ 'Đảm bảo tuyển dụng đúng kế hoạch và nhu cầu nhân sự',
+ 20),
+
+(2, 'Quản lý hồ sơ nhân viên',
+ 'Cập nhật đầy đủ thông tin nhân sự, hợp đồng và hồ sơ lao động',
+ 15),
+
+(2, 'Quản lý chấm công, tính lương và phúc lợi',
+ 'Đảm bảo dữ liệu chấm công, lương và chế độ chính xác',
+ 15),
+
+(2, 'Đào tạo và phát triển nhân sự',
+ 'Lập kế hoạch đào tạo và theo dõi phát triển nhân viên',
+ 10),
+
+(2, 'Quan hệ lao động',
+ 'Hỗ trợ giải quyết vấn đề nhân sự và duy trì môi trường làm việc',
+ 10),
+
+(2, 'Tuân thủ chính sách nhân sự',
+ 'Đảm bảo thực hiện đúng quy định lao động',
+ 10),
+
+(2, 'Báo cáo và phân tích dữ liệu nhân sự',
+ 'Cung cấp báo cáo nhân sự đầy đủ và chính xác',
+ 10),
+
+
+-- =============================================================
+-- 3. KPI KHỐI KẾ TOÁN
+-- =============================================================
+
+(3, 'Độ chính xác nghiệp vụ kế toán',
+ 'Hạch toán, kiểm tra chứng từ và số liệu kế toán chính xác',
+ 25),
+
+(3, 'Lập báo cáo tài chính và kế toán',
+ 'Hoàn thành báo cáo đúng thời hạn và đúng quy định',
+ 20),
+
+(3, 'Quản lý chứng từ kế toán',
+ 'Lưu trữ hóa đơn, chứng từ khoa học và đầy đủ',
+ 15),
+
+(3, 'Quản lý công nợ và thanh toán',
+ 'Theo dõi công nợ, xử lý thanh toán đúng hạn',
+ 15),
+
+(3, 'Tuân thủ quy định tài chính - thuế',
+ 'Thực hiện đúng quy định kế toán và thuế',
+ 10),
+
+(3, 'Kiểm soát chi phí',
+ 'Theo dõi và đề xuất tối ưu chi phí',
+ 10),
+
+(3, 'Phối hợp nội bộ',
+ 'Hỗ trợ các phòng ban về nghiệp vụ tài chính',
+ 5),
+
+
+-- =============================================================
+-- 4. KPI KHỐI KINH DOANH
+-- =============================================================
+
+(4, 'Doanh số và chỉ tiêu kinh doanh',
+ 'Hoàn thành mục tiêu doanh thu được giao',
+ 30),
+
+(4, 'Phát triển khách hàng mới',
+ 'Tìm kiếm và mở rộng danh sách khách hàng',
+ 15),
+
+(4, 'Chăm sóc khách hàng',
+ 'Duy trì quan hệ và mức độ hài lòng khách hàng',
+ 15),
+
+(4, 'Hiệu quả tư vấn và chốt đơn',
+ 'Nâng cao tỷ lệ chuyển đổi bán hàng',
+ 15),
+
+(4, 'Quản lý dữ liệu kinh doanh',
+ 'Cập nhật khách hàng và báo cáo kinh doanh đầy đủ',
+ 10),
+
+(4, 'Tuân thủ quy trình kinh doanh',
+ 'Thực hiện đúng quy trình bán hàng của công ty',
+ 10),
+
+(4, 'Phối hợp đội nhóm',
+ 'Hỗ trợ đồng nghiệp và phối hợp các phòng ban',
+ 5),
+
+
+-- =============================================================
+-- 5. KPI XƯỞNG SẢN XUẤT
+-- =============================================================
+
+(5, 'Năng suất sản xuất',
+ 'Đảm bảo sản lượng theo kế hoạch sản xuất',
+ 25),
+
+(5, 'Chất lượng sản phẩm',
+ 'Kiểm soát lỗi sản phẩm và đảm bảo tiêu chuẩn kỹ thuật',
+ 20),
+
+(5, 'Tuân thủ quy trình sản xuất',
+ 'Thực hiện đúng quy trình vận hành và kỹ thuật',
+ 15),
+
+(5, 'An toàn lao động và vệ sinh nhà xưởng',
+ 'Tuân thủ quy định an toàn lao động',
+ 15),
+
+(5, 'Quản lý nguyên vật liệu',
+ 'Sử dụng nguyên vật liệu hiệu quả, hạn chế hao hụt',
+ 10),
+
+(5, 'Bảo quản máy móc thiết bị',
+ 'Vận hành và bảo dưỡng thiết bị đúng quy định',
+ 10),
+
+(5, 'Tinh thần làm việc nhóm',
+ 'Phối hợp sản xuất và tuân thủ kỷ luật',
+ 5),
+
+
+-- =============================================================
+-- 6. KPI CHUNG
+-- =============================================================
+
+(6, 'Hoàn thành công việc được giao',
+ 'Đảm bảo hoàn thành nhiệm vụ đúng tiến độ',
+ 25),
+
+(6, 'Chất lượng công việc',
+ 'Đảm bảo độ chính xác và hạn chế sai sót',
+ 20),
+
+(6, 'Tinh thần trách nhiệm',
+ 'Chủ động và có trách nhiệm trong công việc',
+ 15),
+
+(6, 'Khả năng phối hợp làm việc nhóm',
+ 'Phối hợp tốt với đồng nghiệp và phòng ban',
+ 15),
+
+(6, 'Tuân thủ nội quy công ty',
+ 'Thực hiện đúng quy định và quy trình',
+ 10),
+
+(6, 'Học hỏi và phát triển bản thân',
+ 'Nâng cao kỹ năng chuyên môn',
+ 10),
+
+(6, 'Đề xuất cải tiến',
+ 'Đóng góp ý tưởng nâng cao hiệu quả',
+ 5);
 CREATE TABLE payroll_configs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     config_key VARCHAR(100) NOT NULL UNIQUE COMMENT 'Mã Tham số (Key)',
