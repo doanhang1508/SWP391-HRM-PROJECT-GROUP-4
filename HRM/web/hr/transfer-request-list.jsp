@@ -166,26 +166,20 @@
                                             <fmt:formatDate value="${tr.effectiveDate}" pattern="dd/MM/yyyy" />
                                         </td>
                                         <td>
-                                            <c:choose>
-                                                <c:when test="${tr.status eq 'PENDING'}">
-                                                    <span class="badge-s b-pending"><i class="far fa-clock"></i> Chờ TP duyệt</span>
-                                                </c:when>
-                                                <c:when test="${tr.status eq 'MANAGER_APPROVED'}">
-                                                    <span class="badge-s" style="background:rgba(79,70,229,0.1);color:#4f46e5;"><i class="fas fa-user-check"></i> Chờ HR xác nhận</span>
-                                                </c:when>
-                                                <c:when test="${tr.status eq 'APPROVED'}">
-                                                    <span class="badge-s b-approved"><i class="fas fa-check"></i> Đã duyệt</span>
-                                                </c:when>
-                                                <c:when test="${tr.status eq 'REJECTED'}">
-                                                    <span class="badge-s b-rejected" title="${tr.rejectReason}"><i class="fas fa-times"></i> TP từ chối</span>
-                                                </c:when>
-                                                <c:when test="${tr.status eq 'HR_REJECTED'}">
-                                                    <span class="badge-s b-rejected" title="${tr.rejectReason}"><i class="fas fa-user-times"></i> HR từ chối</span>
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <span class="badge-s b-cancelled"><i class="fas fa-ban"></i> Đã huỷ</span>
-                                                </c:otherwise>
-                                            </c:choose>
+                                             <c:choose>
+                                                 <c:when test="${tr.status eq 'PENDING' or tr.status eq 'MANAGER_APPROVED'}">
+                                                     <span class="badge-s b-pending"><i class="far fa-clock"></i> Chờ duyệt</span>
+                                                 </c:when>
+                                                 <c:when test="${tr.status eq 'APPROVED'}">
+                                                     <span class="badge-s b-approved"><i class="fas fa-check"></i> Đã duyệt</span>
+                                                 </c:when>
+                                                 <c:when test="${tr.status eq 'REJECTED' or tr.status eq 'HR_REJECTED'}">
+                                                     <span class="badge-s b-rejected" title="${tr.rejectReason}"><i class="fas fa-times"></i> Bị từ chối</span>
+                                                 </c:when>
+                                                 <c:otherwise>
+                                                     <span class="badge-s b-cancelled"><i class="fas fa-ban"></i> Đã huỷ</span>
+                                                 </c:otherwise>
+                                             </c:choose>
                                         </td>
                                         <td>
                                             ${tr.requestedByName}

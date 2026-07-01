@@ -178,12 +178,9 @@ public class TransferRequestDAO {
     }
 
     public boolean rejectTransferRequest(int requestId, int approverId, String rejectReason) {
-        // Trưởng phòng từ chối PENDING → REJECTED
-        // HR Manager từ chối MANAGER_APPROVED → HR_REJECTED
         String sql = "UPDATE transfer_requests SET " +
-                     "status = CASE WHEN status = 'PENDING' THEN 'REJECTED' ELSE 'HR_REJECTED' END, " +
-                     "approved_by = ?, approved_at = NOW(), reject_reason = ?, updated_at = NOW() " +
-                     "WHERE transfer_request_id = ? AND status IN ('PENDING', 'MANAGER_APPROVED')";
+                     "status = 'REJECTED', approved_by = ?, approved_at = NOW(), reject_reason = ?, updated_at = NOW() " +
+                     "WHERE transfer_request_id = ? AND status = 'PENDING'";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, approverId);
@@ -317,9 +314,9 @@ public class TransferRequestDAO {
             if (req == null) {
                 throw new SQLException("Transfer Request not found: " + requestId);
             }
-            // [2-STEP] Chỉ thực thi khi đã qua bước duyệt của Trưởng phòng
-            if (!"MANAGER_APPROVED".equals(req.getStatus())) {
-                throw new SQLException("Transfer Request chưa được Trưởng phòng duyệt (status=" + req.getStatus() + ")");
+            // Chỉ thực thi khi đơn ở trạng thái PENDING
+            if (!"PENDING".equals(req.getStatus())) {
+                throw new SQLException("Transfer Request is not PENDING (status=" + req.getStatus() + ")");
             }
 
             // ── Bước 2: Lấy tên phòng ban, chức vụ, vai trò để ghi work_history ──
