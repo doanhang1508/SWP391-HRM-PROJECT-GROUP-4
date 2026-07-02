@@ -696,9 +696,7 @@ public class PayrollDAO {
         }
         
         LeaveRequestDAOImpl leaveDAO = new LeaveRequestDAOImpl();
-        PayrollConfigDAO configDAO = new PayrollConfigDAO();
-        
-        BigDecimal standardWorkDays = configDAO.getConfigValue("STANDARD_WORK_DAYS", new BigDecimal("26"));
+        BigDecimal standardWorkDays = new BigDecimal(util.DateUtil.getStandardWorkDays(month, year));
         
         for (int userId : userIds) {
             Payroll existing = getPayroll(userId, month, year);
@@ -904,8 +902,7 @@ public class PayrollDAO {
         BigDecimal deduction = payroll.getDeductionAmount() != null ? payroll.getDeductionAmount() : BigDecimal.ZERO;
         
         // --- TÃ­nh lÆ°Æ¡ng theo ngÃ y cÃ´ng thá»±c táº¿ ---
-        PayrollConfigDAO configDAO = new PayrollConfigDAO();
-        BigDecimal standardWorkDays = configDAO.getConfigValue("STANDARD_WORK_DAYS", new BigDecimal("26"));
+        BigDecimal standardWorkDays = new BigDecimal(util.DateUtil.getStandardWorkDays(payroll.getMonth(), payroll.getYear()));
         
         BigDecimal baseWorkedSalary = BigDecimal.ZERO;
         if (standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {

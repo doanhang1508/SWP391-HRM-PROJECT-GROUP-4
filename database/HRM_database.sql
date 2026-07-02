@@ -813,9 +813,9 @@ INSERT INTO employee_contracts (user_id, contract_type_id, position_id, departme
 (33, 2, 7, 3, 2, '2026-03-01', '2027-03-01', 10000000, 'Active');
 
 -- ── 16d.2 Insert Phụ lục Hợp đồng (Addendum) mẫu ──
-INSERT INTO employee_contracts (user_id, contract_type_id, position_id, department_id, salary_grade_id, start_date, end_date, base_salary, status, doc_type, addendum_reason, sign_status) VALUES
--- Phụ lục của user 19 (Trưởng phòng KD): Tăng lương lên 25tr, đã ký
-(19, 3, 2, 4, 1, '2025-01-01', '2027-01-01', 25000000, 'Active', 'ADDENDUM', 'Tăng lương', 'SIGNED');
+INSERT INTO employee_contracts (user_id, contract_type_id, position_id, department_id, salary_grade_id, start_date, end_date, base_salary, tax_calc_type, status, doc_type, parent_contract_id, addendum_reason, sign_status) VALUES
+-- Phụ lục của user 19 (Trưởng phòng KD): Tăng lương lên 25tr, đã ký, tham chiếu hợp đồng gốc id = 11
+(19, 3, 2, 4, 1, '2025-01-01', '2027-01-01', 25000000, 1, 'Active', 'ADDENDUM', 11, 'Tăng lương', 'SIGNED');
 
 
 

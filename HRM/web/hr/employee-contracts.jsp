@@ -371,7 +371,9 @@
                 data-base="${c.baseSalary}"
                 data-gross="${c.grossSalary}"
                 data-alw-html="${fn:escapeXml(c.allowanceHtml)}"
-                data-tax="<c:choose><c:when test='${c.taxCalcType == 1}'>Biểu thuế lũy tiến</c:when><c:when test='${c.taxCalcType == 2}'>Khấu trừ 10%</c:when><c:otherwise>Miễn thuế</c:otherwise></c:choose>">
+                data-tax="<c:choose><c:when test='${c.taxCalcType == 1}'>Biểu thuế lũy tiến</c:when><c:when test='${c.taxCalcType == 2}'>Khấu trừ 10%</c:when><c:otherwise>Miễn thuế</c:otherwise></c:choose>"
+                data-doctype="${c.docType}"
+                data-parent="${c.parentContractId}">
               <td style="padding: 16px 20px; font-weight: 600; color: #1a1a1a; font-size: 0.9rem;">
                 <c:choose>
                     <c:when test="${c.docType == 'ADDENDUM'}">
@@ -468,7 +470,7 @@
     <div style="padding: 20px 24px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; background: #f9fafb;">
       <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #1a1a1a;">
         <i class="fas fa-file-contract" style="color: #6b7280; margin-right: 8px;"></i>
-        Chi tiết Hợp đồng Lịch sử
+        <span id="hmTitleText">Chi tiết Hợp đồng Lịch sử</span>
       </h3>
       <button type="button" onclick="closeModal('historyModal')" style="background: transparent; border: none; font-size: 1.4rem; color: #9ca3af; cursor: pointer;">&times;</button>
     </div>
@@ -523,7 +525,15 @@
 function viewHistoryModal(row) {
     var d = row.dataset;
     var year = d.start ? d.start.split('/')[2] : new Date().getFullYear();
-    document.getElementById('hmId').textContent = 'HĐ-' + year + '-' + String(d.cid).padStart(4, '0');
+    
+    if (d.doctype === 'ADDENDUM') {
+        document.getElementById('hmTitleText').textContent = 'Chi tiết Phụ lục Hợp đồng (Gắn với HĐ gốc: HĐ-' + year + '-' + String(d.parent).padStart(4, '0') + ')';
+        document.getElementById('hmId').textContent = 'PL-' + year + '-' + String(d.cid).padStart(4, '0');
+    } else {
+        document.getElementById('hmTitleText').textContent = 'Chi tiết Hợp đồng Lịch sử';
+        document.getElementById('hmId').textContent = 'HĐ-' + year + '-' + String(d.cid).padStart(4, '0');
+    }
+    
     document.getElementById('hmType').textContent = d.type || '';
     document.getElementById('hmStart').textContent = d.start || '';
     document.getElementById('hmEnd').textContent = d.end || '';
