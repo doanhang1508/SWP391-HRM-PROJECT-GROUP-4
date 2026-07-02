@@ -27,6 +27,7 @@ public class KpiEvaluation {
     private String employeeCode; // username or employee code
     private String managerName;
     private String cycleName;
+    private String cycleStatus;
     private String departmentName;
 
     public KpiEvaluation() {}
@@ -106,6 +107,9 @@ public class KpiEvaluation {
 
     public String getCycleName() { return cycleName; }
     public void setCycleName(String cycleName) { this.cycleName = cycleName; }
+
+    public String getCycleStatus() { return cycleStatus; }
+    public void setCycleStatus(String cycleStatus) { this.cycleStatus = cycleStatus; }
 
     public String getDepartmentName() { return departmentName; }
     public void setDepartmentName(String departmentName) { this.departmentName = departmentName; }

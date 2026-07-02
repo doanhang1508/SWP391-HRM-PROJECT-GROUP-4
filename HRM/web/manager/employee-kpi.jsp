@@ -15,7 +15,12 @@
     <!-- Title & Select Cycle -->
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
         <div>
-            <h2 class="fw-bold mb-1">Đánh giá KPI Nhân sự</h2>
+            <div class="d-flex align-items-center gap-2">
+                <h2 class="fw-bold mb-1">Đánh giá KPI Nhân sự</h2>
+                <c:if test="${selectedCycle.status == 'LOCKED' || selectedCycle.status == 'CLOSED'}">
+                    <span class="badge bg-danger px-2.5 py-1.5" style="border-radius: 6px; font-size: 0.85rem;"><i class="fas fa-lock me-1"></i> ĐÃ KHÓA SỔ</span>
+                </c:if>
+            </div>
             <p class="text-muted mb-0">Chấm điểm hiệu suất làm việc của các thành viên trong bộ phận</p>
         </div>
         
@@ -156,7 +161,7 @@
                             <c:set var="hasDraft" value="true" />
                         </c:if>
                     </c:forEach>
-                    <c:if test="${hasDraft}">
+                    <c:if test="${hasDraft && selectedCycle.status != 'LOCKED' && selectedCycle.status != 'CLOSED'}">
                         <form action="${pageContext.request.contextPath}/manager/employee-kpi" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn nộp tất cả bản đánh giá KPI dạng Nháp/Từ chối của đợt này? Sau khi nộp sẽ không thể chỉnh sửa.')">
                             <input type="hidden" name="action" value="bulk-submit" />
                             <input type="hidden" name="cycleId" value="${selectedCycleId}" />
@@ -218,7 +223,7 @@
                                             
                                             <td class="text-center p-1">
                                                 <c:choose>
-                                                    <c:when test="${eval.status == 'DRAFT' || eval.status == 'REJECTED'}">
+                                                    <c:when test="${(eval.status == 'DRAFT' || eval.status == 'REJECTED') && selectedCycle.status != 'LOCKED' && selectedCycle.status != 'CLOSED'}">
                                                         <input type="number" 
                                                                name="score_${eval.evaluationId}_${crit.itemId}"
                                                                class="form-control text-center grid-score-input fw-semibold p-1 mb-1" 
@@ -253,7 +258,7 @@
                                         <!-- General Comment Column -->
                                         <td class="p-1">
                                             <c:choose>
-                                                <c:when test="${eval.status == 'DRAFT' || eval.status == 'REJECTED'}">
+                                                <c:when test="${(eval.status == 'DRAFT' || eval.status == 'REJECTED') && selectedCycle.status != 'LOCKED' && selectedCycle.status != 'CLOSED'}">
                                                     <input type="text" 
                                                            name="comment_${eval.evaluationId}"
                                                            class="form-control grid-comment-input small p-1" 
@@ -294,7 +299,7 @@
                                         <td class="text-center">
                                             <div class="d-flex justify-content-center gap-1">
                                                 <c:choose>
-                                                    <c:when test="${eval.status == 'DRAFT' || eval.status == 'REJECTED'}">
+                                                    <c:when test="${(eval.status == 'DRAFT' || eval.status == 'REJECTED') && selectedCycle.status != 'LOCKED' && selectedCycle.status != 'CLOSED'}">
                                                         <form action="${pageContext.request.contextPath}/manager/employee-kpi" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn nộp bản đánh giá KPI của nhân viên này? Sau khi nộp sẽ không thể chỉnh sửa.')">
                                                             <input type="hidden" name="action" value="submit" />
                                                             <input type="hidden" name="evaluationId" value="${eval.evaluationId}" />
@@ -514,17 +519,26 @@
                             </div>
 
                             <!-- Comment Form -->
-                            <form action="${pageContext.request.contextPath}/manager/employee-kpi" method="POST" class="mt-2">
-                                <input type="hidden" name="action" value="addComment" />
-                                <input type="hidden" name="evaluationId" value="${detailEval.evaluationId}" />
-                                <input type="hidden" name="viewAll" value="${param.viewAll}" />
-                                <div class="input-group">
-                                    <textarea class="form-control" name="commentText" placeholder="Nhập phản hồi, câu hỏi hoặc hướng dẫn..." rows="2" style="border-radius: 8px 0 0 8px; resize: none; font-size: 0.85rem;" required></textarea>
-                                    <button class="btn btn-primary px-4" type="submit" style="border-radius: 0 8px 8px 0;">
-                                        <i class="fas fa-paper-plane me-1"></i> Gửi
-                                    </button>
-                                </div>
-                            </form>
+                            <c:choose>
+                                <c:when test="${detailEval.cycleStatus == 'LOCKED' || detailEval.cycleStatus == 'CLOSED'}">
+                                    <div class="alert alert-warning mb-0 text-center py-2 px-3 small" style="border-radius: 8px;">
+                                        <i class="fas fa-lock me-1"></i> Đợt đánh giá này đã khóa sổ (LOCKED). Không thể gửi thêm ý kiến trao đổi.
+                                    </div>
+                                </c:when>
+                                <c:otherwise>
+                                    <form action="${pageContext.request.contextPath}/manager/employee-kpi" method="POST" class="mt-2">
+                                        <input type="hidden" name="action" value="addComment" />
+                                        <input type="hidden" name="evaluationId" value="${detailEval.evaluationId}" />
+                                        <input type="hidden" name="viewAll" value="${param.viewAll}" />
+                                        <div class="input-group">
+                                            <textarea class="form-control" name="commentText" placeholder="Nhập phản hồi, câu hỏi hoặc hướng dẫn..." rows="2" style="border-radius: 8px 0 0 8px; resize: none; font-size: 0.85rem;" required></textarea>
+                                            <button class="btn btn-primary px-4" type="submit" style="border-radius: 0 8px 8px 0;">
+                                                <i class="fas fa-paper-plane me-1"></i> Gửi
+                                            </button>
+                                        </div>
+                                    </form>
+                                </c:otherwise>
+                            </c:choose>
                         </div>
                     </div>
                 </div>

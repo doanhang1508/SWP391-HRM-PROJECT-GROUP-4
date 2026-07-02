@@ -159,16 +159,25 @@
                             </div>
 
                             <!-- Comment Input Form -->
-                            <form action="${pageContext.request.contextPath}/employee/kpi-view" method="POST" class="mt-2">
-                                <input type="hidden" name="action" value="addComment" />
-                                <input type="hidden" name="evaluationId" value="${selectedEval.evaluationId}" />
-                                <div class="input-group">
-                                    <textarea class="form-control" name="commentText" placeholder="Nhập phản hồi, câu hỏi hoặc thắc mắc..." rows="2" style="border-radius: 8px 0 0 8px; resize: none; font-size: 0.85rem;" required></textarea>
-                                    <button class="btn btn-primary px-4" type="submit" style="border-radius: 0 8px 8px 0;">
-                                        <i class="fas fa-paper-plane me-1"></i> Gửi
-                                    </button>
-                                </div>
-                            </form>
+                            <c:choose>
+                                <c:when test="${selectedEval.cycleStatus == 'LOCKED' || selectedEval.cycleStatus == 'CLOSED'}">
+                                    <div class="alert alert-warning mb-0 text-center py-2 px-3 small" style="border-radius: 8px;">
+                                        <i class="fas fa-lock me-1"></i> Đợt đánh giá này đã khóa sổ (LOCKED). Không thể gửi thêm ý kiến trao đổi.
+                                    </div>
+                                </c:when>
+                                <c:otherwise>
+                                    <form action="${pageContext.request.contextPath}/employee/kpi-view" method="POST" class="mt-2">
+                                        <input type="hidden" name="action" value="addComment" />
+                                        <input type="hidden" name="evaluationId" value="${selectedEval.evaluationId}" />
+                                        <div class="input-group">
+                                            <textarea class="form-control" name="commentText" placeholder="Nhập phản hồi, câu hỏi hoặc thắc mắc..." rows="2" style="border-radius: 8px 0 0 8px; resize: none; font-size: 0.85rem;" required></textarea>
+                                            <button class="btn btn-primary px-4" type="submit" style="border-radius: 0 8px 8px 0;">
+                                                <i class="fas fa-paper-plane me-1"></i> Gửi
+                                            </button>
+                                        </div>
+                                    </form>
+                                </c:otherwise>
+                            </c:choose>
                         </div>
                     </div>
                 </c:when>

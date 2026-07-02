@@ -255,13 +255,49 @@ public class KpiDAO {
         return false;
     }
 
+    public boolean isCycleLocked(int cycleId) {
+        String sql = "SELECT status FROM kpi_cycles WHERE cycle_id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, cycleId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String status = rs.getString("status");
+                    return "LOCKED".equalsIgnoreCase(status) || "CLOSED".equalsIgnoreCase(status);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean isCycleLockedByEvaluationId(int evaluationId) {
+        String sql = "SELECT c.status FROM kpi_evaluations e " +
+                     "JOIN kpi_cycles c ON e.cycle_id = c.cycle_id " +
+                     "WHERE e.evaluation_id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, evaluationId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String status = rs.getString("status");
+                    return "LOCKED".equalsIgnoreCase(status) || "CLOSED".equalsIgnoreCase(status);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     // ==========================================
     // 3. EVALUATIONS
     // ==========================================
 
     public KpiEvaluation getEvaluation(int cycleId, int employeeId) {
         String sql = "SELECT e.*, u.full_name AS employee_name, u.username AS employee_code, " +
-                     "m.full_name AS manager_name, c.name AS cycle_name, d.department_name " +
+                     "m.full_name AS manager_name, c.name AS cycle_name, c.status AS cycle_status, d.department_name " +
                      "FROM kpi_evaluations e " +
                      "JOIN users u ON e.employee_id = u.user_id " +
                      "LEFT JOIN users m ON e.manager_id = m.user_id " +
@@ -285,7 +321,7 @@ public class KpiDAO {
 
     public KpiEvaluation getEvaluationById(int evaluationId) {
         String sql = "SELECT e.*, u.full_name AS employee_name, u.username AS employee_code, " +
-                     "m.full_name AS manager_name, c.name AS cycle_name, d.department_name " +
+                     "m.full_name AS manager_name, c.name AS cycle_name, c.status AS cycle_status, d.department_name " +
                      "FROM kpi_evaluations e " +
                      "JOIN users u ON e.employee_id = u.user_id " +
                      "LEFT JOIN users m ON e.manager_id = m.user_id " +
@@ -311,7 +347,7 @@ public class KpiDAO {
         // Match evaluations either by direct manager_id assignment,
         // OR by department (fallback when manager_id was not set during init).
         String sql = "SELECT e.*, u.full_name AS employee_name, u.username AS employee_code, " +
-                     "m.full_name AS manager_name, c.name AS cycle_name, d.department_name " +
+                     "m.full_name AS manager_name, c.name AS cycle_name, c.status AS cycle_status, d.department_name " +
                      "FROM kpi_evaluations e " +
                      "JOIN users u ON e.employee_id = u.user_id " +
                      "LEFT JOIN users m ON e.manager_id = m.user_id " +
@@ -345,7 +381,7 @@ public class KpiDAO {
     public List<KpiEvaluation> getEvaluationsByCycle(int cycleId) {
         List<KpiEvaluation> list = new ArrayList<>();
         String sql = "SELECT e.*, u.full_name AS employee_name, u.username AS employee_code, " +
-                     "m.full_name AS manager_name, c.name AS cycle_name, d.department_name " +
+                     "m.full_name AS manager_name, c.name AS cycle_name, c.status AS cycle_status, d.department_name " +
                      "FROM kpi_evaluations e " +
                      "JOIN users u ON e.employee_id = u.user_id " +
                      "LEFT JOIN users m ON e.manager_id = m.user_id " +
@@ -370,7 +406,7 @@ public class KpiDAO {
     public List<KpiEvaluation> getEvaluationsByEmployee(int employeeId) {
         List<KpiEvaluation> list = new ArrayList<>();
         String sql = "SELECT e.*, u.full_name AS employee_name, u.username AS employee_code, " +
-                     "m.full_name AS manager_name, c.name AS cycle_name, d.department_name " +
+                     "m.full_name AS manager_name, c.name AS cycle_name, c.status AS cycle_status, d.department_name " +
                      "FROM kpi_evaluations e " +
                      "JOIN users u ON e.employee_id = u.user_id " +
                      "LEFT JOIN users m ON e.manager_id = m.user_id " +
@@ -417,6 +453,9 @@ public class KpiDAO {
     }
 
     public boolean updateEvaluation(KpiEvaluation evaluation) {
+        if (isCycleLockedByEvaluationId(evaluation.getEvaluationId())) {
+            return false;
+        }
         String sql = "UPDATE kpi_evaluations SET score = ?, weighted_score = ?, status = ?, comment = ?, updated_by = ? WHERE evaluation_id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -434,6 +473,9 @@ public class KpiDAO {
     }
 
     public boolean updateEvaluationStatus(int evaluationId, String status, int userId, String note) {
+        if (isCycleLockedByEvaluationId(evaluationId)) {
+            return false;
+        }
         KpiEvaluation oldEval = getEvaluationById(evaluationId);
         if (oldEval == null) return false;
 
@@ -499,6 +541,9 @@ public class KpiDAO {
      * Automatically recalculates the raw score (average) and weighted score.
      */
     public boolean saveOrUpdateEvaluationItems(int evaluationId, List<KpiEvaluationItem> items, int updatedBy) {
+        if (isCycleLockedByEvaluationId(evaluationId)) {
+            return false;
+        }
         Connection conn = null;
         try {
             conn = DBContext.getConnection();
@@ -654,6 +699,9 @@ public class KpiDAO {
     }
 
     public boolean insertComment(KpiComment comment) {
+        if (isCycleLockedByEvaluationId(comment.getEvaluationId())) {
+            return false;
+        }
         String sql = "INSERT INTO kpi_comments (evaluation_id, user_id, comment_text, type) VALUES (?, ?, ?, ?)";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -820,6 +868,9 @@ public class KpiDAO {
         e.setEmployeeCode(rs.getString("employee_code"));
         e.setManagerName(rs.getString("manager_name"));
         e.setCycleName(rs.getString("cycle_name"));
+        try {
+            e.setCycleStatus(rs.getString("cycle_status"));
+        } catch (SQLException ignored) {}
         e.setDepartmentName(rs.getString("department_name"));
         return e;
     }

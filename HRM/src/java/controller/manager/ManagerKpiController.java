@@ -98,7 +98,8 @@ public class ManagerKpiController extends HttpServlet {
                 request.setAttribute("statusHistory", kpiDAO.getStatusHistory(editId));
                 request.setAttribute("auditLogs", kpiDAO.getAuditLogs(editId));
                 request.setAttribute("comments", kpiDAO.getComments(editId));
-                request.setAttribute("isEditMode", true);
+                boolean isLocked = kpiDAO.isCycleLockedByEvaluationId(editId);
+                request.setAttribute("isEditMode", !isLocked);
             }
         }
 
@@ -154,6 +155,11 @@ public class ManagerKpiController extends HttpServlet {
             }
 
             int evaluationId = Integer.parseInt(evaluationIdStr);
+            if (kpiDAO.isCycleLockedByEvaluationId(evaluationId)) {
+                response.getWriter().write("{\"status\":\"error\", \"message\":\"Đợt đánh giá đã khóa sổ (LOCKED), không thể chỉnh sửa\"}");
+                return;
+            }
+
             KpiEvaluation eval = kpiDAO.getEvaluationById(evaluationId);
 
             if (eval == null) {
@@ -210,7 +216,7 @@ public class ManagerKpiController extends HttpServlet {
                 response.getWriter().write("{\"status\":\"success\", \"score\":" + updatedEval.getScore() + 
                                            ", \"weightedScore\":" + updatedEval.getWeightedScore() + "}");
             } else {
-                response.getWriter().write("{\"status\":\"error\", \"message\":\"Lỗi hệ thống khi lưu\"}");
+                response.getWriter().write("{\"status\":\"error\", \"message\":\"Lỗi hệ thống hoặc đợt đánh giá đã khóa sổ\"}");
             }
 
         } else if ("addComment".equals(action)) {
@@ -220,6 +226,11 @@ public class ManagerKpiController extends HttpServlet {
 
             if (evaluationIdStr != null && !evaluationIdStr.isEmpty() && commentText != null && !commentText.trim().isEmpty()) {
                 int evaluationId = Integer.parseInt(evaluationIdStr);
+                if (kpiDAO.isCycleLockedByEvaluationId(evaluationId)) {
+                    response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?error=cycle_locked");
+                    return;
+                }
+
                 KpiEvaluation eval = kpiDAO.getEvaluationById(evaluationId);
 
                 if (eval != null) {
@@ -254,6 +265,11 @@ public class ManagerKpiController extends HttpServlet {
 
             if (evaluationIdStr != null && !evaluationIdStr.isEmpty()) {
                 int evaluationId = Integer.parseInt(evaluationIdStr);
+                if (kpiDAO.isCycleLockedByEvaluationId(evaluationId)) {
+                    response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?error=cycle_locked");
+                    return;
+                }
+
                 KpiEvaluation eval = kpiDAO.getEvaluationById(evaluationId);
 
                 if (eval != null) {
@@ -272,6 +288,11 @@ public class ManagerKpiController extends HttpServlet {
             String note = request.getParameter("note");
             if (cycleIdStr != null && !cycleIdStr.isEmpty()) {
                 int cycleId = Integer.parseInt(cycleIdStr);
+                if (kpiDAO.isCycleLocked(cycleId)) {
+                    response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?cycleId=" + cycleId + "&error=cycle_locked");
+                    return;
+                }
+
                 List<KpiEvaluation> evals = kpiDAO.getEvaluationsByCycleAndManager(cycleId, user.getUserId());
                 int successCount = 0;
                 for (KpiEvaluation eval : evals) {

@@ -75,6 +75,10 @@ public class EmployeeKpiController extends HttpServlet {
 
             if (evaluationIdStr != null && !evaluationIdStr.isEmpty() && commentText != null && !commentText.trim().isEmpty()) {
                 int evaluationId = Integer.parseInt(evaluationIdStr);
+                if (kpiDAO.isCycleLockedByEvaluationId(evaluationId)) {
+                    response.sendRedirect(request.getContextPath() + "/employee/kpi-view?id=" + evaluationId + "&error=cycle_locked");
+                    return;
+                }
                 KpiEvaluation eval = kpiDAO.getEvaluationById(evaluationId);
 
                 // Access control
