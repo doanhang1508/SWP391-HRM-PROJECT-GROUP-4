@@ -254,14 +254,18 @@ public class ImportAttendanceController extends HttpServlet {
                     } else {
                         String timeStr = getStringCell(row, 3);
                         if (timeStr != null && !timeStr.trim().isEmpty()) {
+                            timeStr = timeStr.replace("//", "/").replace("  ", " ").trim();
                             String[] formats = {
+                                "dd/MM/yyyy hh:mm a", "dd/MM/yyyy hh:mm:ss a",
+                                "yyyy-MM-dd hh:mm a", "yyyy-MM-dd hh:mm:ss a",
                                 "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss",
                                 "dd/MM/yyyy HH:mm", "yyyy-MM-dd HH:mm",
                                 "dd-MM-yyyy HH:mm:ss", "dd-MM-yyyy HH:mm"
                             };
                             for (String fmt : formats) {
                                 try {
-                                    dateTime = new java.text.SimpleDateFormat(fmt).parse(timeStr.trim());
+                                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(fmt, java.util.Locale.ENGLISH);
+                                    dateTime = sdf.parse(timeStr);
                                     break;
                                 } catch (Exception ignored) {}
                             }
