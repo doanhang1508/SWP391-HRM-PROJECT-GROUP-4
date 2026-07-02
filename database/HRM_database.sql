@@ -747,11 +747,11 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 
 -- ── 16a. Users cốt lõi (user_id 1-5) ──
 INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
-(1,'admin',     '@123456','Quản Trị Viên',          'admin@hrm.com',     '0900000001',1,NULL,NULL),
-(2,'giam_doc',  '@123456','Nguyễn Văn Giám Đốc',    'giamdoc@hrm.com',   '0901000002',4,1,1),
-(3,'hr_manager','@123456','Trần Thị Nhân Sự',       'hr@hrm.com',        '0901000003',2,2,2),
-(4,'quan_doc',  '@123456','Lê Văn Quản Đốc',        'quandoc@hrm.com',   '0901000004',3,5,4),
-(5,'cong_nhan', '@123456','Phạm Công Nhân',          'cn1@hrm.com',       '0901000005',7,5,9);
+(1,'admin',     '$2a$12$rYoA1kECJ6UezPnfPqISP.Gg1Goc4FUiqLGQIFBOHqFbiBis2C4.i','Quản Trị Viên',          'admin@hrm.com',     '0900000001',1,NULL,NULL),
+(2,'giam_doc',  '$2a$12$VmGdTMHeOmArIfaKnIm7KuR4IeZScPaJatyvb8aq6bQDqDUvU0FWe','Nguyễn Văn Giám Đốc',    'giamdoc@hrm.com',   '0901000002',4,1,1),
+(3,'hr_manager','$2a$12$KlvlpagR4obNSuv2XfM32uWEVqKfNFT5t5JUzRMCrYGi.1QetPgEy','Trần Thị Nhân Sự',       'hr@hrm.com',        '0901000003',2,2,2),
+(4,'quan_doc',  '$2a$12$Pz91uQpiTf8GgwrkbiA/ReDRjxRk48K4lu2Y5yxLGlxQQutJ2xUIm','Lê Văn Quản Đốc',        'quandoc@hrm.com',   '0901000004',3,5,4),
+(5,'cong_nhan', '$2a$12$9rsQL.viVSSU3uxAqO4aI.LVVYSyc6i1BaZSvrF5SPnAKijaaMmFK','Phạm Công Nhân',          'cn1@hrm.com',       '0901000005',7,5,9);
 
 -- ── 16b. Profiles users 2-5 ──
 INSERT INTO employee_profiles (user_id,department_id,id_card,dob,gender,address,hire_date,tax_code,social_insurance_no,bank_account,bank_name,contract_type_id,salary_grade_id,employment_status_id,education_level_id) VALUES
@@ -764,25 +764,25 @@ INSERT INTO employee_profiles (user_id,department_id,id_card,dob,gender,address,
 
 -- Phòng Hành Chính (dept=1)
 INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
-(6, 'tp_hanh_chinh','@123456','Đỗ Thị Hà',    'tp_hc@hrm.com',  '0901000006',6,1,2);
+(6, 'tp_hanh_chinh','$2a$12$iXJpwqZER8kK7i8kvvEGO.jfomkoEBpy3Nd8JwXQJ7pFXGtJX6JsC','Đỗ Thị Hà',    'tp_hc@hrm.com',  '0901000006',6,1,2);
 
 -- Phòng Nhân Sự (dept=2)
 INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
-(10,'hr_staff_01','@123456','Đặng Thị Hồng','hrs1@hrm.com','0901000010',5,2,8);
+(10,'hr_staff_01','$2a$12$TU4.I9PDJz5rYNR1fF7QNeAOwik010Ta6Pvihh7xhZHA3mmLxWF0C','Đặng Thị Hồng','hrs1@hrm.com','0901000010',5,2,8);
 
 -- Phòng Kế Toán (dept=3)
 INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
-(14,'ke_toan_truong','@123456','Phan Thị Khánh','ktt@hrm.com',    '0901000014',6,3,6);
+(14,'ke_toan_truong','$2a$12$CX4AKldReVh0P34bzQGNOeTYMKuSgZ/BScaFnB2mdUJ7mMaku/K3W','Phan Thị Khánh','ktt@hrm.com',    '0901000014',6,3,6);
 
 -- Phòng Kinh Doanh (dept=4)
 INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
-(19,'tp_kinh_doanh','@123456','Hoàng Văn Lộc', 'tp_kd@hrm.com',  '0901000019',6,4,2),
-(20,'pp_kinh_doanh','@123456','Vũ Thị Thủy',   'pp_kd@hrm.com',  '0901000020',7,4,3);
+(19,'tp_kinh_doanh','$2a$12$IYsk5pMFaUR2Fi5y4evcN.d2.lVrO7aHpCHjUxpLywiQsJ3EnFuz.','Hoàng Văn Lộc', 'tp_kd@hrm.com',  '0901000019',6,4,2),
+(20,'pp_kinh_doanh','$2a$12$84xjtVEmBcw2CbrX2ERHueEVouBMPPWQKdkJvGbYQwqrH1AbFun8.','Vũ Thị Thủy',   'pp_kd@hrm.com',  '0901000020',7,4,3);
 
 -- Xưởng Sản Xuất (dept=5) + Ke Toan
 INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
-(33, 'ke_toan_01', '@123456', 'Nguyễn Thị Kế Toán', 'ketoan01@hrm.com', '0901000033', 8, 3, 7),
-(11, 'nv_nghi_viec', '@123456', 'Nguyễn Văn Đã Nghỉ', 'nghiviec@hrm.com', '0901000011', 7, 5, 9);
+(33, 'ke_toan_01', '$2a$12$6P4evU5n2Vb5yujdiEVTo.X9yVsr4m0wVGnzr..W2DCY4j1WposdW', 'Nguyễn Thị Kế Toán', 'ketoan01@hrm.com', '0901000033', 8, 3, 7),
+(11, 'nv_nghi_viec', '$2a$12$w5u/sMxKGlOB7jPBXU1FK.ULSY5NkOptWLXDNfg8mRGNtbBCBIjKS', 'Nguyễn Văn Đã Nghỉ', 'nghiviec@hrm.com', '0901000011', 7, 5, 9);
 
 -- ── Profiles quản lý ──
 -- Format: (uid, dept_id, id_card, dob, gender, address, hire_date, tax_code, social_insurance_no, bank_account, bank_name, ct, sg, es, el)

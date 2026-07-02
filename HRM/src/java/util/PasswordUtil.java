@@ -25,12 +25,6 @@ public class PasswordUtil {
         if (hashed == null || hashed.isEmpty()) {
             return false;
         }
-        
-        // CỰC KỲ QUAN TRỌNG: Hỗ trợ mật khẩu chưa mã hóa (Plain text)
-        // Dùng để test dữ liệu mẫu nhập tay vào DB (123456)
-        if (!hashed.startsWith("$2a$") && !hashed.startsWith("$2b$") && !hashed.startsWith("$2y$")) {
-            return password.trim().equals(hashed.trim());
-        }
 
         try {
             return BCrypt.checkpw(password, hashed);
