@@ -49,6 +49,31 @@ public class ImportAttendanceController extends HttpServlet {
             return;
         }
 
+        String action = request.getParameter("action");
+        if ("checkLock".equals(action)) {
+            String monthStr = request.getParameter("month");
+            String yearStr = request.getParameter("year");
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            PrintWriter out = null;
+            try {
+                out = response.getWriter();
+                int month = monthStr != null ? Integer.parseInt(monthStr) : LocalDate.now().getMonthValue();
+                int year = yearStr != null ? Integer.parseInt(yearStr) : LocalDate.now().getYear();
+                boolean isLocked = attendanceDAO.isMonthLocked(month, year);
+                out.print("{\"isLocked\": " + isLocked + "}");
+            } catch (Exception e) {
+                if (out != null) {
+                    out.print("{\"isLocked\": false}");
+                }
+            } finally {
+                if (out != null) {
+                    out.flush();
+                }
+            }
+            return;
+        }
+
         LocalDate now = LocalDate.now();
         request.setAttribute("currentMonth", now.getMonthValue());
         request.setAttribute("currentYear", now.getYear());
@@ -106,17 +131,11 @@ public class ImportAttendanceController extends HttpServlet {
                 return;
             }
 
-            int currentMonth = LocalDate.now().getMonthValue();
-            int currentYear = LocalDate.now().getYear();
-            if (year != currentYear || month != currentMonth) {
-                session.setAttribute("errorMessage", "Hệ thống chỉ cho phép import chấm công cho tháng hiện tại (" + currentMonth + "/" + currentYear + ").");
-                response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
-                return;
-            }
-
-            if (attendanceDAO.isMonthLocked(month, year)) {
+            boolean isLocked = attendanceDAO.isMonthLocked(month, year);
+            String confirmedLocked = request.getParameter("confirmedLocked");
+            if (isLocked && !"true".equals(confirmedLocked)) {
                 session.setAttribute("errorMessage",
-                        "Tháng " + month + "/" + year + " đã bị khóa. Không thể import.");
+                        "Tháng " + month + "/" + year + " đã bị khóa. Vui lòng xác nhận trước khi import.");
                 response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
                 return;
             }

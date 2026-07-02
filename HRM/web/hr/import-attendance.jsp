@@ -152,6 +152,7 @@
             <form method="post" action="${pageContext.request.contextPath}/hr/import-attendance"
                   enctype="multipart/form-data" id="importForm">
                 <input type="hidden" name="action" value="import">
+                <input type="hidden" name="confirmedLocked" id="confirmedLocked" value="false">
 
                 <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
                     <i class="fas fa-file-excel" style="color:#1D6F42"></i>
@@ -233,19 +234,50 @@
 
     const importMonthSelect = document.getElementById('importMonthSelect');
     const importYearSelect = document.getElementById('importYearSelect');
-    const sysCurrentMonth = ${currentMonth};
-    const sysCurrentYear = ${currentYear};
+    const importForm = document.getElementById('importForm');
+    const confirmedLockedInput = document.getElementById('confirmedLocked');
 
-    function validateSelection() {
-        if (parseInt(importMonthSelect.value) !== sysCurrentMonth || parseInt(importYearSelect.value) !== sysCurrentYear) {
-            alert("Hệ thống chỉ cho phép import chấm công cho tháng hiện tại (" + sysCurrentMonth + "/" + sysCurrentYear + "). Bạn không thể chọn tháng/năm khác!");
-            importMonthSelect.value = sysCurrentMonth;
-            importYearSelect.value = sysCurrentYear;
+    importForm.addEventListener('submit', function(e) {
+        if (confirmedLockedInput.value === 'true') {
+            return; // Allow standard submission
         }
-    }
+        e.preventDefault(); // Intercept submission
 
-    importMonthSelect.addEventListener('change', validateSelection);
-    importYearSelect.addEventListener('change', validateSelection);
+        const month = importMonthSelect.value;
+        const year = importYearSelect.value;
+
+        // Disable button during AJAX check
+        const originalBtnText = importBtn.innerHTML;
+        importBtn.disabled = true;
+        importBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang kiểm tra...';
+
+        // Call the checkLock action on the controller
+        fetch(`${pageContext.request.contextPath}/hr/import-attendance?action=checkLock&month=${month}&year=${year}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.isLocked) {
+                    const confirmMsg = `Tháng ${month}/${year} đã ở trạng thái ĐÃ KHÓA CÔNG. Bạn có chắc chắn muốn tiếp tục import file chấm công vào tháng cũ đã khóa này không?`;
+                    if (confirm(confirmMsg)) {
+                        confirmedLockedInput.value = 'true';
+                        importForm.submit();
+                    } else {
+                        // Restore button
+                        importBtn.disabled = false;
+                        importBtn.innerHTML = originalBtnText;
+                    }
+                } else {
+                    confirmedLockedInput.value = 'false';
+                    importForm.submit();
+                }
+            })
+            .catch(error => {
+                console.error('Error checking lock status:', error);
+                // Restore button and submit
+                importBtn.disabled = false;
+                importBtn.innerHTML = originalBtnText;
+                importForm.submit();
+            });
+    });
 </script>
 
 <jsp:include page="../footer.jsp" />
