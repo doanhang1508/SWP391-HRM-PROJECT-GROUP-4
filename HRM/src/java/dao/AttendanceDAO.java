@@ -817,6 +817,38 @@ public class AttendanceDAO {
         return list;
     }
 
+    public model.AttendanceSummary getAttendanceSummaryForUser(int userId, int month, int year) {
+        String sql = "SELECT " +
+                     "SUM(CASE WHEN UPPER(status) IN ('PRESENT', 'P', 'LATE', 'T') THEN 1 ELSE 0 END) AS present_cnt, " +
+                     "SUM(CASE WHEN UPPER(status) IN ('LATE', 'T') THEN 1 ELSE 0 END) AS late_cnt, " +
+                     "SUM(CASE WHEN UPPER(status) IN ('ABSENT', 'A', 'LEAVE') THEN 1 ELSE 0 END) AS absent_cnt, " +
+                     "SUM(CASE WHEN overtime_hrs > 0 THEN 1 ELSE 0 END) AS ot_cnt, " +
+                     "SUM(IFNULL(overtime_hrs, 0)) AS total_ot_hrs " +
+                     "FROM attendance WHERE user_id=? AND MONTH(work_date)=? AND YEAR(work_date)=? ";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    model.AttendanceSummary s = new model.AttendanceSummary();
+                    s.setUserId(userId);
+                    s.setPresentCount(rs.getInt("present_cnt"));
+                    s.setLateCount(rs.getInt("late_cnt"));
+                    s.setAbsentCount(rs.getInt("absent_cnt"));
+                    s.setOvertimeCount(rs.getInt("ot_cnt"));
+                    s.setTotalOvertimeHrs(rs.getDouble("total_ot_hrs"));
+                    return s;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public List<Attendance> getAllAttendance(int month, int year, String userName, java.sql.Date workDate) {
         List<Attendance> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(

@@ -261,6 +261,23 @@ public class TransferRequestDAO {
         return false;
     }
 
+    public List<TransferRequest> getByEmployeeId(int employeeId) {
+        List<TransferRequest> list = new ArrayList<>();
+        String sql = BASE_SELECT_SQL + "WHERE tr.employee_id = ? ORDER BY tr.created_at DESC";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     /**
      * Giữ được khả năng tương thích ngược với các nơi gọi hasPendingRequest cũ.
      * @deprecated Dùng hasPendingOrInProgressRequest() thay thế

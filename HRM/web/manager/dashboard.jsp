@@ -145,13 +145,13 @@ body {
             <div class="dash-charts-grid">
                 <div class="dash-card">
                     <div class="dash-card-header">
-                        <h3 class="dash-card-title">Hiệu Suất Sản Xuất / Công Việc</h3>
+                        <h3 class="dash-card-title">Tỷ Lệ Điểm Danh 7 Ngày Qua</h3>
                     </div>
                     <div style="height:300px;"><canvas id="performanceChart"></canvas></div>
                 </div>
                 <div class="dash-card">
                     <div class="dash-card-header">
-                        <h3 class="dash-card-title">Phân Bổ Ca Làm Việc</h3>
+                        <h3 class="dash-card-title">Phân Bổ Ca Làm Việc Hôm Nay</h3>
                     </div>
                     <div style="height:300px;"><canvas id="shiftChart"></canvas></div>
                 </div>
@@ -164,22 +164,65 @@ body {
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const perfLabels = [
+        <c:forEach var="lbl" items="${perfLabels}" varStatus="status">
+            '${lbl}'${not status.last ? ',' : ''}
+        </c:forEach>
+    ];
+    const perfTarget = [
+        <c:forEach var="tgt" items="${perfTarget}" varStatus="status">
+            ${tgt}${not status.last ? ',' : ''}
+        </c:forEach>
+    ];
+    const perfActual = [
+        <c:forEach var="act" items="${perfActual}" varStatus="status">
+            ${act}${not status.last ? ',' : ''}
+        </c:forEach>
+    ];
+
+    const shiftLabels = [
+        <c:forEach var="lbl" items="${shiftLabels}" varStatus="status">
+            '${lbl}'${not status.last ? ',' : ''}
+        </c:forEach>
+    ];
+    const shiftData = [
+        <c:forEach var="val" items="${shiftData}" varStatus="status">
+            ${val}${not status.last ? ',' : ''}
+        </c:forEach>
+    ];
+
     new Chart(document.getElementById('performanceChart').getContext('2d'), {
         type: 'bar',
         data: {
-            labels: ['Tuần 1','Tuần 2','Tuần 3','Tuần 4'],
+            labels: perfLabels,
             datasets: [
-                { label:'Mục tiêu', data:[100,100,100,100], backgroundColor:'rgba(148,163,184,0.3)', borderRadius:4 },
-                { label:'Thực tế', data:[95,102,98,105], backgroundColor:'#0d9488', borderRadius:4 }
+                { label:'Mục tiêu (Tổng nhân sự)', data: perfTarget, backgroundColor:'rgba(148,163,184,0.3)', borderRadius:4 },
+                { label:'Thực tế (Có mặt)', data: perfActual, backgroundColor:'#0d9488', borderRadius:4 }
             ]
         },
-        options: { responsive:true, maintainAspectRatio:false }
+        options: { 
+            responsive:true, 
+            maintainAspectRatio:false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
     });
+
     new Chart(document.getElementById('shiftChart').getContext('2d'), {
         type: 'pie',
         data: {
-            labels: ['Ca Hành Chính','Ca Đêm 1','Ca Đêm 2','Nghỉ'],
-            datasets: [{ data:[40,25,20,15], backgroundColor:['#10b981','#f59e0b','#6366f1','#dd6b20'], borderWidth:2 }]
+            labels: shiftLabels,
+            datasets: [{ 
+                data: shiftData, 
+                backgroundColor: ['#10b981','#f59e0b','#6366f1','#dd6b20','#3b82f6','#ec4899','#6b7280'], 
+                borderWidth:2 
+            }]
         },
         options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right' } } }
     });

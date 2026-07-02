@@ -15,8 +15,17 @@ import jakarta.servlet.http.HttpSession;
 
 import model.ShiftAssignment;
 import model.User;
+import model.ResignationRequest;
+import model.TransferRequest;
+import model.KpiEvaluation;
 import dao.ShiftAssignmentDAO;
 import dao.ShiftAssignmentDAOImpl;
+import dao.ResignationDAO;
+import dao.TransferRequestDAO;
+import dao.KpiDAO;
+import dao.LeaveRequestDAO;
+import dao.LeaveRequestDAOImpl;
+import dao.AttendanceDAO;
 
 /**
  * EmployeeDashboardController — Employee dashboard with real shift data.
@@ -26,10 +35,20 @@ import dao.ShiftAssignmentDAOImpl;
 public class employeeDashboardController extends HttpServlet {
 
     private ShiftAssignmentDAO assignmentService;
+    private ResignationDAO resignationDAO;
+    private TransferRequestDAO transferRequestDAO;
+    private KpiDAO kpiDAO;
+    private LeaveRequestDAO leaveRequestDAO;
+    private AttendanceDAO attendanceDAO;
 
     @Override
     public void init() throws ServletException {
         assignmentService = new ShiftAssignmentDAOImpl();
+        resignationDAO = new ResignationDAO();
+        transferRequestDAO = new TransferRequestDAO();
+        kpiDAO = new KpiDAO();
+        leaveRequestDAO = new LeaveRequestDAOImpl();
+        attendanceDAO = new AttendanceDAO();
     }
 
     @Override
@@ -65,6 +84,29 @@ public class employeeDashboardController extends HttpServlet {
             request.setAttribute("weekAssignments", weekAssignments);
             request.setAttribute("weekDates", weekDates);
             request.setAttribute("weekStart", weekStart);
+
+            // ── Fetch Resignation, Transfer, and KPI details ──
+            List<ResignationRequest> resignations = resignationDAO.getByUserId(currentUser.getUserId());
+            ResignationRequest latestResignation = resignations.isEmpty() ? null : resignations.get(0);
+            request.setAttribute("latestResignation", latestResignation);
+
+            List<TransferRequest> transfers = transferRequestDAO.getByEmployeeId(currentUser.getUserId());
+            TransferRequest latestTransfer = transfers.isEmpty() ? null : transfers.get(0);
+            request.setAttribute("latestTransfer", latestTransfer);
+
+            List<KpiEvaluation> kpis = kpiDAO.getEvaluationsByEmployee(currentUser.getUserId());
+            KpiEvaluation latestKpi = kpis.isEmpty() ? null : kpis.get(0);
+            request.setAttribute("latestKpi", latestKpi);
+
+            double remainingLeave = 12.0;
+            try {
+                remainingLeave = leaveRequestDAO.checkRemainingLeaveBalance(currentUser.getUserId(), 1);
+            } catch (Exception e) {}
+            request.setAttribute("remainingLeave", remainingLeave);
+
+            model.AttendanceSummary attendanceSummary = attendanceDAO.getAttendanceSummaryForUser(
+                    currentUser.getUserId(), today.getMonthValue(), today.getYear());
+            request.setAttribute("attendanceSummary", attendanceSummary);
 
             request.getRequestDispatcher("/employee/dashboard.jsp").forward(request, response);
         }

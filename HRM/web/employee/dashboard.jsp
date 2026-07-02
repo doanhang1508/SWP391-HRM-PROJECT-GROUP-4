@@ -269,15 +269,15 @@
                     <div class="stat-row">
                         <div class="stat-icon blue"><i class="fas fa-calendar-check"></i></div>
                         <div class="stat-content">
-                            <h5>22 / 24</h5>
-                            <span>Ngày công tiêu chuẩn</span>
+                            <h5>${not empty attendanceSummary ? attendanceSummary.presentCount : 0} ngày</h5>
+                            <span>Ngày công thực tế (Tháng này)</span>
                         </div>
                     </div>
 
                     <div class="stat-row">
                         <div class="stat-icon orange"><i class="fas fa-business-time"></i></div>
                         <div class="stat-content">
-                            <h5>12.5h</h5>
+                            <h5>${not empty attendanceSummary ? attendanceSummary.totalOvertimeHrs : 0.0}h</h5>
                             <span>Giờ tăng ca (OT)</span>
                         </div>
                     </div>
@@ -285,9 +285,145 @@
                     <div class="stat-row">
                         <div class="stat-icon green"><i class="fas fa-umbrella-beach"></i></div>
                         <div class="stat-content">
-                            <h5>10 ngày</h5>
+                            <h5>${remainingLeave} ngày</h5>
                             <span>Phép năm còn lại</span>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row: Personal Requests & KPI -->
+        <div class="row g-4 mb-4">
+            <!-- Resignation Status -->
+            <div class="col-md-4">
+                <div class="emp-card h-100">
+                    <div class="emp-card-header">
+                        <span class="emp-card-title">
+                            <i class="fas fa-user-minus text-danger"></i>
+                            Đơn xin thôi việc
+                        </span>
+                    </div>
+                    <div class="p-3" style="min-height: 140px;">
+                        <c:choose>
+                            <c:when test="${not empty latestResignation}">
+                                <div class="mb-2">
+                                    <span class="text-muted d-block small">Ngày gửi:</span>
+                                    <strong><fmt:formatDate value="${latestResignation.createdAt}" pattern="dd/MM/yyyy HH:mm" /></strong>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-muted d-block small">Lý do:</span>
+                                    <span class="text-truncate d-block" title="${latestResignation.reason}">${latestResignation.reason}</span>
+                                </div>
+                                <div>
+                                    <span class="text-muted d-block small">Trạng thái:</span>
+                                    <c:choose>
+                                        <c:when test="${latestResignation.status == 'Approved'}">
+                                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Đã duyệt</span>
+                                        </c:when>
+                                        <c:when test="${latestResignation.status == 'Rejected'}">
+                                            <span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i>Từ chối</span>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <span class="badge bg-warning text-dark"><i class="fas fa-hourglass-half me-1"></i>Chờ duyệt</span>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </div>
+                            </c:when>
+                            <c:otherwise>
+                                <div class="text-center py-4 text-muted">
+                                    <i class="fas fa-check-circle fa-2x mb-2 text-success"></i>
+                                    <p class="mb-0 small">Không có yêu cầu thôi việc nào</p>
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transfer Status -->
+            <div class="col-md-4">
+                <div class="emp-card h-100">
+                    <div class="emp-card-header">
+                        <span class="emp-card-title">
+                            <i class="fas fa-exchange-alt text-primary"></i>
+                            Yêu cầu điều chuyển
+                        </span>
+                    </div>
+                    <div class="p-3" style="min-height: 140px;">
+                        <c:choose>
+                            <c:when test="${not empty latestTransfer}">
+                                <div class="mb-2">
+                                    <span class="text-muted d-block small">Ngày gửi:</span>
+                                    <strong><fmt:formatDate value="${latestTransfer.createdAt}" pattern="dd/MM/yyyy HH:mm" /></strong>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-muted d-block small">Bộ phận mới:</span>
+                                    <span>${latestTransfer.newDepartmentName}</span>
+                                </div>
+                                <div>
+                                    <span class="text-muted d-block small">Trạng thái:</span>
+                                    <c:choose>
+                                        <c:when test="${latestTransfer.status == 'Approved'}">
+                                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Đã duyệt</span>
+                                        </c:when>
+                                        <c:when test="${latestTransfer.status == 'Rejected'}">
+                                            <span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i>Từ chối</span>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <span class="badge bg-warning text-dark"><i class="fas fa-hourglass-half me-1"></i>Chờ duyệt</span>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </div>
+                            </c:when>
+                            <c:otherwise>
+                                <div class="text-center py-4 text-muted">
+                                    <i class="fas fa-route fa-2x mb-2 text-primary"></i>
+                                    <p class="mb-0 small">Không có yêu cầu điều chuyển nào</p>
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI score -->
+            <div class="col-md-4">
+                <div class="emp-card h-100">
+                    <div class="emp-card-header">
+                        <span class="emp-card-title">
+                            <i class="fas fa-award text-warning"></i>
+                            KPI & Hiệu suất mới nhất
+                        </span>
+                    </div>
+                    <div class="p-3" style="min-height: 140px;">
+                        <c:choose>
+                            <c:when test="${not empty latestKpi}">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="me-3 bg-warning-subtle text-warning p-2 rounded-circle text-center d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(246, 173, 85, 0.2);">
+                                        <i class="fas fa-star fa-lg"></i>
+                                    </div>
+                                    <div>
+                                        <span class="text-muted d-block small">Điểm đánh giá:</span>
+                                        <h4 class="mb-0 text-warning font-weight-bold" style="font-weight: 700;">${latestKpi.score} / 100</h4>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-muted d-block small">Kỳ đánh giá:</span>
+                                    <span>${latestKpi.cycleName}</span>
+                                </div>
+                                <div>
+                                    <span class="text-muted d-block small">Nhận xét:</span>
+                                    <span class="text-muted d-block text-truncate fst-italic" title="${latestKpi.comment}">${latestKpi.comment}</span>
+                                </div>
+                            </c:when>
+                            <c:otherwise>
+                                <div class="text-center py-4 text-muted">
+                                    <i class="fas fa-award fa-2x mb-2 text-warning"></i>
+                                    <p class="mb-0 small">Chưa có đánh giá KPI nào</p>
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
                     </div>
                 </div>
             </div>
