@@ -919,7 +919,6 @@ INSERT INTO position_allowances (position_id, allowance_id) VALUES (9, 1), (9, 2
 
 -- Seed data for seniority_rules
 INSERT INTO seniority_rules (min_months, max_months, amount) VALUES 
-(12, 35, 200000),  -- 1 to <3 years
 (36, 59, 300000),  -- 3 to <5 years
 (60, 119, 500000), -- 5 to <10 years
 (120, NULL, 1000000);
