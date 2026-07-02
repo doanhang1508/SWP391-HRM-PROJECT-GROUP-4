@@ -514,69 +514,79 @@ public class PayrollDAO {
     public AllowanceResult calculateAllowances(
             int empId, int activeContractId,
             double actualWorkDays, double standardWorkDays, int month, int year) {
-        /*
-         * Logic láº¥y phá»¥ cáº¥p:
-         *   - contract_id = activeContractId  â†’ Phá»¥ cáº¥p "cam káº¿t" Ä‘Ã£ ghi vÃ o há»£p Ä‘á»“ng/phá»¥ lá»¥c
-         *   - contract_id IS NULL            â†’ Phá»¥ cáº¥p "váº­n hÃ nh" (Äƒn ca, Ä‘i láº¡i...), Ã¡p dá»¥ng chung
-         * Tá»· lá»‡ BHXH chá»‰ tÃ­nh trÃªn phá»¥ cáº¥p cÃ³ is_bhxh_applied = 1.
-         */
-        String sql;
-        if (activeContractId > 0) {
-            sql = "SELECT a.amount, a.calculation_type, a.is_bhxh_applied " +
-                  "FROM employee_allowances ea " +
-                  "JOIN allowances a ON ea.allowance_id = a.allowance_id " +
-                  "WHERE ea.user_id = ? AND a.status = 1 " +
-                  "  AND ea.contract_id = ?";
-        } else {
-            // KhÃ´ng cÃ³ há»£p Ä‘á»“ng -> KhÃ´ng cÃ³ phá»¥ cáº¥p
+        if (activeContractId <= 0) {
             return new AllowanceResult(BigDecimal.ZERO, BigDecimal.ZERO);
+        }
+
+        int positionId = -1;
+        String sqlPos = "SELECT position_id FROM employee_contracts WHERE contract_id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sqlPos)) {
+            ps.setInt(1, activeContractId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) positionId = rs.getInt("position_id");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
 
         BigDecimal totalAllowance = BigDecimal.ZERO;
         BigDecimal bhxhBaseFromAllowances = BigDecimal.ZERO;
 
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, empId);
-            if (activeContractId > 0) ps.setInt(2, activeContractId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    BigDecimal amount      = rs.getBigDecimal("amount");
-                    String calcType        = rs.getString("calculation_type");
-                    boolean isBhxhApplied  = rs.getInt("is_bhxh_applied") == 1;
+        if (positionId > 0) {
+            String sql = "SELECT a.amount, a.calculation_type, a.is_bhxh_applied " +
+                         "FROM position_allowances pa " +
+                         "JOIN allowances a ON pa.allowance_id = a.allowance_id " +
+                         "WHERE pa.position_id = ? AND a.status = 1";
+            try (Connection conn = DBContext.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, positionId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        BigDecimal amount      = rs.getBigDecimal("amount");
+                        String calcType        = rs.getString("calculation_type");
+                        boolean isBhxhApplied  = rs.getInt("is_bhxh_applied") == 1;
 
-                    if (amount == null) continue;
+                        if (amount == null) continue;
 
-                    BigDecimal earned;
-                    switch (calcType != null ? calcType : "FIXED") {
-                        case "PER_DAY" -> {
-                            // TÃ­nh theo ngÃ y cÃ´ng thá»±c táº¿ (vÃ­ dá»¥: Äƒn ca)
-                            if (standardWorkDays > 0) {
-                                BigDecimal dailyRate = amount.divide(
-                                    new BigDecimal(String.valueOf(standardWorkDays)), 4, java.math.RoundingMode.HALF_UP);
-                                earned = dailyRate.multiply(new BigDecimal(String.valueOf(actualWorkDays)))
-                                    .setScale(2, java.math.RoundingMode.HALF_UP);
-                            } else {
-                                earned = BigDecimal.ZERO;
+                        BigDecimal earned;
+                        switch (calcType != null ? calcType : "FIXED") {
+                            case "PER_DAY" -> {
+                                if (standardWorkDays > 0) {
+                                    BigDecimal dailyRate = amount.divide(
+                                        new BigDecimal(String.valueOf(standardWorkDays)), 4, java.math.RoundingMode.HALF_UP);
+                                    earned = dailyRate.multiply(new BigDecimal(String.valueOf(actualWorkDays)))
+                                        .setScale(2, java.math.RoundingMode.HALF_UP);
+                                } else {
+                                    earned = BigDecimal.ZERO;
+                                }
                             }
+                            case "CONDITIONAL" -> {
+                                boolean hasUnexcused = hasUnexcusedAbsence(empId, month, year);
+                                earned = hasUnexcused ? BigDecimal.ZERO : amount;
+                            }
+                            default -> earned = amount; // FIXED
                         }
-                        case "CONDITIONAL" -> {
-                            // Tráº£ Ä‘á»§ náº¿u khÃ´ng cÃ³ ngÃ y ABSENT khÃ´ng phÃ©p trong thÃ¡ng
-                            boolean hasUnexcused = hasUnexcusedAbsence(empId, month, year);
-                            earned = hasUnexcused ? BigDecimal.ZERO : amount;
-                        }
-                        default -> earned = amount; // FIXED
-                    }
 
-                    totalAllowance = totalAllowance.add(earned);
-                    if (isBhxhApplied) {
-                        bhxhBaseFromAllowances = bhxhBaseFromAllowances.add(earned);
+                        totalAllowance = totalAllowance.add(earned);
+                        if (isBhxhApplied) {
+                            bhxhBaseFromAllowances = bhxhBaseFromAllowances.add(earned);
+                        }
                     }
                 }
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
+
+        // Add Seniority Allowance
+        AllowanceDAO alwDao = new AllowanceDAO();
+        int tenureMonths = alwDao.getTenureMonths(empId);
+        BigDecimal seniorityAmount = alwDao.getSeniorityAmount(tenureMonths);
+        if (seniorityAmount.compareTo(BigDecimal.ZERO) > 0) {
+            totalAllowance = totalAllowance.add(seniorityAmount);
+        }
+
         return new AllowanceResult(totalAllowance, bhxhBaseFromAllowances);
     }
 
@@ -597,7 +607,7 @@ public class PayrollDAO {
         return false;
     }
 
-    /** Káº¿t quáº£ tÃ­nh phá»¥ cáº¥p: tá»•ng phá»¥ cáº¥p vÃ  pháº§n thuá»™c ná»n BHXH */
+    /** Káº¿t quáº£ tÃ­nh phá»¥ cáº¥p: tá»•ng phá»¥ cáº¥p vÃ  pháº§n thuá»™c ná» n BHXH */
     public static class AllowanceResult {
         public final BigDecimal totalAmount;
         public final BigDecimal bhxhBase;
@@ -607,24 +617,36 @@ public class PayrollDAO {
         }
     }
 
-    /** Giá»¯ láº¡i method cÅ© Ä‘á»ƒ backward-compatible, gá»i sang method má»›i */
+    /** Giữ lại method cũ để backward-compatible */
     public BigDecimal getFixedAllowances(int empId) {
-        String sql = "SELECT SUM(a.amount) FROM employee_allowances ea " +
-                     "JOIN allowances a ON ea.allowance_id = a.allowance_id " +
-                     "WHERE ea.user_id = ? AND a.status = 1 AND a.calculation_type = 'FIXED'";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, empId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    BigDecimal total = rs.getBigDecimal(1);
-                    return total != null ? total : BigDecimal.ZERO;
+        BigDecimal total = BigDecimal.ZERO;
+        // Lấy contract hiện tại
+        EmployeeContractDAO ecDao = new EmployeeContractDAO();
+        EmployeeContract c = ecDao.getActiveContract(empId);
+        if (c != null && c.getPositionId() > 0) {
+            String sql = "SELECT SUM(a.amount) FROM position_allowances pa " +
+                         "JOIN allowances a ON pa.allowance_id = a.allowance_id " +
+                         "WHERE pa.position_id = ? AND a.status = 1 AND a.calculation_type = 'FIXED'";
+            try (Connection conn = DBContext.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, c.getPositionId());
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        BigDecimal amt = rs.getBigDecimal(1);
+                        if (amt != null) total = total.add(amt);
+                    }
                 }
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
-        return BigDecimal.ZERO;
+        
+        AllowanceDAO alwDao = new AllowanceDAO();
+        int tenureMonths = alwDao.getTenureMonths(empId);
+        BigDecimal seniorityAmount = alwDao.getSeniorityAmount(tenureMonths);
+        total = total.add(seniorityAmount);
+
+        return total;
     }
 
     public boolean updateDraftWithAttendance(Payroll p) {

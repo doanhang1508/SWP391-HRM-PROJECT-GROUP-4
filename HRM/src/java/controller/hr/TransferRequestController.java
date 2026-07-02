@@ -6,7 +6,7 @@ import dao.PositionDAO;
 import dao.RoleDAO;
 import dao.TransferRequestDAO;
 import dao.UserDAO;
-import model.Allowance;
+
 import model.Department;
 import model.Position;
 import model.Role;
@@ -165,19 +165,18 @@ public class TransferRequestController extends HttpServlet {
         request.setAttribute("departments", deptDAO.getAll());
         request.setAttribute("positions", posDAO.getAll());
         request.setAttribute("roles", roleDAO.getAllRoles());
-        // [NEW FLOW] Phụ cấp theo phụ lục thay thế ngạch lương
-        request.setAttribute("availableAllowances", allowanceDAO.getActive());
+        // Phụ cấp được load động qua AJAX (/api/position-allowances) khi chọn chức vụ
         // Ngày hiệu lực mặc định = ngày 1 của tháng sau
         LocalDate nextMonthFirstDay = LocalDate.now().plusMonths(1).withDayOfMonth(1);
         request.setAttribute("nextMonthFirstDay", nextMonthFirstDay.toString());
 
-        // [NEW] Build JSON map {empId: {salary, allowanceIds}} để JS pre-fill form khi chọn nhân viên
+        // Build JSON map {empId: {salary}} để JS pre-fill lương khi chọn nhân viên
+        // Phụ cấp không còn lưu tĩnh theo nhân viên — sẽ tính động theo chức vụ
         StringBuilder empSalaryJson = new StringBuilder("{");
         boolean first = true;
         for (User emp : employees) {
             int uid = emp.getUserId();
             BigDecimal salary = allowanceDAO.getActiveBaseSalaryByEmployee(uid);
-            List<Integer> aIds = allowanceDAO.getActiveAllowanceIdsByEmployee(uid);
 
             if (!first) empSalaryJson.append(",");
             first = false;
@@ -185,12 +184,7 @@ public class TransferRequestController extends HttpServlet {
             empSalaryJson.append("\"salary\": ");
             if (salary != null) empSalaryJson.append(salary.toPlainString());
             else empSalaryJson.append("null");
-            empSalaryJson.append(", \"allowanceIds\": [");
-            for (int i = 0; i < aIds.size(); i++) {
-                if (i > 0) empSalaryJson.append(",");
-                empSalaryJson.append(aIds.get(i));
-            }
-            empSalaryJson.append("]}");
+            empSalaryJson.append("}");
         }
         empSalaryJson.append("}");
         request.setAttribute("empSalaryData", empSalaryJson.toString());

@@ -455,20 +455,20 @@ CREATE TABLE timesheet_lock (
 -- NHÓM 5: LƯƠNG - C&B
 -- =============================================================
 
-CREATE TABLE employee_allowances (
+CREATE TABLE position_allowances (
     id              INT           PRIMARY KEY AUTO_INCREMENT,
-    user_id         INT           NOT NULL,
+    position_id     INT           NOT NULL,
     allowance_id    INT           NOT NULL,
-    -- === THÊM MỚI: Liên kết với Hợp đồng để lịch sử hoá phụ cấp ===
-    contract_id     INT           NULL
-                    COMMENT 'FK về employee_contracts. NULL=áp dụng chung, có giá trị=gắn với hợp đồng/phụ lục cụ thể',
-    effective_date  DATE          NULL
-                    COMMENT 'Ngày phụ cấp này có hiệu lực (thường = start_date của hợp đồng/phụ lục)',
-    -- ================================================================
-    FOREIGN KEY (user_id)      REFERENCES users(user_id)       ON DELETE CASCADE,
-    FOREIGN KEY (allowance_id) REFERENCES allowances(allowance_id) ON DELETE RESTRICT,
-    FOREIGN KEY (contract_id)  REFERENCES employee_contracts(contract_id) ON DELETE SET NULL,
-    INDEX idx_ea_user_contract (user_id, contract_id)
+    FOREIGN KEY (position_id)  REFERENCES positions(position_id) ON DELETE CASCADE,
+    FOREIGN KEY (allowance_id) REFERENCES allowances(allowance_id) ON DELETE CASCADE,
+    INDEX idx_pa_position (position_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE seniority_rules (
+    rule_id         INT           PRIMARY KEY AUTO_INCREMENT,
+    min_months      INT           NOT NULL,
+    max_months      INT           NULL,
+    amount          DECIMAL(15,2) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE employee_rewards_disciplines (
@@ -897,6 +897,33 @@ INSERT INTO leave_requests (user_id, leave_type_id, start_date, end_date, total_
 (20, 2, '2026-06-12', '2026-06-13', 2.0, 'Viêm họng cấp', 'Approved', 19),
 (33, 2, '2026-06-18', '2026-06-19', 2.0, 'Điều trị dạ dày', 'Approved', 14);
 
+-- Seed data for position_allowances
+-- Giám đốc (1): Ăn trưa, Đi lại, Điện thoại, Trách nhiệm GĐ
+INSERT INTO position_allowances (position_id, allowance_id) VALUES (1, 1), (1, 2), (1, 5), (1, 6);
+-- Trưởng phòng (2): Ăn trưa, Đi lại, Trách nhiệm, Điện thoại
+INSERT INTO position_allowances (position_id, allowance_id) VALUES (2, 1), (2, 2), (2, 3), (2, 5);
+-- Phó phòng (3): Ăn trưa, Đi lại
+INSERT INTO position_allowances (position_id, allowance_id) VALUES (3, 1), (3, 2);
+-- Quản đốc (4): Ăn trưa, Đi lại, Trách nhiệm, Điện thoại
+INSERT INTO position_allowances (position_id, allowance_id) VALUES (4, 1), (4, 2), (4, 3), (4, 5);
+-- Tổ trưởng (5): Ăn trưa, Đi lại, Trách nhiệm
+INSERT INTO position_allowances (position_id, allowance_id) VALUES (5, 1), (5, 2), (5, 3);
+-- Kế toán trưởng (6): Ăn trưa, Đi lại, Trách nhiệm, Điện thoại
+INSERT INTO position_allowances (position_id, allowance_id) VALUES (6, 1), (6, 2), (6, 3), (6, 5);
+-- Chuyên viên (7): Ăn trưa, Đi lại
+INSERT INTO position_allowances (position_id, allowance_id) VALUES (7, 1), (7, 2);
+-- Nhân viên (8): Ăn trưa, Đi lại
+INSERT INTO position_allowances (position_id, allowance_id) VALUES (8, 1), (8, 2);
+-- Công nhân (9): Ăn trưa, Đi lại
+INSERT INTO position_allowances (position_id, allowance_id) VALUES (9, 1), (9, 2);
+
+-- Seed data for seniority_rules
+INSERT INTO seniority_rules (min_months, max_months, amount) VALUES 
+(12, 35, 200000),  -- 1 to <3 years
+(36, 59, 300000),  -- 3 to <5 years
+(60, 119, 500000), -- 5 to <10 years
+(120, NULL, 1000000);
+
 INSERT INTO shift_assignments (user_id, shift_id, assigned_date) VALUES
 -- Ca Hành Chính (shift_id = 1) ngày 04/06/2026
 (2,  1, '2026-06-04'),
@@ -936,38 +963,7 @@ INSERT INTO work_history (user_id, position_title, company_name, location, start
 -- Kế toán (user 33)
 (33, 'Kế toán viên', 'Công ty TNHH Group4', 'Hà Nội', '2025-03-01', NULL, 'Thanh toán nội bộ', 1);
 
--- Phụ cấp Ăn trưa (allowance_id = 1) & Đi lại (allowance_id = 2):
--- Áp dụng toàn bộ nhân viên, amount lấy từ bảng allowances để luôn đồng bộ cấu hình
-INSERT INTO employee_allowances (user_id, allowance_id, contract_id, effective_date)
-SELECT 
-    u.user_id, 
-    a.allowance_id,
-    (SELECT contract_id FROM employee_contracts ec WHERE ec.user_id = u.user_id AND ec.status = 'Active' ORDER BY contract_id DESC LIMIT 1),
-    (SELECT start_date FROM employee_contracts ec WHERE ec.user_id = u.user_id AND ec.status = 'Active' ORDER BY contract_id DESC LIMIT 1)
-FROM (SELECT 2 AS user_id UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6
-      UNION SELECT 10 UNION SELECT 14 UNION SELECT 19 UNION SELECT 20 UNION SELECT 33) u
-CROSS JOIN allowances a
-WHERE a.allowance_id IN (1, 2);
 
--- Phụ cấp Trách nhiệm (allowance_id = 3): Chỉ áp dụng cho quản lý/trưởng phòng
-INSERT INTO employee_allowances (user_id, allowance_id, contract_id, effective_date)
-SELECT 
-    u.user_id, 
-    3,
-    (SELECT contract_id FROM employee_contracts ec WHERE ec.user_id = u.user_id AND ec.status = 'Active' ORDER BY contract_id DESC LIMIT 1),
-    (SELECT start_date FROM employee_contracts ec WHERE ec.user_id = u.user_id AND ec.status = 'Active' ORDER BY contract_id DESC LIMIT 1)
-FROM users u
-WHERE u.user_id IN (3, 4, 6, 14, 19);
-
--- Phụ cấp Trách nhiệm Giám Đốc (allowance_id = 6)
-INSERT INTO employee_allowances (user_id, allowance_id, contract_id, effective_date)
-SELECT 
-    u.user_id, 
-    6,
-    (SELECT contract_id FROM employee_contracts ec WHERE ec.user_id = u.user_id AND ec.status = 'Active' ORDER BY contract_id DESC LIMIT 1),
-    (SELECT start_date FROM employee_contracts ec WHERE ec.user_id = u.user_id AND ec.status = 'Active' ORDER BY contract_id DESC LIMIT 1)
-FROM users u
-WHERE u.user_id = 2;
 
 /* ================================================================
    MIGRATION V2: Shift & Overtime Management Module

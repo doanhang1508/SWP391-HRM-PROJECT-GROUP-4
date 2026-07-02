@@ -150,34 +150,21 @@ public class AllowanceDAO {
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-    /** Đếm số nhân viên đang hưởng phụ cấp này */
-    public int countEmployees(int id) {
-        String sql = "SELECT COUNT(DISTINCT user_id) FROM employee_allowances WHERE allowance_id = ?";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
-            }
-        } catch (Exception e) { e.printStackTrace(); }
-        return 0;
-    }
-
     /**
-     * Lấy danh sách phụ cấp chi tiết của một nhân viên theo hợp đồng cụ thể
+     * Lấy phụ cấp theo chức vụ
      */
-    public List<java.util.Map<String, Object>> getAllowancesByContract(int userId, int contractId) {
+    public List<java.util.Map<String, Object>> getAllowancesByPosition(int positionId) {
         List<java.util.Map<String, Object>> list = new java.util.ArrayList<>();
-        String sql = "SELECT a.allowance_name, a.amount FROM employee_allowances ea " +
-                     "JOIN allowances a ON ea.allowance_id = a.allowance_id " +
-                     "WHERE ea.user_id = ? AND ea.contract_id = ?";
+        String sql = "SELECT a.allowance_id, a.allowance_name, a.amount FROM position_allowances pa " +
+                     "JOIN allowances a ON pa.allowance_id = a.allowance_id " +
+                     "WHERE pa.position_id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            ps.setInt(2, contractId);
+            ps.setInt(1, positionId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     java.util.Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("id", rs.getInt("allowance_id"));
                     map.put("name", rs.getString("allowance_name"));
                     map.put("amount", rs.getDouble("amount"));
                     list.add(map);
@@ -190,50 +177,79 @@ public class AllowanceDAO {
     }
 
     /**
-     * Chèn nhiều phụ cấp cho một hợp đồng
+     * Lấy mức phụ cấp thâm niên dựa trên số tháng làm việc
      */
-    public void insertEmployeeAllowances(int userId, int contractId, java.sql.Date effectiveDate, String[] allowanceIds) {
-        if (allowanceIds == null || allowanceIds.length == 0) return;
-        String sql = "INSERT INTO employee_allowances (user_id, allowance_id, contract_id, effective_date) " +
-                     "VALUES (?, ?, ?, ?)";
+    public BigDecimal getSeniorityAmount(int tenureMonths) {
+        String sql = "SELECT amount FROM seniority_rules WHERE min_months <= ? AND (max_months IS NULL OR max_months >= ?) ORDER BY min_months DESC LIMIT 1";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            for (String alwIdStr : allowanceIds) {
-                int alwId = Integer.parseInt(alwIdStr);
-                ps.setInt(1, userId);
-                ps.setInt(2, alwId);
-                ps.setInt(3, contractId);
-                ps.setDate(4, effectiveDate);
-                ps.addBatch();
+            ps.setInt(1, tenureMonths);
+            ps.setInt(2, tenureMonths);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getBigDecimal("amount");
+                }
             }
-            ps.executeBatch();
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return BigDecimal.ZERO;
     }
 
     /**
-     * Lấy danh sách allowance_id đang được hưởng của một nhân viên
-     * (lấy từ hợp đồng Active mới nhất — dùng để pre-check trong form phụ lục / điều chuyển).
+     * Helper method to calculate tenure months from user's first contract
      */
-    public List<Integer> getActiveAllowanceIdsByEmployee(int userId) {
-        List<Integer> ids = new java.util.ArrayList<>();
-        // Lấy từ hợp đồng Active mới nhất của nhân viên
-        String sql = "SELECT ea.allowance_id " +
-                     "FROM employee_allowances ea " +
-                     "JOIN employee_contracts ec ON ea.contract_id = ec.contract_id " +
-                     "WHERE ea.user_id = ? AND ec.status = 'Active' " +
-                     "ORDER BY ec.start_date DESC, ec.contract_id DESC";
+    public int getTenureMonths(int userId) {
+        String sql = "SELECT TIMESTAMPDIFF(MONTH, MIN(start_date), CURDATE()) AS months FROM employee_contracts WHERE user_id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) ids.add(rs.getInt("allowance_id"));
+                if (rs.next()) {
+                    return rs.getInt("months");
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return ids;
+        return 0;
+    }
+
+    /**
+     * Lấy danh sách phụ cấp chi tiết của một hợp đồng (Position + Seniority)
+     */
+    public List<java.util.Map<String, Object>> getAllowancesByContract(int userId, int contractId) {
+        List<java.util.Map<String, Object>> list = new java.util.ArrayList<>();
+        
+        // 1. Lấy position_id của hợp đồng
+        int positionId = -1;
+        String sqlPos = "SELECT position_id FROM employee_contracts WHERE contract_id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sqlPos)) {
+            ps.setInt(1, contractId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) positionId = rs.getInt("position_id");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        if (positionId != -1) {
+            // Lấy phụ cấp theo chức vụ
+            list.addAll(getAllowancesByPosition(positionId));
+        }
+
+        // 2. Tính thâm niên và thêm phụ cấp thâm niên (nếu có)
+        int tenureMonths = getTenureMonths(userId);
+        BigDecimal seniorityAmount = getSeniorityAmount(tenureMonths);
+        if (seniorityAmount.compareTo(BigDecimal.ZERO) > 0) {
+            java.util.Map<String, Object> senMap = new java.util.HashMap<>();
+            senMap.put("name", "Phụ cấp thâm niên");
+            senMap.put("amount", seniorityAmount.doubleValue());
+            list.add(senMap);
+        }
+        
+        return list;
     }
 
     /**

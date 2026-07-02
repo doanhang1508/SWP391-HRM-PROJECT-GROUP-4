@@ -287,21 +287,11 @@
                                           required></textarea>
                             </div>
 
-                            <%-- Phụ cấp áp dụng theo phụ lục — lấy đúng style từ employee-contracts.jsp --%>
-                            <c:if test="${not empty availableAllowances}">
-                                <div class="form-group full">
-                                    <label class="form-label">Phụ cấp áp dụng theo phụ lục</label>
-                                    <div class="allowance-check-grid">
-                                        <c:forEach var="alw" items="${availableAllowances}">
-                                            <div class="allowance-check-item">
-                                                <input type="checkbox" name="allowanceIds" value="${alw.allowanceId}" id="tr_alw_${alw.allowanceId}">
-                                                <label for="tr_alw_${alw.allowanceId}"><c:out value="${alw.allowanceName}"/></label>
-                                                <span class="alw-amount"><fmt:formatNumber value="${alw.amount}" type="number" groupingUsed="true"/>đ</span>
-                                            </div>
-                                        </c:forEach>
-                                    </div>
-                                </div>
-                            </c:if>
+                            <%-- Phụ cấp hiển thị động theo chức vụ được chọn --%>
+                            <div class="form-group full" id="positionAllowanceContainer" style="display:none;">
+                                <label class="form-label"><i class="fas fa-coins" style="color:#059669;margin-right:6px;"></i>Phụ cấp tự động theo chức vụ</label>
+                                <div id="positionAllowanceList" class="allowance-check-grid"></div>
+                            </div>
 
                         </div>
                     </div>
@@ -317,6 +307,7 @@
 </div>
 
 <script>
+    const contextPath = '${pageContext.request.contextPath}';
     const deptPositions = {
         1: [1, 3, 7, 8],   // Hành chính: Giám đốc, Phó phòng, Chuyên viên, Nhân viên
         2: [3, 7, 8],      // Nhân sự: Phó phòng, Chuyên viên, Nhân viên
@@ -545,6 +536,11 @@
         var salaryInput = document.getElementById('newBaseSalary');
         if (salaryInput) salaryInput.value = '';
         document.querySelectorAll('input[name="allowanceIds"]').forEach(function(cb){ cb.checked = false; });
+        // Xóa danh sách phụ cấp động
+        var posAlwContainer = document.getElementById('positionAllowanceContainer');
+        if (posAlwContainer) posAlwContainer.style.display = 'none';
+        var posAlwList = document.getElementById('positionAllowanceList');
+        if (posAlwList) posAlwList.innerHTML = '';
     }
 
     function openDropdown() {
@@ -578,11 +574,41 @@
                 salaryInput.value = '';
             }
         }
-        // -- Pre-check phụ cấp --
-        var activeIds = (data && data.allowanceIds) ? data.allowanceIds : [];
-        document.querySelectorAll('input[name="allowanceIds"]').forEach(function(cb) {
-            cb.checked = activeIds.indexOf(Number(cb.value)) !== -1;
-        });
+    }
+
+    /**
+     * Fetch và hiển thị phụ cấp theo chức vụ được chọn (AJAX)
+     */
+    function fetchPositionAllowances(positionId) {
+        var container = document.getElementById('positionAllowanceContainer');
+        var listEl    = document.getElementById('positionAllowanceList');
+        if (!container || !listEl) return;
+        if (!positionId) { container.style.display = 'none'; listEl.innerHTML = ''; return; }
+
+        var empIdInput = document.getElementById('employeeId');
+        var userIdParam = (empIdInput && empIdInput.value) ? '&userId=' + empIdInput.value : '';
+
+        fetch(contextPath + '/api/position-allowances?positionId=' + positionId + userIdParam)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data || data.length === 0) {
+                    container.style.display = 'none';
+                    listEl.innerHTML = '';
+                    return;
+                }
+                var html = '';
+                data.forEach(function(alw) {
+                    var formatted = Number(alw.amount).toLocaleString('vi-VN');
+                    html += '<div class="allowance-check-item">'
+                          + '<i class="fas fa-check-circle" style="color:#059669;font-size:.85rem;"></i>'
+                          + '<label style="flex:1;">' + escHtml(alw.name) + '</label>'
+                          + '<span class="alw-amount">' + formatted + 'đ</span>'
+                          + '</div>';
+                });
+                listEl.innerHTML = html;
+                container.style.display = 'block';
+            })
+            .catch(function() { container.style.display = 'none'; });
     }
 
 
@@ -691,6 +717,9 @@
         if (validRoleIds.length === 1) {
             roleSelect.value = validRoleIds[0];
         }
+
+        // Fetch và hiển thị phụ cấp theo chức vụ mới
+        fetchPositionAllowances(selectedPos);
     }
 
     // [REMOVED] updateSalarySection() đã bị xóa — không còn ngạch lương trong form điều chuyển.

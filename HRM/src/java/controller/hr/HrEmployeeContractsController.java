@@ -182,11 +182,8 @@ public class HrEmployeeContractsController extends HttpServlet {
             request.setAttribute("totalAllowance", totalAllowance);
             request.setAttribute("allowanceList", allowanceList);
 
-            dao.AllowanceDAO allowanceDAO = new dao.AllowanceDAO();
-            List<model.Allowance> availableAllowances = allowanceDAO.getActive();
-            request.setAttribute("availableAllowances", availableAllowances);
-            List<Integer> currentAllowanceIds = allowanceDAO.getActiveAllowanceIdsByEmployee(userId);
-            request.setAttribute("currentAllowanceIds", currentAllowanceIds);
+            // Phụ cấp giờ được load động qua AJAX (/api/position-allowances) khi HR chọn chức vụ
+            // Không cần load danh sách tĩnh nữa sau khi chuyển sang hệ thống phụ cấp theo chức vụ
 
 
             // Load salary grades (active only) for the contract form dropdown
@@ -268,11 +265,6 @@ public class HrEmployeeContractsController extends HttpServlet {
                 ecDAO.insert(c);
                 
                 // Handle allowance checkboxes
-                String[] allowanceIds = request.getParameterValues("allowanceIds");
-                if (allowanceIds != null && allowanceIds.length > 0 && c.getContractId() > 0) {
-                    dao.AllowanceDAO alwDAO = new dao.AllowanceDAO();
-                    alwDAO.insertEmployeeAllowances(userId, c.getContractId(), c.getStartDate(), allowanceIds);
-                }
                 
                 // Đồng thời cập nhật contract_type_id vào bảng employee_profiles
                 // để tương thích ngược với các module khác chưa chuyển đổi sang dùng bảng mới
@@ -350,13 +342,6 @@ public class HrEmployeeContractsController extends HttpServlet {
                 ecDAO.insertAddendum(addendum);
                 
                 // Get the generated contractId for the addendum to insert allowances
-                if (addendum.getContractId() > 0) {
-                    String[] allowanceIds = request.getParameterValues("allowanceIds");
-                    if (allowanceIds != null && allowanceIds.length > 0) {
-                        dao.AllowanceDAO alwDAO = new dao.AllowanceDAO();
-                        alwDAO.insertEmployeeAllowances(userId, addendum.getContractId(), addendum.getStartDate(), allowanceIds);
-                    }
-                }
                 
                 session.setAttribute("successMsg", "Đã tạo phụ lục Hợp đồng. Vui lòng chờ nhân viên xác nhận!");
                 response.sendRedirect(request.getContextPath() + "/hr/employee-contracts?userId=" + userId);

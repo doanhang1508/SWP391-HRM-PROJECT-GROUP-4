@@ -31,7 +31,7 @@ import java.util.List;
  * URL: /hr/import-attendance
  * Roles: HR Manager (2), HR Staff (5), Admin (1)
  */
-@WebServlet(name = "ImportAttendanceController", urlPatterns = {"/hr/import-attendance"})
+@WebServlet(name = "ImportAttendanceController", urlPatterns = { "/hr/import-attendance" })
 @MultipartConfig(maxFileSize = 10 * 1024 * 1024)
 public class ImportAttendanceController extends HttpServlet {
 
@@ -168,7 +168,7 @@ public class ImportAttendanceController extends HttpServlet {
 
             int[] importResult = attendanceDAO.bulkImportAttendance(records);
             int inserted = importResult[0];
-            int updated  = importResult[1];
+            int updated = importResult[1];
 
             String msg;
             if (inserted > 0 && updated == 0) {
@@ -194,18 +194,22 @@ public class ImportAttendanceController extends HttpServlet {
     }
 
     private String removeAccents(String s) {
-        if (s == null) return null;
+        if (s == null)
+            return null;
         String normalized = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD);
         return normalized.replaceAll("\\p{M}", "").replaceAll("\\s+", "_").toUpperCase();
     }
 
     private boolean isRawLogFormat(Sheet sheet) {
         Row headerRow = sheet.getRow(1);
-        if (headerRow == null) headerRow = sheet.getRow(2);
-        if (headerRow == null) return true;
+        if (headerRow == null)
+            headerRow = sheet.getRow(2);
+        if (headerRow == null)
+            return true;
         int lastCol = headerRow.getLastCellNum();
-        if (lastCol < 6) return true;
-        
+        if (lastCol < 6)
+            return true;
+
         boolean hasWorkDateCol = false;
         for (int c = 0; c < lastCol; c++) {
             Cell cell = headerRow.getCell(c);
@@ -221,7 +225,7 @@ public class ImportAttendanceController extends HttpServlet {
     }
 
     private void parseExcel(InputStream is, List<Attendance> records, List<String> errors,
-                             List<String> skippedRows, int month, int year)
+            List<String> skippedRows, int month, int year)
             throws Exception {
         UserDAO userDAO = new UserDAO();
         ShiftDAOImpl shiftDAO = new ShiftDAOImpl();
@@ -237,7 +241,7 @@ public class ImportAttendanceController extends HttpServlet {
         }
 
         try (Workbook wb = WorkbookFactory.create(is)) {
-            Sheet sheet = wb.getSheet("CHI_TIET_CHAM_CONG");//tim dung File de doc
+            Sheet sheet = wb.getSheet("CHI_TIET_CHAM_CONG");// tim dung File de doc
             if (sheet == null) {
                 // Thử tìm sheet có chứa chữ CHAM_CONG hoặc lấy sheet ĐẦU TIÊN
                 for (int i = 0; i < wb.getNumberOfSheets(); i++) {
@@ -247,26 +251,31 @@ public class ImportAttendanceController extends HttpServlet {
                         break;
                     }
                 }
-                if (sheet == null) sheet = wb.getSheetAt(0); // Fallback về sheet 0
+                if (sheet == null)
+                    sheet = wb.getSheetAt(0); // Fallback về sheet 0
             }
 
             if (isRawLogFormat(sheet)) {
                 // 1. Group swipe logs from Sheet 1 ("Chi Tiết Chấm Công")
                 java.util.Map<String, java.util.Map<LocalDate, List<Time>>> swipeMap = new java.util.HashMap<>();
                 for (Row row : sheet) {
-                    if (row.getRowNum() < 2) continue; // Bỏ qua 2 dòng đầu (title, header)
-                    if (isRowEmpty(row)) continue;
-                    
+                    if (row.getRowNum() < 2)
+                        continue; // Bỏ qua 2 dòng đầu (title, header)
+                    if (isRowEmpty(row))
+                        continue;
+
                     String empCode = getStringCell(row, 2); // Column 2: Mã Nhân Viên
                     if (empCode == null || empCode.trim().isEmpty()) {
                         empCode = getStringCell(row, 1); // Fallback to column 1
                     }
-                    if (empCode == null || empCode.trim().isEmpty()) continue;
+                    if (empCode == null || empCode.trim().isEmpty())
+                        continue;
                     empCode = empCode.trim().toUpperCase();
-                    
+
                     Cell timeCell = row.getCell(3); // Column 3: Giờ
-                    if (timeCell == null) continue;
-                    
+                    if (timeCell == null)
+                        continue;
+
                     java.util.Date dateTime = null;
                     if (timeCell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(timeCell)) {
                         dateTime = timeCell.getDateCellValue();
@@ -275,53 +284,58 @@ public class ImportAttendanceController extends HttpServlet {
                         if (timeStr != null && !timeStr.trim().isEmpty()) {
                             timeStr = timeStr.replace("//", "/").replace("  ", " ").trim();
                             String[] formats = {
-                                "dd/MM/yyyy hh:mm a", "dd/MM/yyyy hh:mm:ss a",
-                                "yyyy-MM-dd hh:mm a", "yyyy-MM-dd hh:mm:ss a",
-                                "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss",
-                                "dd/MM/yyyy HH:mm", "yyyy-MM-dd HH:mm",
-                                "dd-MM-yyyy HH:mm:ss", "dd-MM-yyyy HH:mm"
+                                    "dd/MM/yyyy hh:mm a", "dd/MM/yyyy hh:mm:ss a",
+                                    "yyyy-MM-dd hh:mm a", "yyyy-MM-dd hh:mm:ss a",
+                                    "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss",
+                                    "dd/MM/yyyy HH:mm", "yyyy-MM-dd HH:mm",
+                                    "dd-MM-yyyy HH:mm:ss", "dd-MM-yyyy HH:mm"
                             };
                             for (String fmt : formats) {
                                 try {
-                                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(fmt, java.util.Locale.ENGLISH);
+                                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(fmt,
+                                            java.util.Locale.ENGLISH);
                                     dateTime = sdf.parse(timeStr);
                                     break;
-                                } catch (Exception ignored) {}
+                                } catch (Exception ignored) {
+                                }
                             }
                         }
                     }
-                    
+
                     if (dateTime != null) {
                         java.util.Calendar cal = java.util.Calendar.getInstance();
                         cal.setTime(dateTime);
-                        LocalDate date = LocalDate.of(cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH) + 1, cal.get(java.util.Calendar.DAY_OF_MONTH));
+                        LocalDate date = LocalDate.of(cal.get(java.util.Calendar.YEAR),
+                                cal.get(java.util.Calendar.MONTH) + 1, cal.get(java.util.Calendar.DAY_OF_MONTH));
                         Time time = new Time(dateTime.getTime());
-                        
+
                         swipeMap.computeIfAbsent(empCode, k -> new java.util.HashMap<>())
                                 .computeIfAbsent(date, k -> new java.util.ArrayList<>())
                                 .add(time);
                     }
                 }
 
-                // 2. Parse Sheet 0 ("Bảng Công") to get employee profiles, shifts, and daily statuses
+                // 2. Parse Sheet 0 ("Bảng Công") to get employee profiles, shifts, and daily
+                // statuses
                 Sheet sheet0 = wb.getSheetAt(0);
                 Row row4 = sheet0.getRow(4); // Day numbers
                 if (row4 == null) {
                     throw new Exception("Không tìm thấy dòng ngày (dòng 5) ở Sheet Bảng Công.");
                 }
-                
+
                 int otColIdx = -1;
                 Row headerRow = sheet0.getRow(3);
                 if (headerRow != null) {
                     for (int c = 0; c < headerRow.getLastCellNum(); c++) {
                         String h = getStringCell(headerRow, c);
-                        if (h != null && (h.toUpperCase().contains("OT") || h.toUpperCase().contains("TĂNG CA") || h.toUpperCase().contains("TANG CA"))) {
+                        if (h != null && (h.toUpperCase().contains("OT") || h.toUpperCase().contains("TĂNG CA")
+                                || h.toUpperCase().contains("TANG CA"))) {
                             otColIdx = c;
                             break;
                         }
                     }
                 }
-                
+
                 java.util.Map<Integer, Integer> colToDayMap = new java.util.HashMap<>();
                 for (int c = 6; c < row4.getLastCellNum(); c++) {
                     Cell cell = row4.getCell(c);
@@ -336,24 +350,28 @@ public class ImportAttendanceController extends HttpServlet {
                             if (val > 0) {
                                 colToDayMap.put(c, (int) val);
                             }
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                     }
                 }
-                
+
                 for (int r = 5; r <= sheet0.getLastRowNum(); r++) {
                     Row row = sheet0.getRow(r);
-                    if (row == null || isRowEmpty(row)) continue;
-                    
+                    if (row == null || isRowEmpty(row))
+                        continue;
+
                     String empCode = getStringCell(row, 1); // Column 1: Mã NV
-                    if (empCode == null || empCode.trim().isEmpty()) continue;
+                    if (empCode == null || empCode.trim().isEmpty())
+                        continue;
                     empCode = empCode.trim().toUpperCase();
-                    
+
                     User user = null;
                     if (empCode.startsWith("NV")) {
                         try {
                             int userId = Integer.parseInt(empCode.substring(2));
                             user = userMap.get(userId);
-                        } catch (NumberFormatException ignored) {}
+                        } catch (NumberFormatException ignored) {
+                        }
                     }
                     if (user == null) {
                         user = usernameMap.get(empCode);
@@ -362,7 +380,7 @@ public class ImportAttendanceController extends HttpServlet {
                         errors.add("Dòng " + (r + 1) + " (Sheet Bảng Công): Không tìm thấy nhân viên: " + empCode);
                         continue;
                     }
-                    
+
                     String shiftName = getStringCell(row, 5); // Column 5: Ca làm
                     if (shiftName == null || shiftName.trim().isEmpty()) {
                         errors.add("Dòng " + (r + 1) + " (Sheet Bảng Công): Thiếu Ca làm việc cho NV " + empCode);
@@ -383,7 +401,7 @@ public class ImportAttendanceController extends HttpServlet {
                         errors.add("Dòng " + (r + 1) + " (Sheet Bảng Công): Không tìm thấy Ca làm việc: " + shiftName);
                         continue;
                     }
-                    
+
                     double totalOtHrs = 0.0;
                     if (otColIdx != -1) {
                         Cell otCell = row.getCell(otColIdx);
@@ -394,53 +412,59 @@ public class ImportAttendanceController extends HttpServlet {
                                 } else {
                                     totalOtHrs = Double.parseDouble(otCell.toString().trim());
                                 }
-                            } catch (Exception ignored) {}
+                            } catch (Exception ignored) {
+                            }
                         }
                     }
                     boolean otAssigned = false;
                     Attendance lastA = null;
-                    
+
                     for (java.util.Map.Entry<Integer, Integer> entry : colToDayMap.entrySet()) {
                         int colIdx = entry.getKey();
                         int day = entry.getValue();
-                        
+
                         String statusChar = getStringCell(row, colIdx);
                         if (statusChar == null || statusChar.trim().isEmpty() || statusChar.equalsIgnoreCase("BLANK")) {
                             continue;
                         }
                         statusChar = statusChar.trim().toUpperCase();
-                        if (statusChar.startsWith("CỘNG") || statusChar.startsWith("CONG") 
+                        if (statusChar.startsWith("CỘNG") || statusChar.startsWith("CONG")
                                 || statusChar.startsWith("TỔNG") || statusChar.startsWith("TONG")) {
                             continue;
                         }
-                        
+
                         LocalDate workLocalDate = LocalDate.of(year, month, day);
                         Date workDate = Date.valueOf(workLocalDate);
-                        
+
                         Attendance a = new Attendance();
                         a.setUserId(user.getUserId());
                         a.setShiftId(shiftId);
                         a.setWorkDate(workDate);
-                        
+
                         String status = "ABSENT";
                         switch (statusChar) {
                             case "P":
-                                status = "PRESENT"; break;
+                                status = "PRESENT";
+                                break;
                             case "A":
-                                status = "ABSENT"; break;
+                                status = "ABSENT";
+                                break;
                             case "L":
                             case "T":
-                                status = "LATE"; break;
+                                status = "LATE";
+                                break;
                             case "H":
-                                status = "HALFDAY"; break;
+                                status = "HALFDAY";
+                                break;
                             case "NGHI PHEP":
                             case "NP":
-                                status = "LEAVE"; break;
+                                status = "LEAVE";
+                                break;
                             default:
                                 status = "PRESENT";
                         }
                         a.setStatus(status);
-                        
+
                         java.util.Map<LocalDate, List<Time>> userSwipes = swipeMap.get(empCode);
                         if (userSwipes != null) {
                             List<Time> swipes = userSwipes.get(workLocalDate);
@@ -460,7 +484,7 @@ public class ImportAttendanceController extends HttpServlet {
                             a.setCheckIn(null);
                             a.setCheckOut(null);
                         }
-                        
+
                         a.setOvertimeHrs(0.0);
                         a.setOtReason("");
                         if (!otAssigned && totalOtHrs > 0 && "PRESENT".equals(status)) {
@@ -468,7 +492,7 @@ public class ImportAttendanceController extends HttpServlet {
                             a.setOtReason("Imported OT");
                             otAssigned = true;
                         }
-                        
+
                         lastA = a;
                         records.add(a);
                     }
@@ -480,8 +504,10 @@ public class ImportAttendanceController extends HttpServlet {
             } else {
                 // 13-column format
                 for (Row row : sheet) {
-                    if (row.getRowNum() < 3) continue; // Bỏ qua 3 dòng đầu (headers)
-                    if (isRowEmpty(row)) continue;
+                    if (row.getRowNum() < 3)
+                        continue; // Bỏ qua 3 dòng đầu (headers)
+                    if (isRowEmpty(row))
+                        continue;
                     try {
                         Attendance a = rowToAttendance(row, userMap, usernameMap, allShifts);
                         if (a != null) {
@@ -497,23 +523,26 @@ public class ImportAttendanceController extends HttpServlet {
         }
     }
 
-
     private boolean isRowEmpty(Row row) {
-        if (row == null) return true;
+        if (row == null)
+            return true;
         for (int i = 0; i < 20; i++) {
             Cell cell = row.getCell(i);
-            if (cell != null && cell.getCellType() != CellType.BLANK) return false;
+            if (cell != null && cell.getCellType() != CellType.BLANK)
+                return false;
         }
         return true;
     }
 
-    private Attendance rowToAttendance(Row row, java.util.Map<Integer, User> userMap, java.util.Map<String, User> usernameMap, List<Shift> allShifts) throws Exception {
+    private Attendance rowToAttendance(Row row, java.util.Map<Integer, User> userMap,
+            java.util.Map<String, User> usernameMap, List<Shift> allShifts) throws Exception {
         Attendance a = new Attendance();
 
         // ── Scan 6 cột đầu vì dòng "Cộng:" có thể nằm ở cột bất kỳ do merged cell ──
         for (int ci = 0; ci < 6; ci++) {
             String cellVal = getStringCell(row, ci);
-            if (cellVal == null) continue;
+            if (cellVal == null)
+                continue;
             String cellNorm = java.text.Normalizer.normalize(cellVal.trim(), java.text.Normalizer.Form.NFD)
                     .replaceAll("\\p{M}", "").toLowerCase();
             if (cellNorm.startsWith("cong:") || (cellNorm.contains("p:") && cellNorm.contains("a:"))) {
@@ -537,7 +566,7 @@ public class ImportAttendanceController extends HttpServlet {
         // 1. Mã NV (Cột 1)
         String employeeCode = secondCell;
         employeeCode = employeeCode.trim();
-        
+
         User user = null;
         if (employeeCode.toUpperCase().startsWith("NV")) {
             try {
@@ -550,30 +579,33 @@ public class ImportAttendanceController extends HttpServlet {
         if (user == null) {
             user = usernameMap.get(employeeCode.toUpperCase());
         }
-        
+
         if (user == null) {
             throw new Exception("Kh\u00f4ng t\u00ecm th\u1ea5y nh\u00e2n vi\u00ean: " + employeeCode);
         }
         a.setUserId(user.getUserId());
 
-
         Cell dateCell = row.getCell(5);
-        if (dateCell == null) throw new Exception("Thiếu Ngày làm việc");
+        if (dateCell == null)
+            throw new Exception("Thiếu Ngày làm việc");
         if (dateCell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(dateCell)) {
             java.util.Date d = dateCell.getDateCellValue();
             a.setWorkDate(new Date(d.getTime()));
         } else {
             String dateStr = getStringCell(row, 5);
-            if (dateStr == null || dateStr.trim().isEmpty()) throw new Exception("Thiếu Ngày làm việc");
+            if (dateStr == null || dateStr.trim().isEmpty())
+                throw new Exception("Thiếu Ngày làm việc");
             dateStr = dateStr.trim();
             try {
                 if (dateStr.contains("/")) {
-                    a.setWorkDate(Date.valueOf(LocalDate.parse(dateStr, java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))));
+                    a.setWorkDate(Date.valueOf(
+                            LocalDate.parse(dateStr, java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))));
                 } else {
                     a.setWorkDate(Date.valueOf(LocalDate.parse(dateStr, DATE_FMT)));
                 }
             } catch (Exception e) {
-                throw new Exception("Sai định dạng ngày làm việc (" + dateStr + "). Cần định dạng dd/MM/yyyy hoặc yyyy-MM-dd");
+                throw new Exception(
+                        "Sai định dạng ngày làm việc (" + dateStr + "). Cần định dạng dd/MM/yyyy hoặc yyyy-MM-dd");
             }
         }
 
@@ -598,18 +630,20 @@ public class ImportAttendanceController extends HttpServlet {
         a.setShiftId(shiftId);
 
         String checkIn = getStringCell(row, 8);
-        if (checkIn != null && !checkIn.trim().isEmpty() 
+        if (checkIn != null && !checkIn.trim().isEmpty()
                 && !checkIn.equalsIgnoreCase("BLANK") && isValidTime(checkIn.trim())) {
-            if (checkIn.trim().length() == 5) checkIn = checkIn.trim() + ":00";
+            if (checkIn.trim().length() == 5)
+                checkIn = checkIn.trim() + ":00";
             a.setCheckIn(Time.valueOf(checkIn.trim()));
         } else {
             a.setCheckIn(null);
         }
 
         String checkOut = getStringCell(row, 9);
-        if (checkOut != null && !checkOut.trim().isEmpty() 
+        if (checkOut != null && !checkOut.trim().isEmpty()
                 && !checkOut.equalsIgnoreCase("BLANK") && isValidTime(checkOut.trim())) {
-            if (checkOut.trim().length() == 5) checkOut = checkOut.trim() + ":00";
+            if (checkOut.trim().length() == 5)
+                checkOut = checkOut.trim() + ":00";
             a.setCheckOut(Time.valueOf(checkOut.trim()));
         } else {
             a.setCheckOut(null);
@@ -617,7 +651,7 @@ public class ImportAttendanceController extends HttpServlet {
 
         String status = getStringCell(row, 10);
         if (status == null || status.trim().isEmpty() || status.equalsIgnoreCase("BLANK")) {
-             status = "A"; // default absent
+            status = "A"; // default absent
         }
         status = status.trim();
 
@@ -628,8 +662,8 @@ public class ImportAttendanceController extends HttpServlet {
         // Chữ "Đ" (U+0110) không tách được bằng NFD nên phải replace thủ công trước
         String statusPrep = status.replace("Đ", "D").replace("đ", "d");
         String normStatus = java.text.Normalizer.normalize(statusPrep, java.text.Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "")   // bỏ dấu
-                .toUpperCase()              // uppercase
+                .replaceAll("\\p{M}", "") // bỏ dấu
+                .toUpperCase() // uppercase
                 .trim();
 
         // Loại bỏ text thừa sau dấu phẩy (vd: "DI TRE, BI GHI NHAN" → "DI TRE")
@@ -640,20 +674,26 @@ public class ImportAttendanceController extends HttpServlet {
         switch (normStatus) {
             case "P":
             case "CO MAT":
-                a.setStatus("PRESENT"); break;
+                a.setStatus("PRESENT");
+                break;
             case "A":
             case "VANG MAT":
             case "VANG MAT (KP)":
-                a.setStatus("ABSENT"); break;
+                a.setStatus("ABSENT");
+                break;
             case "L":
             case "T":
             case "DI TRE":
-                a.setStatus("LATE"); break;
+                a.setStatus("LATE");
+                break;
             case "H":
-                a.setStatus("HALFDAY"); break;
+                a.setStatus("HALFDAY");
+                break;
             case "NGHI PHEP":
-                a.setStatus("LEAVE"); break;
-            default: throw new Exception("Trạng thái không hợp lệ: " + status);
+                a.setStatus("LEAVE");
+                break;
+            default:
+                throw new Exception("Trạng thái không hợp lệ: " + status);
         }
 
         Cell otCell = row.getCell(11);
@@ -674,21 +714,24 @@ public class ImportAttendanceController extends HttpServlet {
 
         String otReason = getStringCell(row, 12);
         a.setOtReason(otReason != null && !otReason.equalsIgnoreCase("BLANK") ? otReason.trim() : "");
-        
+
         return a;
     }
 
     private String getStringCell(Row row, int col) {
         Cell cell = row.getCell(col);
-        if (cell == null) return null;
+        if (cell == null)
+            return null;
         switch (cell.getCellType()) {
-            case STRING: return cell.getStringCellValue();
+            case STRING:
+                return cell.getStringCellValue();
             case NUMERIC:
                 if (DateUtil.isCellDateFormatted(cell)) {
                     java.util.Date d = cell.getDateCellValue();
                     java.util.Calendar cal = java.util.Calendar.getInstance();
                     cal.setTime(d);
-                    return String.format("%02d:%02d", cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE));
+                    return String.format("%02d:%02d", cal.get(java.util.Calendar.HOUR_OF_DAY),
+                            cal.get(java.util.Calendar.MINUTE));
                 }
                 double numValue = cell.getNumericCellValue();
                 if (numValue == (long) numValue) {
@@ -696,10 +739,12 @@ public class ImportAttendanceController extends HttpServlet {
                 } else {
                     return String.format("%s", numValue);
                 }
-            case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
             case FORMULA:
-                switch(cell.getCachedFormulaResultType()) {
-                    case STRING: return cell.getStringCellValue();
+                switch (cell.getCachedFormulaResultType()) {
+                    case STRING:
+                        return cell.getStringCellValue();
                     case NUMERIC:
                         double numValueF = cell.getNumericCellValue();
                         if (numValueF == (long) numValueF) {
@@ -707,15 +752,19 @@ public class ImportAttendanceController extends HttpServlet {
                         } else {
                             return String.format("%s", numValueF);
                         }
-                    case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
-                    default: return null;
+                    case BOOLEAN:
+                        return String.valueOf(cell.getBooleanCellValue());
+                    default:
+                        return null;
                 }
-            default: return null;
+            default:
+                return null;
         }
     }
 
     private boolean isValidTime(String s) {
-        if (s == null) return false;
+        if (s == null)
+            return false;
         // Chấp nhận định dạng HH:mm hoặc HH:mm:ss, bác bỏ "—", "–", chữ...
         return s.matches("\\d{1,2}:\\d{2}(:\\d{2})?");
     }

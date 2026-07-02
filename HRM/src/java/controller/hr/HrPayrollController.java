@@ -408,35 +408,54 @@ public class HrPayrollController extends HttpServlet {
             
             json.append("\"allowances\":[");
             String sqlAllowance = "SELECT a.allowance_name, a.amount, a.calculation_type, a.is_bhxh_applied " +
-                                  "FROM employee_allowances ea " +
-                                  "JOIN allowances a ON ea.allowance_id = a.allowance_id " +
-                                  "WHERE ea.user_id = ? AND a.status = 1 AND ea.contract_id = ?";
+                                  "FROM position_allowances pa " +
+                                  "JOIN allowances a ON pa.allowance_id = a.allowance_id " +
+                                  "WHERE pa.position_id = ? AND a.status = 1";
             boolean firstAllow = true;
-            try (Connection conn = DBContext.getConnection();
-                 PreparedStatement ps = conn.prepareStatement(sqlAllowance)) {
-                ps.setInt(1, userId);
-                ps.setInt(2, activeContractId);
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        if (!firstAllow) json.append(",");
-                        json.append("{");
-                        json.append("\"name\":\"").append(escapeHtml(rs.getString("allowance_name"))).append("\",");
-                        
-                        BigDecimal amount = rs.getBigDecimal("amount");
-                        String calcType = rs.getString("calculation_type");
-                        BigDecimal earned = amount;
-                        if ("PER_DAY".equals(calcType) && standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
-                            BigDecimal dailyRate = amount.divide(standardWorkDays, 4, java.math.RoundingMode.HALF_UP);
-                            earned = dailyRate.multiply(new BigDecimal(p.getWorkingDays())).setScale(2, java.math.RoundingMode.HALF_UP);
+            
+            // Lấy positionId từ hợp đồng
+            int positionId = (activeContract != null) ? activeContract.getPositionId() : -1;
+            
+            if (positionId > 0) {
+                try (Connection conn = DBContext.getConnection();
+                     PreparedStatement ps = conn.prepareStatement(sqlAllowance)) {
+                    ps.setInt(1, positionId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            if (!firstAllow) json.append(",");
+                            json.append("{");
+                            json.append("\"name\":\"").append(escapeHtml(rs.getString("allowance_name"))).append("\",");
+                            
+                            BigDecimal amount = rs.getBigDecimal("amount");
+                            String calcType = rs.getString("calculation_type");
+                            BigDecimal earned = amount;
+                            if ("PER_DAY".equals(calcType) && standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
+                                BigDecimal dailyRate = amount.divide(standardWorkDays, 4, java.math.RoundingMode.HALF_UP);
+                                earned = dailyRate.multiply(new BigDecimal(p.getWorkingDays())).setScale(2, java.math.RoundingMode.HALF_UP);
+                            }
+                            
+                            json.append("\"amount\":").append(earned).append(",");
+                            json.append("\"isBhxh\":").append(rs.getInt("is_bhxh_applied") == 1);
+                            json.append("}");
+                            firstAllow = false;
                         }
-                        
-                        json.append("\"amount\":").append(earned).append(",");
-                        json.append("\"isBhxh\":").append(rs.getInt("is_bhxh_applied") == 1);
-                        json.append("}");
-                        firstAllow = false;
                     }
                 }
             }
+            
+            // Tính thâm niên
+            dao.AllowanceDAO alwDao = new dao.AllowanceDAO();
+            int tenureMonths = alwDao.getTenureMonths(userId);
+            BigDecimal seniorityAmount = alwDao.getSeniorityAmount(tenureMonths);
+            if (seniorityAmount.compareTo(BigDecimal.ZERO) > 0) {
+                if (!firstAllow) json.append(",");
+                json.append("{");
+                json.append("\"name\":\"").append(escapeHtml("Phụ cấp thâm niên")).append("\",");
+                json.append("\"amount\":").append(seniorityAmount).append(",");
+                json.append("\"isBhxh\":false");
+                json.append("}");
+            }
+            
             json.append("],");
 
             json.append("\"insurances\":[");

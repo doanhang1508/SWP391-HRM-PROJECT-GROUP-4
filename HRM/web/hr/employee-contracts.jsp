@@ -423,14 +423,18 @@
         <div class="form-group"><label class="form-label">Loại hợp đồng <span class="required">*</span></label><select name="contractTypeId" class="form-control" required onchange="updateSalaryHint(this)"><option value="">-- Chọn --</option><c:forEach var="ct" items="${contractTypes}"><option value="${ct.contractTypeId}"><c:out value="${ct.typeName}"/></option></c:forEach></select></div>
         <div class="form-group"><label class="form-label">Bậc lương <span class="required">*</span></label><select name="salaryGradeId" class="form-control" required onchange="prefillSalary(this)"><option value="">-- Chọn --</option><c:forEach var="sg" items="${salaryGrades}"><option value="${sg.salaryGradeId}" data-base="${sg.minSalary}"><c:out value="${sg.gradeName}"/> (<fmt:formatNumber value="${sg.minSalary}" type="number" groupingUsed="true"/>đ - <fmt:formatNumber value="${sg.maxSalary}" type="number" groupingUsed="true"/>đ)</option></c:forEach></select></div>
         <div class="form-group"><label class="form-label">Phòng ban <span class="required">*</span></label><select name="departmentId" class="form-control" required><c:forEach var="d" items="${departments}"><option value="${d.departmentId}" ${d.departmentId==employee.departmentId?'selected':''}><c:out value="${d.departmentName}"/></option></c:forEach></select></div>
-        <div class="form-group"><label class="form-label">Chức vụ <span class="required">*</span></label><select name="positionId" class="form-control" required><c:forEach var="p" items="${positions}"><option value="${p.positionId}" ${p.positionId==employee.positionId?'selected':''}><c:out value="${p.positionName}"/></option></c:forEach></select></div>
+        <div class="form-group"><label class="form-label">Chức vụ <span class="required">*</span></label><select name="positionId" id="positionSelect" class="form-control" required onchange="fetchPositionAllowances(this.value)"><option value="">-- Chọn --</option><c:forEach var="p" items="${positions}"><option value="${p.positionId}" ${p.positionId==employee.positionId?'selected':''}><c:out value="${p.positionName}"/></option></c:forEach></select></div>
         <div class="form-group"><label class="form-label">Ngày bắt đầu <span class="required">*</span></label><input type="date" name="startDate" class="form-control" required></div>
         <div class="form-group"><label class="form-label">Ngày kết thúc</label><input type="date" name="endDate" class="form-control"><span class="form-hint">Để trống nếu không thời hạn</span></div>
         <div class="form-group"><label class="form-label">Lương cơ bản (đ) <span class="required">*</span></label><input type="text" name="baseSalary" id="baseSalaryInput" class="form-control" required placeholder="VD: 10000000"><span class="form-hint" id="salaryHint"></span></div>
         <div class="form-group"><label class="form-label">Tính thuế <span class="required">*</span></label><select name="taxCalcType" class="form-control" required><option value="1">Lũy tiến</option><option value="2">Khấu trừ 10%</option><option value="3">Miễn thuế</option></select></div>
-        <c:if test="${not empty availableAllowances}">
-          <div class="form-group full"><label class="form-label">Phụ cấp đi kèm</label><div class="allowance-check-grid"><c:forEach var="alw" items="${availableAllowances}"><div class="allowance-check-item"><input type="checkbox" name="allowanceIds" value="${alw.allowanceId}" id="alw_${alw.allowanceId}"><label for="alw_${alw.allowanceId}"><c:out value="${alw.allowanceName}"/></label><span class="alw-amount"><fmt:formatNumber value="${alw.amount}" type="number" groupingUsed="true"/>đ</span></div></c:forEach></div></div>
-        </c:if>
+        <div class="form-group full">
+          <label class="form-label">Phụ cấp áp dụng theo Chức vụ</label>
+          <div id="dynamicAllowancesContainer" style="padding: 12px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; color: #475569; font-size: 0.9rem;">
+             Vui lòng chọn chức vụ để xem phụ cấp mặc định.
+          </div>
+          
+        </div>
       </div>
       <div class="modal-actions"><button type="button" class="btn-outline" onclick="closeModal('createContractModal')">Hủy</button><button type="submit" class="btn-primary"><i class="fas fa-save"></i> Tạo hợp đồng</button></div>
     </form>
@@ -454,9 +458,13 @@
         <div class="form-group"><label class="form-label">Ngày hiệu lực phụ lục <span class="required">*</span></label><input type="date" name="startDate" class="form-control" required></div>
         <div class="form-group"><label class="form-label">Lương cơ bản mới (đ) <span class="required">*</span></label><input type="text" name="baseSalary" class="form-control" required value="<fmt:formatNumber value='${currentContract.baseSalary}' type='number' groupingUsed='false'/>"></div>
         <div class="form-group full"><label class="form-label">Lý do / Nội dung phụ lục <span class="required">*</span></label><textarea name="addendumReason" class="form-control" required rows="3" placeholder="Mô tả lý do điều chỉnh..."></textarea></div>
-        <c:if test="${not empty availableAllowances}">
-          <div class="form-group full"><label class="form-label">Phụ cấp áp dụng theo phụ lục</label><div class="allowance-check-grid"><c:forEach var="alw" items="${availableAllowances}"><c:set var="_checked" value="false"/><c:forEach var="_id" items="${currentAllowanceIds}"><c:if test="${_id == alw.allowanceId}"><c:set var="_checked" value="true"/></c:if></c:forEach><div class="allowance-check-item"><input type="checkbox" name="allowanceIds" value="${alw.allowanceId}" id="add_alw_${alw.allowanceId}"${_checked ? ' checked' : ''}><label for="add_alw_${alw.allowanceId}"><c:out value="${alw.allowanceName}"/></label><span class="alw-amount"><fmt:formatNumber value="${alw.amount}" type="number" groupingUsed="true"/>đ</span></div></c:forEach></div></div>
-        </c:if>
+        <div class="form-group full">
+          <label class="form-label">Phụ cấp áp dụng</label>
+          <div id="addendumAllowancesContainer" style="padding: 12px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; color: #475569; font-size: 0.9rem;">
+             <i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu phụ cấp...
+          </div>
+          
+        </div>
 
       </div>
       <div class="modal-actions"><button type="button" class="btn-outline" onclick="closeModal('addendumModal')">Hủy</button><button type="submit" class="btn-primary"><i class="fas fa-paper-plane"></i> Gửi phụ lục</button></div>
@@ -556,7 +564,87 @@ function closeModal(id){var m=document.getElementById(id);if(m){m.classList.remo
 document.querySelectorAll('.modal-overlay').forEach(function(m){m.addEventListener('click',function(e){if(e.target===m)closeModal(m.id);});});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')document.querySelectorAll('.modal-overlay.open').forEach(function(m){closeModal(m.id);});});
 function prefillSalary(sel){var b=sel.options[sel.selectedIndex].getAttribute('data-base');if(b)document.getElementById('baseSalaryInput').value=b;}
-function updateSalaryHint(sel){var h=document.getElementById('salaryHint');if(h){h.textContent=(sel.value=='1')?'Hop dong thu viec: luong thuc nhan = 85% luong nhap.':'';h.style.color='#d97706';}}
+function updateSalaryHint(selectElement) {
+    const minSalaryInput = document.getElementById("baseSalaryInput");
+    const h = document.getElementById('salaryHint');
+    if(h){
+        h.textContent=(selectElement.value=='1')?'Hop dong thu viec: luong thuc nhan = 85% luong nhap.':'';
+        h.style.color='#d97706';
+    }
+}
+
+function fetchPositionAllowances(positionId) {
+    const container = document.getElementById("dynamicAllowancesContainer");
+    if (!positionId) {
+        container.innerHTML = "Vui lòng chọn chức vụ để xem phụ cấp mặc định.";
+        return;
+    }
+    
+    container.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...';
+    
+    // Lấy userId để tính thâm niên (nếu có)
+    const userIdInput = document.querySelector('input[name="userId"]');
+    let userIdParam = (userIdInput && userIdInput.value) ? '&userId=' + userIdInput.value : '';
+
+    fetch('${pageContext.request.contextPath}/api/position-allowances?positionId=' + positionId + userIdParam)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                container.innerHTML = '<span style="color:red;">Lỗi tải dữ liệu.</span>';
+                return;
+            }
+            if (data.length === 0) {
+                container.innerHTML = 'Chức vụ này không có phụ cấp mặc định.';
+                return;
+            }
+            
+            let html = '<ul style="margin: 0; padding-left: 20px;">';
+            data.forEach(item => {
+                let formattedAmount = new Intl.NumberFormat('vi-VN').format(item.amount);
+                html += '<li><strong>' + item.name + '</strong>: ' + formattedAmount + ' đ</li>';
+            });
+            html += '</ul>';
+            container.innerHTML = html;
+        })
+        .catch(err => {
+            console.error(err);
+            container.innerHTML = '<span style="color:red;">Lỗi kết nối.</span>';
+        });
+}
+
+// Fetch once if position is pre-selected on modal open
+document.addEventListener("DOMContentLoaded", function() {
+    var posSelect = document.getElementById("positionSelect");
+    if (posSelect && posSelect.value) {
+        fetchPositionAllowances(posSelect.value);
+    }
+    
+    // Fetch cho phần phụ lục hợp đồng
+    var currentContractPosInput = document.querySelector('#addendumModal input[name="positionId"]');
+    var addendumContainer = document.getElementById("addendumAllowancesContainer");
+    if (currentContractPosInput && currentContractPosInput.value && addendumContainer) {
+        const userIdInput = document.querySelector('input[name="userId"]');
+        let userIdParam = (userIdInput && userIdInput.value) ? '&userId=' + userIdInput.value : '';
+        fetch('${pageContext.request.contextPath}/api/position-allowances?positionId=' + currentContractPosInput.value + userIdParam)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error || data.length === 0) {
+                    addendumContainer.innerHTML = 'Không có phụ cấp mặc định.';
+                    return;
+                }
+                let html = '<ul style="margin: 0; padding-left: 20px;">';
+                data.forEach(item => {
+                    let formattedAmount = new Intl.NumberFormat('vi-VN').format(item.amount);
+                    html += '<li><strong>' + item.name + '</strong>: ' + formattedAmount + ' đ</li>';
+                });
+                html += '</ul>';
+                addendumContainer.innerHTML = html;
+            })
+            .catch(err => {
+                addendumContainer.innerHTML = '<span style="color:red;">Lỗi kết nối.</span>';
+            });
+    }
+});
 
 // Ràng buộc chọn Ngày bắt đầu từ mùng 1 tháng sau trở đi
 document.addEventListener("DOMContentLoaded", function() {
