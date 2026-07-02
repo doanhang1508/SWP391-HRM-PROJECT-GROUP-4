@@ -155,12 +155,21 @@ public class ImportAttendanceController extends HttpServlet {
             }
 
             if (records.isEmpty()) {
-                session.setAttribute("errorMessage",
-                        "Không có dữ liệu hợp lệ để import. " +
-                                (parseErrors.isEmpty() ? ""
-                                        : "Lỗi: " +
-                                                String.join("; ",
-                                                        parseErrors.subList(0, Math.min(3, parseErrors.size())))));
+                long monthMismatchCount = parseErrors.stream()
+                        .filter(e -> e.contains("không thuộc Tháng"))
+                        .count();
+                String errorMessage;
+                if (monthMismatchCount > 0 && monthMismatchCount == parseErrors.size()) {
+                    errorMessage = "File bạn chọn không khớp với Tháng " + month + "/" + year
+                            + " đã chọn. Vui lòng kiểm tra lại file hoặc chọn đúng tháng/năm tương ứng.";
+                } else {
+                    errorMessage = "Không có dữ liệu hợp lệ để import. "
+                            + (parseErrors.isEmpty() ? ""
+                                    : "Lỗi: "
+                                            + String.join("; ",
+                                                    parseErrors.subList(0, Math.min(3, parseErrors.size()))));
+                }
+                session.setAttribute("errorMessage", errorMessage);
                 session.setAttribute("fullParseErrors", parseErrors);
                 response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
                 return;
@@ -258,6 +267,7 @@ public class ImportAttendanceController extends HttpServlet {
             if (isRawLogFormat(sheet)) {
                 // 1. Group swipe logs from Sheet 1 ("Chi Tiết Chấm Công")
                 java.util.Map<String, java.util.Map<LocalDate, List<Time>>> swipeMap = new java.util.HashMap<>();
+                int skippedSwipeCount = 0;
                 for (Row row : sheet) {
                     if (row.getRowNum() < 2)
                         continue; // Bỏ qua 2 dòng đầu (title, header)
@@ -305,14 +315,21 @@ public class ImportAttendanceController extends HttpServlet {
                     if (dateTime != null) {
                         java.util.Calendar cal = java.util.Calendar.getInstance();
                         cal.setTime(dateTime);
-                        LocalDate date = LocalDate.of(cal.get(java.util.Calendar.YEAR),
-                                cal.get(java.util.Calendar.MONTH) + 1, cal.get(java.util.Calendar.DAY_OF_MONTH));
+                        LocalDate date = LocalDate.of(cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH) + 1, cal.get(java.util.Calendar.DAY_OF_MONTH));
+                        if (date.getMonthValue() != month || date.getYear() != year) {
+                            skippedSwipeCount++;
+                            continue;
+                        }
                         Time time = new Time(dateTime.getTime());
 
                         swipeMap.computeIfAbsent(empCode, k -> new java.util.HashMap<>())
                                 .computeIfAbsent(date, k -> new java.util.ArrayList<>())
                                 .add(time);
                     }
+                }
+                if (skippedSwipeCount > 0) {
+                    skippedRows.add("Đã bỏ qua " + skippedSwipeCount + " swipe log không thuộc Tháng "
+                            + month + "/" + year + " đã chọn.");
                 }
 
                 // 2. Parse Sheet 0 ("Bảng Công") to get employee profiles, shifts, and daily
@@ -509,7 +526,7 @@ public class ImportAttendanceController extends HttpServlet {
                     if (isRowEmpty(row))
                         continue;
                     try {
-                        Attendance a = rowToAttendance(row, userMap, usernameMap, allShifts);
+                        Attendance a = rowToAttendance(row, userMap, usernameMap, allShifts, month, year);
                         if (a != null) {
                             records.add(a);
                         } else {
@@ -534,8 +551,7 @@ public class ImportAttendanceController extends HttpServlet {
         return true;
     }
 
-    private Attendance rowToAttendance(Row row, java.util.Map<Integer, User> userMap,
-            java.util.Map<String, User> usernameMap, List<Shift> allShifts) throws Exception {
+    private Attendance rowToAttendance(Row row, java.util.Map<Integer, User> userMap, java.util.Map<String, User> usernameMap, List<Shift> allShifts, int selectedMonth, int selectedYear) throws Exception {
         Attendance a = new Attendance();
 
         // ── Scan 6 cột đầu vì dòng "Cộng:" có thể nằm ở cột bất kỳ do merged cell ──
@@ -607,6 +623,12 @@ public class ImportAttendanceController extends HttpServlet {
                 throw new Exception(
                         "Sai định dạng ngày làm việc (" + dateStr + "). Cần định dạng dd/MM/yyyy hoặc yyyy-MM-dd");
             }
+        }
+
+        LocalDate wd = a.getWorkDate().toLocalDate();
+        if (wd.getMonthValue() != selectedMonth || wd.getYear() != selectedYear) {
+            throw new Exception("Ngày làm việc " + wd + " không thuộc Tháng " + selectedMonth
+                    + "/" + selectedYear + " đã chọn để import.");
         }
 
         String shiftName = getStringCell(row, 7);
