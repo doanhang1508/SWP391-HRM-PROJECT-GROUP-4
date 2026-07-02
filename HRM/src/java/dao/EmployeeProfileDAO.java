@@ -136,6 +136,20 @@ public class EmployeeProfileDAO {
         return false;
     }
 
+    public boolean updateEmploymentStatus(int userId, int statusId) {
+        String sql = "UPDATE employee_profiles SET employment_status_id = ? WHERE user_id = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, statusId);
+            ps.setInt(2, userId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("EmployeeProfileDAO.updateEmploymentStatus error: " + e.getMessage());
+        }
+        return false;
+    }
+
     // ── Helpers ────────────────────────────────────────────────────────────────
 
     private EmployeeProfile mapRow(ResultSet rs) throws SQLException {

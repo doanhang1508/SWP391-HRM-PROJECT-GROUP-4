@@ -433,6 +433,7 @@ public class PayrollDAO {
                      "               WHERE ec.user_id = u.user_id " +
                      "                 AND ec.start_date <= ? " +
                      "                 AND (ec.end_date IS NULL OR ec.end_date >= ?) " +
+                     "                 AND (ec.actual_end_date IS NULL OR ec.actual_end_date >= ?) " +
                      "           ) " +
                      "           OR EXISTS ( " +
                      "               SELECT 1 FROM employee_rewards_disciplines erd " +
@@ -442,12 +443,21 @@ public class PayrollDAO {
                      "                 AND erd.applied_date >= ? " +
                      "           ) " +
                      "       ) " +
+                     "   ) " +
+                     "   AND NOT EXISTS ( " +
+                     "       SELECT 1 FROM employee_profiles ep2 " +
+                     "       JOIN employee_contracts ec2 ON ep2.user_id = ec2.user_id " +
+                     "       WHERE ep2.user_id = u.user_id " +
+                     "         AND ep2.employment_status_id = 4 " +
+                     "         AND ec2.status = 'Terminated' " +
+                     "         AND ec2.actual_end_date < ? " +
                      "   )";
 
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             // params: attendance(1-2), shift_assignments(3-4), employee_shifts(5-6),
-            //         employee_contracts(7=lastDay, 8=firstDay), rewards(9=firstDay)
+            //         employee_contracts(7=lastDay, 8=firstDay, 9=firstDay), rewards(10=firstDay), 
+            //         not_exists(11=firstDay)
             ps.setDate(1, sqlFirstDay);
             ps.setDate(2, sqlLastDay);
             ps.setDate(3, sqlFirstDay);
@@ -456,7 +466,9 @@ public class PayrollDAO {
             ps.setDate(6, sqlLastDay);
             ps.setDate(7, sqlLastDay);   // ec.start_date <= lastDay
             ps.setDate(8, sqlFirstDay);  // ec.end_date >= firstDay
-            ps.setDate(9, sqlFirstDay);  // erd.applied_date >= firstDay
+            ps.setDate(9, sqlFirstDay);  // ec.actual_end_date >= firstDay
+            ps.setDate(10, sqlFirstDay); // erd.applied_date >= firstDay
+            ps.setDate(11, sqlFirstDay); // ec2.actual_end_date < firstDay
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {

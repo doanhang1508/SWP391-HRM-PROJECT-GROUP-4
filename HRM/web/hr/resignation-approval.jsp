@@ -777,6 +777,10 @@
         <form id="approveForm" action="${pageContext.request.contextPath}/hr/resignation-approval" method="post">
             <input type="hidden" name="action" value="approve">
             <input type="hidden" name="resignationId" id="approveResignationId">
+            <div style="margin-top: 15px; text-align: left;">
+                <label for="lastWorkingDayInput" style="font-weight: 600; font-size: 0.85rem;">Ngày làm việc cuối cùng:</label>
+                <input type="date" id="lastWorkingDayInput" name="lastWorkingDay" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; margin-top: 6px;">
+            </div>
         </form>
 
         <div class="modal-actions">

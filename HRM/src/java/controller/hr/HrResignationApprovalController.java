@@ -28,11 +28,13 @@ public class HrResignationApprovalController extends HttpServlet {
 
     private ResignationDAO resignationDAO;
     private UserDAO        userDAO;
+    private dao.EmployeeProfileDAO profileDAO;
 
     @Override
     public void init() throws ServletException {
         resignationDAO = new ResignationDAO();
         userDAO        = new UserDAO();
+        profileDAO     = new dao.EmployeeProfileDAO();
     }
 
     // ── Access Control ─────────────────────────────────────────────────────────
@@ -151,9 +153,25 @@ public class HrResignationApprovalController extends HttpServlet {
             return;
         }
 
-        // Bước 1: Cập nhật trạng thái đơn → APPROVED
+        String lastWorkingDayStr = req.getParameter("lastWorkingDay");
+        if (lastWorkingDayStr == null || lastWorkingDayStr.isBlank()) {
+            session.setAttribute("errorMessage", "Vui lòng chọn ngày làm việc cuối cùng.");
+            resp.sendRedirect(req.getContextPath() + "/hr/resignation-approval");
+            return;
+        }
+
+        java.sql.Date lastWorkingDay;
+        try {
+            lastWorkingDay = java.sql.Date.valueOf(lastWorkingDayStr);
+        } catch (Exception e) {
+            session.setAttribute("errorMessage", "Định dạng ngày không hợp lệ.");
+            resp.sendRedirect(req.getContextPath() + "/hr/resignation-approval");
+            return;
+        }
+
+        // Bước 1: Cập nhật trạng thái đơn → APPROVED và ghi nhận last_working_day
         boolean updatedRequest = resignationDAO.updateStatus(
-                resignationId, "APPROVED", hrUser.getUserId(), null);
+                resignationId, "APPROVED", hrUser.getUserId(), null, lastWorkingDay);
 
         if (!updatedRequest) {
             session.setAttribute("errorMessage", "Cập nhật trạng thái đơn thất bại.");
@@ -161,17 +179,15 @@ public class HrResignationApprovalController extends HttpServlet {
             return;
         }
 
-        // Bước 2: Transaction vô hiệu hóa tài khoản + cập nhật employment_status_id=4
-        //         + chuyển hợp đồng Active → Terminated (end_date = desired_last_date)
-        boolean deactivated = userDAO.approveResignation(rr.getUserId(), rr.getDesiredLastDate());
+        // Bước 2: Chuyển trạng thái nhân viên sang NoticePeriod (5)
+        boolean statusUpdated = profileDAO.updateEmploymentStatus(rr.getUserId(), 5);
 
-        if (deactivated) {
+        if (statusUpdated) {
             session.setAttribute("successMessage",
-                    "Đã duyệt đơn nghỉ việc. Tài khoản nhân viên đã được vô hiệu hóa.");
+                    "Đã duyệt đơn nghỉ việc. Nhân viên đang trong thời gian báo trước.");
         } else {
-            // Đơn đã cập nhật APPROVED nhưng deactivate thất bại — báo lỗi rõ ràng
             session.setAttribute("errorMessage",
-                    "Đơn đã duyệt nhưng vô hiệu hóa tài khoản thất bại. Vui lòng kiểm tra lại hồ sơ nhân viên ID=" + rr.getUserId() + ".");
+                    "Đơn đã duyệt nhưng cập nhật trạng thái nhân viên thất bại.");
         }
 
         resp.sendRedirect(req.getContextPath() + "/hr/resignation-approval");
@@ -204,7 +220,7 @@ public class HrResignationApprovalController extends HttpServlet {
 
         // Chỉ cập nhật trạng thái đơn — không động vào users hay employee_profiles
         boolean success = resignationDAO.updateStatus(
-                resignationId, "REJECTED", hrUser.getUserId(), hrNote.trim());
+                resignationId, "REJECTED", hrUser.getUserId(), hrNote.trim(), null);
 
         if (success) {
             session.setAttribute("successMessage", "Đã từ chối đơn xin nghỉ việc.");

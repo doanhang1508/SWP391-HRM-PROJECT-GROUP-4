@@ -18,6 +18,8 @@ public class EmployeeContract {
     private int salaryGradeId;
     private Date startDate;
     private Date endDate;
+    private Date actualEndDate;
+    private String terminationReason;
     private BigDecimal baseSalary;
     private int taxCalcType;         // 1=Lũy tiến, 2=Khấu trừ 10%, 3=Không thuế
     private String filePath;
@@ -75,6 +77,12 @@ public class EmployeeContract {
 
     public Date getEndDate() { return endDate; }
     public void setEndDate(Date endDate) { this.endDate = endDate; }
+
+    public Date getActualEndDate() { return actualEndDate; }
+    public void setActualEndDate(Date actualEndDate) { this.actualEndDate = actualEndDate; }
+
+    public String getTerminationReason() { return terminationReason; }
+    public void setTerminationReason(String terminationReason) { this.terminationReason = terminationReason; }
 
     public BigDecimal getBaseSalary() { return baseSalary; }
     public void setBaseSalary(BigDecimal baseSalary) { this.baseSalary = baseSalary; }

@@ -49,8 +49,24 @@ public class AttendanceDAO {
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection()) {
             conn.setAutoCommit(false);
+            
+            // Lấy danh sách ngày làm việc cuối cùng của các nhân viên đã nghỉ (dựa vào hợp đồng)
+            java.util.Map<Integer, java.sql.Date> lastWorkingDays = new java.util.HashMap<>();
+            String lwSql = "SELECT user_id, MAX(actual_end_date) as max_end FROM employee_contracts WHERE status = 'Terminated' AND actual_end_date IS NOT NULL GROUP BY user_id";
+            try (PreparedStatement psLw = conn.prepareStatement(lwSql);
+                 ResultSet rsLw = psLw.executeQuery()) {
+                while (rsLw.next()) {
+                    lastWorkingDays.put(rsLw.getInt("user_id"), rsLw.getDate("max_end"));
+                }
+            }
+
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (Attendance a : records) {
+                    java.sql.Date lwd = lastWorkingDays.get(a.getUserId());
+                    if (lwd != null && a.getWorkDate().after(lwd)) {
+                        continue; // Bỏ qua chấm công sau ngày nghỉ việc
+                    }
+
                     ps.setInt(1, a.getUserId());
                     ps.setInt(2, a.getShiftId());
                     ps.setDate(3, a.getWorkDate());

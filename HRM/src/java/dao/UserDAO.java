@@ -501,12 +501,12 @@ public class UserDAO {
                 ps2.executeUpdate();
             }
 
-            // 3. Chuyển hợp đồng Active sang Terminated với end_date = lastWorkingDate.
+            // 3. Chuyển hợp đồng Active sang Terminated với actual_end_date = lastWorkingDate.
             //    Điều kiện: chỉ áp dụng cho hợp đồng active chưa có end_date
             //    hoặc có end_date sau ngày nghỉ (tránh update nhầm hợp đồng đã hết hạn đúng trước đó).
             String updateContractSql =
                     "UPDATE employee_contracts " +
-                    "SET status = 'Terminated', end_date = ? " +
+                    "SET status = 'Terminated', actual_end_date = ? " +
                     "WHERE user_id = ? " +
                     "  AND status = 'Active' " +
                     "  AND (end_date IS NULL OR end_date > ?)";
@@ -516,7 +516,7 @@ public class UserDAO {
                 ps3.setDate(3, lastWorkingDate);
                 int contractsUpdated = ps3.executeUpdate();
                 System.out.println("[PAYROLL INFO] approveResignation: userId=" + userId
-                        + " — terminated " + contractsUpdated + " contract(s), end_date=" + lastWorkingDate);
+                        + " — terminated " + contractsUpdated + " contract(s), actual_end_date=" + lastWorkingDate);
             }
 
             conn.commit(); // Commit Transaction — cả 3 bước

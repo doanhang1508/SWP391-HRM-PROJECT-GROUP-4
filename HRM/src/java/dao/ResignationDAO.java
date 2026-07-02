@@ -1,6 +1,8 @@
 package dao;
 
 import model.ResignationRequest;
+import model.ResignationChecklist;
+import model.ExitInterview;
 import util.DBContext;
 
 import java.sql.*;
@@ -8,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * DAO cho bảng resignation_requests.
+ * DAO cho bảng resignation_requests, resignation_checklist, exit_interviews.
  * Xử lý luồng nhân viên tự xin nghỉ việc.
  */
 public class ResignationDAO {
@@ -16,8 +18,8 @@ public class ResignationDAO {
     // ── SQL constants ──────────────────────────────────────────────────────────
 
     private static final String SQL_INSERT =
-            "INSERT INTO resignation_requests (user_id, reason, desired_last_date, status) " +
-            "VALUES (?, ?, ?, 'PENDING')";
+            "INSERT INTO resignation_requests (user_id, reason, desired_last_date, expected_leave_date, notice_period_days, status) " +
+            "VALUES (?, ?, ?, ?, ?, 'PENDING')";
 
     private static final String SQL_GET_BY_USER =
             "SELECT r.*, u.full_name AS employee_name, u.username AS employee_username, rv.full_name AS reviewer_name " +
@@ -42,11 +44,6 @@ public class ResignationDAO {
             "WHERE r.status = ? " +
             "ORDER BY r.submitted_at DESC";
 
-    private static final String SQL_UPDATE_STATUS =
-            "UPDATE resignation_requests " +
-            "SET status = ?, reviewed_by = ?, reviewed_at = NOW(), hr_note = ? " +
-            "WHERE resignation_id = ?";
-
     private static final String SQL_GET_BY_ID =
             "SELECT r.*, u.full_name AS employee_name, u.username AS employee_username, rv.full_name AS reviewer_name " +
             "FROM resignation_requests r " +
@@ -54,38 +51,14 @@ public class ResignationDAO {
             "LEFT JOIN users rv ON r.reviewed_by = rv.user_id " +
             "WHERE r.resignation_id = ?";
 
+    private static final String SQL_UPDATE_STATUS =
+            "UPDATE resignation_requests " +
+            "SET status = ?, reviewed_by = ?, reviewed_at = NOW(), hr_note = ?, last_working_day = ? " +
+            "WHERE resignation_id = ?";
+
     // ── Public Methods ─────────────────────────────────────────────────────────
 
-    /**
-     * Tự động tạo bảng resignation_requests nếu chưa tồn tại.
-     * Gọi trong constructor để đảm bảo bảng luôn có sẵn.
-     */
-    private void ensureTableExists() {
-        String createSQL =
-            "CREATE TABLE IF NOT EXISTS resignation_requests (" +
-            "  resignation_id    INT          AUTO_INCREMENT PRIMARY KEY," +
-            "  user_id           INT          NOT NULL," +
-            "  reason            TEXT         NOT NULL," +
-            "  desired_last_date DATE         NOT NULL," +
-            "  status            ENUM('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING'," +
-            "  submitted_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP," +
-            "  reviewed_by       INT          NULL," +
-            "  reviewed_at       TIMESTAMP    NULL," +
-            "  hr_note           TEXT         NULL," +
-            "  CONSTRAINT fk_resignation_user     FOREIGN KEY (user_id)     REFERENCES users(user_id) ON DELETE CASCADE," +
-            "  CONSTRAINT fk_resignation_reviewer FOREIGN KEY (reviewed_by) REFERENCES users(user_id) ON DELETE SET NULL" +
-            ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
-        DBContext dbContext = new DBContext();
-        try (java.sql.Connection conn = dbContext.getConnection();
-             java.sql.Statement st = conn.createStatement()) {
-            st.execute(createSQL);
-        } catch (java.sql.SQLException e) {
-            System.err.println("ResignationDAO.ensureTableExists warning: " + e.getMessage());
-        }
-    }
-
     public ResignationDAO() {
-        ensureTableExists();
     }
 
     /**
@@ -93,15 +66,15 @@ public class ResignationDAO {
      * Dùng để ngăn nộp đơn trùng lặp.
      */
     public boolean hasPendingResignation(int userId) {
-        String sql = "SELECT COUNT(*) FROM resignation_requests WHERE user_id = ? AND status = 'PENDING'";
+        String sql = "SELECT COUNT(*) FROM resignation_requests WHERE user_id = ? AND status IN ('PENDING', 'APPROVED')";
         DBContext dbContext = new DBContext();
-        try (java.sql.Connection conn = dbContext.getConnection();
-             java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
-            try (java.sql.ResultSet rs = ps.executeQuery()) {
+            try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return rs.getInt(1) > 0;
             }
-        } catch (java.sql.SQLException e) {
+        } catch (SQLException e) {
             System.err.println("ResignationDAO.hasPendingResignation error: " + e.getMessage());
         }
         return false;
@@ -109,7 +82,6 @@ public class ResignationDAO {
 
     /**
      * Nhân viên nộp đơn xin nghỉ mới (status = PENDING).
-     * @return true nếu insert thành công
      */
     public boolean insert(ResignationRequest r) {
         DBContext dbContext = new DBContext();
@@ -119,6 +91,12 @@ public class ResignationDAO {
             ps.setInt(1, r.getUserId());
             ps.setString(2, r.getReason());
             ps.setDate(3, r.getDesiredLastDate());
+            ps.setDate(4, r.getExpectedLeaveDate());
+            if (r.getNoticePeriodDays() != null) {
+                ps.setInt(5, r.getNoticePeriodDays());
+            } else {
+                ps.setNull(5, Types.INTEGER);
+            }
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
@@ -127,20 +105,14 @@ public class ResignationDAO {
         }
     }
 
-    /**
-     * Lấy tất cả đơn của 1 nhân viên, sắp xếp mới nhất trước.
-     */
     public List<ResignationRequest> getByUserId(int userId) {
         List<ResignationRequest> list = new ArrayList<>();
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(SQL_GET_BY_USER)) {
-
             ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapRow(rs));
-                }
+                while (rs.next()) list.add(mapRow(rs));
             }
         } catch (SQLException e) {
             System.err.println("ResignationDAO.getByUserId error: " + e.getMessage());
@@ -148,39 +120,27 @@ public class ResignationDAO {
         return list;
     }
 
-    /**
-     * Lấy tất cả đơn (dành cho HR — không filter).
-     */
     public List<ResignationRequest> getAll() {
         List<ResignationRequest> list = new ArrayList<>();
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(SQL_GET_ALL);
              ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                list.add(mapRow(rs));
-            }
+            while (rs.next()) list.add(mapRow(rs));
         } catch (SQLException e) {
             System.err.println("ResignationDAO.getAll error: " + e.getMessage());
         }
         return list;
     }
 
-    /**
-     * Lấy đơn theo trạng thái (PENDING / APPROVED / REJECTED).
-     */
     public List<ResignationRequest> getAllByStatus(String status) {
         List<ResignationRequest> list = new ArrayList<>();
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(SQL_GET_ALL_BY_STATUS)) {
-
             ps.setString(1, status);
             try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapRow(rs));
-                }
+                while (rs.next()) list.add(mapRow(rs));
             }
         } catch (SQLException e) {
             System.err.println("ResignationDAO.getAllByStatus error: " + e.getMessage());
@@ -188,14 +148,10 @@ public class ResignationDAO {
         return list;
     }
 
-    /**
-     * Lấy 1 đơn theo ID (dùng khi cần lấy userId trước khi approve).
-     */
     public ResignationRequest getById(int resignationId) {
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(SQL_GET_BY_ID)) {
-
             ps.setInt(1, resignationId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return mapRow(rs);
@@ -206,26 +162,28 @@ public class ResignationDAO {
         return null;
     }
 
-    /**
-     * Cập nhật trạng thái đơn (APPROVED hoặc REJECTED).
-     * @param id         resignation_id
-     * @param status     "APPROVED" hoặc "REJECTED"
-     * @param reviewedBy user_id của HR duyệt
-     * @param hrNote     ghi chú HR (nullable khi approve)
-     */
-    public boolean updateStatus(int id, String status, int reviewedBy, String hrNote) {
+    public boolean updateStatus(int id, String status, int reviewedBy, String hrNote, Date lastWorkingDay) {
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(SQL_UPDATE_STATUS)) {
 
             ps.setString(1, status);
-            ps.setInt(2, reviewedBy);
+            if (reviewedBy > 0) {
+                ps.setInt(2, reviewedBy);
+            } else {
+                ps.setNull(2, Types.INTEGER);
+            }
             if (hrNote != null && !hrNote.isBlank()) {
                 ps.setString(3, hrNote);
             } else {
                 ps.setNull(3, Types.VARCHAR);
             }
-            ps.setInt(4, id);
+            if (lastWorkingDay != null) {
+                ps.setDate(4, lastWorkingDay);
+            } else {
+                ps.setNull(4, Types.DATE);
+            }
+            ps.setInt(5, id);
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
@@ -233,6 +191,119 @@ public class ResignationDAO {
             return false;
         }
     }
+
+    // ── Checklist methods ─────────────────────────────────────────────────────────
+
+    public List<ResignationChecklist> getChecklistByResignationId(int resignationId) {
+        List<ResignationChecklist> list = new ArrayList<>();
+        String sql = "SELECT c.*, u.full_name AS completed_by_name FROM resignation_checklist c LEFT JOIN users u ON c.completed_by = u.user_id WHERE resignation_id = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, resignationId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ResignationChecklist c = new ResignationChecklist();
+                    c.setChecklistId(rs.getInt("checklist_id"));
+                    c.setResignationId(rs.getInt("resignation_id"));
+                    c.setItemName(rs.getString("item_name"));
+                    c.setCompleted(rs.getBoolean("is_completed"));
+                    c.setCompletedBy(rs.getObject("completed_by") != null ? rs.getInt("completed_by") : null);
+                    c.setCompletedAt(rs.getTimestamp("completed_at"));
+                    c.setNote(rs.getString("note"));
+                    c.setCompletedByName(rs.getString("completed_by_name"));
+                    list.add(c);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("ResignationDAO.getChecklist error: " + e.getMessage());
+        }
+        return list;
+    }
+
+    public boolean updateChecklistItem(int checklistId, boolean isCompleted, int completedBy, String note) {
+        String sql = "UPDATE resignation_checklist SET is_completed = ?, completed_by = ?, completed_at = NOW(), note = ? WHERE checklist_id = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setBoolean(1, isCompleted);
+            ps.setInt(2, completedBy);
+            ps.setString(3, note);
+            ps.setInt(4, checklistId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("ResignationDAO.updateChecklistItem error: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean insertChecklistItem(int resignationId, String itemName) {
+        String sql = "INSERT INTO resignation_checklist (resignation_id, item_name) VALUES (?, ?)";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, resignationId);
+            ps.setString(2, itemName);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("ResignationDAO.insertChecklistItem error: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean deleteChecklistItem(int checklistId) {
+        String sql = "DELETE FROM resignation_checklist WHERE checklist_id = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, checklistId);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("ResignationDAO.deleteChecklistItem error: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // ── Exit Interview methods ─────────────────────────────────────────────────────────
+
+    public ExitInterview getExitInterview(int resignationId) {
+        String sql = "SELECT * FROM exit_interviews WHERE resignation_id = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, resignationId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    ExitInterview e = new ExitInterview();
+                    e.setExitInterviewId(rs.getInt("exit_interview_id"));
+                    e.setResignationId(rs.getInt("resignation_id"));
+                    e.setReasonCategory(rs.getString("reason_category"));
+                    e.setComment(rs.getString("comment"));
+                    e.setCreatedAt(rs.getTimestamp("created_at"));
+                    return e;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("ResignationDAO.getExitInterview error: " + e.getMessage());
+        }
+        return null;
+    }
+
+    public boolean insertExitInterview(ExitInterview exit) {
+        String sql = "INSERT INTO exit_interviews (resignation_id, reason_category, comment) VALUES (?, ?, ?)";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, exit.getResignationId());
+            ps.setString(2, exit.getReasonCategory());
+            ps.setString(3, exit.getComment());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("ResignationDAO.insertExitInterview error: " + e.getMessage());
+            return false;
+        }
+    }
+
 
     // ── Private Helpers ───────────────────────────────────────────────────────
 
@@ -242,11 +313,28 @@ public class ResignationDAO {
         r.setUserId(rs.getInt("user_id"));
         r.setReason(rs.getString("reason"));
         r.setDesiredLastDate(rs.getDate("desired_last_date"));
+        try {
+            r.setExpectedLeaveDate(rs.getDate("expected_leave_date"));
+            r.setLastWorkingDay(rs.getDate("last_working_day"));
+            if (rs.getObject("notice_period_days") != null) {
+                r.setNoticePeriodDays(rs.getInt("notice_period_days"));
+            }
+        } catch(SQLException ex) {}
+
         r.setStatus(rs.getString("status"));
         r.setSubmittedAt(rs.getTimestamp("submitted_at"));
         r.setReviewedBy(rs.getInt("reviewed_by"));      // 0 nếu NULL
         r.setReviewedAt(rs.getTimestamp("reviewed_at")); // null nếu chưa duyệt
-        r.setHrNote(rs.getString("hr_note"));
+        
+        try {
+            r.setHrNote(rs.getString("hr_note"));
+        } catch(SQLException ex) {}
+        
+        try {
+            r.setCreatedAt(rs.getTimestamp("created_at"));
+            r.setUpdatedAt(rs.getTimestamp("updated_at"));
+        } catch(SQLException ex) {}
+
         r.setEmployeeName(rs.getString("employee_name"));
         r.setEmployeeUsername(rs.getString("employee_username")); // username (mã NV)
         r.setReviewerName(rs.getString("reviewer_name")); // null nếu chưa duyệt

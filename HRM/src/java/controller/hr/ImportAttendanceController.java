@@ -287,6 +287,18 @@ public class ImportAttendanceController extends HttpServlet {
                     throw new Exception("Không tìm thấy dòng ngày (dòng 5) ở Sheet Bảng Công.");
                 }
                 
+                int otColIdx = -1;
+                Row headerRow = sheet0.getRow(3);
+                if (headerRow != null) {
+                    for (int c = 0; c < headerRow.getLastCellNum(); c++) {
+                        String h = getStringCell(headerRow, c);
+                        if (h != null && (h.toUpperCase().contains("OT") || h.toUpperCase().contains("TĂNG CA") || h.toUpperCase().contains("TANG CA"))) {
+                            otColIdx = c;
+                            break;
+                        }
+                    }
+                }
+                
                 java.util.Map<Integer, Integer> colToDayMap = new java.util.HashMap<>();
                 for (int c = 6; c < row4.getLastCellNum(); c++) {
                     Cell cell = row4.getCell(c);
@@ -348,6 +360,22 @@ public class ImportAttendanceController extends HttpServlet {
                         errors.add("Dòng " + (r + 1) + " (Sheet Bảng Công): Không tìm thấy Ca làm việc: " + shiftName);
                         continue;
                     }
+                    
+                    double totalOtHrs = 0.0;
+                    if (otColIdx != -1) {
+                        Cell otCell = row.getCell(otColIdx);
+                        if (otCell != null) {
+                            try {
+                                if (otCell.getCellType() == CellType.NUMERIC) {
+                                    totalOtHrs = otCell.getNumericCellValue();
+                                } else {
+                                    totalOtHrs = Double.parseDouble(otCell.toString().trim());
+                                }
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                    boolean otAssigned = false;
+                    Attendance lastA = null;
                     
                     for (java.util.Map.Entry<Integer, Integer> entry : colToDayMap.entrySet()) {
                         int colIdx = entry.getKey();
@@ -412,8 +440,18 @@ public class ImportAttendanceController extends HttpServlet {
                         
                         a.setOvertimeHrs(0.0);
                         a.setOtReason("");
+                        if (!otAssigned && totalOtHrs > 0 && "PRESENT".equals(status)) {
+                            a.setOvertimeHrs(totalOtHrs);
+                            a.setOtReason("Imported OT");
+                            otAssigned = true;
+                        }
                         
+                        lastA = a;
                         records.add(a);
+                    }
+                    if (!otAssigned && totalOtHrs > 0 && lastA != null) {
+                        lastA.setOvertimeHrs(totalOtHrs);
+                        lastA.setOtReason("Imported OT");
                     }
                 }
             } else {

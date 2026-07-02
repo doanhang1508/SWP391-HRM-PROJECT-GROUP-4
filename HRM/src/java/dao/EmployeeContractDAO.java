@@ -33,6 +33,8 @@ public class EmployeeContractDAO {
         c.setSalaryGradeId(rs.getInt("salary_grade_id"));
         c.setStartDate(rs.getDate("start_date"));
         c.setEndDate(rs.getDate("end_date"));
+        try { c.setActualEndDate(rs.getDate("actual_end_date")); } catch(SQLException e) {}
+        try { c.setTerminationReason(rs.getString("termination_reason")); } catch(SQLException e) {}
         c.setBaseSalary(rs.getBigDecimal("base_salary"));
         c.setTaxCalcType(rs.getInt("tax_calc_type"));
         c.setFilePath(rs.getString("file_path"));
@@ -237,6 +239,29 @@ public class EmployeeContractDAO {
             }
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) list.add(mapRow(rs));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<EmployeeContract> getExpiringContracts(int daysThreshold) {
+        List<EmployeeContract> list = new ArrayList<>();
+        String sql = "SELECT ec.*, u.full_name AS employee_name, ct.type_name AS contract_type_name " +
+                     "FROM employee_contracts ec " +
+                     "JOIN users u ON ec.user_id = u.user_id " +
+                     "LEFT JOIN contract_types ct ON ec.contract_type_id = ct.contract_type_id " +
+                     "WHERE ec.status = 'Active' AND ec.end_date IS NOT NULL " +
+                     "  AND ec.end_date <= DATE_ADD(CURDATE(), INTERVAL ? DAY) " +
+                     "ORDER BY ec.end_date ASC";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, daysThreshold);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();

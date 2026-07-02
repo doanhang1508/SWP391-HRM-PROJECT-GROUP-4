@@ -80,6 +80,26 @@ public class ResignationController extends HttpServlet {
         HttpSession session = req.getSession(false);
         User user = (User) session.getAttribute("currentUser");
 
+        String action = req.getParameter("action");
+
+        if ("cancel".equals(action)) {
+            String idStr = req.getParameter("resignationId");
+            try {
+                int id = Integer.parseInt(idStr);
+                ResignationRequest r = resignationDAO.getById(id);
+                if (r != null && r.getUserId() == user.getUserId() && "PENDING".equals(r.getStatus())) {
+                    resignationDAO.updateStatus(id, "CANCELLED", 0, null, null);
+                    session.setAttribute("successMessage", "Đã hủy đơn xin nghỉ việc.");
+                } else {
+                    session.setAttribute("errorMessage", "Không thể hủy đơn này.");
+                }
+            } catch (Exception e) {
+                session.setAttribute("errorMessage", "Hủy đơn thất bại.");
+            }
+            resp.sendRedirect(req.getContextPath() + "/employee/resignation");
+            return;
+        }
+
         String reason          = req.getParameter("reason");
         String desiredLastDateStr = req.getParameter("desiredLastDate");
 
@@ -96,21 +116,25 @@ public class ResignationController extends HttpServlet {
         }
 
         try {
-            Date desiredLastDate = Date.valueOf(desiredLastDateStr);
+            Date expectedLeaveDate = Date.valueOf(desiredLastDateStr);
+            java.time.LocalDate today = java.time.LocalDate.now();
+            java.time.LocalDate leaveDate = expectedLeaveDate.toLocalDate();
 
             // Ngày nghỉ phải từ hôm nay trở đi
-            // Dùng LocalDate để tránh lỗi so sánh giờ giấc (java.sql.Date.valueOf() tạo 00:00:00)
-            if (desiredLastDate.toLocalDate().isBefore(java.time.LocalDate.now())) {
+            if (leaveDate.isBefore(today)) {
                 session.setAttribute("errorMessage", "Ngày nghỉ phải từ hôm nay trở đi.");
                 resp.sendRedirect(req.getContextPath() + "/employee/resignation");
                 return;
             }
 
+            int noticePeriodDays = (int) java.time.temporal.ChronoUnit.DAYS.between(today, leaveDate);
 
             ResignationRequest r = new ResignationRequest();
             r.setUserId(user.getUserId());
             r.setReason(reason.trim());
-            r.setDesiredLastDate(desiredLastDate);
+            r.setDesiredLastDate(expectedLeaveDate);
+            r.setExpectedLeaveDate(expectedLeaveDate);
+            r.setNoticePeriodDays(noticePeriodDays);
 
             boolean success = resignationDAO.insert(r);
             if (success) {

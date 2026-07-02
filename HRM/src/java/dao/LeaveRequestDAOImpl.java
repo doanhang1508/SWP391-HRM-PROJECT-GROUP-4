@@ -403,6 +403,27 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
         LocalDate startDate = request.getStartDate().toLocalDate();
         LocalDate endDate = request.getEndDate().toLocalDate();
         
+        EmployeeProfileDAO profileDAO = new EmployeeProfileDAO();
+        model.EmployeeProfile profile = profileDAO.getByUserId(request.getUserId());
+        if (profile != null) {
+            int statusId = profile.getEmploymentStatusId();
+            if (statusId == 4 || statusId == 6 || statusId == 7) {
+                throw new Exception("Không thể tạo đơn nghỉ phép. Trạng thái nhân sự hiện tại: " + profile.getEmploymentStatusName());
+            }
+            if (statusId == 5) { // NoticePeriod
+                ResignationDAO resDao = new ResignationDAO();
+                java.util.List<model.ResignationRequest> requests = resDao.getByUserId(request.getUserId());
+                for (model.ResignationRequest r : requests) {
+                    if ("APPROVED".equals(r.getStatus()) && r.getLastWorkingDay() != null) {
+                        if (endDate.isAfter(r.getLastWorkingDay().toLocalDate())) {
+                            throw new Exception("Bạn đang trong thời gian báo trước nghỉ việc. Ngày kết thúc nghỉ phép không được vượt quá ngày làm việc cuối cùng (" + r.getLastWorkingDay() + ").");
+                        }
+                    }
+                }
+            }
+        }
+
+        
         if (startDate.isAfter(endDate)) {
             throw new Exception("Ngày bắt đầu không được lớn hơn ngày kết thúc.");
         }
