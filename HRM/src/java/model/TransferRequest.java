@@ -41,6 +41,8 @@ public class TransferRequest {
     // [NEW FLOW] Bước 0: Nhân viên xác nhận
     private Timestamp employeeConfirmedAt; // nullable
     private String    employeeRejectReason; // nullable
+    // [EFFECTIVE DATE FLOW] Thời điểm hệ thống áp dụng thực sự (null = chưa áp dụng)
+    private Timestamp appliedAt; // nullable
 
     public TransferRequest() {
     }
@@ -311,5 +313,14 @@ public class TransferRequest {
 
     public void setEmployeeRejectReason(String employeeRejectReason) {
         this.employeeRejectReason = employeeRejectReason;
+    }
+
+    // [EFFECTIVE DATE FLOW] Getter/Setter cho applied_at
+    public Timestamp getAppliedAt() {
+        return appliedAt;
+    }
+
+    public void setAppliedAt(Timestamp appliedAt) {
+        this.appliedAt = appliedAt;
     }
 }

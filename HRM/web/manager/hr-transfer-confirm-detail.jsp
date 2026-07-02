@@ -274,7 +274,24 @@
 
                 <!-- ACTION SECTION -->
                 <c:choose>
+                    <c:when test="${req.status eq 'COMPLETED'}">
+                        <div class="status-banner approved">
+                            <i class="fas fa-check-double"></i> Điều chuyển đã được áp dụng.
+                            <c:if test="${req.appliedAt != null}">
+                                <div style="font-weight:normal; font-size:0.85rem; margin-top:6px;">
+                                    Áp dụng lúc: <fmt:formatDate value="${req.appliedAt}" pattern="dd/MM/yyyy HH:mm" />
+                                </div>
+                            </c:if>
+                        </div>
+                    </c:when>
                     <c:when test="${req.status eq 'APPROVED'}">
+                        <div class="status-banner approved" style="background: rgba(2,132,199,0.07); color: #0369a1; border: 1px solid rgba(2,132,199,0.3);">
+                            <i class="fas fa-hourglass-half"></i> Đã phê duyệt — đang chờ đến ngày hiệu lực
+                            (<fmt:formatDate value="${req.effectiveDate}" pattern="dd/MM/yyyy" />).
+                            Hệ thống sẽ tự động cập nhật vào ngày đó.
+                        </div>
+                    </c:when>
+                    <c:when test="${req.status eq 'APPROVED' and false}">
                         <div class="status-banner approved">
                             <i class="fas fa-check-circle"></i> Yêu cầu điều chuyển đã được hoàn tất phê duyệt &amp; thực thi.
                         </div>
@@ -297,7 +314,7 @@
                         <div style="display: flex; gap: 16px;">
                             <div style="flex: 1;">
                                 <form action="${pageContext.request.contextPath}/manager/hr-transfer-confirm/approve" method="post"
-                                      onsubmit="return confirm('Bạn xác nhận PHÊ DUYỆT CUỐI cùng?\n\nHồ sơ nhân viên, hợp đồng và lương sẽ được cập nhật ngay lập tức. Không thể hoàn tác!');">
+                                      onsubmit="return confirm('Bạn xác nhận PHÊ DUYỆT CUỐI cùng?\n\nNếu ngày hiệu lực đã tới: hồ sơ nhân viên và hợp đồng sẽ được cập nhật ngay.\nNếu ngày hiệu lực chưa tới: hệ thống sẽ tự động cập nhật đúng ngày hiệu lực.')">
                                     <input type="hidden" name="requestId" value="${req.transferRequestId}">
                                     <button type="submit" class="btn-approve">
                                         <i class="fas fa-check-double"></i> Xác nhận chuyển

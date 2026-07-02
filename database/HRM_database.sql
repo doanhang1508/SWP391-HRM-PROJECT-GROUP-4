@@ -500,27 +500,47 @@ CREATE TABLE IF NOT EXISTS transfer_requests (
                         COMMENT 'Lương cơ bản mới (NULL = giữ nguyên). Bắt buộc nếu new_salary_grade_id != NULL',
     reason              TEXT        NOT NULL,
     effective_date      DATE        NOT NULL,
-    status              ENUM('PENDING','APPROVED','REJECTED','CANCELLED') NOT NULL DEFAULT 'PENDING',
+    status              ENUM('PENDING','EMPLOYEE_CONFIRMED','MANAGER_APPROVED','APPROVED','COMPLETED','REJECTED','EMPLOYEE_REJECTED','CANCELLED') NOT NULL DEFAULT 'PENDING',
     requested_by        INT         NOT NULL,
-    approved_by         INT         NULL,
-    approved_at         TIMESTAMP   NULL,
-    reject_reason       TEXT        NULL,
-    created_at          TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
-    updated_at          TIMESTAMP   DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    approved_by              INT         NULL,
+    approved_at              TIMESTAMP   NULL,
+    reject_reason            TEXT        NULL,
+    created_at               TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+    updated_at               TIMESTAMP   DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    applied_at               TIMESTAMP   NULL COMMENT 'Thời điểm hệ thống thực sự thực thi đổi phòng ban/chức vụ/vai trò (NULL = chưa áp dụng)',
+    -- Tích hợp từ transfer_new_flow_migration.sql
+    employee_confirmed_at    TIMESTAMP   NULL COMMENT 'Thời điểm nhân viên xác nhận đồng ý điều chuyển',
+    employee_reject_reason   TEXT        NULL COMMENT 'Lý do nhân viên từ chối điều chuyển',
+    manager_approved_by      INT         NULL COMMENT 'User ID của Trưởng phòng đã duyệt bước 1',
+    manager_approved_at      TIMESTAMP   NULL COMMENT 'Thời điểm Trưởng phòng duyệt bước 1',
 
-    CONSTRAINT fk_transfer_employee  FOREIGN KEY (employee_id)       REFERENCES users(user_id)       ON DELETE CASCADE,
-    CONSTRAINT fk_transfer_old_dept  FOREIGN KEY (old_department_id) REFERENCES departments(department_id) ON DELETE SET NULL,
-    CONSTRAINT fk_transfer_old_pos   FOREIGN KEY (old_position_id)   REFERENCES positions(position_id)    ON DELETE SET NULL,
-    CONSTRAINT fk_transfer_old_role  FOREIGN KEY (old_role_id)       REFERENCES roles(role_id)            ON DELETE SET NULL,
-    CONSTRAINT fk_transfer_new_dept  FOREIGN KEY (new_department_id) REFERENCES departments(department_id) ON DELETE CASCADE,
-    CONSTRAINT fk_transfer_new_pos   FOREIGN KEY (new_position_id)   REFERENCES positions(position_id)    ON DELETE CASCADE,
-    CONSTRAINT fk_transfer_new_role  FOREIGN KEY (new_role_id)       REFERENCES roles(role_id)            ON DELETE CASCADE,
-    CONSTRAINT fk_transfer_requester FOREIGN KEY (requested_by)      REFERENCES users(user_id)       ON DELETE CASCADE,
-    CONSTRAINT fk_transfer_approver  FOREIGN KEY (approved_by)       REFERENCES users(user_id)       ON DELETE SET NULL
+    CONSTRAINT fk_transfer_employee   FOREIGN KEY (employee_id)        REFERENCES users(user_id)            ON DELETE CASCADE,
+    CONSTRAINT fk_transfer_old_dept   FOREIGN KEY (old_department_id)  REFERENCES departments(department_id) ON DELETE SET NULL,
+    CONSTRAINT fk_transfer_old_pos    FOREIGN KEY (old_position_id)    REFERENCES positions(position_id)    ON DELETE SET NULL,
+    CONSTRAINT fk_transfer_old_role   FOREIGN KEY (old_role_id)        REFERENCES roles(role_id)            ON DELETE SET NULL,
+    CONSTRAINT fk_transfer_new_dept   FOREIGN KEY (new_department_id)  REFERENCES departments(department_id) ON DELETE CASCADE,
+    CONSTRAINT fk_transfer_new_pos    FOREIGN KEY (new_position_id)    REFERENCES positions(position_id)    ON DELETE CASCADE,
+    CONSTRAINT fk_transfer_new_role   FOREIGN KEY (new_role_id)        REFERENCES roles(role_id)            ON DELETE CASCADE,
+    CONSTRAINT fk_transfer_requester  FOREIGN KEY (requested_by)       REFERENCES users(user_id)            ON DELETE CASCADE,
+    CONSTRAINT fk_transfer_approver   FOREIGN KEY (approved_by)        REFERENCES users(user_id)            ON DELETE SET NULL,
+    CONSTRAINT fk_transfer_mgr_approver FOREIGN KEY (manager_approved_by) REFERENCES users(user_id)         ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE INDEX idx_transfer_employee ON transfer_requests(employee_id);
 CREATE INDEX idx_transfer_status   ON transfer_requests(status);
+
+-- ── transfer_request_allowances: Phụ cấp dự kiến đi kèm phiếu điều chuyển ──
+-- Tích hợp từ transfer_new_flow_migration.sql
+CREATE TABLE IF NOT EXISTS transfer_request_allowances (
+  transfer_request_id INT NOT NULL,
+  allowance_id        INT NOT NULL,
+  PRIMARY KEY (transfer_request_id, allowance_id),
+  CONSTRAINT fk_tra_transfer  FOREIGN KEY (transfer_request_id)
+    REFERENCES transfer_requests(transfer_request_id) ON DELETE CASCADE,
+  CONSTRAINT fk_tra_allowance FOREIGN KEY (allowance_id)
+    REFERENCES allowances(allowance_id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Phụ cấp dự kiến đi kèm phiếu điều chuyển (chỉ áp dụng khi approve)';
 
 -- 3. BẬT LẠI KIỂM TRA KHÓA NGOẠI
 SET FOREIGN_KEY_CHECKS = 1;

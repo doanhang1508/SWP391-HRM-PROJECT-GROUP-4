@@ -255,6 +255,12 @@
                 }
 
                 .b-approved {
+                    background: rgba(16, 185, 129, 0.08);
+                    color: #0284c7;
+                    border: 1px solid rgba(2, 132, 199, 0.25);
+                }
+
+                .b-completed {
                     background: var(--ok-l);
                     color: var(--ok);
                 }
@@ -477,25 +483,26 @@
 
                                                     <td>
                                                         <c:choose>
-                                                            
                                                             <c:when test="${tr.status eq 'EMPLOYEE_CONFIRMED'}">
-                                                                <span class="badge-s b-pending"><i
-                                                                        class="fas fa-user-check"></i> NV xác nhận</span>
+                                                                <span class="badge-s b-pending"><i class="fas fa-user-check"></i> NV xác nhận</span>
                                                             </c:when>
-                                                            
+
                                                             <c:when test="${tr.status eq 'MANAGER_APPROVED'}">
-                                                                <span class="badge-s b-mgr-appr"><i
-                                                                        class="fas fa-user-check"></i> TP duyệt</span>
+                                                                <span class="badge-s b-mgr-appr"><i class="fas fa-user-check"></i> TP duyệt</span>
                                                             </c:when>
-                                                            
+
                                                             <c:when test="${tr.status eq 'APPROVED'}">
-                                                                <span class="badge-s b-approved"><i
-                                                                        class="fas fa-check"></i> Hoàn tất</span>
+                                                                <span class="badge-s b-approved" title="Đã duyệt — chờ ngày hiệu lực">
+                                                                    <i class="fas fa-hourglass-half"></i> Chờ hiệu lực
+                                                                </span>
                                                             </c:when>
-                                                            
+
+                                                            <c:when test="${tr.status eq 'COMPLETED'}">
+                                                                <span class="badge-s b-completed"><i class="fas fa-check-double"></i> Đã áp dụng</span>
+                                                            </c:when>
+
                                                             <c:otherwise>
-                                                                <span class="badge-s b-rejected"><i
-                                                                        class="fas fa-times"></i> Từ chối</span>
+                                                                <span class="badge-s b-rejected"><i class="fas fa-times"></i> Từ chối</span>
                                                             </c:otherwise>
                                                         </c:choose>
                                                     </td>

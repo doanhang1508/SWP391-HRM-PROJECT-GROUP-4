@@ -63,7 +63,8 @@
     .b-emp-conf  { background: rgba(99, 102, 241, 0.1); color: #4f46e5; }
     .b-emp-rej   { background: var(--ng-l); color: var(--ng); }
     .b-mgr-appr  { background: rgba(59, 130, 246, 0.1); color: #1d4ed8; }
-    .b-approved  { background: var(--ok-l); color: var(--ok); }
+    .b-approved  { background: rgba(16, 185, 129, 0.08); color: #0284c7; border: 1px solid rgba(2, 132, 199, 0.25); }
+    .b-completed { background: var(--ok-l); color: var(--ok); }
     .b-rejected  { background: var(--ng-l); color: var(--ng); }
     .b-cancelled { background: rgba(100, 116, 139, 0.1); color: #475569; }
 
@@ -169,29 +170,32 @@
                                             <fmt:formatDate value="${tr.effectiveDate}" pattern="dd/MM/yyyy" />
                                         </td>
                                         <td>
-                                             <c:choose>
-                                              <c:when test="${tr.status eq 'PENDING'}">
-                                                  <span class="badge-s b-pending"><i class="far fa-clock"></i> Chờ NV xác nhận</span>
-                                              </c:when>
-                                              <c:when test="${tr.status eq 'EMPLOYEE_CONFIRMED'}">
-                                                  <span class="badge-s b-emp-conf"><i class="fas fa-user-check"></i> NV đã xác nhận</span>
-                                              </c:when>
-                                              <c:when test="${tr.status eq 'MANAGER_APPROVED'}">
-                                                  <span class="badge-s b-mgr-appr"><i class="fas fa-thumbs-up"></i> TP đã duyệt</span>
-                                              </c:when>
-                                              <c:when test="${tr.status eq 'APPROVED'}">
-                                                  <span class="badge-s b-approved"><i class="fas fa-check"></i> Đã duyệt</span>
-                                              </c:when>
-                                              <c:when test="${tr.status eq 'EMPLOYEE_REJECTED'}">
-                                                  <span class="badge-s b-emp-rej" title="${tr.employeeRejectReason}"><i class="fas fa-user-times"></i> NV từ chối</span>
-                                              </c:when>
-                                              <c:when test="${tr.status eq 'REJECTED' or tr.status eq 'HR_REJECTED'}">
-                                                  <span class="badge-s b-rejected" title="${tr.rejectReason}"><i class="fas fa-times"></i> Bị từ chối</span>
-                                              </c:when>
-                                              <c:otherwise>
-                                                  <span class="badge-s b-cancelled"><i class="fas fa-ban"></i> Đã huỷ</span>
-                                              </c:otherwise>
-                                          </c:choose>
+                                            <c:choose>
+                                                <c:when test="${tr.status eq 'PENDING'}">
+                                                    <span class="badge-s b-pending"><i class="far fa-clock"></i> Chờ NV xác nhận</span>
+                                                </c:when>
+                                                <c:when test="${tr.status eq 'EMPLOYEE_CONFIRMED'}">
+                                                    <span class="badge-s b-emp-conf"><i class="fas fa-user-check"></i> NV đã xác nhận</span>
+                                                </c:when>
+                                                <c:when test="${tr.status eq 'MANAGER_APPROVED'}">
+                                                    <span class="badge-s b-mgr-appr"><i class="fas fa-thumbs-up"></i> TP đã duyệt</span>
+                                                </c:when>
+                                                <c:when test="${tr.status eq 'APPROVED'}">
+                                                    <span class="badge-s b-approved" title="Đã duyệt — chờ đến ngày hiệu lực"><i class="fas fa-hourglass-half"></i> Chờ hiệu lực</span>
+                                                </c:when>
+                                                <c:when test="${tr.status eq 'COMPLETED'}">
+                                                    <span class="badge-s b-completed"><i class="fas fa-check-double"></i> Đã áp dụng</span>
+                                                </c:when>
+                                                <c:when test="${tr.status eq 'EMPLOYEE_REJECTED'}">
+                                                    <span class="badge-s b-emp-rej" title="${tr.employeeRejectReason}"><i class="fas fa-user-times"></i> NV từ chối</span>
+                                                </c:when>
+                                                <c:when test="${tr.status eq 'REJECTED' or tr.status eq 'HR_REJECTED'}">
+                                                    <span class="badge-s b-rejected" title="${tr.rejectReason}"><i class="fas fa-times"></i> Bị từ chối</span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="badge-s b-cancelled"><i class="fas fa-ban"></i> Đã huỷ</span>
+                                                </c:otherwise>
+                                            </c:choose>
                                         </td>
                                         <td>
                                             ${tr.requestedByName}

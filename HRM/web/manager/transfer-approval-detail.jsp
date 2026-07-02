@@ -245,8 +245,27 @@
 
                 <!-- DYNAMIC ACTION FORMS BASED ON STATUS -->
                 <c:choose>
-                    <%-- 1. Hoàn tất --%>
+                    <%-- 1. Đã hoàn tất áp dụng --%>
+                    <c:when test="${req.status eq 'COMPLETED'}">
+                        <div class="status-banner approved">
+                            <i class="fas fa-check-double"></i> Điều chuyển đã được áp dụng.
+                            <c:if test="${req.appliedAt != null}">
+                                <div style="font-weight:normal; font-size:0.85rem; margin-top:6px;">
+                                    Áp dụng lúc: <fmt:formatDate value="${req.appliedAt}" pattern="dd/MM/yyyy HH:mm" />
+                                </div>
+                            </c:if>
+                        </div>
+                    </c:when>
+                    <%-- 2. Đã duyệt — chờ ngày hiệu lực --%>
                     <c:when test="${req.status eq 'APPROVED'}">
+                        <div class="status-banner pending-hr" style="background: rgba(2,132,199,0.07); color: #0369a1; border-color: rgba(2,132,199,0.3);">
+                            <i class="fas fa-hourglass-half"></i> Đã phê duyệt — chờ đến ngày hiệu lực
+                            (<fmt:formatDate value="${req.effectiveDate}" pattern="dd/MM/yyyy" />).
+                            Hệ thống sẽ tự động cập nhật vào ngày đó.
+                        </div>
+                    </c:when>
+                    <%-- 3. Hoàn tất (cũ - giữ backward compat) --%>
+                    <c:when test="${req.status eq 'APPROVED' and false}">
                         <div class="status-banner approved">
                             <i class="fas fa-check-circle"></i> Yêu cầu điều chuyển đã được hoàn tất phê duyệt &amp; thực thi.
                         </div>
@@ -309,7 +328,7 @@
  
                         <div style="display: flex; gap: 16px;">
                             <div style="flex: 1;">
-                                <form action="${pageContext.request.contextPath}/manager/transfer-approval/approve" method="post" onsubmit="return confirm('Bạn xác nhận PHÊ DUYỆT CUỐI cùng? Hồ sơ nhân viên và hợp đồng sẽ được thực thi cập nhật ngay lập tức.');">
+                                <form action="${pageContext.request.contextPath}/manager/transfer-approval/approve" method="post" onsubmit="return confirm('Bạn xác nhận PHÊ DUYỆT CUỐI cùng?\n\nNếu ngày hiệu lực đã tới: hồ sơ sẽ được cập nhật ngay.\nNếu ngày hiệu lực chưa tới: hệ thống sẽ tự động cập nhật đúng ngày.');">
                                     <input type="hidden" name="requestId" value="${req.transferRequestId}">
                                     <button type="submit" class="btn-approve">
                                         <i class="fas fa-check-circle"></i> Phê duyệt cuối

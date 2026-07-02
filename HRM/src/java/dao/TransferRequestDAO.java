@@ -244,14 +244,17 @@ public class TransferRequestDAO {
 
     /**
      * Kiểm tra nhân viên có đơn điều chuyển đang trong quá trình xử lý không.
-     * (PENDING, EMPLOYEE_CONFIRMED, hoặc MANAGER_APPROVED)
+     * (PENDING, EMPLOYEE_CONFIRMED, MANAGER_APPROVED, hoặc APPROVED chưa tới effective_date)
      */
     public boolean hasPendingOrInProgressRequest(int employeeId) {
         String sql = "SELECT 1 FROM transfer_requests WHERE employee_id = ? " +
-                     "AND status IN ('PENDING','EMPLOYEE_CONFIRMED','MANAGER_APPROVED')";
+                     "AND status IN ('PENDING','EMPLOYEE_CONFIRMED','MANAGER_APPROVED') " +
+                     "UNION SELECT 1 FROM transfer_requests " +
+                     "WHERE employee_id = ? AND status = 'APPROVED' AND applied_at IS NULL";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, employeeId);
+            ps.setInt(2, employeeId);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
@@ -440,36 +443,119 @@ public class TransferRequestDAO {
         return false;
     }
 
+    // ── [EFFECTIVE DATE FLOW] applyTransferEffects ───────────────────────────
+
     /**
-     * Phê duyệt yêu cầu điều chuyển nội bộ.
+     * Thực thi đầy đủ hiệu ứng của điều chuyển: cập nhật users, employee_profiles,
+     * work_history, và tạo phụ lục hợp đồng.
      *
-     * Trong 1 atomic transaction, thực hiện đầy đủ:
-     *   1. SELECT FOR UPDATE để lock row
-     *   2. Validate status = PENDING
-     *   3. Lấy tên phòng ban, chức vụ, vai trò (để ghi work_history)
-     *   4. UPDATE transfer_requests → APPROVED
-     *   5. UPDATE users (department_id, position_id, role_id)
-     *   6. UPDATE employee_profiles (department_id)
-     *   7. Đóng work_history cũ (closeCurrentHistory)
-     *   8. Insert work_history mới (insertTransferHistory)
-     *   9. [FIX #1] Lấy hợp đồng active hiện tại của nhân viên (trong cùng conn)
-     *  10. [FIX #1] Insert ADDENDUM mới vào employee_contracts (status=Active, sign_status=SIGNED)
+     * QUAN TRỌNG: Hàm này không tự commit/rollback. Caller phụ trách transaction.
      *
-     * Sau commit (không trong transaction, không critical):
-     *  11. [FIX #3] Gửi notification cho nhân viên và trưởng phòng ban mới
+     * @param conn        Connection đang trong transaction
+     * @param req         TransferRequest đã được load (có employee_id, new_*, effective_date, ...)
+     * @param requestId   ID của transfer request (dùng cho addendum_reason)
+     * @param oldDeptName Tên phòng ban cũ (cho work_history)
+     * @param newDeptName Tên phòng ban mới
+     * @param oldPosName  Tên chức vụ cũ
+     * @param newPosName  Tên chức vụ mới
+     * @param oldRoleName Tên vai trò cũ
+     * @param newRoleName Tên vai trò mới
+     * @throws SQLException nếu có lỗi DB (caller sẽ rollback)
+     */
+    private void applyTransferEffects(
+            Connection conn, TransferRequest req, int requestId,
+            String oldDeptName, String newDeptName,
+            String oldPosName,  String newPosName,
+            String oldRoleName, String newRoleName) throws SQLException {
+
+        // 1. UPDATE users (department_id, position_id, role_id)
+        String updateUserSql = "UPDATE users SET department_id = ?, position_id = ?, role_id = ? WHERE user_id = ?";
+        try (PreparedStatement psUpUser = conn.prepareStatement(updateUserSql)) {
+            psUpUser.setInt(1, req.getNewDepartmentId());
+            psUpUser.setInt(2, req.getNewPositionId());
+            psUpUser.setInt(3, req.getNewRoleId());
+            psUpUser.setInt(4, req.getEmployeeId());
+            psUpUser.executeUpdate();
+        }
+
+        // 2. UPDATE employee_profiles (department_id)
+        String updateProfileSql = "UPDATE employee_profiles SET department_id = ? WHERE user_id = ?";
+        try (PreparedStatement psUpProfile = conn.prepareStatement(updateProfileSql)) {
+            psUpProfile.setInt(1, req.getNewDepartmentId());
+            psUpProfile.setInt(2, req.getEmployeeId());
+            psUpProfile.executeUpdate();
+        }
+
+        // 3. Đóng work_history cũ
+        WorkHistoryDAO whDAO = new WorkHistoryDAO();
+        whDAO.closeCurrentHistory(conn, req.getEmployeeId(), req.getEffectiveDate());
+
+        // 4. Insert work_history mới
+        String description = "Điều chuyển nội bộ từ " + oldDeptName + " - " + oldPosName + " - " + oldRoleName
+                           + " sang " + newDeptName + " - " + newPosName + " - " + newRoleName
+                           + ". Lý do: " + req.getReason();
+        whDAO.insertTransferHistory(conn, req.getEmployeeId(), newPosName, newDeptName, req.getEffectiveDate(), description);
+
+        // 5. Lấy hợp đồng active hiện tại trong cùng conn
+        EmployeeContract currentContract = getActiveContractInTransaction(conn, req.getEmployeeId());
+        if (currentContract == null) {
+            throw new SQLException("Không tìm thấy hợp đồng active cho nhân viên ID=" + req.getEmployeeId()
+                    + ". Không thể tạo phụ lục điều chuyển.");
+        }
+
+        // 6. Tạo ADDENDUM phản ánh vị trí mới
+        EmployeeContract addendum = new EmployeeContract();
+        addendum.setUserId(req.getEmployeeId());
+        addendum.setContractTypeId(currentContract.getContractTypeId());
+        addendum.setPositionId(req.getNewPositionId());
+        addendum.setDepartmentId(req.getNewDepartmentId());
+        if (req.getNewSalaryGradeId() != null) {
+            addendum.setSalaryGradeId(req.getNewSalaryGradeId());
+        } else {
+            addendum.setSalaryGradeId(currentContract.getSalaryGradeId());
+        }
+        if (req.getNewBaseSalary() != null) {
+            addendum.setBaseSalary(req.getNewBaseSalary());
+        } else {
+            addendum.setBaseSalary(currentContract.getBaseSalary());
+        }
+        addendum.setTaxCalcType(currentContract.getTaxCalcType());
+        addendum.setStartDate(req.getEffectiveDate());
+        addendum.setEndDate(currentContract.getEndDate());
+        addendum.setParentContractId(currentContract.getContractId());
+        addendum.setAddendumReason("Điều chuyển nội bộ #" + requestId);
+
+        EmployeeContractDAO contractDAO = new EmployeeContractDAO();
+        contractDAO.insertAddendumInTransaction(conn, addendum);
+    }
+
+    /**
+     * Phê duyệt yêu cầu điều chuyển nội bộ (HR Manager bước cuối).
+     *
+     * Logic mới (Effective Date Flow):
+     *   1. SELECT FOR UPDATE, validate status = MANAGER_APPROVED
+     *   2. UPDATE transfer_requests -> status='APPROVED', approved_by, approved_at
+     *   3. Nếu effective_date <= hôm nay:
+     *        -> gọi applyTransferEffects() trong cùng transaction
+     *        -> UPDATE status='COMPLETED', applied_at=NOW()
+     *   4. Nếu effective_date ở tương lai:
+     *        -> giữ status='APPROVED', applied_at=NULL (scheduler sẽ xử lý sau)
+     *   5. Commit
+     *   6. Gửi notification tương ứng
      */
     public boolean approveTransferRequest(int requestId, int approverId) {
         Connection conn = null;
-        // Các biến để gửi notification sau commit (outside transaction)
+        // Biến để gửi notification sau commit (outside transaction)
         int employeeIdForNotif = 0;
-        int newDeptIdForNotif = 0;
-        String employeeNameForNotif = "";
+        int newDeptIdForNotif  = 0;
         String newDeptNameForNotif = "";
+        boolean appliedImmediately = false;
+        java.sql.Date effectiveDateForNotif = null;
         try {
             conn = DBContext.getConnection();
-            conn.setAutoCommit(false); // Bắt đầu transaction
+            conn.setAutoCommit(false);
 
-            // ── Bước 1: SELECT FOR UPDATE ──────────────────────────────────────────
+            // ── Bước 1: SELECT FOR UPDATE ───────────────────────────────────────
             String selectReqSql = "SELECT * FROM transfer_requests WHERE transfer_request_id = ? FOR UPDATE";
             TransferRequest req = null;
             try (PreparedStatement psSel = conn.prepareStatement(selectReqSql)) {
@@ -489,10 +575,9 @@ public class TransferRequestDAO {
                         req.setReason(rsSel.getString("reason"));
                         req.setEffectiveDate(rsSel.getDate("effective_date"));
                         req.setStatus(rsSel.getString("status"));
-                        // [FIX #2] Lấy thông tin lương mới nếu có trong request
                         int newSgId = rsSel.getInt("new_salary_grade_id");
                         req.setNewSalaryGradeId(rsSel.wasNull() ? null : newSgId);
-                        BigDecimal newBs = rsSel.getBigDecimal("new_base_salary");
+                        java.math.BigDecimal newBs = rsSel.getBigDecimal("new_base_salary");
                         req.setNewBaseSalary(rsSel.wasNull() ? null : newBs);
                     }
                 }
@@ -501,21 +586,17 @@ public class TransferRequestDAO {
             if (req == null) {
                 throw new SQLException("Transfer Request not found: " + requestId);
             }
-            // Chỉ thực thi khi đơn ở trạng thái MANAGER_APPROVED
             if (!"MANAGER_APPROVED".equals(req.getStatus())) {
                 throw new SQLException("Transfer Request is not MANAGER_APPROVED (status=" + req.getStatus() + ")");
             }
 
-            // ── Bước 2: Lấy tên phòng ban, chức vụ, vai trò để ghi work_history ──
-            String oldDeptName = "-";
-            String newDeptName = "-";
-            String oldPosName = "-";
-            String newPosName = "-";
-            String oldRoleName = "-";
-            String newRoleName = "-";
+            // ── Bước 2: Lấy tên phòng ban, chức vụ, vai trò ────────────────────────────
+            String oldDeptName = "-", newDeptName = "-";
+            String oldPosName  = "-", newPosName  = "-";
+            String oldRoleName = "-", newRoleName = "-";
 
-            String deptSql = "SELECT department_id, department_name FROM departments WHERE department_id IN (?, ?)";
-            try (PreparedStatement psDept = conn.prepareStatement(deptSql)) {
+            try (PreparedStatement psDept = conn.prepareStatement(
+                    "SELECT department_id, department_name FROM departments WHERE department_id IN (?, ?)")) {
                 psDept.setInt(1, req.getOldDepartmentId());
                 psDept.setInt(2, req.getNewDepartmentId());
                 try (ResultSet rsDept = psDept.executeQuery()) {
@@ -527,9 +608,8 @@ public class TransferRequestDAO {
                     }
                 }
             }
-
-            String posSql = "SELECT position_id, position_name FROM positions WHERE position_id IN (?, ?)";
-            try (PreparedStatement psPos = conn.prepareStatement(posSql)) {
+            try (PreparedStatement psPos = conn.prepareStatement(
+                    "SELECT position_id, position_name FROM positions WHERE position_id IN (?, ?)")) {
                 psPos.setInt(1, req.getOldPositionId());
                 psPos.setInt(2, req.getNewPositionId());
                 try (ResultSet rsPos = psPos.executeQuery()) {
@@ -541,9 +621,8 @@ public class TransferRequestDAO {
                     }
                 }
             }
-
-            String roleSql = "SELECT role_id, role_name FROM roles WHERE role_id IN (?, ?)";
-            try (PreparedStatement psRole = conn.prepareStatement(roleSql)) {
+            try (PreparedStatement psRole = conn.prepareStatement(
+                    "SELECT role_id, role_name FROM roles WHERE role_id IN (?, ?)")) {
                 if (req.getOldRoleId() != null) psRole.setInt(1, req.getOldRoleId());
                 else psRole.setNull(1, java.sql.Types.INTEGER);
                 psRole.setInt(2, req.getNewRoleId());
@@ -557,112 +636,223 @@ public class TransferRequestDAO {
                 }
             }
 
-            // ── Bước 3: UPDATE transfer_requests → APPROVED ────────────────────────
-            String updateReqSql = "UPDATE transfer_requests SET status = 'APPROVED', approved_by = ?, approved_at = NOW(), updated_at = NOW() WHERE transfer_request_id = ?";
+            // ── Bước 3: UPDATE transfer_requests -> APPROVED ───────────────────────
+            String updateReqSql = "UPDATE transfer_requests " +
+                "SET status = 'APPROVED', approved_by = ?, approved_at = NOW(), updated_at = NOW() " +
+                "WHERE transfer_request_id = ?";
             try (PreparedStatement psUpReq = conn.prepareStatement(updateReqSql)) {
                 psUpReq.setInt(1, approverId);
                 psUpReq.setInt(2, requestId);
                 psUpReq.executeUpdate();
             }
 
-            // ── Bước 4: UPDATE users ────────────────────────────────────────────────
-            String updateUserSql = "UPDATE users SET department_id = ?, position_id = ?, role_id = ? WHERE user_id = ?";
-            try (PreparedStatement psUpUser = conn.prepareStatement(updateUserSql)) {
-                psUpUser.setInt(1, req.getNewDepartmentId());
-                psUpUser.setInt(2, req.getNewPositionId());
-                psUpUser.setInt(3, req.getNewRoleId());
-                psUpUser.setInt(4, req.getEmployeeId());
-                psUpUser.executeUpdate();
+            // ── Bước 4: Kiểm tra effective_date ─────────────────────────────────────
+            java.sql.Date today = new java.sql.Date(System.currentTimeMillis());
+            if (!req.getEffectiveDate().after(today)) {
+                // effective_date đã tới hoặc qua hạn -> áp dụng ngay trong cùng transaction
+                applyTransferEffects(conn, req, requestId,
+                        oldDeptName, newDeptName, oldPosName, newPosName, oldRoleName, newRoleName);
+                // UPDATE status -> COMPLETED, applied_at = NOW()
+                String completeReqSql = "UPDATE transfer_requests " +
+                    "SET status = 'COMPLETED', applied_at = NOW(), updated_at = NOW() " +
+                    "WHERE transfer_request_id = ?";
+                try (PreparedStatement psCmp = conn.prepareStatement(completeReqSql)) {
+                    psCmp.setInt(1, requestId);
+                    psCmp.executeUpdate();
+                }
+                appliedImmediately = true;
             }
+            // Nếu effective_date ở tương lai: giữ status='APPROVED', applied_at=NULL
+            // Scheduler sẽ xử lý khi tới ngày
 
-            // ── Bước 5: UPDATE employee_profiles ───────────────────────────────────
-            String updateProfileSql = "UPDATE employee_profiles SET department_id = ? WHERE user_id = ?";
-            try (PreparedStatement psUpProfile = conn.prepareStatement(updateProfileSql)) {
-                psUpProfile.setInt(1, req.getNewDepartmentId());
-                psUpProfile.setInt(2, req.getEmployeeId());
-                psUpProfile.executeUpdate();
-            }
-
-            // ── Bước 6: Đóng work_history cũ ───────────────────────────────────────
-            WorkHistoryDAO whDAO = new WorkHistoryDAO();
-            whDAO.closeCurrentHistory(conn, req.getEmployeeId(), req.getEffectiveDate());
-
-            // ── Bước 7: Insert work_history mới ────────────────────────────────────
-            String description = "Điều chuyển nội bộ từ " + oldDeptName + " - " + oldPosName + " - " + oldRoleName
-                               + " sang " + newDeptName + " - " + newPosName + " - " + newRoleName
-                               + ". Lý do: " + req.getReason();
-            whDAO.insertTransferHistory(conn, req.getEmployeeId(), newPosName, newDeptName, req.getEffectiveDate(), description);
-
-            // ── Bước 8 [FIX #1]: Lấy hợp đồng active hiện tại trong cùng conn ─────
-            // Dùng effective_date để tìm hợp đồng đang có hiệu lực tại thời điểm chuyển
-            EmployeeContract currentContract = getActiveContractInTransaction(conn, req.getEmployeeId());
-
-            if (currentContract == null) {
-                throw new SQLException("Không tìm thấy hợp đồng active cho nhân viên ID=" + req.getEmployeeId()
-                        + ". Không thể tạo phụ lục điều chuyển.");
-            }
-
-            // ── Bước 9 [FIX #1]: Tạo ADDENDUM mới phản ánh vị trí mới ────────────
-            EmployeeContract addendum = new EmployeeContract();
-            addendum.setUserId(req.getEmployeeId());
-            addendum.setContractTypeId(currentContract.getContractTypeId()); // Giữ nguyên loại HĐ
-            addendum.setPositionId(req.getNewPositionId());                  // Chức vụ MỚI
-            addendum.setDepartmentId(req.getNewDepartmentId());              // Phòng ban MỚI
-            // [FIX #2] Lương: ưu tiên giá trị mới từ request, fallback về hợp đồng cũ
-            if (req.getNewSalaryGradeId() != null) {
-                addendum.setSalaryGradeId(req.getNewSalaryGradeId());
-            } else {
-                addendum.setSalaryGradeId(currentContract.getSalaryGradeId());
-            }
-            if (req.getNewBaseSalary() != null) {
-                addendum.setBaseSalary(req.getNewBaseSalary());
-            } else {
-                addendum.setBaseSalary(currentContract.getBaseSalary());
-            }
-            addendum.setTaxCalcType(currentContract.getTaxCalcType());       // Giữ nguyên cách tính thuế
-            addendum.setStartDate(req.getEffectiveDate());                   // Có hiệu lực từ ngày chuyển
-            addendum.setEndDate(currentContract.getEndDate());               // Kế thừa end_date hợp đồng gốc
-            addendum.setParentContractId(currentContract.getContractId());   // Trỏ về hợp đồng cũ
-            addendum.setAddendumReason("Điều chuyển nội bộ #" + requestId); // Ghi rõ nguồn gốc
-
-            EmployeeContractDAO contractDAO = new EmployeeContractDAO();
-            contractDAO.insertAddendumInTransaction(conn, addendum);
-
-            // ── Commit Transaction ──────────────────────────────────────────────────
+            // ── Commit Transaction ─────────────────────────────────────────────────
             conn.commit();
 
-            // Lưu lại thông tin để gửi notification sau commit (không trong transaction)
-            employeeIdForNotif  = req.getEmployeeId();
-            newDeptIdForNotif   = req.getNewDepartmentId();
-            employeeNameForNotif = oldDeptName; // dùng tạm, tên NV lấy từ notification body
-            newDeptNameForNotif = newDeptName;
+            employeeIdForNotif   = req.getEmployeeId();
+            newDeptIdForNotif    = req.getNewDepartmentId();
+            newDeptNameForNotif  = newDeptName;
+            effectiveDateForNotif = req.getEffectiveDate();
             return true;
 
         } catch (Exception e) {
             e.printStackTrace();
             if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
+                try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
             }
             return false;
         } finally {
             if (conn != null) {
-                try {
-                    conn.setAutoCommit(true);
-                    conn.close();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
+                try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ex) { ex.printStackTrace(); }
             }
-            // ── Bước 10 [FIX #3]: Gửi notification sau commit (outside transaction) ─
-            // Không throw exception vì không ảnh hưởng tính đúng đắn của dữ liệu
+            // Gửi notification sau commit (outside transaction)
             if (employeeIdForNotif > 0) {
-                sendTransferNotifications(employeeIdForNotif, newDeptIdForNotif, newDeptNameForNotif, requestId);
+                sendTransferNotifications(employeeIdForNotif, newDeptIdForNotif, newDeptNameForNotif,
+                        requestId, appliedImmediately, effectiveDateForNotif);
             }
         }
+    }
+
+    /**
+     * [SCHEDULER] Xử lý các đơn điều chuyển đã tới effective_date nhưng chưa được áp dụng.
+     * Được gọi mỗi ngày bởng TransferSchedulerListener.
+     *
+     * Algorithm:
+     *   1. SELECT các request_id có status='APPROVED' AND applied_at IS NULL AND effective_date <= CURDATE()
+     *   2. Với mỗi đơn: mở transaction riêng, SELECT FOR UPDATE, re-validate,
+     *      gọi applyTransferEffects(), UPDATE status='COMPLETED', applied_at=NOW(), commit.
+     *   3. Gửi notification sau commit.
+     *
+     * @return Số lượng đơn đã xử lý thành công.
+     */
+    public int processElapsedEffectiveTransfers() {
+        // Bước 1: Lấy danh sách đơn cần xử lý
+        String selectSql = "SELECT transfer_request_id FROM transfer_requests " +
+                           "WHERE status = 'APPROVED' AND applied_at IS NULL AND effective_date <= CURDATE()";
+        List<Integer> ids = new ArrayList<>();
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(selectSql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                ids.add(rs.getInt(1));
+            }
+        } catch (SQLException e) {
+            System.err.println("[TransferScheduler] Lỗi query đơn điều chuyển cần xử lý: " + e.getMessage());
+            return 0;
+        }
+
+        int processed = 0;
+        for (int requestId : ids) {
+            Connection conn = null;
+            int employeeIdForNotif = 0;
+            int newDeptIdForNotif  = 0;
+            String newDeptNameForNotif = "";
+            try {
+                conn = DBContext.getConnection();
+                conn.setAutoCommit(false);
+
+                // Bước 2: SELECT FOR UPDATE để lock row, tránh race condition
+                String lockSql = "SELECT * FROM transfer_requests WHERE transfer_request_id = ? FOR UPDATE";
+                TransferRequest req = null;
+                try (PreparedStatement psLock = conn.prepareStatement(lockSql)) {
+                    psLock.setInt(1, requestId);
+                    try (ResultSet rsLock = psLock.executeQuery()) {
+                        if (rsLock.next()) {
+                            req = new TransferRequest();
+                            req.setTransferRequestId(rsLock.getInt("transfer_request_id"));
+                            req.setEmployeeId(rsLock.getInt("employee_id"));
+                            req.setOldDepartmentId(rsLock.getInt("old_department_id"));
+                            req.setOldPositionId(rsLock.getInt("old_position_id"));
+                            int oldRoleVal = rsLock.getInt("old_role_id");
+                            req.setOldRoleId(rsLock.wasNull() ? null : oldRoleVal);
+                            req.setNewDepartmentId(rsLock.getInt("new_department_id"));
+                            req.setNewPositionId(rsLock.getInt("new_position_id"));
+                            req.setNewRoleId(rsLock.getInt("new_role_id"));
+                            req.setReason(rsLock.getString("reason"));
+                            req.setEffectiveDate(rsLock.getDate("effective_date"));
+                            req.setStatus(rsLock.getString("status"));
+                            int newSgId = rsLock.getInt("new_salary_grade_id");
+                            req.setNewSalaryGradeId(rsLock.wasNull() ? null : newSgId);
+                            java.math.BigDecimal newBs = rsLock.getBigDecimal("new_base_salary");
+                            req.setNewBaseSalary(rsLock.wasNull() ? null : newBs);
+                        }
+                    }
+                }
+
+                // Re-validate: chỉ xử lý nếu vẫn ở APPROVED và applied_at IS NULL và đã tới ngày
+                if (req == null || !"APPROVED".equals(req.getStatus())) {
+                    conn.rollback();
+                    continue;
+                }
+                java.sql.Date today = new java.sql.Date(System.currentTimeMillis());
+                if (req.getEffectiveDate().after(today)) {
+                    conn.rollback();
+                    continue;
+                }
+
+                // Lấy tên phòng ban, chức vụ, vai trò để ghi work_history
+                String oldDeptName = "-", newDeptName = "-";
+                String oldPosName  = "-", newPosName  = "-";
+                String oldRoleName = "-", newRoleName = "-";
+
+                try (PreparedStatement psDept = conn.prepareStatement(
+                        "SELECT department_id, department_name FROM departments WHERE department_id IN (?, ?)")) {
+                    psDept.setInt(1, req.getOldDepartmentId());
+                    psDept.setInt(2, req.getNewDepartmentId());
+                    try (ResultSet rsDept = psDept.executeQuery()) {
+                        while (rsDept.next()) {
+                            int id = rsDept.getInt("department_id");
+                            String name = rsDept.getString("department_name");
+                            if (id == req.getOldDepartmentId()) oldDeptName = name;
+                            if (id == req.getNewDepartmentId()) newDeptName = name;
+                        }
+                    }
+                }
+                try (PreparedStatement psPos = conn.prepareStatement(
+                        "SELECT position_id, position_name FROM positions WHERE position_id IN (?, ?)")) {
+                    psPos.setInt(1, req.getOldPositionId());
+                    psPos.setInt(2, req.getNewPositionId());
+                    try (ResultSet rsPos = psPos.executeQuery()) {
+                        while (rsPos.next()) {
+                            int id = rsPos.getInt("position_id");
+                            String name = rsPos.getString("position_name");
+                            if (id == req.getOldPositionId()) oldPosName = name;
+                            if (id == req.getNewPositionId()) newPosName = name;
+                        }
+                    }
+                }
+                try (PreparedStatement psRole = conn.prepareStatement(
+                        "SELECT role_id, role_name FROM roles WHERE role_id IN (?, ?)")) {
+                    if (req.getOldRoleId() != null) psRole.setInt(1, req.getOldRoleId());
+                    else psRole.setNull(1, java.sql.Types.INTEGER);
+                    psRole.setInt(2, req.getNewRoleId());
+                    try (ResultSet rsRole = psRole.executeQuery()) {
+                        while (rsRole.next()) {
+                            int id = rsRole.getInt("role_id");
+                            String name = rsRole.getString("role_name");
+                            if (req.getOldRoleId() != null && id == req.getOldRoleId()) oldRoleName = name;
+                            if (id == req.getNewRoleId()) newRoleName = name;
+                        }
+                    }
+                }
+
+                // Áp dụng hiệu ứng điều chuyển
+                applyTransferEffects(conn, req, requestId,
+                        oldDeptName, newDeptName, oldPosName, newPosName, oldRoleName, newRoleName);
+
+                // UPDATE status='COMPLETED', applied_at=NOW()
+                String completeSql = "UPDATE transfer_requests " +
+                    "SET status = 'COMPLETED', applied_at = NOW(), updated_at = NOW() " +
+                    "WHERE transfer_request_id = ?";
+                try (PreparedStatement psCmp = conn.prepareStatement(completeSql)) {
+                    psCmp.setInt(1, requestId);
+                    psCmp.executeUpdate();
+                }
+
+                conn.commit();
+                processed++;
+                employeeIdForNotif  = req.getEmployeeId();
+                newDeptIdForNotif   = req.getNewDepartmentId();
+                newDeptNameForNotif = newDeptName;
+
+                System.out.println("[TransferScheduler] Đã áp dụng điều chuyển requestId=" + requestId
+                        + " cho nhân viên userId=" + req.getEmployeeId());
+
+            } catch (Exception e) {
+                System.err.println("[TransferScheduler] Lỗi xử lý requestId=" + requestId + ": " + e.getMessage());
+                if (conn != null) {
+                    try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+                }
+            } finally {
+                if (conn != null) {
+                    try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ex) { ex.printStackTrace(); }
+                }
+                // Gửi notification sau khi commit xong
+                if (employeeIdForNotif > 0) {
+                    sendTransferCompletedNotifications(employeeIdForNotif, newDeptIdForNotif, newDeptNameForNotif, requestId);
+                }
+            }
+        }
+        return processed;
     }
 
     /**
@@ -703,47 +893,64 @@ public class TransferRequestDAO {
     }
 
     /**
-     * [FIX #3] Gửi notification cho nhân viên và trưởng phòng mới sau khi approve.
-     * Chạy NGOÀI transaction — nếu lỗi thì log nhưng không ảnh hưởng data.
+     * [EFFECTIVE DATE FLOW] Gửi notification với 2 trường hợp:
+     *   - Áp dụng ngay (effective_date đã tới)
+     *   - Chờ ngày hiệu lực (scheduler sẽ xử lý sau)
      */
-    private void sendTransferNotifications(int employeeId, int newDeptId, String newDeptName, int requestId) {
+    private void sendTransferNotifications(int employeeId, int newDeptId, String newDeptName,
+            int requestId, boolean appliedImmediately, java.sql.Date effectiveDate) {
         try {
             notificationDAO notifDAO = new notificationDAO();
             String detailLink = "/manager/transfer-approval-detail?id=" + requestId;
+            String empMsg;
+            if (appliedImmediately) {
+                empMsg = "Yêu cầu điều chuyển nội bộ #" + requestId + " của bạn sang phòng " + newDeptName
+                       + " đã được duyệt và có hiệu lực ngay hôm nay.";
+            } else {
+                String effStr = (effectiveDate != null)
+                    ? new java.text.SimpleDateFormat("dd/MM/yyyy").format(effectiveDate) : "";
+                empMsg = "Yêu cầu điều chuyển nội bộ #" + requestId + " của bạn sang phòng " + newDeptName
+                       + " đã được duyệt. Hiệu lực từ ngày " + effStr + ".";
+            }
+            notifDAO.create(employeeId, "transfer",
+                "Yêu cầu điều chuyển đã được phê duyệt", empMsg, detailLink);
 
-            // Gửi cho nhân viên được điều chuyển
-            notifDAO.create(
-                employeeId,
-                "transfer",
-                "Yêu cầu điều chuyển đã được phê duyệt",
-                "Yêu cầu điều chuyển nội bộ #" + requestId + " của bạn sang phòng " + newDeptName + " đã được duyệt và có hiệu lực.",
-                detailLink
-            );
-
-            // Tìm trưởng phòng ban mới (Factory Manager roleId=3 hoặc Department Manager roleId=6)
-            // để thông báo về nhân sự mới sắp về phòng
+            // Notify trưởng phòng mới
             String findManagerSql = "SELECT user_id FROM users " +
                                     "WHERE department_id = ? AND role_id IN (3, 6) AND status = 1 " +
                                     "ORDER BY user_id ASC LIMIT 1";
-            try (Connection conn = DBContext.getConnection();
-                 PreparedStatement ps = conn.prepareStatement(findManagerSql)) {
-                ps.setInt(1, newDeptId);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        int managerId = rs.getInt("user_id");
-                        notifDAO.create(
-                            managerId,
-                            "transfer",
-                            "Nhân sự mới điều chuyển vào phòng của bạn",
-                            "Yêu cầu điều chuyển #" + requestId + " đã được duyệt. Một nhân viên mới sẽ chuyển sang " + newDeptName + " theo đúng ngày hiệu lực.",
-                            detailLink
-                        );
+            try (Connection conn2 = DBContext.getConnection();
+                 PreparedStatement ps2 = conn2.prepareStatement(findManagerSql)) {
+                ps2.setInt(1, newDeptId);
+                try (ResultSet rs2 = ps2.executeQuery()) {
+                    if (rs2.next()) {
+                        int managerId = rs2.getInt("user_id");
+                        notifDAO.create(managerId, "transfer",
+                            "Nhân sự mới sắp chuyển vào phòng của bạn",
+                            "Yêu cầu điều chuyển #" + requestId + " đã được duyệt. Một nhân viên sẽ chuyển sang " + newDeptName + ".",
+                            detailLink);
                     }
                 }
             }
         } catch (Exception e) {
-            // Ghi log nhưng không throw — không ảnh hưởng kết quả approve
-            System.err.println("[TransferRequestDAO] Lỗi gửi notification sau approve requestId=" + requestId + ": " + e.getMessage());
+            System.err.println("[TransferRequestDAO] Lỗi gửi notification approve requestId=" + requestId + ": " + e.getMessage());
+        }
+    }
+
+    /**
+     * [SCHEDULER] Gửi notification khi scheduler tự động áp dụng điều chuyển theo ngày hiệu lực.
+     */
+    private void sendTransferCompletedNotifications(int employeeId, int newDeptId, String newDeptName, int requestId) {
+        try {
+            notificationDAO notifDAO = new notificationDAO();
+            String detailLink = "/hr/transfer-request/list";
+            notifDAO.create(employeeId, "transfer",
+                "Điều chuyển nội bộ đã có hiệu lực",
+                "Kể từ hôm nay, bạn chính thức công tác tại phòng " + newDeptName
+                + " theo yêu cầu điều chuyển #" + requestId + ".",
+                detailLink);
+        } catch (Exception e) {
+            System.err.println("[TransferScheduler] Lỗi gửi notification completed requestId=" + requestId + ": " + e.getMessage());
         }
     }
 
@@ -790,6 +997,8 @@ public class TransferRequestDAO {
         // [NEW FLOW] Đọc thông tin xác nhận của Nhân viên
         tr.setEmployeeConfirmedAt(rs.getTimestamp("employee_confirmed_at"));
         tr.setEmployeeRejectReason(rs.getString("employee_reject_reason"));
+        // [EFFECTIVE DATE FLOW] applied_at (nullable)
+        tr.setAppliedAt(rs.getTimestamp("applied_at"));
         return tr;
     }
 
