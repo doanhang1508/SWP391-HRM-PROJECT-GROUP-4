@@ -49,6 +49,31 @@ public class ImportAttendanceController extends HttpServlet {
             return;
         }
 
+        String action = request.getParameter("action");
+        if ("checkLock".equals(action)) {
+            String monthStr = request.getParameter("month");
+            String yearStr = request.getParameter("year");
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            PrintWriter out = null;
+            try {
+                out = response.getWriter();
+                int month = monthStr != null ? Integer.parseInt(monthStr) : LocalDate.now().getMonthValue();
+                int year = yearStr != null ? Integer.parseInt(yearStr) : LocalDate.now().getYear();
+                boolean isLocked = attendanceDAO.isMonthLocked(month, year);
+                out.print("{\"isLocked\": " + isLocked + "}");
+            } catch (Exception e) {
+                if (out != null) {
+                    out.print("{\"isLocked\": false}");
+                }
+            } finally {
+                if (out != null) {
+                    out.flush();
+                }
+            }
+            return;
+        }
+
         LocalDate now = LocalDate.now();
         request.setAttribute("currentMonth", now.getMonthValue());
         request.setAttribute("currentYear", now.getYear());
@@ -106,17 +131,11 @@ public class ImportAttendanceController extends HttpServlet {
                 return;
             }
 
-            int currentMonth = LocalDate.now().getMonthValue();
-            int currentYear = LocalDate.now().getYear();
-            if (year != currentYear || month != currentMonth) {
-                session.setAttribute("errorMessage", "Hệ thống chỉ cho phép import chấm công cho tháng hiện tại (" + currentMonth + "/" + currentYear + ").");
-                response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
-                return;
-            }
-
-            if (attendanceDAO.isMonthLocked(month, year)) {
+            boolean isLocked = attendanceDAO.isMonthLocked(month, year);
+            String confirmedLocked = request.getParameter("confirmedLocked");
+            if (isLocked && !"true".equals(confirmedLocked)) {
                 session.setAttribute("errorMessage",
-                        "Tháng " + month + "/" + year + " đã bị khóa. Không thể import.");
+                        "Tháng " + month + "/" + year + " đã bị khóa. Vui lòng xác nhận trước khi import.");
                 response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
                 return;
             }
@@ -254,14 +273,18 @@ public class ImportAttendanceController extends HttpServlet {
                     } else {
                         String timeStr = getStringCell(row, 3);
                         if (timeStr != null && !timeStr.trim().isEmpty()) {
+                            timeStr = timeStr.replace("//", "/").replace("  ", " ").trim();
                             String[] formats = {
+                                "dd/MM/yyyy hh:mm a", "dd/MM/yyyy hh:mm:ss a",
+                                "yyyy-MM-dd hh:mm a", "yyyy-MM-dd hh:mm:ss a",
                                 "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss",
                                 "dd/MM/yyyy HH:mm", "yyyy-MM-dd HH:mm",
                                 "dd-MM-yyyy HH:mm:ss", "dd-MM-yyyy HH:mm"
                             };
                             for (String fmt : formats) {
                                 try {
-                                    dateTime = new java.text.SimpleDateFormat(fmt).parse(timeStr.trim());
+                                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(fmt, java.util.Locale.ENGLISH);
+                                    dateTime = sdf.parse(timeStr);
                                     break;
                                 } catch (Exception ignored) {}
                             }
