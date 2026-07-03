@@ -86,6 +86,11 @@ public class ManagerKpiApprovalController extends HttpServlet {
         String viewIdStr = request.getParameter("viewId");
         if (viewIdStr != null && !viewIdStr.isEmpty()) {
             int viewId = Integer.parseInt(viewIdStr);
+            // Authorization check: verify this user is authorized to view this evaluation
+            if (!kpiDAO.isManagerAuthorizedForEvaluation(user.getUserId(), user.getRoleId(), viewId)) {
+                response.sendRedirect(request.getContextPath() + "/manager/kpi-approvals?error=unauthorized");
+                return;
+            }
             KpiEvaluation detailEval = kpiDAO.getEvaluationById(viewId);
             if (detailEval != null) {
                 List<KpiEvaluationItem> detailItems = kpiDAO.getEvaluationItems(viewId);
@@ -126,6 +131,13 @@ public class ManagerKpiApprovalController extends HttpServlet {
             String commentText = request.getParameter("commentText");
             if (evaluationIdStr != null && !evaluationIdStr.isEmpty() && commentText != null && !commentText.trim().isEmpty()) {
                 int evaluationId = Integer.parseInt(evaluationIdStr);
+
+                // Authorization check: verify this user is authorized for this evaluation
+                if (!kpiDAO.isManagerAuthorizedForEvaluation(user.getUserId(), user.getRoleId(), evaluationId)) {
+                    response.sendRedirect(request.getContextPath() + "/manager/kpi-approvals?error=unauthorized");
+                    return;
+                }
+
                 KpiEvaluation eval = kpiDAO.getEvaluationById(evaluationId);
                 if (eval != null) {
                     KpiComment comment = new KpiComment();
@@ -152,6 +164,13 @@ public class ManagerKpiApprovalController extends HttpServlet {
 
         if (evaluationIdStr != null && !evaluationIdStr.isEmpty() && action != null) {
             int evaluationId = Integer.parseInt(evaluationIdStr);
+
+            // Authorization check: verify this user is authorized for this evaluation
+            if (!kpiDAO.isManagerAuthorizedForEvaluation(user.getUserId(), user.getRoleId(), evaluationId)) {
+                response.sendRedirect(request.getContextPath() + "/manager/kpi-approvals?error=unauthorized");
+                return;
+            }
+
             KpiEvaluation eval = kpiDAO.getEvaluationById(evaluationId);
 
             if (eval != null && "SUBMITTED".equals(eval.getStatus())) {

@@ -66,6 +66,11 @@ public class KpiCycle {
     public String getTemplateName() { return templateName; }
     public void setTemplateName(String templateName) { this.templateName = templateName; }
 
+    // Helper field: department name from the cycle's template (via JOIN)
+    private String templateDepartmentName;
+    public String getTemplateDepartmentName() { return templateDepartmentName; }
+    public void setTemplateDepartmentName(String templateDepartmentName) { this.templateDepartmentName = templateDepartmentName; }
+
     /** Alias for {@link #getDeadline()} — used by kpi-cycles.jsp via EL ${cycle.evaluationDeadline} */
     public java.sql.Date getEvaluationDeadline() { return deadline; }
     public void setEvaluationDeadline(java.sql.Date evaluationDeadline) { this.deadline = evaluationDeadline; }
