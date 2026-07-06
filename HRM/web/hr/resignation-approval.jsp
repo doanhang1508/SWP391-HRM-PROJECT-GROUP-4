@@ -269,6 +269,7 @@
     .badge-pending  { background: var(--warning-light); color: #92400e; border: 1px solid #fde68a; }
     .badge-approved { background: var(--success-light);  color: #065f46; border: 1px solid #a7f3d0; }
     .badge-rejected { background: var(--danger-light);   color: #9f1239; border: 1px solid #fecdd3; }
+    .badge-withdraw { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
 
     /* ── ACTION BUTTONS ── */
     .btn-approve {
@@ -526,6 +527,13 @@
                 </div>
                 <h1><i class="fas fa-file-signature" style="color:#e11d48;margin-right:10px;font-size:1.3rem;"></i>Duyệt Đơn Xin Nghỉ Việc</h1>
             </div>
+            <div class="page-topbar-right" style="margin-left: auto;">
+                <form action="${pageContext.request.contextPath}/hr/resignation-process-now" method="POST">
+                    <button type="submit" class="btn-approve" style="background: var(--navy); border: none;" onclick="return confirm('Chạy tác vụ Scheduler (vô hiệu hóa NV hết notice period) thủ công ngay bây giờ?');">
+                        <i class="fas fa-sync-alt"></i> Xử lý Scheduler
+                    </button>
+                </form>
+            </div>
         </div>
 
         <!-- Flash Messages -->
@@ -619,6 +627,10 @@
                class="filter-tab ${statusFilter == 'REJECTED' ? 'active' : ''}">
                 <i class="fas fa-times-circle"></i> Từ chối
             </a>
+            <a href="${pageContext.request.contextPath}/hr/resignation-approval?status=WITHDRAW_REQUESTED"
+               class="filter-tab ${statusFilter == 'WITHDRAW_REQUESTED' ? 'active' : ''}">
+                <i class="fas fa-undo"></i> Yêu cầu rút
+            </a>
         </div>
 
         <!-- Table Card -->
@@ -693,6 +705,21 @@
                                                         <i class="fas fa-times-circle"></i> Từ chối
                                                     </span>
                                                 </c:when>
+                                                <c:when test="${rr.status == 'WITHDRAW_REQUESTED'}">
+                                                    <span class="badge badge-withdraw">
+                                                        <i class="fas fa-undo"></i> Yêu cầu rút
+                                                    </span>
+                                                </c:when>
+                                                <c:when test="${rr.status == 'WITHDRAWN'}">
+                                                    <span class="badge badge-withdraw">
+                                                        <i class="fas fa-history"></i> Đã rút đơn
+                                                    </span>
+                                                </c:when>
+                                                <c:when test="${rr.status == 'COMPLETED'}">
+                                                    <span class="badge badge-approved" style="background:#e0f2fe;color:#0369a1;border-color:#bae6fd;">
+                                                        <i class="fas fa-check-double"></i> Đã hoàn thành
+                                                    </span>
+                                                </c:when>
                                             </c:choose>
                                         </td>
                                         <td>
@@ -734,7 +761,25 @@
                                                         </button>
                                                     </div>
                                                 </c:when>
-                                                <c:when test="${rr.status == 'PENDING' && sessionScope.currentUser.roleId != 2}">
+                                                <c:when test="${rr.status == 'WITHDRAW_REQUESTED' && sessionScope.currentUser.roleId == 2}">
+                                                    <div class="action-btns" style="flex-direction: column; align-items: stretch; gap: 4px;">
+                                                        <form action="${pageContext.request.contextPath}/hr/resignation-approval" method="post" style="margin:0;">
+                                                            <input type="hidden" name="action" value="approveWithdraw">
+                                                            <input type="hidden" name="resignationId" value="${rr.resignationId}">
+                                                            <button type="submit" class="btn-approve" style="width: 100%; justify-content: center;" onclick="return confirm('Xác nhận duyệt yêu cầu rút đơn này? Nhân viên sẽ quay lại trạng thái làm việc bình thường.');">
+                                                                <i class="fas fa-check"></i> Cho rút đơn
+                                                            </button>
+                                                        </form>
+                                                        <form action="${pageContext.request.contextPath}/hr/resignation-approval" method="post" style="margin:0;">
+                                                            <input type="hidden" name="action" value="rejectWithdraw">
+                                                            <input type="hidden" name="resignationId" value="${rr.resignationId}">
+                                                            <button type="submit" class="btn-reject" style="width: 100%; justify-content: center;" onclick="return confirm('Từ chối yêu cầu rút đơn? Nhân viên sẽ tiếp tục quy trình nghỉ việc.');">
+                                                                <i class="fas fa-times"></i> Không cho rút
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </c:when>
+                                                <c:when test="${(rr.status == 'PENDING' || rr.status == 'WITHDRAW_REQUESTED') && sessionScope.currentUser.roleId != 2}">
                                                     <span style="font-size:0.8rem;color:#94a3b8;">— Không có quyền —</span>
                                                 </c:when>
                                                 <c:otherwise>
@@ -843,6 +888,22 @@
         document.getElementById('approveModal').classList.remove('active');
         document.body.style.overflow = '';
     }
+
+    document.getElementById('approveForm').addEventListener('submit', function(e) {
+        var desiredDateStr = document.getElementById('approveDesiredDate').textContent;
+        var lastWorkingDayStr = document.getElementById('lastWorkingDayInput').value;
+        if(desiredDateStr && lastWorkingDayStr && desiredDateStr !== '—') {
+            var expectedLeaveDate = new Date(desiredDateStr);
+            var lastWorkingDay = new Date(lastWorkingDayStr);
+            var diffTime = Math.abs(lastWorkingDay - expectedLeaveDate);
+            var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            if(diffDays > 30) {
+                if(!confirm('Cảnh báo: Ngày làm việc cuối cùng cách ngày muốn nghỉ hơn 30 ngày (' + diffDays + ' ngày).\n\nBạn có chắc chắn muốn duyệt?')) {
+                    e.preventDefault();
+                }
+            }
+        }
+    });
 
     // ── Reject Modal ──
     function openRejectModal(id, name) {

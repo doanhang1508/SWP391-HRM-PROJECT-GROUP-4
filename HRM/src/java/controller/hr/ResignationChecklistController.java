@@ -116,9 +116,12 @@ public class ResignationChecklistController extends HttpServlet {
                     session.setAttribute("successMessage", "Đã xóa mục.");
                 }
             } else if ("completeAll".equals(action)) {
-                // Update status of resignation request to COMPLETED
-                resignationDAO.updateStatus(resignationId, "COMPLETED", hrUser.getUserId(), null, null);
-                session.setAttribute("successMessage", "Đã hoàn thành toàn bộ thủ tục bàn giao. Trạng thái đơn được chuyển sang COMPLETED.");
+                if (hrUser.getRoleId() != 2) {
+                    session.setAttribute("errorMessage", "Chỉ HR Manager mới có quyền hoàn tất thủ tục nghỉ việc.");
+                } else {
+                    resignationDAO.updateStatus(resignationId, "COMPLETED", "APPROVED", hrUser.getUserId(), null, null);
+                    session.setAttribute("successMessage", "Đã hoàn thành toàn bộ thủ tục bàn giao. Trạng thái đơn được chuyển sang COMPLETED.");
+                }
             }
         } catch (Exception e) {
             session.setAttribute("errorMessage", "Lỗi: " + e.getMessage());

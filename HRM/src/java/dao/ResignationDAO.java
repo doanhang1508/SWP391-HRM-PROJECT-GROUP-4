@@ -66,7 +66,7 @@ public class ResignationDAO {
      * Dùng để ngăn nộp đơn trùng lặp.
      */
     public boolean hasPendingResignation(int userId) {
-        String sql = "SELECT COUNT(*) FROM resignation_requests WHERE user_id = ? AND status IN ('PENDING', 'APPROVED')";
+        String sql = "SELECT COUNT(*) FROM resignation_requests WHERE user_id = ? AND status IN ('PENDING', 'APPROVED', 'WITHDRAW_REQUESTED')";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -162,10 +162,14 @@ public class ResignationDAO {
         return null;
     }
 
-    public boolean updateStatus(int id, String status, int reviewedBy, String hrNote, Date lastWorkingDay) {
+    public boolean updateStatus(int id, String status, String expectedOldStatus, int reviewedBy, String hrNote, Date lastWorkingDay) {
+        String sql = "UPDATE resignation_requests " +
+                     "SET status = ?, reviewed_by = ?, reviewed_at = NOW(), hr_note = ?, last_working_day = ? " +
+                     "WHERE resignation_id = ? AND status = ?";
+                     
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(SQL_UPDATE_STATUS)) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, status);
             if (reviewedBy > 0) {
@@ -184,11 +188,107 @@ public class ResignationDAO {
                 ps.setNull(4, Types.DATE);
             }
             ps.setInt(5, id);
+            ps.setString(6, expectedOldStatus);
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
             System.err.println("ResignationDAO.updateStatus error: " + e.getMessage());
             return false;
+        }
+    }
+
+    public boolean approveResignationRequestTransaction(int resignationId, int userId, int hrUserId, Date lastWorkingDay, int currentEmpStatusId) {
+        String sqlResign = "UPDATE resignation_requests " +
+                           "SET status = 'APPROVED', reviewed_by = ?, reviewed_at = NOW(), last_working_day = ?, previous_employment_status_id = ? " +
+                           "WHERE resignation_id = ? AND status = 'PENDING'";
+        String sqlProfile = "UPDATE employee_profiles SET employment_status_id = 5 WHERE user_id = ?";
+        
+        DBContext dbContext = new DBContext();
+        Connection conn = null;
+        try {
+            conn = dbContext.getConnection();
+            conn.setAutoCommit(false);
+            
+            // 1. Update resignation_requests
+            try (PreparedStatement ps = conn.prepareStatement(sqlResign)) {
+                ps.setInt(1, hrUserId);
+                if (lastWorkingDay != null) {
+                    ps.setDate(2, lastWorkingDay);
+                } else {
+                    ps.setNull(2, Types.DATE);
+                }
+                ps.setInt(3, currentEmpStatusId);
+                ps.setInt(4, resignationId);
+                int updated = ps.executeUpdate();
+                if (updated == 0) {
+                    conn.rollback();
+                    return false; // Race condition
+                }
+            }
+            
+            // 2. Update employee_profiles
+            try (PreparedStatement ps = conn.prepareStatement(sqlProfile)) {
+                ps.setInt(1, userId);
+                ps.executeUpdate();
+            }
+            
+            conn.commit();
+            return true;
+        } catch (SQLException e) {
+            System.err.println("ResignationDAO.approveResignationRequestTransaction error: " + e.getMessage());
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ex) {}
+            }
+            return false;
+        } finally {
+            if (conn != null) {
+                try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ex) {}
+            }
+        }
+    }
+
+    public boolean approveWithdrawResignationTransaction(int resignationId, int userId, int hrUserId, int previousEmpStatusId) {
+        String sqlResign = "UPDATE resignation_requests " +
+                           "SET status = 'WITHDRAWN', reviewed_by = ?, reviewed_at = NOW() " +
+                           "WHERE resignation_id = ? AND status = 'WITHDRAW_REQUESTED'";
+        String sqlProfile = "UPDATE employee_profiles SET employment_status_id = ? WHERE user_id = ?";
+        
+        DBContext dbContext = new DBContext();
+        Connection conn = null;
+        try {
+            conn = dbContext.getConnection();
+            conn.setAutoCommit(false);
+            
+            // 1. Update resignation_requests
+            try (PreparedStatement ps = conn.prepareStatement(sqlResign)) {
+                ps.setInt(1, hrUserId);
+                ps.setInt(2, resignationId);
+                int updated = ps.executeUpdate();
+                if (updated == 0) {
+                    conn.rollback();
+                    return false; // Race condition
+                }
+            }
+            
+            // 2. Update employee_profiles
+            try (PreparedStatement ps = conn.prepareStatement(sqlProfile)) {
+                ps.setInt(1, previousEmpStatusId);
+                ps.setInt(2, userId);
+                ps.executeUpdate();
+            }
+            
+            conn.commit();
+            return true;
+        } catch (SQLException e) {
+            System.err.println("ResignationDAO.approveWithdrawResignationTransaction error: " + e.getMessage());
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ex) {}
+            }
+            return false;
+        } finally {
+            if (conn != null) {
+                try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ex) {}
+            }
         }
     }
 
@@ -318,6 +418,9 @@ public class ResignationDAO {
             r.setLastWorkingDay(rs.getDate("last_working_day"));
             if (rs.getObject("notice_period_days") != null) {
                 r.setNoticePeriodDays(rs.getInt("notice_period_days"));
+            }
+            if (rs.getObject("previous_employment_status_id") != null) {
+                r.setPreviousEmploymentStatusId(rs.getInt("previous_employment_status_id"));
             }
         } catch(SQLException ex) {}
 

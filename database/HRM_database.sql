@@ -229,9 +229,13 @@ CREATE TABLE employee_contracts (
     position_id      INT           NOT NULL,
     department_id    INT           NOT NULL,
     salary_grade_id  INT           NOT NULL,
-    start_date       DATE          NOT NULL,
-    end_date         DATE          NULL,
-    base_salary      DECIMAL(15,2) NOT NULL,
+    start_date            DATE          NOT NULL,
+    end_date              DATE          NULL,
+    actual_end_date       DATE          NULL
+                         COMMENT 'Ngày thực tế chấm dứt hợp đồng (do nghỉ việc / sa thải) — khác với end_date theo lịch',
+    termination_reason    VARCHAR(255)  NULL
+                         COMMENT 'Lý do chấm dứt hợp đồng sớm (nghỉ việc tự nguyện, sa thải, hết hạn...)',
+    base_salary           DECIMAL(15,2) NOT NULL,
     tax_calc_type    INT           NOT NULL DEFAULT 1
                      COMMENT '1=Lũy tiến, 2=Khấu trừ 10%, 3=Không thuế',
     file_path        VARCHAR(255),
@@ -316,6 +320,72 @@ CREATE INDEX idx_onb_status     ON onboarding_requests(status);
 CREATE INDEX idx_onb_created_by ON onboarding_requests(created_by);
 CREATE INDEX idx_onb_cccd       ON onboarding_requests(cccd_number);
 CREATE INDEX idx_onb_email      ON onboarding_requests(email);
+
+-- =============================================================
+-- NHÓM 3b: LUỒNG NGHỈ VIỆC (RESIGNATION)
+-- Tích hợp từ: resignation_migration.sql + resignation_v2_migration.sql
+-- (Merge ngày 2026-07-06 — các file migration gốc đã được lưu trữ
+--  tại database/archive/ để tham khảo lịch sử.)
+-- =============================================================
+
+-- BẢNG: resignation_requests (phiên bản v2 đầy đủ)
+CREATE TABLE resignation_requests (
+    resignation_id      INT           PRIMARY KEY AUTO_INCREMENT,
+    user_id             INT           NOT NULL,
+    reason              TEXT          NOT NULL,
+    desired_last_date   DATE          NOT NULL,
+    notice_period_days  INT           NULL
+                        COMMENT 'Số ngày báo trước (tính từ ngày nộp đơn đến desired_last_date)',
+    expected_leave_date DATE          NULL
+                        COMMENT 'Ngày dự kiến rời công ty (do HR tính toán sau khi duyệt)',
+    last_working_day    DATE          NULL
+                        COMMENT 'Ngày làm việc cuối cùng thực tế (sau khi COMPLETED)',
+    status              ENUM('PENDING','APPROVED','REJECTED','COMPLETED','CANCELLED','WITHDRAW_REQUESTED','WITHDRAWN')
+                        NOT NULL DEFAULT 'PENDING',
+    previous_employment_status_id INT NULL
+                        COMMENT 'Lưu trạng thái làm việc trước khi chuyển sang NoticePeriod',
+    submitted_at        TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reviewed_by         INT           NULL,
+    reviewed_at         TIMESTAMP     NULL,
+    hr_note             TEXT          NULL,
+    created_at          TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_resignation_user
+        FOREIGN KEY (user_id)     REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT fk_resignation_reviewer
+        FOREIGN KEY (reviewed_by) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX idx_resignation_user_id ON resignation_requests(user_id);
+CREATE INDEX idx_resignation_status  ON resignation_requests(status);
+
+-- BẢNG: resignation_checklist (Checklist bàn giao khi nghỉ việc)
+CREATE TABLE resignation_checklist (
+    checklist_id   INT           PRIMARY KEY AUTO_INCREMENT,
+    resignation_id INT           NOT NULL,
+    item_name      VARCHAR(100)  NOT NULL
+                   COMMENT 'Laptop, ID Card, Uniform, Document, Knowledge Transfer, Company Assets',
+    is_completed   TINYINT(1)    NOT NULL DEFAULT 0,
+    completed_by   INT           NULL,
+    completed_at   TIMESTAMP     NULL,
+    note           VARCHAR(255)  NULL,
+    CONSTRAINT fk_checklist_resignation
+        FOREIGN KEY (resignation_id) REFERENCES resignation_requests(resignation_id) ON DELETE CASCADE,
+    CONSTRAINT fk_checklist_user
+        FOREIGN KEY (completed_by)   REFERENCES users(user_id)                       ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- BẢNG: exit_interviews (Phỏng vấn thôi việc)
+CREATE TABLE exit_interviews (
+    exit_interview_id  INT    PRIMARY KEY AUTO_INCREMENT,
+    resignation_id     INT    NOT NULL UNIQUE,
+    reason_category    ENUM('Salary','Career','Study','Family','Health','Other') NOT NULL,
+    comment            TEXT   NULL,
+    created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_exit_resignation
+        FOREIGN KEY (resignation_id) REFERENCES resignation_requests(resignation_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
 -- =============================================================
@@ -609,11 +679,14 @@ INSERT INTO insurance_rates (insurance_rate_id, insurance_code, insurance_name, 
 (3, 'BHTN', 'Bảo hiểm Thất nghiệp (BHTN)',   1.0,  1.0, 'Bảo hiểm thất nghiệp theo quy định',       '2020-01-01');
 
 -- ── 8. Employment Statuses ──
-INSERT INTO employment_statuses (status_id, status_name, description) VALUES
-(1, 'Đang thử việc',  'Đang trong thời gian đánh giá'),
-(2, 'Đang làm việc',  'Nhân viên chính thức'),
-(3, 'Tạm hoãn HĐLĐ', 'Nghỉ ốm dài ngày, Thai sản'),
-(4, 'Đã nghỉ việc',   'Chấm dứt Hợp đồng');
+INSERT INTO employment_statuses (status_id, status_name, description, status) VALUES
+(1, 'Đang thử việc',  'Đang trong thời gian đánh giá',                    1),
+(2, 'Đang làm việc',  'Nhân viên chính thức',                              1),
+(3, 'Tạm hoãn HĐLĐ', 'Nghỉ ốm dài ngày, Thai sản',                        1),
+(4, 'Đã nghỉ việc',   'Chấm dứt Hợp đồng',                                1),
+(5, 'NoticePeriod',   'Đang trong thời gian báo trước nghỉ việc',          1),
+(6, 'ContractExpired','Hợp đồng đã hết hạn',                               1),
+(7, 'Terminate',      'Bị cho thôi việc (sa thải)',                        1);
 
 -- ── 9. Education Levels ──
 INSERT INTO education_levels (education_level_id, level_name) VALUES

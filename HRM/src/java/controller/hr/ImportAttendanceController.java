@@ -131,6 +131,24 @@ public class ImportAttendanceController extends HttpServlet {
                 return;
             }
 
+            // ── Chặn cứng: không cho import lại các THÁNG ĐÃ QUA so với ngày hệ thống ──
+            // Một khi đã sang tháng mới, tháng cũ mặc định coi như đã "chốt công" và
+            // KHÔNG cho phép import lại (khác với khóa thủ công ở dưới, cái này không có
+            // checkbox xác nhận để bỏ qua). Chỉ khi Admin/Quản lý chủ động bấm "Mở khóa"
+            // cho tháng đó ở trang Lock Timesheet thì mới được import lại.
+            LocalDate today = LocalDate.now();
+            boolean isPastMonth = (year < today.getYear())
+                    || (year == today.getYear() && month < today.getMonthValue());
+            if (isPastMonth && !attendanceDAO.isExplicitlyUnlocked(month, year)) {
+                session.setAttribute("errorMessage",
+                        "Tháng " + month + "/" + year + " đã qua (hiện tại là Tháng " + today.getMonthValue()
+                                + "/" + today.getYear() + ") và được xem là đã CHỐT CÔNG. "
+                                + "Hệ thống không cho phép import lại dữ liệu cho các tháng đã kết thúc. "
+                                + "Nếu thực sự cần chỉnh sửa, vui lòng liên hệ Quản lý để MỞ KHÓA tháng này trước.");
+                response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
+                return;
+            }
+
             boolean isLocked = attendanceDAO.isMonthLocked(month, year);
             String confirmedLocked = request.getParameter("confirmedLocked");
             if (isLocked && !"true".equals(confirmedLocked)) {
@@ -175,17 +193,51 @@ public class ImportAttendanceController extends HttpServlet {
                 return;
             }
 
-            int[] importResult = attendanceDAO.bulkImportAttendance(records);
+            int[] importResult;
+            try {
+                importResult = attendanceDAO.bulkImportAttendance(records);
+            } catch (Exception dbEx) {
+                // Trước đây lỗi CSDL bị nuốt âm thầm và vẫn hiện "Import thành công: 0/0",
+                // khiến HR tưởng đã xong trong khi thực chất KHÔNG có gì được ghi vào DB.
+                session.setAttribute("errorMessage",
+                        "Import thất bại, không có bản ghi nào được ghi vào CSDL. Lỗi: " + dbEx.getMessage());
+                response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
+                return;
+            }
             int inserted = importResult[0];
             int updated = importResult[1];
+            int unchanged = importResult.length > 2 ? importResult[2] : 0;
+            int skippedTerminated = importResult.length > 3 ? importResult[3] : 0;
 
             String msg;
-            if (inserted > 0 && updated == 0) {
+            if (inserted == 0 && updated == 0 && unchanged == 0) {
+                // Có bản ghi hợp lệ được đọc từ file (records không rỗng), nhưng CUỐI CÙNG
+                // không có gì được ghi vào DB — thường do toàn bộ bị loại vì nhân viên đã
+                // nghỉ việc trước ngày chấm công. Đây LÀ vấn đề thật, không phải "thành công".
+                if (skippedTerminated > 0 && skippedTerminated == records.size()) {
+                    msg = "⚠️ Import KHÔNG có bản ghi nào được ghi vào CSDL: toàn bộ " + skippedTerminated
+                            + " dòng bị bỏ qua vì thuộc về nhân viên đã nghỉ việc trước ngày chấm công trong file.";
+                } else {
+                    msg = "⚠️ Import KHÔNG có bản ghi nào được ghi vào CSDL dù file đọc được "
+                            + records.size() + " dòng hợp lệ. Vui lòng kiểm tra lại dữ liệu (mã nhân viên, ca làm, ngày công) trong file.";
+                }
+            } else if (inserted == 0 && updated == 0 && unchanged > 0) {
+                // Toàn bộ bản ghi đã tồn tại sẵn trong DB với dữ liệu giống hệt file import.
+                // KHÔNG phải lỗi — chỉ là không có gì thay đổi so với lần import trước.
+                msg = "ℹ️ " + unchanged + " bản ghi đã tồn tại và giống hệt dữ liệu trong file "
+                        + "(không có bản ghi MỚI hoặc CẬP NHẬT nào vì dữ liệu không thay đổi).";
+            } else if (inserted > 0 && updated == 0) {
                 msg = "✅ Import thành công: " + inserted + " bản ghi MỚI.";
             } else if (inserted == 0 && updated > 0) {
                 msg = "🔄 Import thành công: " + updated + " bản ghi đã được CẬP NHẬT (ghi đè dữ liệu cũ).";
             } else {
                 msg = "✅ Import thành công: " + inserted + " bản ghi MỚI, " + updated + " bản ghi CẬP NHẬT.";
+            }
+            if (unchanged > 0 && (inserted > 0 || updated > 0)) {
+                msg += " (" + unchanged + " bản ghi không đổi.)";
+            }
+            if (skippedTerminated > 0 && skippedTerminated != records.size()) {
+                msg += " Đã bỏ qua " + skippedTerminated + " dòng của nhân viên đã nghỉ việc.";
             }
             if (!skippedRows.isEmpty()) {
                 msg += " Đã bỏ qua " + skippedRows.size() + " dòng tổng hợp/header (bình thường).";
@@ -193,7 +245,11 @@ public class ImportAttendanceController extends HttpServlet {
             if (!parseErrors.isEmpty()) {
                 msg += " ⚠️ Có " + parseErrors.size() + " dòng lỗi thực sự cần kiểm tra.";
             }
-            session.setAttribute("successMessage", msg);
+            if (inserted == 0 && updated == 0 && unchanged == 0) {
+                session.setAttribute("errorMessage", msg);
+            } else {
+                session.setAttribute("successMessage", msg);
+            }
             session.setAttribute("fullParseErrors", parseErrors);
             response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
 
@@ -207,6 +263,42 @@ public class ImportAttendanceController extends HttpServlet {
             return null;
         String normalized = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD);
         return normalized.replaceAll("\\p{M}", "").replaceAll("\\s+", "_").toUpperCase();
+    }
+
+    /**
+     * Đọc 3 dòng tiêu đề đầu của Sheet "Bảng Công" để lấy Tháng/Năm THẬT SỰ của
+     * file, ví dụ: "BẢNG CHẤM CÔNG THÁNG 6/2026" hoặc "Tháng: 06/2026".
+     * Trả về null nếu không tìm thấy (khi đó bỏ qua kiểm tra, tránh chặn nhầm
+     * các file không theo mẫu chuẩn).
+     */
+    private int[] extractTitleMonthYear(Sheet sheet) {
+        java.util.regex.Pattern p = java.util.regex.Pattern
+                .compile("th[áa]ng\\s*[:\\s]*\\s*(\\d{1,2})\\s*/\\s*(\\d{4})",
+                        java.util.regex.Pattern.CASE_INSENSITIVE);
+        for (int r = 0; r <= 2; r++) {
+            Row row = sheet.getRow(r);
+            if (row == null)
+                continue;
+            for (int c = 0; c < Math.min(row.getLastCellNum(), 5); c++) {
+                String val = getStringCell(row, c);
+                if (val == null || val.trim().isEmpty())
+                    continue;
+                String normalized = java.text.Normalizer.normalize(val, java.text.Normalizer.Form.NFD)
+                        .replaceAll("\\p{M}", "");
+                java.util.regex.Matcher m = p.matcher(normalized);
+                if (m.find()) {
+                    try {
+                        int mo = Integer.parseInt(m.group(1));
+                        int yr = Integer.parseInt(m.group(2));
+                        if (mo >= 1 && mo <= 12) {
+                            return new int[] { mo, yr };
+                        }
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private boolean isRawLogFormat(Sheet sheet) {
@@ -335,6 +427,19 @@ public class ImportAttendanceController extends HttpServlet {
                 // 2. Parse Sheet 0 ("Bảng Công") to get employee profiles, shifts, and daily
                 // statuses
                 Sheet sheet0 = wb.getSheetAt(0);
+
+                // ── Kiểm tra Tháng/Năm ghi trong tiêu đề file so với Tháng/Năm đã chọn ──
+                // Định dạng "Bảng Công" không có cột ngày đầy đủ (chỉ có số ngày 1,2,3...),
+                // nên PHẢI đối chiếu với tiêu đề thật của file (dòng 1-2), nếu không hệ thống
+                // sẽ gán bừa mọi file vào tháng/năm người dùng chọn trên dropdown.
+                int[] fileMonthYear = extractTitleMonthYear(sheet0);
+                if (fileMonthYear != null
+                        && (fileMonthYear[0] != month || fileMonthYear[1] != year)) {
+                    throw new Exception("File bạn tải lên là bảng chấm công Tháng " + fileMonthYear[0] + "/"
+                            + fileMonthYear[1] + ", không khớp với Tháng " + month + "/" + year
+                            + " bạn đã chọn để import. Vui lòng chọn đúng Tháng/Năm hoặc tải đúng file.");
+                }
+
                 Row row4 = sheet0.getRow(4); // Day numbers
                 if (row4 == null) {
                     throw new Exception("Không tìm thấy dòng ngày (dòng 5) ở Sheet Bảng Công.");
