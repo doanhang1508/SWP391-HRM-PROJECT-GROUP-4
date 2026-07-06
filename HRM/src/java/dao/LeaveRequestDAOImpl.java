@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
 
 public class LeaveRequestDAOImpl implements LeaveRequestDAO {
 
@@ -603,6 +605,7 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
      * @param year       năm cần tính
      * @return Set&lt;LocalDate&gt; các ngày nghỉ phép hợp lệ (không trùng nhau, không có Chủ nhật)
      */
+    @Override
     public Set<LocalDate> getPaidLeaveDaySet(int employeeId, int month, int year) {
         LocalDate firstDayOfMonth = LocalDate.of(year, month, 1);
         LocalDate lastDayOfMonth  = firstDayOfMonth.withDayOfMonth(firstDayOfMonth.lengthOfMonth());
@@ -615,6 +618,16 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
                      "  AND lt.paid_leave = 1 " +
                      "  AND lr.start_date <= ? " +
                      "  AND lr.end_date   >= ?";
+
+        // Lấy tất cả shift assignments của nhân viên trong tháng để lọc các ngày được xếp lịch làm việc
+        dao.ShiftAssignmentDAO shiftAssignmentDAO = new dao.ShiftAssignmentDAOImpl();
+        List<model.ShiftAssignment> assignments = shiftAssignmentDAO.getByUserAndDateRange(employeeId, firstDayOfMonth, lastDayOfMonth);
+        Set<LocalDate> assignedDates = new HashSet<>();
+        if (assignments != null) {
+            for (model.ShiftAssignment sa : assignments) {
+                assignedDates.add(sa.getAssignedDate());
+            }
+        }
 
         Set<LocalDate> leaveDays = new HashSet<>();
         try (Connection c = DBContext.getConnection();
@@ -631,10 +644,10 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
                     LocalDate effectiveStart = leaveStart.isBefore(firstDayOfMonth) ? firstDayOfMonth : leaveStart;
                     LocalDate effectiveEnd   = leaveEnd.isAfter(lastDayOfMonth)     ? lastDayOfMonth  : leaveEnd;
 
-                    // Duyệt từng ngày trong phạm vi, loại Chủ nhật (tuần làm việc Mon-Sat)
+                    // Chỉ tính ngày nghỉ phép nếu ngày đó có phân ca làm việc
                     LocalDate current = effectiveStart;
                     while (!current.isAfter(effectiveEnd)) {
-                        if (current.getDayOfWeek() != DayOfWeek.SUNDAY) {
+                        if (assignedDates.contains(current)) {
                             leaveDays.add(current);
                         }
                         current = current.plusDays(1);
@@ -645,6 +658,61 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
             e.printStackTrace();
         }
         return leaveDays;
+    }
+
+    @Override
+    public Map<LocalDate, Integer> getUnpaidLeaveDayMapWithShift(int employeeId, int month, int year) {
+        LocalDate firstDayOfMonth = LocalDate.of(year, month, 1);
+        LocalDate lastDayOfMonth  = firstDayOfMonth.withDayOfMonth(firstDayOfMonth.lengthOfMonth());
+
+        String sql = "SELECT lr.start_date, lr.end_date, lr.leave_type_id " +
+                     "FROM leave_requests lr " +
+                     "JOIN leave_types lt ON lr.leave_type_id = lt.leave_type_id " +
+                     "WHERE lr.user_id = ? " +
+                     "  AND lr.status = 'Approved' " +
+                     "  AND lt.paid_leave = 0 " +
+                     "  AND lr.start_date <= ? " +
+                     "  AND lr.end_date   >= ?";
+
+        // Lấy tất cả shift assignments của nhân viên trong tháng
+        dao.ShiftAssignmentDAO shiftAssignmentDAO = new dao.ShiftAssignmentDAOImpl();
+        List<model.ShiftAssignment> assignments = shiftAssignmentDAO.getByUserAndDateRange(employeeId, firstDayOfMonth, lastDayOfMonth);
+        Set<LocalDate> assignedDates = new HashSet<>();
+        if (assignments != null) {
+            for (model.ShiftAssignment sa : assignments) {
+                assignedDates.add(sa.getAssignedDate());
+            }
+        }
+
+        Map<LocalDate, Integer> unpaidLeaveMap = new HashMap<>();
+        try (Connection c = DBContext.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, employeeId);
+            ps.setDate(2, java.sql.Date.valueOf(lastDayOfMonth));
+            ps.setDate(3, java.sql.Date.valueOf(firstDayOfMonth));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    LocalDate leaveStart = rs.getDate("start_date").toLocalDate();
+                    LocalDate leaveEnd   = rs.getDate("end_date").toLocalDate();
+                    int leaveTypeId      = rs.getInt("leave_type_id");
+
+                    // Clamp phạm vi leave vào đúng tháng đang tính
+                    LocalDate effectiveStart = leaveStart.isBefore(firstDayOfMonth) ? firstDayOfMonth : leaveStart;
+                    LocalDate effectiveEnd   = leaveEnd.isAfter(lastDayOfMonth)     ? lastDayOfMonth  : leaveEnd;
+
+                    LocalDate current = effectiveStart;
+                    while (!current.isAfter(effectiveEnd)) {
+                        if (assignedDates.contains(current)) {
+                            unpaidLeaveMap.put(current, leaveTypeId);
+                        }
+                        current = current.plusDays(1);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return unpaidLeaveMap;
     }
 }
 

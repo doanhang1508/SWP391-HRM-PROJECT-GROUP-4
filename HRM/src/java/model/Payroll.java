@@ -18,6 +18,7 @@ public class Payroll {
     private BigDecimal taxAmount;
     private BigDecimal grossSalary;
     private BigDecimal netSalary;
+    private BigDecimal insuranceBenefit;
     private String status;
     private Timestamp createdAt;
     // New fields for approval and payment flow
@@ -120,6 +121,9 @@ public class Payroll {
 
     public BigDecimal getNetSalary() { return netSalary; }
     public void setNetSalary(BigDecimal netSalary) { this.netSalary = netSalary; }
+
+    public BigDecimal getInsuranceBenefit() { return insuranceBenefit; }
+    public void setInsuranceBenefit(BigDecimal insuranceBenefit) { this.insuranceBenefit = insuranceBenefit; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

@@ -356,7 +356,8 @@ public class HrPayrollController extends HttpServlet {
                 "\"insuranceAmount\":" + preview.getInsuranceAmount().toPlainString() + "," +
                 "\"taxAmount\":" + preview.getTaxAmount().toPlainString() + "," +
                 "\"grossSalary\":" + preview.getGrossSalary().toPlainString() + "," +
-                "\"netSalary\":" + preview.getNetSalary().toPlainString() +
+                "\"netSalary\":" + preview.getNetSalary().toPlainString() + "," +
+                "\"insuranceBenefit\":" + (preview.getInsuranceBenefit() != null ? preview.getInsuranceBenefit().toPlainString() : "0") +
                 "}";
             response.getWriter().write(json);
         } catch (NumberFormatException e) {
@@ -401,6 +402,7 @@ public class HrPayrollController extends HttpServlet {
             json.append("\"baseWorkedSalary\":").append(baseWorkedSalary).append(",");
             json.append("\"workingDays\":").append(p.getWorkingDays()).append(",");
             json.append("\"standardWorkDays\":").append(standardWorkDays).append(",");
+            json.append("\"insuranceBenefit\":").append(p.getInsuranceBenefit() != null ? p.getInsuranceBenefit() : BigDecimal.ZERO).append(",");
 
             EmployeeContractDAO ecDAO = new EmployeeContractDAO();
             EmployeeContract activeContract = ecDAO.getActiveContract(userId);

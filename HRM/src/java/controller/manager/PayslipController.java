@@ -303,6 +303,7 @@ public class PayslipController extends HttpServlet {
             json.append("\"baseWorkedSalary\":").append(baseWorkedSalary).append(",");
             json.append("\"workingDays\":").append(p.getWorkingDays()).append(",");
             json.append("\"standardWorkDays\":").append(standardWorkDays).append(",");
+            json.append("\"insuranceBenefit\":").append(p.getInsuranceBenefit() != null ? p.getInsuranceBenefit() : BigDecimal.ZERO).append(",");
 
             EmployeeContractDAO ecDAO = new EmployeeContractDAO();
             EmployeeContract activeContract = ecDAO.getActiveContract(requestedUserId);

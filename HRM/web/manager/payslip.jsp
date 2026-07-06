@@ -293,6 +293,7 @@
                                             data-tax="<fmt:formatNumber value='${p.taxAmount != null ? p.taxAmount : 0}' type='number' groupingUsed='true'/> ₫"
                                             data-gross="<fmt:formatNumber value='${p.grossSalary != null ? p.grossSalary : 0}' type='number' groupingUsed='true'/> ₫"
                                             data-net="<fmt:formatNumber value='${p.netSalary != null ? p.netSalary : 0}' type='number' groupingUsed='true'/> ₫"
+                                            data-insurancebenefit="<fmt:formatNumber value='${p.insuranceBenefit != null ? p.insuranceBenefit : 0}' type='number' groupingUsed='true'/> ₫"
                                             data-status="${p.status}">
                                         <i class="fas fa-eye"></i>
                                     </button>
@@ -384,6 +385,10 @@
                                     <span class="fw-semibold text-dark text-success" id="modalBonus">+ 0 ₫</span>
                                 </div>
                                 <div id="modalBonusDetails" style="padding-left: 15px; font-size: 0.8rem; display: none;"></div>
+                                <div class="d-flex justify-content-between" id="modalInsuranceBenefitRow" style="display: none !important;">
+                                    <span class="text-muted">Trợ cấp BHXH (Thai sản/Ốm đau...):</span>
+                                    <span class="fw-semibold text-dark text-success" id="modalInsuranceBenefit">+ 0 ₫</span>
+                                </div>
                                 <hr style="margin: 10px 0; border-color: rgba(16,185,129,.2);">
                                 <div class="d-flex justify-content-between fw-bold text-dark" style="font-size: 0.95rem;">
                                     <span>Lương Gross:</span>
@@ -456,6 +461,7 @@
                 const tax = button.getAttribute('data-tax');
                 const gross = button.getAttribute('data-gross');
                 const net = button.getAttribute('data-net');
+                const insuranceBenefit = button.getAttribute('data-insurancebenefit') || '0 ₫';
                 const status = button.getAttribute('data-status');
 
                 // Populate Modal Fields
@@ -472,6 +478,14 @@
                 document.getElementById('modalTax').textContent = '- ' + tax;
                 document.getElementById('modalDeduction').textContent = '- ' + deduction;
                 document.getElementById('modalNet').textContent = net;
+
+                document.getElementById('modalInsuranceBenefit').textContent = '+ ' + insuranceBenefit;
+                const numericBenefit = parseFloat(insuranceBenefit.replace(/[^\d]/g, '')) || 0;
+                if (numericBenefit > 0) {
+                    document.getElementById('modalInsuranceBenefitRow').style.setProperty('display', 'flex', 'important');
+                } else {
+                    document.getElementById('modalInsuranceBenefitRow').style.setProperty('display', 'none', 'important');
+                }
 
                 // Fetch detailed breakdowns
                 const contextPath = '${pageContext.request.contextPath}';
@@ -506,11 +520,19 @@
                             baseWorkedEl.textContent = new Intl.NumberFormat('vi-VN').format(Math.round(data.baseWorkedSalary)) + ' ₫';
                         }
                         
+                        if (data.insuranceBenefit !== undefined) {
+                            if (data.insuranceBenefit > 0) {
+                                document.getElementById('modalInsuranceBenefit').textContent = '+ ' + new Intl.NumberFormat('vi-VN').format(Math.round(data.insuranceBenefit)) + ' ₫';
+                                document.getElementById('modalInsuranceBenefitRow').style.setProperty('display', 'flex', 'important');
+                            } else {
+                                document.getElementById('modalInsuranceBenefitRow').style.setProperty('display', 'none', 'important');
+                            }
+                        }
+                        
                         let allowHtml = '';
                         if (data.allowances && data.allowances.length > 0) {
                             data.allowances.forEach(a => {
                                 allowHtml += `<div class="d-flex justify-content-between text-muted">
-                                    <span>- \${a.name}:</span>
                                     <span>+ \${new Intl.NumberFormat('vi-VN').format(Math.round(a.amount))} ₫</span>
                                 </div>`;
                             });
