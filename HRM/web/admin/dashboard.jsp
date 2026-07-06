@@ -11,273 +11,462 @@
 <style>
 footer, #chatWidget { display: none !important; }
 
+*, *::before, *::after { box-sizing: border-box; }
+
 body {
-    background-color: #f1f5f9 !important;
-    font-family: 'Inter', sans-serif !important;
+    background: #f0f2f5 !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
     padding-top: 0 !important;
     min-height: 100vh;
-    overflow-x: hidden;
+    color: #1a1d23;
 }
 
-/* ── Layout ── */
-.dashboard-wrapper { display: flex; min-height: calc(100vh - 64px); }
-.dash-main { flex: 1; min-width: 0; background: #f1f5f9; }
-.dash-content { padding: 28px 32px; display: flex; flex-direction: column; gap: 28px; }
+/* Layout */
+.db-wrap { display: flex; min-height: calc(100vh - 64px); }
+.db-main { flex: 1; min-width: 0; padding: 28px 32px; display: flex; flex-direction: column; gap: 24px; }
 
-/* ── Page Header ── */
-.dash-page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
-.dash-page-header-left { display: flex; flex-direction: column; gap: 4px; }
-.dash-breadcrumb { font-size: 0.78rem; color: #94a3b8; display: flex; align-items: center; gap: 6px; }
-.dash-breadcrumb a { color: #0d9488; text-decoration: none; }
-.dash-breadcrumb a:hover { text-decoration: underline; }
-.dash-page-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
-.dash-role-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 6px 14px; border-radius: 20px;
-    font-size: 0.8rem; font-weight: 700;
-    background: linear-gradient(135deg, #0d9488, #0369a1);
-    color: #fff; box-shadow: 0 2px 8px rgba(13,148,136,0.3);
+/* Header */
+.db-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.db-header-left { display: flex; flex-direction: column; gap: 4px; }
+.db-breadcrumb { font-size: 0.8rem; color: #8892a4; display: flex; align-items: center; gap: 6px; }
+.db-breadcrumb a { color: #4f7ef8; text-decoration: none; }
+.db-title { font-size: 1.6rem; font-weight: 700; color: #111827; letter-spacing: -0.3px; margin: 0; }
+.db-subtitle { font-size: 0.85rem; color: #6b7280; margin-top: 2px; }
+.db-date-badge {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border-radius: 10px;
+    background: #fff; border: 1px solid #e5e7eb;
+    font-size: 0.82rem; font-weight: 600; color: #374151;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 
-/* ── Stat Cards ── */
-.dash-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
-.dash-stat-card {
-    background: #fff; border-radius: 16px; padding: 22px 24px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
-    display: flex; flex-direction: column; gap: 10px;
-    transition: transform 0.2s, box-shadow 0.2s;
+/* Stat Cards Row */
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+@media (max-width: 1200px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .stat-grid { grid-template-columns: 1fr; } }
+
+.stat-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 22px 24px;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    display: flex; align-items: center; gap: 18px;
+    transition: box-shadow 0.25s, transform 0.25s;
+    position: relative; overflow: hidden;
 }
-.dash-stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
-.dash-stat-header { display: flex; justify-content: space-between; align-items: flex-start; }
-.dash-stat-title { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px; }
-.dash-stat-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
-.dash-stat-val { font-size: 2rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
-.dash-stat-change { font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 4px; }
-.dash-stat-change.up { color: #10b981; }
-.dash-stat-change.down { color: #ef4444; }
-.dash-stat-change.neutral { color: #94a3b8; }
-
-.dash-stat-card.stat-warning { border-left: 4px solid #f59e0b; }
-.dash-stat-card.stat-warning .dash-stat-icon { background: #fef3c7; color: #d97706; }
-.dash-stat-card.stat-danger { border-left: 4px solid #ef4444; }
-.dash-stat-card.stat-danger .dash-stat-icon { background: #fee2e2; color: #dc2626; }
-.dash-stat-card.stat-success { border-left: 4px solid #10b981; }
-.dash-stat-card.stat-success .dash-stat-icon { background: #d1fae5; color: #059669; }
-.dash-stat-card.stat-teal { border-left: 4px solid #0d9488; }
-.dash-stat-card.stat-teal .dash-stat-icon { background: #ccfbf1; color: #0d9488; }
-.dash-stat-card.stat-blue { border-left: 4px solid #3b82f6; }
-.dash-stat-card.stat-blue .dash-stat-icon { background: #dbeafe; color: #2563eb; }
-.dash-stat-card.stat-purple { border-left: 4px solid #8b5cf6; }
-.dash-stat-card.stat-purple .dash-stat-icon { background: #ede9fe; color: #7c3aed; }
-
-/* ── Charts ── */
-.dash-charts-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; }
-@media (max-width: 1100px) { .dash-charts-grid { grid-template-columns: 1fr; } }
-
-.dash-card {
-    background: #fff; border-radius: 16px; padding: 24px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+.stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 4px; height: 100%; border-radius: 16px 0 0 16px;
 }
-.dash-card-header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-.dash-card-title { font-size: 0.95rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; }
-.dash-card-title-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.dot-teal { background: #0d9488; } .dot-blue { background: #3b82f6; } .dot-orange { background: #f59e0b; }
+.stat-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.09); transform: translateY(-2px); }
 
-/* ── Table ── */
-.dash-table-container { width: 100%; overflow-x: auto; }
-.dash-table { width: 100%; border-collapse: collapse; text-align: left; }
-.dash-table th {
-    padding: 12px 16px; border-bottom: 1px solid #e2e8f0;
-    color: #64748b; font-size: 0.73rem; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.6px; background: #fafbfc;
-}
-.dash-table td { padding: 15px 16px; border-bottom: 1px solid #f1f5f9; color: #0f172a; font-size: 0.88rem; vertical-align: middle; }
-.dash-table tbody tr:last-child td { border-bottom: none; }
-.dash-table tbody tr:hover td { background: #f8fafc; }
-.dash-emp-cell { display: flex; align-items: center; gap: 10px; }
-.dash-emp-avatar {
-    width: 34px; height: 34px; border-radius: 8px;
-    background: #eff6ff; color: #3b82f6;
+.stat-card.blue::before { background: linear-gradient(180deg, #4f7ef8, #3b5fce); }
+.stat-card.green::before { background: linear-gradient(180deg, #22c55e, #16a34a); }
+.stat-card.red::before { background: linear-gradient(180deg, #f43f5e, #e11d48); }
+.stat-card.purple::before { background: linear-gradient(180deg, #a855f7, #9333ea); }
+
+.stat-icon {
+    width: 52px; height: 52px; border-radius: 14px;
     display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+    font-size: 1.25rem; color: #fff; flex-shrink: 0;
 }
-.dash-btn {
-    padding: 6px 14px; font-size: 0.8rem; font-weight: 700;
-    border-radius: 8px; border: none; cursor: pointer;
-    transition: all 0.2s; text-decoration: none; display: inline-block;
-}
-.dash-btn-primary { background: #0d9488; color: #fff; }
-.dash-btn-primary:hover { background: #0f766e; }
-.dash-btn-secondary { background: #f1f5f9; color: #475569; }
-.dash-btn-secondary:hover { background: #e2e8f0; }
-.dash-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 0.73rem; font-weight: 700; }
-.badge-pending   { background: #fef3c7; color: #d97706; }
-.badge-completed { background: #d1fae5; color: #059669; }
-.badge-rejected  { background: #fee2e2; color: #dc2626; }
+.stat-card.blue .stat-icon { background: linear-gradient(135deg, #4f7ef8, #3b5fce); }
+.stat-card.green .stat-icon { background: linear-gradient(135deg, #22c55e, #16a34a); }
+.stat-card.red .stat-icon { background: linear-gradient(135deg, #f43f5e, #e11d48); }
+.stat-card.purple .stat-icon { background: linear-gradient(135deg, #a855f7, #9333ea); }
 
-@media (max-width: 768px) { .dash-content { padding: 20px 16px; } }
+.stat-body { flex: 1; min-width: 0; }
+.stat-val { font-size: 2rem; font-weight: 800; color: #111827; line-height: 1; }
+.stat-lbl { font-size: 0.8rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 4px; }
+.stat-sub { font-size: 0.78rem; color: #9ca3af; margin-top: 6px; }
+.stat-pct {
+    font-size: 0.75rem; font-weight: 700;
+    padding: 3px 8px; border-radius: 20px; margin-top: 6px; display: inline-block;
+}
+.pct-green { background: #dcfce7; color: #15803d; }
+.pct-red { background: #fee2e2; color: #b91c1c; }
+.pct-blue { background: #dbeafe; color: #1d4ed8; }
+.pct-purple { background: #f3e8ff; color: #7e22ce; }
+
+/* Card base */
+.card {
+    background: #fff; border-radius: 16px;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    padding: 24px;
+}
+.card-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px;
+}
+.card-title {
+    font-size: 0.95rem; font-weight: 700; color: #111827;
+    display: flex; align-items: center; gap: 10px; margin: 0;
+}
+.card-icon {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; color: #fff;
+}
+.ci-blue { background: linear-gradient(135deg, #4f7ef8, #3b5fce); }
+.ci-green { background: linear-gradient(135deg, #22c55e, #16a34a); }
+.ci-orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.ci-teal { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+.ci-purple { background: linear-gradient(135deg, #a855f7, #9333ea); }
+
+.card-link {
+    font-size: 0.8rem; font-weight: 600; color: #4f7ef8;
+    text-decoration: none; padding: 6px 12px; border-radius: 8px;
+    background: #eff4ff; transition: background 0.2s;
+}
+.card-link:hover { background: #dbeafe; color: #1d4ed8; }
+
+/* Charts row */
+.charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+@media (max-width: 1100px) { .charts-row { grid-template-columns: 1fr; } }
+
+/* Onboarding + Quick Actions row */
+.bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 900px) { .bottom-row { grid-template-columns: 1fr; } }
+
+/* Onboarding progress */
+.onb-items { display: flex; flex-direction: column; gap: 14px; }
+.onb-item { display: flex; flex-direction: column; gap: 6px; }
+.onb-item-head { display: flex; justify-content: space-between; align-items: center; }
+.onb-label { font-size: 0.85rem; font-weight: 600; color: #374151; display: flex; align-items: center; gap: 8px; }
+.onb-dot { width: 8px; height: 8px; border-radius: 50%; }
+.onb-val { font-size: 0.85rem; font-weight: 700; color: #111827; }
+.prog-bar { height: 8px; background: #f3f4f6; border-radius: 99px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
+
+/* Quick Actions */
+.qa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.qa-btn {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; padding: 20px 12px; border-radius: 14px;
+    background: #f9fafb; border: 1.5px solid #f0f0f0;
+    text-decoration: none; transition: all 0.2s; cursor: pointer;
+    text-align: center;
+}
+.qa-btn:hover { background: #f0f4ff; border-color: #c7d7fd; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(79,126,248,0.1); }
+.qa-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; color: #fff;
+}
+.qa-text { font-size: 0.8rem; font-weight: 600; color: #374151; }
+
+/* User Table */
+.user-table-wrap { overflow-x: auto; }
+.user-table { width: 100%; border-collapse: collapse; }
+.user-table th {
+    padding: 10px 14px; font-size: 0.75rem; font-weight: 700;
+    color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;
+    background: #f9fafb; border-bottom: 1px solid #f0f0f0;
+}
+.user-table th:first-child { border-radius: 10px 0 0 10px; }
+.user-table th:last-child { border-radius: 0 10px 10px 0; }
+.user-table td {
+    padding: 14px; font-size: 0.875rem; color: #374151;
+    border-bottom: 1px solid #f9fafb; vertical-align: middle;
+}
+.user-table tbody tr:hover td { background: #f9fbff; }
+.user-table tbody tr:last-child td { border-bottom: none; }
+
+.ua { display: flex; align-items: center; gap: 12px; }
+.av {
+    width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+    background: linear-gradient(135deg, #dbeafe, #c7d2fe);
+    color: #3730a3; font-weight: 800; font-size: 0.95rem;
+    display: flex; align-items: center; justify-content: center;
+}
+.un { font-weight: 600; color: #111827; font-size: 0.875rem; }
+.ue { font-size: 0.78rem; color: #9ca3af; }
+
+.badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+.badge::before { content:''; width:6px; height:6px; border-radius:50%; }
+.badge-on { background: #dcfce7; color: #15803d; }
+.badge-on::before { background: #22c55e; }
+.badge-off { background: #fee2e2; color: #b91c1c; }
+.badge-off::before { background: #ef4444; }
+
+.btn-act {
+    font-size: 0.78rem; font-weight: 600; padding: 6px 14px;
+    border-radius: 8px; background: #eff4ff; color: #4f7ef8;
+    text-decoration: none; border: 1px solid #dbeafe;
+    transition: all 0.2s; display: inline-block;
+}
+.btn-act:hover { background: #4f7ef8; color: #fff; }
 </style>
 
-<div class="dashboard-wrapper">
+<div class="db-wrap">
     <jsp:include page="../shared/sidebar.jsp">
         <jsp:param name="activeMenu" value="dashboard" />
     </jsp:include>
 
-    <div class="dash-main">
-        <div class="dash-content">
+    <div class="db-main">
 
-            <%-- ── Page Header ── --%>
-            <div class="dash-page-header">
-                <div class="dash-page-header-left">
-                    <div class="dash-breadcrumb">
-                        <a href="${pageContext.request.contextPath}/home"><i class="fas fa-home"></i> Trang chủ</a>
-                        <span>/</span>
-                        <span>Dashboard</span>
-                    </div>
-                    <div class="dash-page-title">
-                        Tổng Quan Hệ Thống
-                    </div>
+        <%-- Header --%>
+        <div class="db-header">
+            <div class="db-header-left">
+                <div class="db-breadcrumb">
+                    <a href="${pageContext.request.contextPath}/home"><i class="fas fa-home"></i> Trang chủ</a>
+                    <i class="fas fa-chevron-right" style="font-size:0.65rem;color:#d1d5db;"></i>
+                    <span>Dashboard</span>
                 </div>
-                <div class="dash-role-badge">
-                    <i class="fas fa-server"></i> Admin
+                <h1 class="db-title">Tổng Quan Hệ Thống</h1>
+                <div class="db-subtitle">Giám sát tài khoản, phân quyền và trạng thái hệ thống</div>
+            </div>
+            <div class="db-date-badge">
+                <i class="fas fa-crown" style="color:#f59e0b;"></i>
+                <span>Quản Trị Viên</span>
+            </div>
+        </div>
+
+        <%-- Stat Cards --%>
+        <div class="stat-grid">
+            <div class="stat-card blue">
+                <div class="stat-icon"><i class="fas fa-users"></i></div>
+                <div class="stat-body">
+                    <div class="stat-val">${totalUsers}</div>
+                    <div class="stat-lbl">Tổng Người Dùng</div>
+                    <span class="stat-pct pct-blue">Toàn hệ thống</span>
                 </div>
             </div>
-
-            <%-- ── ADMIN STATS ── --%>
-            <div class="dash-stat-grid">
-                <div class="dash-stat-card stat-teal">
-                    <div class="dash-stat-header">
-                        <span class="dash-stat-title">Người Dùng Hoạt Động</span>
-                        <div class="dash-stat-icon"><i class="fas fa-user-check"></i></div>
-                    </div>
-                    <div class="dash-stat-val">${not empty activeUsers ? activeUsers : '—'}</div>
-                    <div class="dash-stat-change up"><i class="fas fa-arrow-up"></i> Đang hoạt động</div>
-                </div>
-                <div class="dash-stat-card stat-blue">
-                    <div class="dash-stat-header">
-                        <span class="dash-stat-title">Tổng Người Dùng</span>
-                        <div class="dash-stat-icon"><i class="fas fa-users"></i></div>
-                    </div>
-                    <div class="dash-stat-val">${not empty totalUsers ? totalUsers : '—'}</div>
-                    <div class="dash-stat-change neutral">Toàn hệ thống</div>
-                </div>
-                <div class="dash-stat-card stat-danger">
-                    <div class="dash-stat-header">
-                        <span class="dash-stat-title">Tài Khoản Bị Khóa</span>
-                        <div class="dash-stat-icon"><i class="fas fa-user-slash"></i></div>
-                    </div>
-                    <div class="dash-stat-val">${not empty lockedUsers ? lockedUsers : '0'}</div>
-                    <div class="dash-stat-change down"><i class="fas fa-lock"></i> Đang bị tạm khóa</div>
-                </div>
-                <div class="dash-stat-card stat-success">
-                    <div class="dash-stat-header">
-                        <span class="dash-stat-title">Vai Trò Hệ Thống</span>
-                        <div class="dash-stat-icon"><i class="fas fa-user-shield"></i></div>
-                    </div>
-                    <div class="dash-stat-val">${not empty totalRoles ? totalRoles : '—'}</div>
-                    <div class="dash-stat-change neutral">Đang hoạt động</div>
+            <div class="stat-card green">
+                <div class="stat-icon"><i class="fas fa-user-check"></i></div>
+                <div class="stat-body">
+                    <div class="stat-val">${activeUsers}</div>
+                    <div class="stat-lbl">Đang Hoạt Động</div>
+                    <c:if test="${totalUsers > 0}">
+                        <span class="stat-pct pct-green">
+                            <fmt:formatNumber value="${activeUsers * 100 / totalUsers}" maxFractionDigits="1"/>% tài khoản
+                        </span>
+                    </c:if>
                 </div>
             </div>
-
-            <%-- Admin Charts --%>
-            <div class="dash-charts-grid">
-                <div class="dash-card">
-                    <div class="dash-card-header">
-                        <h3 class="dash-card-title">
-                            <div class="dash-card-title-dot dot-teal"></div>
-                            Lượt Đăng Nhập (7 Ngày Qua)
-                        </h3>
-                    </div>
-                    <div style="position:relative;height:280px;width:100%;">
-                        <canvas id="trafficChart"></canvas>
-                    </div>
-                </div>
-                <div class="dash-card">
-                    <div class="dash-card-header">
-                        <h3 class="dash-card-title">
-                            <div class="dash-card-title-dot dot-blue"></div>
-                            Phân Bổ Theo Vai Trò
-                        </h3>
-                    </div>
-                    <div style="position:relative;height:280px;width:100%;display:flex;justify-content:center;align-items:center;">
-                        <canvas id="rolesChart"></canvas>
-                    </div>
+            <div class="stat-card red">
+                <div class="stat-icon"><i class="fas fa-user-lock"></i></div>
+                <div class="stat-body">
+                    <div class="stat-val">${lockedUsers}</div>
+                    <div class="stat-lbl">Bị Vô Hiệu Hóa</div>
+                    <c:if test="${totalUsers > 0}">
+                        <span class="stat-pct pct-red">
+                            <fmt:formatNumber value="${lockedUsers * 100 / totalUsers}" maxFractionDigits="1"/>% tài khoản
+                        </span>
+                    </c:if>
                 </div>
             </div>
+            <div class="stat-card purple">
+                <div class="stat-icon"><i class="fas fa-shield-alt"></i></div>
+                <div class="stat-body">
+                    <div class="stat-val">${totalRoles}</div>
+                    <div class="stat-lbl">Vai Trò</div>
+                    <span class="stat-pct pct-purple">Nhóm phân quyền</span>
+                </div>
+            </div>
+        </div>
 
-            <%-- Admin: danh sách user gần đây --%>
-            <div class="dash-card">
-                <div class="dash-card-header">
-                    <h3 class="dash-card-title">
-                        <div class="dash-card-title-dot dot-orange"></div>
-                        Người Dùng Gần Đây
+        <%-- Charts Row --%>
+        <div class="charts-row">
+            <div class="card">
+                <div class="card-head">
+                    <h3 class="card-title">
+                        <div class="card-icon ci-blue"><i class="fas fa-chart-line"></i></div>
+                        Tăng Trưởng Người Dùng (6 Tháng Gần Nhất)
                     </h3>
-                    <a href="${pageContext.request.contextPath}/admin/users" class="dash-btn dash-btn-secondary">Xem tất cả</a>
                 </div>
-                <div class="dash-table-container">
-                    <table class="dash-table">
-                        <thead><tr><th>Họ Tên</th><th>Email</th><th>Trạng Thái</th><th>Chi Tiết</th></tr></thead>
-                        <tbody>
-                            <c:forEach items="${recentUsers}" var="u">
-                                <tr>
-                                    <td>
-                                        <div class="dash-emp-cell">
-                                            <div class="dash-emp-avatar">${fn:substring(u.fullName,0,1)}</div>
-                                            <span style="font-weight:600;">${u.fullName}</span>
-                                        </div>
-                                    </td>
-                                    <td style="color:#64748b;">${u.email}</td>
-                                    <td>
-                                        <c:choose>
-                                            <c:when test="${u.status == 1}">
-                                                <span class="dash-badge badge-completed"><i class="fas fa-circle" style="font-size:.55rem;"></i> Hoạt động</span>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <span class="dash-badge badge-rejected"><i class="fas fa-circle" style="font-size:.55rem;"></i> Bị khóa</span>
-                                            </c:otherwise>
-                                        </c:choose>
-                                    </td>
-                                    <td>
-                                        <a href="${pageContext.request.contextPath}/admin/users?id=${u.userId}" class="dash-btn dash-btn-primary">Xem</a>
-                                    </td>
-                                </tr>
-                            </c:forEach>
-                        </tbody>
-                    </table>
+                <div style="position:relative;height:260px;">
+                    <canvas id="growthChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-head">
+                    <h3 class="card-title">
+                        <div class="card-icon ci-teal"><i class="fas fa-chart-pie"></i></div>
+                        Phân Bổ Vai Trò
+                    </h3>
+                </div>
+                <div style="position:relative;height:260px;display:flex;align-items:center;justify-content:center;">
+                    <canvas id="rolesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <%-- Onboarding + Quick Actions --%>
+        <div class="bottom-row">
+            <div class="card">
+                <div class="card-head">
+                    <h3 class="card-title">
+                        <div class="card-icon ci-orange"><i class="fas fa-user-plus"></i></div>
+                        Trạng Thái Yêu Cầu Onboarding
+                    </h3>
+                    <a href="${pageContext.request.contextPath}/admin/onboarding/list" class="card-link">Xem tất cả</a>
+                </div>
+                <div class="onb-items">
+                    <div class="onb-item">
+                        <div class="onb-item-head">
+                            <span class="onb-label"><span class="onb-dot" style="background:#6b7280;"></span>Tổng yêu cầu</span>
+                            <span class="onb-val">${onboardingTotal}</span>
+                        </div>
+                        <div class="prog-bar"><div class="prog-fill" style="width:100%;background:#6b7280;"></div></div>
+                    </div>
+                    <div class="onb-item">
+                        <div class="onb-item-head">
+                            <span class="onb-label"><span class="onb-dot" style="background:#f59e0b;"></span>Đang chờ duyệt</span>
+                            <span class="onb-val" style="color:#d97706;">${onboardingPending}</span>
+                        </div>
+                        <div class="prog-bar">
+                            <div class="prog-fill" style="background:linear-gradient(90deg,#fbbf24,#f59e0b);
+                                width:<c:choose><c:when test="${onboardingTotal > 0}">${onboardingPending * 100 / onboardingTotal}%</c:when><c:otherwise>0%</c:otherwise></c:choose>;"></div>
+                        </div>
+                    </div>
+                    <div class="onb-item">
+                        <div class="onb-item-head">
+                            <span class="onb-label"><span class="onb-dot" style="background:#22c55e;"></span>Đã phê duyệt</span>
+                            <span class="onb-val" style="color:#15803d;">${onboardingApproved}</span>
+                        </div>
+                        <div class="prog-bar">
+                            <div class="prog-fill" style="background:linear-gradient(90deg,#4ade80,#22c55e);
+                                width:<c:choose><c:when test="${onboardingTotal > 0}">${onboardingApproved * 100 / onboardingTotal}%</c:when><c:otherwise>0%</c:otherwise></c:choose>;"></div>
+                        </div>
+                    </div>
+                    <div class="onb-item">
+                        <div class="onb-item-head">
+                            <span class="onb-label"><span class="onb-dot" style="background:#ef4444;"></span>Đã từ chối</span>
+                            <span class="onb-val" style="color:#b91c1c;">${onboardingRejected}</span>
+                        </div>
+                        <div class="prog-bar">
+                            <div class="prog-fill" style="background:linear-gradient(90deg,#f87171,#ef4444);
+                                width:<c:choose><c:when test="${onboardingTotal > 0}">${onboardingRejected * 100 / onboardingTotal}%</c:when><c:otherwise>0%</c:otherwise></c:choose>;"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-        </div><%-- end dash-content --%>
-    </div><%-- end dash-main --%>
-</div><%-- end dashboard-wrapper --%>
+            <div class="card">
+                <div class="card-head">
+                    <h3 class="card-title">
+                        <div class="card-icon ci-purple"><i class="fas fa-bolt"></i></div>
+                        Thao Tác Nhanh
+                    </h3>
+                </div>
+                <div class="qa-grid">
+                    <a href="${pageContext.request.contextPath}/admin/users" class="qa-btn">
+                        <div class="qa-icon" style="background:linear-gradient(135deg,#4f7ef8,#3b5fce);"><i class="fas fa-users"></i></div>
+                        <span class="qa-text">Quản lý<br>Người Dùng</span>
+                    </a>
+                    <a href="${pageContext.request.contextPath}/role" class="qa-btn">
+                        <div class="qa-icon" style="background:linear-gradient(135deg,#a855f7,#9333ea);"><i class="fas fa-shield-alt"></i></div>
+                        <span class="qa-text">Phân Quyền<br>Vai Trò</span>
+                    </a>
+                    <a href="${pageContext.request.contextPath}/admin/onboarding/list" class="qa-btn">
+                        <div class="qa-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);"><i class="fas fa-user-plus"></i></div>
+                        <span class="qa-text">Yêu Cầu<br>Onboarding</span>
+                    </a>
+                    <a href="${pageContext.request.contextPath}/editRolePermission" class="qa-btn">
+                        <div class="qa-icon" style="background:linear-gradient(135deg,#14b8a6,#0d9488);"><i class="fas fa-key"></i></div>
+                        <span class="qa-text">Cấu Hình<br>Quyền Hạn</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div><%-- end db-main --%>
+</div><%-- end db-wrap --%>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    new Chart(document.getElementById('trafficChart').getContext('2d'), {
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.color = '#6b7280';
+
+    const growthLabels = ${growthLabels};
+    const growthValues = ${growthValues};
+    const roleLabels   = ${roleLabels};
+    const roleValues   = ${roleValues};
+
+    // Line Chart
+    const ctxG = document.getElementById('growthChart').getContext('2d');
+    const grad = ctxG.createLinearGradient(0, 0, 0, 260);
+    grad.addColorStop(0, 'rgba(79,126,248,0.25)');
+    grad.addColorStop(1, 'rgba(79,126,248,0.0)');
+
+    new Chart(ctxG, {
         type: 'line',
         data: {
-            labels: ['21/05','22/05','23/05','24/05','25/05','26/05','27/05'],
-            datasets: [
-                { label: 'Đăng nhập thành công', data: [1120,1280,850,420,1340,1420,1245],
-                  borderColor:'#0d9488', backgroundColor:'rgba(13,148,136,0.06)', fill:true, tension:0.35, borderWidth:2.5, pointBackgroundColor:'#0d9488', pointRadius:4 },
-                { label: 'Đăng nhập thất bại', data: [15,24,18,5,29,32,21],
-                  borderColor:'#ef4444', fill:false, tension:0.35, borderWidth:2, borderDash:[6,4], pointBackgroundColor:'#ef4444', pointRadius:3 }
-            ]
+            labels: growthLabels,
+            datasets: [{
+                label: 'Tài khoản mới',
+                data: growthValues,
+                borderColor: '#4f7ef8',
+                backgroundColor: grad,
+                fill: true,
+                tension: 0.45,
+                borderWidth: 2.5,
+                pointBackgroundColor: '#fff',
+                pointBorderColor: '#4f7ef8',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
         },
-        options: { responsive:true, maintainAspectRatio:false,
-            plugins:{ legend:{ position:'top', labels:{ boxWidth:12, font:{family:'Inter',size:12}, padding:16 }}},
-            scales:{ y:{ grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{family:'Inter',size:11},color:'#94a3b8'}},
-                     x:{ grid:{display:false}, ticks:{font:{family:'Inter',size:11},color:'#94a3b8'}}}}
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#111827',
+                    titleFont: { size: 13, weight: '700' },
+                    bodyFont: { size: 13 },
+                    padding: 12,
+                    displayColors: false,
+                    callbacks: { label: ctx => ctx.parsed.y + ' tài khoản mới' }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
+                    ticks: { font: { size: 12 }, stepSize: 1 }
+                },
+                x: {
+                    grid: { display: false, drawBorder: false },
+                    ticks: { font: { size: 12 } }
+                }
+            }
+        }
     });
+
+    // Doughnut Chart
     new Chart(document.getElementById('rolesChart').getContext('2d'), {
         type: 'doughnut',
         data: {
-            labels: ['Admin','HR Manager','Quản đốc','Giám đốc'],
-            datasets: [{ data:[10,30,20,5], backgroundColor:['#0d9488','#3b82f6','#f59e0b','#8b5cf6'], borderWidth:3, borderColor:'#fff' }]
+            labels: roleLabels,
+            datasets: [{
+                data: roleValues,
+                backgroundColor: ['#4f7ef8','#22c55e','#f59e0b','#a855f7','#14b8a6','#f43f5e','#6b7280'],
+                borderWidth: 3,
+                borderColor: '#fff',
+                hoverOffset: 8
+            }]
         },
-        options: { responsive:true, maintainAspectRatio:false, cutout:'68%',
-            plugins:{ legend:{ position:'bottom', labels:{ boxWidth:12, padding:18, font:{family:'Inter',size:12}}}}}
+        options: {
+            responsive: true, maintainAspectRatio: false, cutout: '68%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { boxWidth: 10, padding: 14, font: { size: 11, weight: '600' }, usePointStyle: true }
+                },
+                tooltip: {
+                    backgroundColor: '#111827',
+                    titleFont: { size: 12 },
+                    bodyFont: { size: 13, weight: '600' },
+                    padding: 10
+                }
+            }
+        }
     });
 });
 </script>

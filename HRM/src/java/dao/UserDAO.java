@@ -580,4 +580,57 @@ public class UserDAO {
         }
         return list;
     }
+
+    // ── Lấy dữ liệu biểu đồ phân bổ vai trò ──
+    public java.util.Map<String, Integer> getUserRoleDistribution() {
+        java.util.Map<String, Integer> map = new java.util.LinkedHashMap<>();
+        String sql = "SELECT r.role_name, COUNT(u.user_id) as count " +
+                     "FROM roles r LEFT JOIN users u ON r.role_id = u.role_id AND u.status = 1 " +
+                     "GROUP BY r.role_name " +
+                     "ORDER BY count DESC";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                map.put(rs.getString("role_name"), rs.getInt("count"));
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi getUserRoleDistribution: " + e.getMessage());
+        }
+        return map;
+    }
+
+    // ── Lấy dữ liệu biểu đồ người dùng mới trong 6 tháng qua ──
+    public java.util.Map<String, Integer> getNewUsersLast6Months() {
+        java.util.Map<String, Integer> map = new java.util.LinkedHashMap<>();
+        
+        // Tạo 6 tháng gần nhất (bao gồm cả tháng hiện tại) với giá trị mặc định là 0
+        java.time.YearMonth currentMonth = java.time.YearMonth.now();
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("MM/yyyy");
+        for (int i = 5; i >= 0; i--) {
+            map.put(currentMonth.minusMonths(i).format(formatter), 0);
+        }
+
+        String sql = "SELECT DATE_FORMAT(created_at, '%m/%Y') as month_str, COUNT(user_id) as count " +
+                     "FROM users " +
+                     "WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH) " +
+                     "GROUP BY DATE_FORMAT(created_at, '%m/%Y') " +
+                     "ORDER BY MIN(created_at) ASC";
+                     
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                String monthStr = rs.getString("month_str");
+                if (map.containsKey(monthStr)) {
+                    map.put(monthStr, rs.getInt("count"));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi getNewUsersLast6Months: " + e.getMessage());
+        }
+        return map;
+    }
 }
