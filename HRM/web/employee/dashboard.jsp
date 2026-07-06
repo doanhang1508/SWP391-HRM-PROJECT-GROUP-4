@@ -262,7 +262,7 @@
                     <div class="emp-card-header">
                         <span class="emp-card-title">
                             <i class="fas fa-chart-pie text-success"></i>
-                            Thống kê cá nhân (Tháng này)
+                            Thống kê cá nhân (Tháng ${summaryMonth}/${summaryYear})
                         </span>
                     </div>
 
@@ -270,14 +270,21 @@
                         <div class="stat-icon blue"><i class="fas fa-calendar-check"></i></div>
                         <div class="stat-content">
                             <h5>${not empty attendanceSummary ? attendanceSummary.presentCount : 0} ngày</h5>
-                            <span>Ngày công thực tế (Tháng này)</span>
+                            <span>Ngày công thực tế (Tháng ${summaryMonth}/${summaryYear})</span>
                         </div>
                     </div>
 
                     <div class="stat-row">
                         <div class="stat-icon orange"><i class="fas fa-business-time"></i></div>
                         <div class="stat-content">
-                            <h5>${not empty attendanceSummary ? attendanceSummary.totalOvertimeHrs : 0.0}h</h5>
+                            <h5>
+                                <span>${not empty attendanceSummary ? attendanceSummary.totalOvertimeHrs : 0.0}h</span>
+                                <c:if test="${not empty attendanceSummary && attendanceSummary.scheduledOvertimeHrs > 0}">
+                                    <span style="font-size: 0.85rem; font-weight: normal; color: #f39c12; margin-left: 5px;" title="Giờ tăng ca dự kiến (bao gồm ca OT được phân và yêu cầu OT đang chờ duyệt)">
+                                        (+${attendanceSummary.scheduledOvertimeHrs}h dự kiến)
+                                    </span>
+                                </c:if>
+                            </h5>
                             <span>Giờ tăng ca (OT)</span>
                         </div>
                     </div>
@@ -497,12 +504,14 @@
                         @SuppressWarnings("unchecked")
                         List<ShiftAssignment> wkAssignments = (List<ShiftAssignment>) request.getAttribute("weekAssignments");
 
-                        // Build a map: dayIndex -> ShiftAssignment
-                        Map<Integer, ShiftAssignment> wkMap = new LinkedHashMap<>();
+                        // Build a map: dayIndex -> List<ShiftAssignment>
+                        Map<Integer, List<ShiftAssignment>> wkMap = new LinkedHashMap<>();
                         if (wkAssignments != null && wkStart != null) {
                             for (ShiftAssignment sa : wkAssignments) {
                                 int dayIdx = (int) (sa.getAssignedDate().toEpochDay() - wkStart.toEpochDay());
-                                if (dayIdx >= 0 && dayIdx < 7) wkMap.put(dayIdx, sa);
+                                if (dayIdx >= 0 && dayIdx < 7) {
+                                    wkMap.computeIfAbsent(dayIdx, k -> new ArrayList<>()).add(sa);
+                                }
                             }
                         }
 
@@ -512,34 +521,40 @@
                             for (int d = 0; d < 7; d++) {
                                 boolean isTdy = wkDates[d].equals(todayDate);
                                 boolean isPst = wkDates[d].isBefore(todayDate);
-                                ShiftAssignment sa = wkMap.get(d);
+                                List<ShiftAssignment> saList = wkMap.get(d);
+                                boolean hasShifts = (saList != null && !saList.isEmpty());
 
                                 String itemClass = "shift-item";
                                 if (isTdy) itemClass += " today";
                                 else if (isPst) itemClass += " past";
-                                else if (sa == null) itemClass += " off";
+                                else if (!hasShifts) itemClass += " off";
                                 else itemClass += " future";
 
                                 String dayLabel = dNames[d];
                                 if (isTdy) dayLabel += " (Hôm nay)";
                     %>
-                    <div class="<%= itemClass %>">
-                        <span class="shift-day"><%= dayLabel %></span>
-                        <% if (sa != null) {
-                            String sn = sa.getShiftName() != null ? sa.getShiftName() : "Ca";
-                            String badgeCss = "bg-secondary";
-                            if (sn.contains("Sáng") || sn.contains("Ca 1")) badgeCss = "bg-warning text-dark";
-                            else if (sn.contains("Chiều") || sn.contains("Ca 2")) badgeCss = "bg-primary";
-                            else if (sn.contains("Đêm") || sn.contains("Ca 3") || sa.isNightShift()) badgeCss = "bg-success";
-                            else if (sn.contains("Hành chính")) badgeCss = "bg-secondary";
-                            String st = sa.getStartTime() != null ? sa.getStartTime().toString() : "--:--";
-                            String et = sa.getEndTime() != null ? sa.getEndTime().toString() : "--:--";
-                        %>
-                        <span class="shift-time">
-                            <span class="badge <%= badgeCss %>"><%= sn %></span><%= st %> – <%= et %>
-                        </span>
+                    <div class="<%= itemClass %>" style="align-items: flex-start; min-height: 52px; padding: 10px 14px;">
+                        <span class="shift-day" style="margin-top: 2px;"><%= dayLabel %></span>
+                        <% if (hasShifts) { %>
+                        <div class="d-flex flex-column align-items-end gap-1" style="flex-grow: 1;">
+                            <% for (ShiftAssignment sa : saList) {
+                                String sn = sa.getShiftName() != null ? sa.getShiftName() : "Ca";
+                                String badgeCss = "bg-secondary";
+                                if (sn.contains("Sáng") || sn.contains("Ca 1")) badgeCss = "bg-warning text-dark";
+                                else if (sn.contains("Chiều") || sn.contains("Ca 2")) badgeCss = "bg-primary";
+                                else if (sn.contains("Đêm") || sn.contains("Ca 3") || sa.isNightShift()) badgeCss = "bg-success";
+                                else if (sn.contains("Hành chính") || sn.contains("Hành Chính")) badgeCss = "bg-secondary";
+                                
+                                String st = sa.getStartTime() != null ? sa.getStartTime().toString() : "--:--";
+                                String et = sa.getEndTime() != null ? sa.getEndTime().toString() : "--:--";
+                            %>
+                            <span class="shift-time" style="white-space: nowrap; display: flex; align-items: center; justify-content: flex-end;">
+                                <span class="badge <%= badgeCss %>" style="margin-right: 5px;"><%= sn %></span><%= st %> – <%= et %>
+                            </span>
+                            <% } %>
+                        </div>
                         <% } else { %>
-                        <span class="shift-time text-muted">
+                        <span class="shift-time text-muted" style="margin-top: 2px;">
                             <i class="fas fa-bed me-1"></i>Nghỉ
                         </span>
                         <% } %>

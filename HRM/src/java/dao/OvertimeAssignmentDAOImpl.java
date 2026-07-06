@@ -348,8 +348,37 @@ public class OvertimeAssignmentDAOImpl implements OvertimeAssignmentDAO {
                             }
                         }
                     } else {
-                        // Attendance record does not exist
-                        throw new SQLException("Chưa có dữ liệu chấm công (Attendance) cho ngày này. Cần có dữ liệu check-in để duyệt OT.");
+                        // Attendance record does not exist -> INSERT a new one!
+                        Integer shiftId = null;
+                        String sqlShift = "SELECT shift_id FROM shift_assignments WHERE user_id = ? AND assigned_date = ? LIMIT 1";
+                        try (PreparedStatement psShift = rawConn.prepareStatement(sqlShift)) {
+                            psShift.setInt(1, assignment.getUserId());
+                            psShift.setDate(2, plan.getTargetDate());
+                            try (ResultSet rsShift = psShift.executeQuery()) {
+                                if (rsShift.next()) {
+                                    shiftId = rsShift.getInt("shift_id");
+                                }
+                            }
+                        }
+
+                        String sqlInsert = "INSERT INTO attendance (user_id, shift_id, work_date, check_in, check_out, status, overtime_hrs, ot_reason, created_at) "
+                                         + "VALUES (?, ?, ?, NULL, NULL, 'PRESENT', ?, ?, NOW())";
+                        try (PreparedStatement psIns = rawConn.prepareStatement(sqlInsert)) {
+                            psIns.setInt(1, assignment.getUserId());
+                            if (shiftId != null) {
+                                psIns.setInt(2, shiftId);
+                            } else {
+                                psIns.setNull(2, java.sql.Types.INTEGER);
+                            }
+                            psIns.setDate(3, plan.getTargetDate());
+                            psIns.setDouble(4, assignment.getAssignedHours());
+                            psIns.setString(5, plan.getDescription() != null ? plan.getDescription() : "Tăng ca được duyệt");
+                            
+                            int attRows = psIns.executeUpdate();
+                            if (attRows == 0) {
+                                throw new SQLException("Không thể tạo dữ liệu chấm công mới cho giờ OT.");
+                            }
+                        }
                     }
                 }
             }
