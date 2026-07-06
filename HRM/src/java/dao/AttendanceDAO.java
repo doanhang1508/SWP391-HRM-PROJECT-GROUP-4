@@ -34,9 +34,15 @@ public class AttendanceDAO {
      */
     /**
      * Bulk upsert danh sách chấm công từ file Excel (SQL Server MERGE).
-     * @return int[]{insertCount, updateCount}
+     * @return int[]{insertCount, updateCount, unchangedCount}
      */
-    public int[] bulkImportAttendance(List<Attendance> records) {
+    /**
+     * Bulk upsert danh sách chấm công từ file Excel (SQL Server MERGE).
+     * @return int[]{insertCount, updateCount, unchangedCount, skippedTerminatedCount}
+     * @throws Exception nếu có lỗi CSDL thực sự — KHÔNG được nuốt lỗi rồi trả về
+     *         {0,0,0,0} như trước, vì controller sẽ hiểu nhầm là "import thành công".
+     */
+    public int[] bulkImportAttendance(List<Attendance> records) throws Exception {
         String sql = "INSERT INTO attendance " +
                      "  (user_id, shift_id, work_date, check_in, check_out, status, overtime_hrs, ot_reason, created_at) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW()) " +
@@ -46,49 +52,63 @@ public class AttendanceDAO {
                      "  ot_reason = VALUES(ot_reason)";
         int insertCount = 0;
         int updateCount = 0;
+        int unchangedCount = 0;
+        int skippedTerminatedCount = 0;
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection()) {
             conn.setAutoCommit(false);
-            
-            // Lấy danh sách ngày làm việc cuối cùng của các nhân viên đã nghỉ (dựa vào hợp đồng)
-            java.util.Map<Integer, java.sql.Date> lastWorkingDays = new java.util.HashMap<>();
-            String lwSql = "SELECT user_id, MAX(actual_end_date) as max_end FROM employee_contracts WHERE status = 'Terminated' AND actual_end_date IS NOT NULL GROUP BY user_id";
-            try (PreparedStatement psLw = conn.prepareStatement(lwSql);
-                 ResultSet rsLw = psLw.executeQuery()) {
-                while (rsLw.next()) {
-                    lastWorkingDays.put(rsLw.getInt("user_id"), rsLw.getDate("max_end"));
-                }
-            }
-
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                for (Attendance a : records) {
-                    java.sql.Date lwd = lastWorkingDays.get(a.getUserId());
-                    if (lwd != null && a.getWorkDate().after(lwd)) {
-                        continue; // Bỏ qua chấm công sau ngày nghỉ việc
-                    }
-
-                    ps.setInt(1, a.getUserId());
-                    ps.setInt(2, a.getShiftId());
-                    ps.setDate(3, a.getWorkDate());
-                    ps.setTime(4, a.getCheckIn());
-                    ps.setTime(5, a.getCheckOut());
-                    ps.setString(6, a.getStatus());
-                    ps.setDouble(7, a.getOvertimeHrs());
-                    ps.setString(8, a.getOtReason());
-                    
-                    int res = ps.executeUpdate();
-                    if (res == 1) {
-                        insertCount++;
-                    } else if (res == 2) {
-                        updateCount++;
+            try {
+                // Lấy danh sách ngày làm việc cuối cùng của các nhân viên đã nghỉ (dựa vào hợp đồng)
+                java.util.Map<Integer, java.sql.Date> lastWorkingDays = new java.util.HashMap<>();
+                String lwSql = "SELECT user_id, MAX(actual_end_date) as max_end FROM employee_contracts WHERE status = 'Terminated' AND actual_end_date IS NOT NULL GROUP BY user_id";
+                try (PreparedStatement psLw = conn.prepareStatement(lwSql);
+                     ResultSet rsLw = psLw.executeQuery()) {
+                    while (rsLw.next()) {
+                        lastWorkingDays.put(rsLw.getInt("user_id"), rsLw.getDate("max_end"));
                     }
                 }
+
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    for (Attendance a : records) {
+                        java.sql.Date lwd = lastWorkingDays.get(a.getUserId());
+                        if (lwd != null && a.getWorkDate().after(lwd)) {
+                            skippedTerminatedCount++;
+                            continue; // Bỏ qua chấm công sau ngày nghỉ việc
+                        }
+
+                        ps.setInt(1, a.getUserId());
+                        ps.setInt(2, a.getShiftId());
+                        ps.setDate(3, a.getWorkDate());
+                        ps.setTime(4, a.getCheckIn());
+                        ps.setTime(5, a.getCheckOut());
+                        ps.setString(6, a.getStatus());
+                        ps.setDouble(7, a.getOvertimeHrs());
+                        ps.setString(8, a.getOtReason());
+
+                        int res = ps.executeUpdate();
+                        if (res == 1) {
+                            insertCount++;
+                        } else if (res == 2) {
+                            updateCount++;
+                        } else {
+                            // res == 0: MySQL trùng khóa (user_id + work_date) nhưng dữ liệu
+                            // mới GIỐNG HỆT dữ liệu cũ nên không có gì để cập nhật. Bản ghi
+                            // này đã tồn tại đúng như file import, KHÔNG PHẢI là lỗi/bị bỏ qua.
+                            unchangedCount++;
+                        }
+                    }
+                }
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                e.printStackTrace();
+                throw new Exception("Lỗi CSDL khi ghi dữ liệu chấm công: " + e.getMessage(), e);
             }
-            conn.commit();
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new Exception("Lỗi kết nối CSDL: " + e.getMessage(), e);
         }
-        return new int[]{insertCount, updateCount};
+        return new int[]{insertCount, updateCount, unchangedCount, skippedTerminatedCount};
     }
 
 
@@ -113,6 +133,27 @@ public class AttendanceDAO {
 
     public boolean isUserMonthLocked(int userId, int month, int year) {
         return isMonthLocked(month, year);
+    }
+
+    /**
+     * Kiểm tra xem tháng này có đang được Admin/Quản lý CHỦ ĐỘNG mở khóa hay
+     * không (status = 'UNLOCKED' trong timesheet_lock). Dùng để cho phép import
+     * lại các tháng đã qua trong trường hợp cần chỉnh sửa hợp lệ.
+     */
+    public boolean isExplicitlyUnlocked(int month, int year) {
+        String sql = "SELECT status FROM timesheet_lock WHERE month=? AND year=? AND status='UNLOCKED'";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     public boolean isAttendanceLocked(int attendanceId) {

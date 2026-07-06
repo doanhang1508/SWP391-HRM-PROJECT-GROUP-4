@@ -75,6 +75,14 @@
                                     <span class="badge bg-secondary-subtle text-secondary px-2.5 py-1.5" style="border-radius: 6px;">
                                         <i class="fas fa-clipboard-list me-1"></i> ${cycle.templateName}
                                     </span>
+                                    <br/>
+                                    <small class="text-muted">
+                                        <i class="fas fa-building me-1"></i>
+                                        <c:choose>
+                                            <c:when test="${cycle.templateDepartmentName != null}">${cycle.templateDepartmentName}</c:when>
+                                            <c:otherwise>Toàn công ty</c:otherwise>
+                                        </c:choose>
+                                    </small>
                                 </td>
                                 <td><fmt:formatDate value="${cycle.startDate}" pattern="dd/MM/yyyy" /></td>
                                 <td><fmt:formatDate value="${cycle.endDate}" pattern="dd/MM/yyyy" /></td>
@@ -172,9 +180,26 @@
                         <select class="form-select px-3 py-2" id="templateId" name="templateId" required style="border-radius: 8px;">
                             <option value="">-- Chọn mẫu tiêu chuẩn --</option>
                             <c:forEach var="template" items="${templateList}">
-                                <option value="${template.templateId}">${template.name}</option>
+                                <option value="${template.templateId}">
+                                    ${template.name}
+                                    <c:choose>
+                                        <c:when test="${template.departmentId != null}"> — [${template.departmentName}]</c:when>
+                                        <c:otherwise> — [Toàn công ty]</c:otherwise>
+                                    </c:choose>
+                                </option>
                             </c:forEach>
                         </select>
+                        <div class="form-text text-muted">
+                            <i class="fas fa-info-circle me-1"></i>Mẫu gắn phòng ban sẽ chỉ tạo bảng đánh giá cho nhân viên thuộc phòng ban đó.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="quarterSelect" class="form-label fw-bold">Chọn quý <span class="text-muted fw-normal">(tùy chọn)</span></label>
+                        <select class="form-select px-3 py-2" id="quarterSelect" style="border-radius: 8px;">
+                            <option value="">-- Chọn quý để tự điền ngày --</option>
+                        </select>
+                        <div class="form-text text-muted">Chọn quý để hệ thống tự động điền ngày bắt đầu và kết thúc.</div>
                     </div>
 
                     <div class="row mb-3">
@@ -209,5 +234,52 @@
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    const quarterSelect = document.getElementById('quarterSelect');
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput   = document.getElementById('endDate');
+    const cycleNameInput = document.getElementById('cycleName');
+
+    // Build quarter options for current year and next year
+    const now  = new Date();
+    const currentYear = now.getFullYear();
+    const years = [currentYear, currentYear + 1];
+
+    const quarterDefs = [
+        { label: 'Quý 1', q: 1, startMonth: '01', startDay: '01', endMonth: '03', endDay: '31' },
+        { label: 'Quý 2', q: 2, startMonth: '04', startDay: '01', endMonth: '06', endDay: '30' },
+        { label: 'Quý 3', q: 3, startMonth: '07', startDay: '01', endMonth: '09', endDay: '30' },
+        { label: 'Quý 4', q: 4, startMonth: '10', startDay: '01', endMonth: '12', endDay: '31' }
+    ];
+
+    years.forEach(function(year) {
+        quarterDefs.forEach(function(qd) {
+            const opt = document.createElement('option');
+            opt.value = year + '-Q' + qd.q;
+            opt.textContent = qd.label + ' - Năm ' + year
+                + ' (' + qd.startDay + '/' + qd.startMonth + ' \u2013 ' + qd.endDay + '/' + qd.endMonth + ')';
+            opt.dataset.startDate = year + '-' + qd.startMonth + '-' + qd.startDay;
+            opt.dataset.endDate   = year + '-' + qd.endMonth   + '-' + qd.endDay;
+            opt.dataset.suggestedName = '\u0110\u00e1nh gi\u00e1 KPI ' + qd.label + ' - N\u0103m ' + year;
+            quarterSelect.appendChild(opt);
+        });
+    });
+
+    quarterSelect.addEventListener('change', function() {
+        const selected = this.options[this.selectedIndex];
+        if (!selected.value) return;
+
+        startDateInput.value = selected.dataset.startDate;
+        endDateInput.value   = selected.dataset.endDate;
+
+        // Auto-suggest a cycle name if the field is empty
+        if (!cycleNameInput.value.trim()) {
+            cycleNameInput.value = selected.dataset.suggestedName;
+        }
+    });
+})();
+</script>
 
 <%@include file="../footer.jsp"%>

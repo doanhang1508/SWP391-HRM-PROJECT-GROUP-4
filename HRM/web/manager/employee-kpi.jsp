@@ -235,7 +235,7 @@
                                                                data-weight="${crit.weight}"
                                                                data-row-idx="${rowStatus.index}"
                                                                data-col-idx="${colStatus.index}" />
-                                                        <input type="text"
+<!--                                                        <input type="text"
                                                                name="comment_${eval.evaluationId}_${crit.itemId}"
                                                                class="form-control text-center grid-item-comment-input p-0.5"
                                                                style="width: 76px; margin: 0 auto; border-radius: 4px; font-size: 0.65rem; min-height: 22px;"
@@ -243,7 +243,7 @@
                                                                value="${not empty matchedItem ? matchedItem.comment : ''}"
                                                                data-eval-id="${eval.evaluationId}"
                                                                data-crit-id="${crit.itemId}"
-                                                               title="Nhận xét riêng cho tiêu chí ${crit.criterionName}" />
+                                                               title="Nhận xét riêng cho tiêu chí ${crit.criterionName}" />-->
                                                     </c:when>
                                                     <c:otherwise>
                                                         <span class="fw-semibold grid-score-display text-muted d-block" data-crit-id="${crit.itemId}">${not empty matchedItem ? matchedItem.score : '0.0'}</span>

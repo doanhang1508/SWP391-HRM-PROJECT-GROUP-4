@@ -348,6 +348,12 @@
         border: 1px solid #fecdd3;
     }
 
+    .badge-withdraw {
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+    }
+
     /* ── Empty state ── */
     .empty-state {
         text-align: center;
@@ -631,7 +637,35 @@
                                                         <i class="fas fa-times-circle"></i> Từ chối
                                                     </span>
                                                 </c:when>
+                                                <c:when test="${rr.status == 'WITHDRAW_REQUESTED'}">
+                                                    <span class="badge badge-withdraw">
+                                                        <i class="fas fa-undo"></i> Đang chờ rút đơn
+                                                    </span>
+                                                </c:when>
+                                                <c:when test="${rr.status == 'WITHDRAWN'}">
+                                                    <span class="badge badge-withdraw">
+                                                        <i class="fas fa-history"></i> Đã rút đơn
+                                                    </span>
+                                                </c:when>
+                                                <c:when test="${rr.status == 'COMPLETED'}">
+                                                    <span class="badge badge-approved" style="background:#e0f2fe;color:#0369a1;border-color:#bae6fd;">
+                                                        <i class="fas fa-check-double"></i> Đã hoàn thành
+                                                    </span>
+                                                </c:when>
                                             </c:choose>
+                                            
+                                            <!-- Nút Xin Rút Đơn -->
+                                            <c:if test="${rr.status == 'APPROVED' and not isAlreadyResigned}">
+                                                <div style="margin-top: 8px;">
+                                                    <form action="${pageContext.request.contextPath}/employee/resignation" method="post" style="display:inline;">
+                                                        <input type="hidden" name="action" value="withdraw">
+                                                        <input type="hidden" name="resignationId" value="${rr.resignationId}">
+                                                        <button type="submit" class="btn-modal-cancel" style="padding: 4px 8px; font-size: 0.75rem;" onclick="return confirm('Bạn có chắc chắn muốn xin rút đơn nghỉ việc này?');">
+                                                            <i class="fas fa-undo"></i> Xin rút đơn
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </c:if>
                                         </td>
                                         <td>
                                             <c:choose>

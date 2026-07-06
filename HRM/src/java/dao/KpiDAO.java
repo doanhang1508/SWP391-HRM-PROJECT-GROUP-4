@@ -151,8 +151,9 @@ public class KpiDAO {
 
     public List<KpiCycle> getAllCycles() {
         List<KpiCycle> list = new ArrayList<>();
-        String sql = "SELECT c.*, t.name AS template_name FROM kpi_cycles c "
+        String sql = "SELECT c.*, t.name AS template_name, d.department_name AS template_department_name FROM kpi_cycles c "
                    + "LEFT JOIN kpi_templates t ON c.template_id = t.template_id "
+                   + "LEFT JOIN departments d ON t.department_id = d.department_id "
                    + "ORDER BY c.cycle_id DESC";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -168,8 +169,9 @@ public class KpiDAO {
 
     public List<KpiCycle> getActiveCycles() {
         List<KpiCycle> list = new ArrayList<>();
-        String sql = "SELECT c.*, t.name AS template_name FROM kpi_cycles c "
+        String sql = "SELECT c.*, t.name AS template_name, d.department_name AS template_department_name FROM kpi_cycles c "
                    + "LEFT JOIN kpi_templates t ON c.template_id = t.template_id "
+                   + "LEFT JOIN departments d ON t.department_id = d.department_id "
                    + "WHERE c.status = 'ACTIVE' ORDER BY c.cycle_id DESC";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -184,8 +186,9 @@ public class KpiDAO {
     }
 
     public KpiCycle getCycleById(int cycleId) {
-        String sql = "SELECT c.*, t.name AS template_name FROM kpi_cycles c "
+        String sql = "SELECT c.*, t.name AS template_name, d.department_name AS template_department_name FROM kpi_cycles c "
                    + "LEFT JOIN kpi_templates t ON c.template_id = t.template_id "
+                   + "LEFT JOIN departments d ON t.department_id = d.department_id "
                    + "WHERE c.cycle_id = ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -843,6 +846,9 @@ public class KpiDAO {
         try {
             cycle.setTemplateName(rs.getString("template_name"));
         } catch (SQLException ignored) {}
+        try {
+            cycle.setTemplateDepartmentName(rs.getString("template_department_name"));
+        } catch (SQLException ignored) {}
         return cycle;
     }
 
@@ -930,6 +936,59 @@ public class KpiDAO {
         return al;
     }
 
+    /**
+     * Checks whether a user (manager) is authorized to view/edit a specific evaluation.
+     * Returns true if:
+     *   - The user's role is Admin (1), HR Manager (2), or Director (4) — they can access all evaluations.
+     *   - The user is the assigned manager_id on the evaluation.
+     *   - The user is a department head (role 3 or 6) in the same department as the employee.
+     */
+    public boolean isManagerAuthorizedForEvaluation(int userId, int userRoleId, int evaluationId) {
+        // Admin, HR Manager, Director can access all evaluations
+        if (userRoleId == 1 || userRoleId == 2 || userRoleId == 4) {
+            return true;
+        }
+
+        String sql = "SELECT e.manager_id, u.department_id AS emp_dept_id " +
+                     "FROM kpi_evaluations e " +
+                     "JOIN users u ON e.employee_id = u.user_id " +
+                     "WHERE e.evaluation_id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, evaluationId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int managerId = rs.getInt("manager_id");
+                    int empDeptId = rs.getInt("emp_dept_id");
+
+                    // Direct assignment check
+                    if (managerId == userId) {
+                        return true;
+                    }
+
+                    // Same-department fallback for department heads
+                    if (userRoleId == 3 || userRoleId == 5 || userRoleId == 6) {
+                        String deptSql = "SELECT department_id FROM users WHERE user_id = ?";
+                        try (PreparedStatement ps2 = conn.prepareStatement(deptSql)) {
+                            ps2.setInt(1, userId);
+                            try (ResultSet rs2 = ps2.executeQuery()) {
+                                if (rs2.next()) {
+                                    int mgrDeptId = rs2.getInt("department_id");
+                                    if (mgrDeptId > 0 && mgrDeptId == empDeptId) {
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public List<KpiTemplateItem> getTemplateItemsForEmployee(int employeeDepartmentId, int defaultTemplateId) {
         if (employeeDepartmentId > 0) {
             String sql = "SELECT template_id FROM kpi_templates "
@@ -955,7 +1014,10 @@ public class KpiDAO {
     }
 
     /**
-     * Initializes evaluations and default evaluation items for all active employees for a given cycle.
+     * Initializes evaluations and default evaluation items for a given cycle.
+     * If the cycle's template is department-specific (has department_id),
+     * only employees from that department will receive evaluations.
+     * If the template is general (department_id = NULL), all active employees are included.
      * Each employee is processed independently so one failure does not block the others.
      */
     public boolean initializeEvaluationsForCycle(int cycleId) {
@@ -965,18 +1027,31 @@ public class KpiDAO {
         List<KpiTemplateItem> defaultTemplateItems = getTemplateItems(cycle.getTemplateId());
         if (defaultTemplateItems.isEmpty()) return false;
 
-        // Load all active non-admin employees
+        // Check if the template is department-specific
+        KpiTemplate template = getTemplateById(cycle.getTemplateId());
+        Integer templateDeptId = (template != null) ? template.getDepartmentId() : null;
+
+        // Load employees: filter by department if template is department-specific
         List<User> employees = new ArrayList<>();
-        String empSql = "SELECT user_id, department_id, role_id FROM users WHERE status = 1 AND role_id != 1";
+        String empSql;
+        if (templateDeptId != null) {
+            empSql = "SELECT user_id, department_id, role_id FROM users WHERE status = 1 AND role_id != 1 AND department_id = ?";
+        } else {
+            empSql = "SELECT user_id, department_id, role_id FROM users WHERE status = 1 AND role_id != 1";
+        }
         try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(empSql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                User u = new User();
-                u.setUserId(rs.getInt("user_id"));
-                u.setDepartmentId(rs.getInt("department_id"));
-                u.setRoleId(rs.getInt("role_id"));
-                employees.add(u);
+             PreparedStatement ps = conn.prepareStatement(empSql)) {
+            if (templateDeptId != null) {
+                ps.setInt(1, templateDeptId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    User u = new User();
+                    u.setUserId(rs.getInt("user_id"));
+                    u.setDepartmentId(rs.getInt("department_id"));
+                    u.setRoleId(rs.getInt("role_id"));
+                    employees.add(u);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();

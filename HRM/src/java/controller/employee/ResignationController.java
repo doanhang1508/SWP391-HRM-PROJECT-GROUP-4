@@ -13,6 +13,8 @@ import model.User;
 import java.io.IOException;
 import java.sql.Date;
 import java.util.List;
+import dao.EmployeeProfileDAO;
+import dao.notificationDAO;
 
 /**
  * ResignationController — Nhân viên tự nộp đơn xin nghỉ việc.
@@ -66,6 +68,9 @@ public class ResignationController extends HttpServlet {
         boolean hasPending = resignationDAO.hasPendingResignation(user.getUserId());
         req.setAttribute("hasPending", hasPending);
 
+        boolean isAlreadyResigned = new EmployeeProfileDAO().isEmployeeAlreadyResigned(user.getUserId());
+        req.setAttribute("isAlreadyResigned", isAlreadyResigned);
+
         req.getRequestDispatcher("/employee/resignation-form.jsp").forward(req, resp);
     }
 
@@ -88,13 +93,40 @@ public class ResignationController extends HttpServlet {
                 int id = Integer.parseInt(idStr);
                 ResignationRequest r = resignationDAO.getById(id);
                 if (r != null && r.getUserId() == user.getUserId() && "PENDING".equals(r.getStatus())) {
-                    resignationDAO.updateStatus(id, "CANCELLED", 0, null, null);
+                    resignationDAO.updateStatus(id, "CANCELLED", "PENDING", 0, null, null);
                     session.setAttribute("successMessage", "Đã hủy đơn xin nghỉ việc.");
                 } else {
                     session.setAttribute("errorMessage", "Không thể hủy đơn này.");
                 }
             } catch (Exception e) {
                 session.setAttribute("errorMessage", "Hủy đơn thất bại.");
+            }
+            resp.sendRedirect(req.getContextPath() + "/employee/resignation");
+            return;
+        } else if ("withdraw".equals(action)) {
+            String idStr = req.getParameter("resignationId");
+            try {
+                int id = Integer.parseInt(idStr);
+                ResignationRequest r = resignationDAO.getById(id);
+                if (r != null && r.getUserId() == user.getUserId() && "APPROVED".equals(r.getStatus())) {
+                    EmployeeProfileDAO profileDAO = new EmployeeProfileDAO();
+                    if (profileDAO.isEmployeeAlreadyResigned(user.getUserId())) {
+                        session.setAttribute("errorMessage", "Hợp đồng đã kết thúc, không thể rút đơn.");
+                    } else {
+                        // Gọi updateStatus với expectedOldStatus
+                        boolean updated = resignationDAO.updateStatus(id, "WITHDRAW_REQUESTED", "APPROVED", 0, null, null);
+                        if (updated) {
+                            session.setAttribute("successMessage", "Đã gửi yêu cầu rút đơn. Vui lòng chờ HR phê duyệt.");
+                            new notificationDAO().create(user.getUserId(), "system", "Yêu cầu rút đơn", "Yêu cầu rút đơn xin nghỉ việc của bạn đã được gửi tới HR.", "/employee/resignation");
+                        } else {
+                            session.setAttribute("errorMessage", "Đơn đã bị thay đổi, vui lòng tải lại trang.");
+                        }
+                    }
+                } else {
+                    session.setAttribute("errorMessage", "Không thể xin rút đơn này.");
+                }
+            } catch (Exception e) {
+                session.setAttribute("errorMessage", "Xin rút đơn thất bại.");
             }
             resp.sendRedirect(req.getContextPath() + "/employee/resignation");
             return;

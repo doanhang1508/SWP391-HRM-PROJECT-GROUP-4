@@ -13,6 +13,9 @@ import model.User;
 
 import java.io.IOException;
 import java.util.List;
+import java.time.LocalDate;
+import dao.notificationDAO;
+import java.util.List;
 
 /**
  * HrResignationApprovalController — HR duyệt / từ chối đơn xin nghỉ việc.
@@ -123,6 +126,10 @@ public class HrResignationApprovalController extends HttpServlet {
                 handleApprove(req, resp, session, hrUser, resignationId);
             } else if ("reject".equalsIgnoreCase(action)) {
                 handleReject(req, resp, session, hrUser, resignationId);
+            } else if ("approveWithdraw".equalsIgnoreCase(action)) {
+                handleApproveWithdraw(req, resp, session, hrUser, resignationId);
+            } else if ("rejectWithdraw".equalsIgnoreCase(action)) {
+                handleRejectWithdraw(req, resp, session, hrUser, resignationId);
             } else {
                 session.setAttribute("errorMessage", "Hành động không hợp lệ.");
                 resp.sendRedirect(req.getContextPath() + "/hr/resignation-approval");
@@ -163,31 +170,31 @@ public class HrResignationApprovalController extends HttpServlet {
         java.sql.Date lastWorkingDay;
         try {
             lastWorkingDay = java.sql.Date.valueOf(lastWorkingDayStr);
+            if (lastWorkingDay.toLocalDate().isBefore(LocalDate.now())) {
+                session.setAttribute("errorMessage", "Ngày làm việc cuối cùng không được nhỏ hơn hôm nay.");
+                resp.sendRedirect(req.getContextPath() + "/hr/resignation-approval");
+                return;
+            }
         } catch (Exception e) {
             session.setAttribute("errorMessage", "Định dạng ngày không hợp lệ.");
             resp.sendRedirect(req.getContextPath() + "/hr/resignation-approval");
             return;
         }
 
-        // Bước 1: Cập nhật trạng thái đơn → APPROVED và ghi nhận last_working_day
-        boolean updatedRequest = resignationDAO.updateStatus(
-                resignationId, "APPROVED", hrUser.getUserId(), null, lastWorkingDay);
+        int currentStatus = profileDAO.getEmploymentStatusId(rr.getUserId());
+        
+        boolean transactionSuccess = resignationDAO.approveResignationRequestTransaction(
+                resignationId, rr.getUserId(), hrUser.getUserId(), lastWorkingDay, currentStatus);
 
-        if (!updatedRequest) {
-            session.setAttribute("errorMessage", "Cập nhật trạng thái đơn thất bại.");
-            resp.sendRedirect(req.getContextPath() + "/hr/resignation-approval");
-            return;
-        }
-
-        // Bước 2: Chuyển trạng thái nhân viên sang NoticePeriod (5)
-        boolean statusUpdated = profileDAO.updateEmploymentStatus(rr.getUserId(), 5);
-
-        if (statusUpdated) {
-            session.setAttribute("successMessage",
-                    "Đã duyệt đơn nghỉ việc. Nhân viên đang trong thời gian báo trước.");
+        if (transactionSuccess) {
+            String[] items = {"Laptop", "ID Card", "Uniform", "Document", "Knowledge Transfer", "Company Assets"};
+            for(String item : items) {
+                resignationDAO.insertChecklistItem(resignationId, item);
+            }
+            new notificationDAO().create(rr.getUserId(), "system", "Đơn nghỉ việc đã duyệt", "Nhân sự đã duyệt đơn nghỉ việc của bạn.", "/employee/resignation");
+            session.setAttribute("successMessage", "Đã duyệt đơn nghỉ việc. Nhân viên đang trong thời gian báo trước.");
         } else {
-            session.setAttribute("errorMessage",
-                    "Đơn đã duyệt nhưng cập nhật trạng thái nhân viên thất bại.");
+            session.setAttribute("errorMessage", "Cập nhật đơn thất bại hoặc đơn đã bị thay đổi bởi người khác.");
         }
 
         resp.sendRedirect(req.getContextPath() + "/hr/resignation-approval");
@@ -220,14 +227,63 @@ public class HrResignationApprovalController extends HttpServlet {
 
         // Chỉ cập nhật trạng thái đơn — không động vào users hay employee_profiles
         boolean success = resignationDAO.updateStatus(
-                resignationId, "REJECTED", hrUser.getUserId(), hrNote.trim(), null);
+                resignationId, "REJECTED", "PENDING", hrUser.getUserId(), hrNote.trim(), null);
 
         if (success) {
+            new notificationDAO().create(rr.getUserId(), "system", "Đơn nghỉ việc bị từ chối", "Đơn xin nghỉ việc của bạn đã bị từ chối.", "/employee/resignation");
             session.setAttribute("successMessage", "Đã từ chối đơn xin nghỉ việc.");
         } else {
-            session.setAttribute("errorMessage", "Từ chối đơn thất bại. Vui lòng thử lại.");
+            session.setAttribute("errorMessage", "Từ chối đơn thất bại. Có thể đơn đã bị thay đổi.");
         }
 
+        resp.sendRedirect(req.getContextPath() + "/hr/resignation-approval");
+    }
+
+    private void handleApproveWithdraw(HttpServletRequest req, HttpServletResponse resp,
+                              HttpSession session, User hrUser, int resignationId)
+            throws IOException {
+        ResignationRequest rr = resignationDAO.getById(resignationId);
+        if (rr == null || !"WITHDRAW_REQUESTED".equals(rr.getStatus())) {
+            session.setAttribute("errorMessage", "Đơn không ở trạng thái yêu cầu rút.");
+            resp.sendRedirect(req.getContextPath() + "/hr/resignation-approval");
+            return;
+        }
+
+        int previousStatus = 2; // Fallback Active
+        if (rr.getPreviousEmploymentStatusId() != null) {
+            previousStatus = rr.getPreviousEmploymentStatusId();
+        } else {
+            System.err.println("[WARNING] Đơn " + resignationId + " không có previous_employment_status_id, fallback về 2.");
+        }
+
+        boolean success = resignationDAO.approveWithdrawResignationTransaction(resignationId, rr.getUserId(), hrUser.getUserId(), previousStatus);
+        
+        if (success) {
+            new notificationDAO().create(rr.getUserId(), "system", "Rút đơn được duyệt", "Yêu cầu rút đơn xin nghỉ việc đã được nhân sự phê duyệt.", "/employee/resignation");
+            session.setAttribute("successMessage", "Đã duyệt yêu cầu rút đơn.");
+        } else {
+            session.setAttribute("errorMessage", "Duyệt yêu cầu thất bại. Có thể đơn đã bị thay đổi.");
+        }
+        resp.sendRedirect(req.getContextPath() + "/hr/resignation-approval");
+    }
+
+    private void handleRejectWithdraw(HttpServletRequest req, HttpServletResponse resp,
+                              HttpSession session, User hrUser, int resignationId)
+            throws IOException {
+        ResignationRequest rr = resignationDAO.getById(resignationId);
+        if (rr == null || !"WITHDRAW_REQUESTED".equals(rr.getStatus())) {
+            session.setAttribute("errorMessage", "Đơn không ở trạng thái yêu cầu rút.");
+            resp.sendRedirect(req.getContextPath() + "/hr/resignation-approval");
+            return;
+        }
+
+        boolean success = resignationDAO.updateStatus(resignationId, "APPROVED", "WITHDRAW_REQUESTED", hrUser.getUserId(), "Từ chối rút đơn", null);
+        if (success) {
+            new notificationDAO().create(rr.getUserId(), "system", "Rút đơn bị từ chối", "Yêu cầu rút đơn xin nghỉ việc đã bị từ chối.", "/employee/resignation");
+            session.setAttribute("successMessage", "Đã từ chối yêu cầu rút đơn.");
+        } else {
+            session.setAttribute("errorMessage", "Từ chối yêu cầu thất bại.");
+        }
         resp.sendRedirect(req.getContextPath() + "/hr/resignation-approval");
     }
 }

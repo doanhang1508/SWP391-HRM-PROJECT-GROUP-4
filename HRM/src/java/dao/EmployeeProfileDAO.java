@@ -150,6 +150,27 @@ public class EmployeeProfileDAO {
         return false;
     }
 
+    public boolean isEmployeeAlreadyResigned(int userId) {
+        return getEmploymentStatusId(userId) == 4;
+    }
+
+    public int getEmploymentStatusId(int userId) {
+        String sql = "SELECT employment_status_id FROM employee_profiles WHERE user_id = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("EmployeeProfileDAO.getEmploymentStatusId error: " + e.getMessage());
+        }
+        return -1;
+    }
+
     // ── Helpers ────────────────────────────────────────────────────────────────
 
     private EmployeeProfile mapRow(ResultSet rs) throws SQLException {

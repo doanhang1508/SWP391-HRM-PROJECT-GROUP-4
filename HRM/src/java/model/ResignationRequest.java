@@ -24,6 +24,7 @@ public class ResignationRequest {
     private Date      lastWorkingDay;
     private Timestamp createdAt;
     private Timestamp updatedAt;
+    private Integer   previousEmploymentStatusId;
 
     // ── Transient fields (JOIN với bảng users để hiển thị tên) ──
     private String    employeeName;      // full_name của user_id
@@ -75,6 +76,9 @@ public class ResignationRequest {
 
     public Timestamp getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Timestamp updatedAt) { this.updatedAt = updatedAt; }
+
+    public Integer getPreviousEmploymentStatusId() { return previousEmploymentStatusId; }
+    public void setPreviousEmploymentStatusId(Integer previousEmploymentStatusId) { this.previousEmploymentStatusId = previousEmploymentStatusId; }
 
     public String getEmployeeName() { return employeeName; }
     public void setEmployeeName(String employeeName) { this.employeeName = employeeName; }

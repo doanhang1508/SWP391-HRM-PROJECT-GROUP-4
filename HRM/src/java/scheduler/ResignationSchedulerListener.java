@@ -35,7 +35,7 @@ public class ResignationSchedulerListener implements ServletContextListener {
         }
     }
     
-    private void processExpiredContracts() {
+    public static void processExpiredContracts() {
         // Tự động chuyển hợp đồng đã quá hạn end_date sang trạng thái Expired (nếu chưa được gia hạn)
         String sql = "UPDATE employee_contracts SET status = 'Expired' WHERE status = 'Active' AND end_date IS NOT NULL AND end_date < CURDATE()";
         try (Connection conn = new DBContext().getConnection();
@@ -49,7 +49,7 @@ public class ResignationSchedulerListener implements ServletContextListener {
         }
     }
     
-    private void processNoticePeriodEnds() {
+    public static void processNoticePeriodEnds() {
         // Tìm các nhân viên đang trong NoticePeriod (status_id = 5) mà resignation request được duyệt (COMPLETED hoặc APPROVED)
         // và ngày last_working_day <= hôm nay, thì vô hiệu hóa tài khoản và terminate hợp đồng.
         String sql = "SELECT r.user_id, r.last_working_day " +

@@ -90,6 +90,11 @@ public class ManagerKpiController extends HttpServlet {
         String editIdStr = request.getParameter("editId");
         if (editIdStr != null && !editIdStr.isEmpty()) {
             int editId = Integer.parseInt(editIdStr);
+            // Authorization check: verify this manager is authorized for this evaluation
+            if (!kpiDAO.isManagerAuthorizedForEvaluation(user.getUserId(), user.getRoleId(), editId)) {
+                response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?error=unauthorized");
+                return;
+            }
             KpiEvaluation detailEval = kpiDAO.getEvaluationById(editId);
             if (detailEval != null) {
                 List<KpiEvaluationItem> detailItems = kpiDAO.getEvaluationItems(editId);
@@ -106,6 +111,11 @@ public class ManagerKpiController extends HttpServlet {
         String viewIdStr = request.getParameter("viewId");
         if (viewIdStr != null && !viewIdStr.isEmpty()) {
             int viewId = Integer.parseInt(viewIdStr);
+            // Authorization check: verify this manager is authorized to view this evaluation
+            if (!kpiDAO.isManagerAuthorizedForEvaluation(user.getUserId(), user.getRoleId(), viewId)) {
+                response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?error=unauthorized");
+                return;
+            }
             KpiEvaluation detailEval = kpiDAO.getEvaluationById(viewId);
             if (detailEval != null) {
                 List<KpiEvaluationItem> detailItems = kpiDAO.getEvaluationItems(viewId);
@@ -155,6 +165,13 @@ public class ManagerKpiController extends HttpServlet {
             }
 
             int evaluationId = Integer.parseInt(evaluationIdStr);
+
+            // Authorization check: verify this manager is authorized for this evaluation
+            if (!kpiDAO.isManagerAuthorizedForEvaluation(user.getUserId(), user.getRoleId(), evaluationId)) {
+                response.getWriter().write("{\"status\":\"error\", \"message\":\"Bạn không có quyền chỉnh sửa đánh giá của phòng ban khác\"}");
+                return;
+            }
+
             if (kpiDAO.isCycleLockedByEvaluationId(evaluationId)) {
                 response.getWriter().write("{\"status\":\"error\", \"message\":\"Đợt đánh giá đã khóa sổ (LOCKED), không thể chỉnh sửa\"}");
                 return;
@@ -226,6 +243,13 @@ public class ManagerKpiController extends HttpServlet {
 
             if (evaluationIdStr != null && !evaluationIdStr.isEmpty() && commentText != null && !commentText.trim().isEmpty()) {
                 int evaluationId = Integer.parseInt(evaluationIdStr);
+
+                // Authorization check: verify this manager is authorized for this evaluation
+                if (!kpiDAO.isManagerAuthorizedForEvaluation(user.getUserId(), user.getRoleId(), evaluationId)) {
+                    response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?error=unauthorized");
+                    return;
+                }
+
                 if (kpiDAO.isCycleLockedByEvaluationId(evaluationId)) {
                     response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?error=cycle_locked");
                     return;
@@ -265,6 +289,13 @@ public class ManagerKpiController extends HttpServlet {
 
             if (evaluationIdStr != null && !evaluationIdStr.isEmpty()) {
                 int evaluationId = Integer.parseInt(evaluationIdStr);
+
+                // Authorization check: verify this manager is authorized for this evaluation
+                if (!kpiDAO.isManagerAuthorizedForEvaluation(user.getUserId(), user.getRoleId(), evaluationId)) {
+                    response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?error=unauthorized");
+                    return;
+                }
+
                 if (kpiDAO.isCycleLockedByEvaluationId(evaluationId)) {
                     response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?error=cycle_locked");
                     return;
