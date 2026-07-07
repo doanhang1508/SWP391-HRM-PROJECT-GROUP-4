@@ -1,7 +1,6 @@
 package controller.hr;
 
 import dao.TimesheetConfirmationDAO;
-import dao.AuditLogDAO;
 import dao.AttendanceDAO;
 import model.Attendance;
 import model.TimesheetConfirmation;
@@ -23,7 +22,6 @@ import java.util.List;
 public class TimesheetConfirmationController extends HttpServlet {
 
     private final TimesheetConfirmationDAO tcDAO = new TimesheetConfirmationDAO();
-    private final AuditLogDAO auditDAO = new AuditLogDAO();
     private final AttendanceDAO attendanceDAO = new AttendanceDAO();
 
     @Override
@@ -152,8 +150,6 @@ public class TimesheetConfirmationController extends HttpServlet {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền truy cập chức năng này.");
             return;
         }
-        String ipAddress = request.getRemoteAddr();
-
         String action = request.getParameter("action");
         String monthStr = request.getParameter("month");
         String yearStr = request.getParameter("year");
@@ -187,8 +183,6 @@ public class TimesheetConfirmationController extends HttpServlet {
                     tc.setCreatedBy(currentUser.getUserId());
                     if (tcDAO.insert(tc)) {
                         created++;
-                        auditDAO.log("timesheet_confirmations", tc.getId(), "CREATE", currentUser.getUserId(),
-                                "Khởi tạo bảng công phòng ban " + dept.getDepartmentName() + " ở trạng thái DRAFT", ipAddress);
                     }
                 }
             }
@@ -210,8 +204,6 @@ public class TimesheetConfirmationController extends HttpServlet {
             for (TimesheetConfirmation c : confirmations) {
                 if ("DRAFT".equals(c.getStatus()) || "DEPARTMENT_REJECTED".equals(c.getStatus()) || "HR_MANAGER_REJECTED".equals(c.getStatus())) {
                     if (tcDAO.updateStatus(c.getId(), "SENT_TO_DEPARTMENT", currentUser.getUserId(), null)) {
-                        auditDAO.logWithValues("timesheet_confirmations", c.getId(), "SEND_TO_DEPARTMENT", currentUser.getUserId(),
-                                c.getStatus(), "SENT_TO_DEPARTMENT", "HR gửi hàng loạt bảng công cho phòng ban xác nhận", ipAddress);
                         sentCount++;
                     }
                 }
@@ -245,8 +237,6 @@ public class TimesheetConfirmationController extends HttpServlet {
                 session.setAttribute("errorMessage", "Trạng thái hiện tại không hợp lệ để gửi cho phòng ban.");
             } else {
                 if (tcDAO.updateStatus(id, "SENT_TO_DEPARTMENT", currentUser.getUserId(), null)) {
-                    auditDAO.logWithValues("timesheet_confirmations", id, "SEND_TO_DEPARTMENT", currentUser.getUserId(),
-                            tc.getStatus(), "SENT_TO_DEPARTMENT", "HR gửi bảng công cho phòng ban xác nhận", ipAddress);
                     session.setAttribute("successMessage", "Đã gửi bảng công cho phòng ban " + tc.getDepartmentName() + ".");
                 } else {
                     session.setAttribute("errorMessage", "Cập nhật trạng thái thất bại.");
@@ -264,8 +254,6 @@ public class TimesheetConfirmationController extends HttpServlet {
                 session.setAttribute("errorMessage", "Còn nhân viên chưa xác nhận phiếu công.");
             } else {
                 if (tcDAO.updateStatus(id, "DEPARTMENT_CONFIRMED", currentUser.getUserId(), null)) {
-                    auditDAO.logWithValues("timesheet_confirmations", id, "DEPARTMENT_CONFIRM", currentUser.getUserId(),
-                            tc.getStatus(), "DEPARTMENT_CONFIRMED", "Trưởng phòng xác nhận bảng công", ipAddress);
                     session.setAttribute("successMessage", "Đã xác nhận bảng công phòng ban.");
                 } else {
                     session.setAttribute("errorMessage", "Xác nhận thất bại.");
@@ -284,8 +272,6 @@ public class TimesheetConfirmationController extends HttpServlet {
                 session.setAttribute("errorMessage", "Trạng thái hiện tại không hợp lệ để từ chối.");
             } else {
                 if (tcDAO.updateStatus(id, "DEPARTMENT_REJECTED", currentUser.getUserId(), reason.trim())) {
-                    auditDAO.logWithValues("timesheet_confirmations", id, "DEPARTMENT_REJECT", currentUser.getUserId(),
-                            tc.getStatus(), "DEPARTMENT_REJECTED", "Trưởng phòng phản hồi sai lệch: " + reason.trim(), ipAddress);
                     session.setAttribute("successMessage", "Đã gửi phản hồi sai lệch cho HR.");
                 } else {
                     session.setAttribute("errorMessage", "Phản hồi thất bại.");
@@ -299,8 +285,6 @@ public class TimesheetConfirmationController extends HttpServlet {
                 session.setAttribute("errorMessage", "Chỉ được gửi lên HR Manager khi phòng ban đã xác nhận.");
             } else {
                 if (tcDAO.updateStatus(id, "SENT_TO_HR_MANAGER", currentUser.getUserId(), null)) {
-                    auditDAO.logWithValues("timesheet_confirmations", id, "SEND_TO_HR_MANAGER", currentUser.getUserId(),
-                            tc.getStatus(), "SENT_TO_HR_MANAGER", "HR Staff gửi bảng công lên HR Manager duyệt", ipAddress);
                     session.setAttribute("successMessage", "Đã gửi bảng công lên HR Manager.");
                 } else {
                     session.setAttribute("errorMessage", "Gửi duyệt thất bại.");
@@ -314,8 +298,6 @@ public class TimesheetConfirmationController extends HttpServlet {
                 session.setAttribute("errorMessage", "Bảng công chưa được gửi lên HR Manager.");
             } else {
                 if (tcDAO.updateStatus(id, "HR_MANAGER_APPROVED", currentUser.getUserId(), null)) {
-                    auditDAO.logWithValues("timesheet_confirmations", id, "HR_MANAGER_APPROVE", currentUser.getUserId(),
-                            tc.getStatus(), "HR_MANAGER_APPROVED", "HR Manager duyệt bảng công", ipAddress);
                     session.setAttribute("successMessage", "Đã duyệt bảng công của phòng ban " + tc.getDepartmentName() + ".");
                 } else {
                     session.setAttribute("errorMessage", "Duyệt thất bại.");
@@ -332,8 +314,6 @@ public class TimesheetConfirmationController extends HttpServlet {
                 session.setAttribute("errorMessage", "Bảng công chưa được gửi lên HR Manager.");
             } else {
                 if (tcDAO.updateStatus(id, "HR_MANAGER_REJECTED", currentUser.getUserId(), reason.trim())) {
-                    auditDAO.logWithValues("timesheet_confirmations", id, "HR_MANAGER_REJECT", currentUser.getUserId(),
-                            tc.getStatus(), "HR_MANAGER_REJECTED", "HR Manager từ chối duyệt: " + reason.trim(), ipAddress);
                     session.setAttribute("successMessage", "Đã từ chối duyệt bảng công.");
                 } else {
                     session.setAttribute("errorMessage", "Từ chối thất bại.");

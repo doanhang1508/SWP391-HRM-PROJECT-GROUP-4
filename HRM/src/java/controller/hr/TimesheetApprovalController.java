@@ -1,7 +1,6 @@
 package controller.hr;
 
 import dao.TimesheetConfirmationDAO;
-import dao.AuditLogDAO;
 import dao.AttendanceDAO;
 import dao.PayrollDAO;
 import model.TimesheetConfirmation;
@@ -23,7 +22,6 @@ import java.util.List;
 public class TimesheetApprovalController extends HttpServlet {
 
     private final TimesheetConfirmationDAO tcDAO = new TimesheetConfirmationDAO();
-    private final AuditLogDAO auditDAO = new AuditLogDAO();
     private final AttendanceDAO attendanceDAO = new AttendanceDAO();
 
     @Override
@@ -96,8 +94,6 @@ public class TimesheetApprovalController extends HttpServlet {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền truy cập chức năng này.");
             return;
         }
-        String ipAddress = request.getRemoteAddr();
-
         String action = request.getParameter("action");
         String monthStr = request.getParameter("month");
         String yearStr = request.getParameter("year");
@@ -137,8 +133,6 @@ public class TimesheetApprovalController extends HttpServlet {
                 session.setAttribute("errorMessage", "Bảng công chưa ở trạng thái sẵn sàng duyệt.");
             } else {
                 if (tcDAO.updateStatus(id, "HR_MANAGER_APPROVED", currentUser.getUserId(), null)) {
-                    auditDAO.logWithValues("timesheet_confirmations", id, "HR_MANAGER_APPROVE", currentUser.getUserId(),
-                             tc.getStatus(), "HR_MANAGER_APPROVED", "HR Manager duyệt bảng công", ipAddress);
                     session.setAttribute("successMessage",
                             "Đã duyệt bảng công của phòng ban " + tc.getDepartmentName() + ".");
                 } else {
@@ -155,9 +149,6 @@ public class TimesheetApprovalController extends HttpServlet {
                 session.setAttribute("errorMessage", "Bảng công chưa ở trạng thái sẵn sàng duyệt.");
             } else {
                 if (tcDAO.updateStatus(id, "HR_MANAGER_REJECTED", currentUser.getUserId(), reason.trim())) {
-                    auditDAO.logWithValues("timesheet_confirmations", id, "HR_MANAGER_REJECT", currentUser.getUserId(),
-                            tc.getStatus(), "HR_MANAGER_REJECTED", "HR Manager từ chối duyệt: " + reason.trim(),
-                            ipAddress);
                     session.setAttribute("successMessage", "Đã từ chối duyệt bảng công.");
                 } else {
                     session.setAttribute("errorMessage", "Từ chối thất bại.");
