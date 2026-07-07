@@ -212,7 +212,7 @@ public class AttendanceDAO {
     public int[] getAttendanceSummary(int userId, int month, int year) {
         // returns [present, late, absent, overtime_days]
         String sql = "SELECT " +
-                     "SUM(CASE WHEN UPPER(status) IN ('PRESENT', 'P') THEN 1 ELSE 0 END) AS present_cnt, " +
+                     "SUM(CASE WHEN UPPER(status) IN ('PRESENT', 'P', 'LEAVE') THEN 1 ELSE 0 END) AS present_cnt, " +
                      "SUM(CASE WHEN UPPER(status) IN ('LATE', 'T') THEN 1 ELSE 0 END) AS late_cnt, " +
                      "SUM(CASE WHEN UPPER(status) IN ('ABSENT', 'A') THEN 1 ELSE 0 END) AS absent_cnt, " +
                      "SUM(CASE WHEN overtime_hrs > 0 THEN 1 ELSE 0 END) AS ot_cnt " +
@@ -822,9 +822,9 @@ public class AttendanceDAO {
     public List<model.AttendanceSummary> getAttendanceSummaryAllUsers(int month, int year) {
         List<model.AttendanceSummary> list = new ArrayList<>();
         String sql = "SELECT u.user_id, u.full_name AS user_name, d.department_name, " +
-                     "SUM(CASE WHEN UPPER(a.status) IN ('PRESENT', 'P') THEN 1 ELSE 0 END) AS present_cnt, " +
+                     "SUM(CASE WHEN UPPER(a.status) IN ('PRESENT', 'P', 'LEAVE') THEN 1 ELSE 0 END) AS present_cnt, " +
                      "SUM(CASE WHEN UPPER(a.status) IN ('LATE', 'T') THEN 1 ELSE 0 END) AS late_cnt, " +
-                     "SUM(CASE WHEN UPPER(a.status) IN ('ABSENT', 'A', 'LEAVE') THEN 1 ELSE 0 END) AS absent_cnt, " +
+                     "SUM(CASE WHEN UPPER(a.status) IN ('ABSENT', 'A') THEN 1 ELSE 0 END) AS absent_cnt, " +
                      "SUM(CASE WHEN a.overtime_hrs > 0 THEN 1 ELSE 0 END) AS ot_cnt, " +
                      "SUM(IFNULL(a.overtime_hrs, 0)) AS total_ot_hrs " +
                      "FROM users u " +
@@ -859,14 +859,87 @@ public class AttendanceDAO {
     }
 
     public model.AttendanceSummary getAttendanceSummaryForUser(int userId, int month, int year) {
+        DBContext dbContext = new DBContext();
+        boolean hasActivity = false;
+
+        // 1. Check attendance records
+        String checkAttSql = "SELECT COUNT(*) FROM attendance WHERE user_id=? AND MONTH(work_date)=? AND YEAR(work_date)=?";
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(checkAttSql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next() && rs.getInt(1) > 0) {
+                    hasActivity = true;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        // 2. Check overtime assignments
+        if (!hasActivity) {
+            String checkOtSql = "SELECT COUNT(*) FROM overtime_assignments oa "
+                              + "JOIN overtime_plans op ON oa.plan_id = op.plan_id "
+                              + "WHERE oa.user_id=? AND MONTH(op.target_date)=? AND YEAR(op.target_date)=?";
+            try (Connection conn = dbContext.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(checkOtSql)) {
+                ps.setInt(1, userId);
+                ps.setInt(2, month);
+                ps.setInt(3, year);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next() && rs.getInt(1) > 0) {
+                        hasActivity = true;
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // 3. Check shift assignments (covers manager-scheduled shifts/OT from "Xếp lịch ca",
+        // which writes to shift_assignments and was previously never checked here)
+        if (!hasActivity) {
+            String checkShiftSql = "SELECT COUNT(*) FROM shift_assignments sa "
+                                 + "WHERE sa.user_id=? AND MONTH(sa.assigned_date)=? AND YEAR(sa.assigned_date)=?";
+            try (Connection conn = dbContext.getConnection();
+                 PreparedStatement ps = conn.prepareStatement(checkShiftSql)) {
+                ps.setInt(1, userId);
+                ps.setInt(2, month);
+                ps.setInt(3, year);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next() && rs.getInt(1) > 0) {
+                        hasActivity = true;
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (!hasActivity) {
+            return null; // Return null to trigger fallback in the controller for historical/future months with absolutely no data
+        }
+
+
+        model.AttendanceSummary s = new model.AttendanceSummary();
+        s.setUserId(userId);
+        s.setPresentCount(0);
+        s.setLateCount(0);
+        s.setAbsentCount(0);
+        s.setOvertimeCount(0);
+        s.setTotalOvertimeHrs(0.0);
+        s.setScheduledOvertimeHrs(0.0);
+
+        // Fetch actual attendance stats
         String sql = "SELECT " +
-                     "SUM(CASE WHEN UPPER(status) IN ('PRESENT', 'P', 'LATE', 'T') THEN 1 ELSE 0 END) AS present_cnt, " +
+                     "SUM(CASE WHEN UPPER(status) IN ('PRESENT', 'P', 'LATE', 'T', 'LEAVE') THEN 1 ELSE 0 END) AS present_cnt, " +
                      "SUM(CASE WHEN UPPER(status) IN ('LATE', 'T') THEN 1 ELSE 0 END) AS late_cnt, " +
-                     "SUM(CASE WHEN UPPER(status) IN ('ABSENT', 'A', 'LEAVE') THEN 1 ELSE 0 END) AS absent_cnt, " +
+                     "SUM(CASE WHEN UPPER(status) IN ('ABSENT', 'A') THEN 1 ELSE 0 END) AS absent_cnt, " +
                      "SUM(CASE WHEN overtime_hrs > 0 THEN 1 ELSE 0 END) AS ot_cnt, " +
                      "SUM(IFNULL(overtime_hrs, 0)) AS total_ot_hrs " +
                      "FROM attendance WHERE user_id=? AND MONTH(work_date)=? AND YEAR(work_date)=? ";
-        DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
@@ -874,14 +947,85 @@ public class AttendanceDAO {
             ps.setInt(3, year);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    model.AttendanceSummary s = new model.AttendanceSummary();
-                    s.setUserId(userId);
                     s.setPresentCount(rs.getInt("present_cnt"));
                     s.setLateCount(rs.getInt("late_cnt"));
                     s.setAbsentCount(rs.getInt("absent_cnt"));
                     s.setOvertimeCount(rs.getInt("ot_cnt"));
                     s.setTotalOvertimeHrs(rs.getDouble("total_ot_hrs"));
-                    return s;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        // Fetch scheduled OT hours (from shift_assignments where coefficient > 1.0 AND overtime_assignments where status = 'Pending')
+        double scheduledHrs = 0.0;
+
+        // 1. Shift assignments
+        String shiftOtSql = "SELECT COALESCE(SUM(TIME_TO_SEC(TIMEDIFF(s.end_time, s.start_time)) / 3600.0), 0) AS shift_ot_hrs " +
+                            "FROM shift_assignments sa " +
+                            "JOIN shifts s ON sa.shift_id = s.shift_id " +
+                            "WHERE sa.user_id = ? AND MONTH(sa.assigned_date) = ? AND YEAR(sa.assigned_date) = ? " +
+                            "AND s.coefficient > 1.0";
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(shiftOtSql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    scheduledHrs += rs.getDouble("shift_ot_hrs");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        // 2. Overtime assignments (Pending status)
+        String pendingOtSql = "SELECT COALESCE(SUM(oa.assigned_hours), 0) AS pending_ot_hrs " +
+                              "FROM overtime_assignments oa " +
+                              "JOIN overtime_plans op ON oa.plan_id = op.plan_id " +
+                              "WHERE oa.user_id = ? AND MONTH(op.target_date) = ? AND YEAR(op.target_date) = ? " +
+                              "AND oa.status = 'Pending'";
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(pendingOtSql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    scheduledHrs += rs.getDouble("pending_ot_hrs");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        s.setScheduledOvertimeHrs(scheduledHrs);
+        return s;
+    }
+
+    public int[] getLatestAttendanceMonthAndYear(int userId) {
+        String sql = "SELECT d FROM ("
+                   + "  SELECT work_date AS d FROM attendance WHERE user_id = ? "
+                   + "  UNION "
+                   + "  SELECT op.target_date AS d FROM overtime_assignments oa JOIN overtime_plans op ON oa.plan_id = op.plan_id WHERE oa.user_id = ? "
+                   + "  UNION "
+                   + "  SELECT sa.assigned_date AS d FROM shift_assignments sa WHERE sa.user_id = ? "
+                   + ") AS combined WHERE d IS NOT NULL ORDER BY d DESC LIMIT 1";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, userId);
+            ps.setInt(3, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    java.sql.Date d = rs.getDate("d");
+                    if (d != null) {
+                        java.time.LocalDate ld = d.toLocalDate();
+                        return new int[]{ld.getMonthValue(), ld.getYear()};
+                    }
                 }
             }
         } catch (SQLException e) {
@@ -889,6 +1033,7 @@ public class AttendanceDAO {
         }
         return null;
     }
+
 
     public List<Attendance> getAllAttendance(int month, int year, String userName, java.sql.Date workDate) {
         List<Attendance> list = new ArrayList<>();
@@ -1089,9 +1234,9 @@ public class AttendanceDAO {
     public List<model.AttendanceSummary> getAttendanceSummaryAllUsersPaginated(int month, int year, int offset, int limit) {
         List<model.AttendanceSummary> list = new ArrayList<>();
         String sql = "SELECT u.user_id, u.full_name AS user_name, d.department_name, " +
-                     "SUM(CASE WHEN UPPER(a.status) IN ('PRESENT', 'P') THEN 1 ELSE 0 END) AS present_cnt, " +
+                     "SUM(CASE WHEN UPPER(a.status) IN ('PRESENT', 'P', 'LEAVE') THEN 1 ELSE 0 END) AS present_cnt, " +
                      "SUM(CASE WHEN UPPER(a.status) IN ('LATE', 'T') THEN 1 ELSE 0 END) AS late_cnt, " +
-                     "SUM(CASE WHEN UPPER(a.status) IN ('ABSENT', 'A', 'LEAVE') THEN 1 ELSE 0 END) AS absent_cnt, " +
+                     "SUM(CASE WHEN UPPER(a.status) IN ('ABSENT', 'A') THEN 1 ELSE 0 END) AS absent_cnt, " +
                      "SUM(CASE WHEN a.overtime_hrs > 0 THEN 1 ELSE 0 END) AS ot_cnt, " +
                      "SUM(IFNULL(a.overtime_hrs, 0)) AS total_ot_hrs " +
                      "FROM users u " +

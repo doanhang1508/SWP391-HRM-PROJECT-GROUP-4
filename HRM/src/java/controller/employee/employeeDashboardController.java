@@ -104,9 +104,34 @@ public class employeeDashboardController extends HttpServlet {
             } catch (Exception e) {}
             request.setAttribute("remainingLeave", remainingLeave);
 
+            int summaryMonth = today.getMonthValue();
+            int summaryYear = today.getYear();
             model.AttendanceSummary attendanceSummary = attendanceDAO.getAttendanceSummaryForUser(
-                    currentUser.getUserId(), today.getMonthValue(), today.getYear());
+                    currentUser.getUserId(), summaryMonth, summaryYear);
+
+            if (attendanceSummary == null) {
+                int[] latestPeriod = attendanceDAO.getLatestAttendanceMonthAndYear(currentUser.getUserId());
+                if (latestPeriod != null) {
+                    summaryMonth = latestPeriod[0];
+                    summaryYear = latestPeriod[1];
+                    attendanceSummary = attendanceDAO.getAttendanceSummaryForUser(
+                            currentUser.getUserId(), summaryMonth, summaryYear);
+                }
+            }
+
+            if (attendanceSummary == null) {
+                attendanceSummary = new model.AttendanceSummary();
+                attendanceSummary.setUserId(currentUser.getUserId());
+                attendanceSummary.setPresentCount(0);
+                attendanceSummary.setLateCount(0);
+                attendanceSummary.setAbsentCount(0);
+                attendanceSummary.setOvertimeCount(0);
+                attendanceSummary.setTotalOvertimeHrs(0.0);
+            }
+
             request.setAttribute("attendanceSummary", attendanceSummary);
+            request.setAttribute("summaryMonth", summaryMonth);
+            request.setAttribute("summaryYear", summaryYear);
 
             request.getRequestDispatcher("/employee/dashboard.jsp").forward(request, response);
         }

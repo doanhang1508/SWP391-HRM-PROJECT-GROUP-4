@@ -35,5 +35,7 @@ public interface LeaveRequestDAO {
     boolean rejectLeaveRequest(int requestId, int approvedBy, String rejectReason) throws Exception;
     List<LeaveRequest> getAllLeaveRequests();
     double getPaidLeaveDays(int employeeId, int month, int year);
+    java.util.Set<LocalDate> getPaidLeaveDaySet(int employeeId, int month, int year);
+    java.util.Map<LocalDate, Integer> getUnpaidLeaveDayMapWithShift(int employeeId, int month, int year);
 }
 

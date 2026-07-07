@@ -243,22 +243,28 @@
             <div class="row-item">
                 <span>Lương theo ngày công:</span>
                 <span>
-                    <c:set var="baseWorkedSalary" value="${payroll.grossSalary - (payroll.overtimeAmount != null ? payroll.overtimeAmount : 0) - (payroll.allowanceAmount != null ? payroll.allowanceAmount : 0) - (payroll.bonusAmount != null ? payroll.bonusAmount : 0)}" />
+                    <c:set var="baseWorkedSalary" value="${payroll.grossSalary - (payroll.overtimeAmount != null ? payroll.overtimeAmount : 0) - (payroll.allowanceAmount != null ? payroll.allowanceAmount : 0) - (payroll.bonusAmount != null ? payroll.bonusAmount : 0) - (payroll.insuranceBenefit != null ? payroll.insuranceBenefit : 0)}" />
                     <fmt:formatNumber value="${baseWorkedSalary}" type="number" groupingUsed="true"/> ₫
                 </span>
             </div>
             <div class="row-item">
                 <span>Lương tăng ca (OT):</span>
-                <span>+ <fmt:formatNumber value="${payroll.overtimeAmount != null ? payroll.overtimeAmount : 0}" type="number" groupingUsed="true"/> ₫</span>
+                <span>+ <fmt:formatNumber value="${payroll.overtimeAmount != null ? payroll.overtimeAmount : 0}" type="number" groupingUsed='true'/> ₫</span>
             </div>
             <div class="row-item">
                 <span>Phụ cấp:</span>
-                <span>+ <fmt:formatNumber value="${payroll.allowanceAmount != null ? payroll.allowanceAmount : 0}" type="number" groupingUsed="true"/> ₫</span>
+                <span>+ <fmt:formatNumber value="${payroll.allowanceAmount != null ? payroll.allowanceAmount : 0}" type="number" groupingUsed='true'/> ₫</span>
             </div>
             <div class="row-item">
                 <span>Thưởng:</span>
-                <span>+ <fmt:formatNumber value="${payroll.bonusAmount != null ? payroll.bonusAmount : 0}" type="number" groupingUsed="true"/> ₫</span>
+                <span>+ <fmt:formatNumber value="${payroll.bonusAmount != null ? payroll.bonusAmount : 0}" type="number" groupingUsed='true'/> ₫</span>
             </div>
+            <c:if test="${payroll.insuranceBenefit != null && payroll.insuranceBenefit > 0}">
+                <div class="row-item">
+                    <span>Trợ cấp BHXH:</span>
+                    <span>+ <fmt:formatNumber value="${payroll.insuranceBenefit}" type="number" groupingUsed='true'/> ₫</span>
+                </div>
+            </c:if>
             <div class="total-row-item text-success">
                 <span>Lương Gross:</span>
                 <span><fmt:formatNumber value="${payroll.grossSalary}" type="number" groupingUsed="true"/> ₫</span>

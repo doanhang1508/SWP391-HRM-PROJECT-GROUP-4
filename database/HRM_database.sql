@@ -452,6 +452,7 @@ CREATE TABLE payroll (
     tax_amount       DECIMAL(15,2),
     gross_salary     DECIMAL(15,2),
     net_salary       DECIMAL(15,2),
+    insurance_benefit DECIMAL(15,2) DEFAULT 0.00,
     status           ENUM('Draft','Pending','Verified','Approved','Rejected','Paid') DEFAULT 'Draft',
     approved_by      INT NULL,
     approved_at      TIMESTAMP NULL,
@@ -464,6 +465,21 @@ CREATE TABLE payroll (
     FOREIGN KEY (approved_by) REFERENCES users(user_id) ON DELETE SET NULL,
     FOREIGN KEY (paid_by) REFERENCES users(user_id) ON DELETE SET NULL,
     UNIQUE KEY uk_user_month_year (user_id, month, year)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- BẢNG: leave_insurance_rates (Tỷ lệ BHXH chi trả cho từng loại nghỉ phép)
+-- Tách riêng để dễ cấu hình tỷ lệ bảo hiểm theo từng loại nghỉ phép.
+CREATE TABLE leave_insurance_rates (
+    leave_insurance_rate_id INT PRIMARY KEY AUTO_INCREMENT,
+    leave_type_id           INT NOT NULL,
+    insurance_rate_percent  DECIMAL(5,2) NOT NULL COMMENT 'Tỷ lệ % lương cơ bản được BHXH chi trả (VD: 75.00 = 75%)',
+    description             NVARCHAR(500),
+    effective_from          DATE DEFAULT (CURRENT_DATE),
+    effective_to            DATE DEFAULT NULL,
+    status                  TINYINT(1) NOT NULL DEFAULT 1 COMMENT '1=Active, 0=Inactive',
+    created_at              DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at              DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (leave_type_id) REFERENCES leave_types(leave_type_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE notifications (
@@ -708,7 +724,15 @@ INSERT INTO leave_types (leave_type_id, type_name, description, paid_leave, max_
 (2, 'Nghỉ ốm (Hưởng BHXH)',    'Nghỉ ốm hưởng chế độ BHXH',               0, NULL),
 (3, 'Nghỉ thai sản',           'Chế độ thai sản theo quy định',           0, NULL),
 (4, 'Nghỉ việc riêng có lương','Nghỉ việc riêng vẫn tính lương',          1, NULL),
-(5, 'Nghỉ không lương',        'Nghỉ không hưởng lương',                  0, NULL);
+(5, 'Nghỉ không lương',        'Nghỉ không hưởng lương',                  0, NULL),
+(6, 'Nghỉ thai sản nam',       'Nghỉ phép cho lao động nam khi vợ sinh con. Thời gian: 5-14 ngày làm việc tùy trường hợp sinh. Hưởng BHXH 100%.', 0, 14);
+
+-- ── 11b. Leave Insurance Rates (Tỷ lệ BHXH cho nghỉ phép) ──
+-- Luật BHXH 2024 (hiệu lực 2025): Nghỉ ốm 75%, Thai sản nữ/nam 100%
+INSERT INTO leave_insurance_rates (leave_type_id, insurance_rate_percent, description, effective_from) VALUES
+(2, 75.00,  'Nghỉ ốm: Hưởng 75% mức tiền lương đóng BHXH',                          '2026-01-01'),
+(3, 100.00, 'Nghỉ thai sản nữ: Hưởng 100% mức bình quân tiền lương đóng BHXH 6 tháng', '2026-01-01'),
+(6, 100.00, 'Nghỉ thai sản nam: Hưởng 100% mức bình quân tiền lương đóng BHXH 6 tháng', '2026-01-01');
 
 -- ── 12. Reward Disciplines ──
 INSERT INTO reward_disciplines (id, name, type, description, apply_level, created_by) VALUES
