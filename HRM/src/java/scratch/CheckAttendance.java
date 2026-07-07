@@ -21,8 +21,9 @@ public class CheckAttendance {
                         String uname = rs.getString("username");
                         String hash = rs.getString("password");
                         boolean is123456 = BCrypt.checkpw("123456", hash);
+                        boolean isAt123456 = BCrypt.checkpw("@123456", hash);
                         boolean isUsername = BCrypt.checkpw(uname, hash);
-                        System.out.printf("User: %s | Match 123456: %b | Match username: %b\n", uname, is123456, isUsername);
+                        System.out.printf("User: %s | Match 123456: %b | Match @123456: %b | Match username: %b\n", uname, is123456, isAt123456, isUsername);
                     }
                 }
             }

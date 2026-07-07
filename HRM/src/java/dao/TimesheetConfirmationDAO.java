@@ -428,7 +428,7 @@ public class TimesheetConfirmationDAO {
                      "  u.full_name, " +
                      "  d.department_name, " +
                      "  COALESCE(p.position_name, '-') AS position_name, " +
-                     "  COALESCE(SUM(CASE WHEN UPPER(a.status) IN ('PRESENT', 'LATE', 'T', 'P') THEN 1 WHEN UPPER(a.status) = 'HALFDAY' THEN 0.5 ELSE 0 END), 0) AS total_work_days, " +
+                     "  COALESCE(SUM(CASE WHEN UPPER(a.status) IN ('PRESENT', 'LATE', 'T', 'P', 'LEAVE') THEN 1 WHEN UPPER(a.status) = 'HALFDAY' THEN 0.5 ELSE 0 END), 0) AS total_work_days, " +
                      "  COALESCE(SUM(CASE WHEN UPPER(a.status) IN ('ABSENT', 'A') THEN 1 WHEN UPPER(a.status) = 'HALFDAY' THEN 0.5 ELSE 0 END), 0) AS total_leave_days, " +
                      "  COALESCE(SUM(CASE WHEN UPPER(a.status) IN ('LATE', 'T') THEN 1 ELSE 0 END), 0) AS late_cnt, " +
                      "  COALESCE(SUM(CASE WHEN UPPER(a.status) IN ('ABSENT', 'A') THEN 1 ELSE 0 END), 0) AS absent_cnt, " +

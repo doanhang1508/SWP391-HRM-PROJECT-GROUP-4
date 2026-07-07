@@ -212,7 +212,7 @@ public class AttendanceDAO {
     public int[] getAttendanceSummary(int userId, int month, int year) {
         // returns [present, late, absent, overtime_days]
         String sql = "SELECT " +
-                     "SUM(CASE WHEN UPPER(status) IN ('PRESENT', 'P') THEN 1 ELSE 0 END) AS present_cnt, " +
+                     "SUM(CASE WHEN UPPER(status) IN ('PRESENT', 'P', 'LEAVE') THEN 1 ELSE 0 END) AS present_cnt, " +
                      "SUM(CASE WHEN UPPER(status) IN ('LATE', 'T') THEN 1 ELSE 0 END) AS late_cnt, " +
                      "SUM(CASE WHEN UPPER(status) IN ('ABSENT', 'A') THEN 1 ELSE 0 END) AS absent_cnt, " +
                      "SUM(CASE WHEN overtime_hrs > 0 THEN 1 ELSE 0 END) AS ot_cnt " +
@@ -822,9 +822,9 @@ public class AttendanceDAO {
     public List<model.AttendanceSummary> getAttendanceSummaryAllUsers(int month, int year) {
         List<model.AttendanceSummary> list = new ArrayList<>();
         String sql = "SELECT u.user_id, u.full_name AS user_name, d.department_name, " +
-                     "SUM(CASE WHEN UPPER(a.status) IN ('PRESENT', 'P') THEN 1 ELSE 0 END) AS present_cnt, " +
+                     "SUM(CASE WHEN UPPER(a.status) IN ('PRESENT', 'P', 'LEAVE') THEN 1 ELSE 0 END) AS present_cnt, " +
                      "SUM(CASE WHEN UPPER(a.status) IN ('LATE', 'T') THEN 1 ELSE 0 END) AS late_cnt, " +
-                     "SUM(CASE WHEN UPPER(a.status) IN ('ABSENT', 'A', 'LEAVE') THEN 1 ELSE 0 END) AS absent_cnt, " +
+                     "SUM(CASE WHEN UPPER(a.status) IN ('ABSENT', 'A') THEN 1 ELSE 0 END) AS absent_cnt, " +
                      "SUM(CASE WHEN a.overtime_hrs > 0 THEN 1 ELSE 0 END) AS ot_cnt, " +
                      "SUM(IFNULL(a.overtime_hrs, 0)) AS total_ot_hrs " +
                      "FROM users u " +
@@ -862,31 +862,23 @@ public class AttendanceDAO {
         DBContext dbContext = new DBContext();
         boolean hasActivity = false;
 
-        // 1. Check if it's the current month/year
-        java.time.LocalDate today = java.time.LocalDate.now();
-        if (month == today.getMonthValue() && year == today.getYear()) {
-            hasActivity = true;
-        }
-
-        // 2. Check attendance records
-        if (!hasActivity) {
-            String checkAttSql = "SELECT COUNT(*) FROM attendance WHERE user_id=? AND MONTH(work_date)=? AND YEAR(work_date)=?";
-            try (Connection conn = dbContext.getConnection();
-                 PreparedStatement ps = conn.prepareStatement(checkAttSql)) {
-                ps.setInt(1, userId);
-                ps.setInt(2, month);
-                ps.setInt(3, year);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next() && rs.getInt(1) > 0) {
-                        hasActivity = true;
-                    }
+        // 1. Check attendance records
+        String checkAttSql = "SELECT COUNT(*) FROM attendance WHERE user_id=? AND MONTH(work_date)=? AND YEAR(work_date)=?";
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(checkAttSql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next() && rs.getInt(1) > 0) {
+                    hasActivity = true;
                 }
-            } catch (SQLException e) {
-                e.printStackTrace();
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
 
-        // 3. Check overtime assignments
+        // 2. Check overtime assignments
         if (!hasActivity) {
             String checkOtSql = "SELECT COUNT(*) FROM overtime_assignments oa "
                               + "JOIN overtime_plans op ON oa.plan_id = op.plan_id "
@@ -906,10 +898,11 @@ public class AttendanceDAO {
             }
         }
 
-        // 4. Check shift assignments
+        // 3. Check shift assignments (covers manager-scheduled shifts/OT from "Xếp lịch ca",
+        // which writes to shift_assignments and was previously never checked here)
         if (!hasActivity) {
-            String checkShiftSql = "SELECT COUNT(*) FROM shift_assignments "
-                                 + "WHERE user_id=? AND MONTH(assigned_date)=? AND YEAR(assigned_date)=?";
+            String checkShiftSql = "SELECT COUNT(*) FROM shift_assignments sa "
+                                 + "WHERE sa.user_id=? AND MONTH(sa.assigned_date)=? AND YEAR(sa.assigned_date)=?";
             try (Connection conn = dbContext.getConnection();
                  PreparedStatement ps = conn.prepareStatement(checkShiftSql)) {
                 ps.setInt(1, userId);
@@ -929,6 +922,7 @@ public class AttendanceDAO {
             return null; // Return null to trigger fallback in the controller for historical/future months with absolutely no data
         }
 
+
         model.AttendanceSummary s = new model.AttendanceSummary();
         s.setUserId(userId);
         s.setPresentCount(0);
@@ -940,9 +934,9 @@ public class AttendanceDAO {
 
         // Fetch actual attendance stats
         String sql = "SELECT " +
-                     "SUM(CASE WHEN UPPER(status) IN ('PRESENT', 'P', 'LATE', 'T') THEN 1 ELSE 0 END) AS present_cnt, " +
+                     "SUM(CASE WHEN UPPER(status) IN ('PRESENT', 'P', 'LATE', 'T', 'LEAVE') THEN 1 ELSE 0 END) AS present_cnt, " +
                      "SUM(CASE WHEN UPPER(status) IN ('LATE', 'T') THEN 1 ELSE 0 END) AS late_cnt, " +
-                     "SUM(CASE WHEN UPPER(status) IN ('ABSENT', 'A', 'LEAVE') THEN 1 ELSE 0 END) AS absent_cnt, " +
+                     "SUM(CASE WHEN UPPER(status) IN ('ABSENT', 'A') THEN 1 ELSE 0 END) AS absent_cnt, " +
                      "SUM(CASE WHEN overtime_hrs > 0 THEN 1 ELSE 0 END) AS ot_cnt, " +
                      "SUM(IFNULL(overtime_hrs, 0)) AS total_ot_hrs " +
                      "FROM attendance WHERE user_id=? AND MONTH(work_date)=? AND YEAR(work_date)=? ";
@@ -1015,9 +1009,9 @@ public class AttendanceDAO {
         String sql = "SELECT d FROM ("
                    + "  SELECT work_date AS d FROM attendance WHERE user_id = ? "
                    + "  UNION "
-                   + "  SELECT assigned_date AS d FROM shift_assignments WHERE user_id = ? "
-                   + "  UNION "
                    + "  SELECT op.target_date AS d FROM overtime_assignments oa JOIN overtime_plans op ON oa.plan_id = op.plan_id WHERE oa.user_id = ? "
+                   + "  UNION "
+                   + "  SELECT sa.assigned_date AS d FROM shift_assignments sa WHERE sa.user_id = ? "
                    + ") AS combined WHERE d IS NOT NULL ORDER BY d DESC LIMIT 1";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
@@ -1039,6 +1033,7 @@ public class AttendanceDAO {
         }
         return null;
     }
+
 
     public List<Attendance> getAllAttendance(int month, int year, String userName, java.sql.Date workDate) {
         List<Attendance> list = new ArrayList<>();
@@ -1239,9 +1234,9 @@ public class AttendanceDAO {
     public List<model.AttendanceSummary> getAttendanceSummaryAllUsersPaginated(int month, int year, int offset, int limit) {
         List<model.AttendanceSummary> list = new ArrayList<>();
         String sql = "SELECT u.user_id, u.full_name AS user_name, d.department_name, " +
-                     "SUM(CASE WHEN UPPER(a.status) IN ('PRESENT', 'P') THEN 1 ELSE 0 END) AS present_cnt, " +
+                     "SUM(CASE WHEN UPPER(a.status) IN ('PRESENT', 'P', 'LEAVE') THEN 1 ELSE 0 END) AS present_cnt, " +
                      "SUM(CASE WHEN UPPER(a.status) IN ('LATE', 'T') THEN 1 ELSE 0 END) AS late_cnt, " +
-                     "SUM(CASE WHEN UPPER(a.status) IN ('ABSENT', 'A', 'LEAVE') THEN 1 ELSE 0 END) AS absent_cnt, " +
+                     "SUM(CASE WHEN UPPER(a.status) IN ('ABSENT', 'A') THEN 1 ELSE 0 END) AS absent_cnt, " +
                      "SUM(CASE WHEN a.overtime_hrs > 0 THEN 1 ELSE 0 END) AS ot_cnt, " +
                      "SUM(IFNULL(a.overtime_hrs, 0)) AS total_ot_hrs " +
                      "FROM users u " +
