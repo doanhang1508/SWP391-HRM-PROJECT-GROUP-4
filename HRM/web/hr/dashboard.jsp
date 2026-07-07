@@ -165,7 +165,7 @@ body { background: #f0f4f8 !important; font-family: 'Inter', sans-serif !importa
             </div>
 
             <%-- ══════════════════════════════════════════════════════ --%>
-            <%-- HR MANAGER (roleId == 2): giữ nguyên 100% nội dung cũ --%>
+            <%-- HR MANAGER (roleId == 2):--%>
             <%-- ══════════════════════════════════════════════════════ --%>
             <c:if test="${currentUser.roleId == 2}">
             <div class="stat-grid">
@@ -326,7 +326,7 @@ body { background: #f0f4f8 !important; font-family: 'Inter', sans-serif !importa
                 </div>
                 <div class="card">
                     <div class="card-head">
-                        <h3 class="card-title"><span class="ct-dot d-orange"></span>Tiến Độ Bảng Lương 6 Tháng</h3>
+                        <h3 class="card-title"><span class="ct-dot d-orange"></span>Tổng Quỹ Lương Chi Trả 6 Tháng</h3>
                         <a href="${pageContext.request.contextPath}/hr/payroll" class="btn btn-ghost">Quản lý</a>
                     </div>
                     <div style="height:260px;">
@@ -495,10 +495,7 @@ const ctData=[<c:forEach var="v" items="${contractTypeData}" varStatus="s">${v}$
 const ctHasData=${contractTypeHasData};
 
 const payLbl=[<c:forEach var="l" items="${payrollLabels}" varStatus="s">'${l}'${!s.last?',':''}</c:forEach>];
-const payDrft=[<c:forEach var="v" items="${payrollDraft}" varStatus="s">${v}${!s.last?',':''}</c:forEach>];
-const payPend=[<c:forEach var="v" items="${payrollPending}" varStatus="s">${v}${!s.last?',':''}</c:forEach>];
-const payApprv=[<c:forEach var="v" items="${payrollApproved}" varStatus="s">${v}${!s.last?',':''}</c:forEach>];
-const payPaid=[<c:forEach var="v" items="${payrollPaid}" varStatus="s">${v}${!s.last?',':''}</c:forEach>];
+const payAmounts=[<c:forEach var="v" items="${payrollAmounts}" varStatus="s">${v}${!s.last?',':''}</c:forEach>];
 const payHasData=${payrollHasData};
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -556,23 +553,59 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     })();
 
-    // ── Chart 4: Stacked Bar — Bảng lương 6 tháng ──
-    new Chart(document.getElementById('payrollTrendChart'), {
-        type: 'bar',
+    // ── Chart 4: Line/Area — Tổng quỹ lương chi trả 6 tháng ──
+    const ctx = document.getElementById('payrollTrendChart').getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 240);
+    gradient.addColorStop(0, 'rgba(13, 148, 136, 0.25)'); // Teal semi-transparent
+    gradient.addColorStop(1, 'rgba(13, 148, 136, 0.0)');
+
+    new Chart(ctx, {
+        type: 'line',
         data: {
             labels: payLbl,
-            datasets: [
-                { label:'Nháp',      data:payDrft,  backgroundColor:'#94a3b8', borderRadius:3, borderSkipped:false },
-                { label:'Chờ duyệt', data:payPend,  backgroundColor:'#f59e0b', borderRadius:3, borderSkipped:false },
-                { label:'Đã duyệt',  data:payApprv, backgroundColor:'#3b82f6', borderRadius:3, borderSkipped:false },
-                { label:'Đã trả',    data:payPaid,  backgroundColor:'#10b981', borderRadius:3, borderSkipped:false }
-            ]
+            datasets: [{
+                label: 'Tổng chi trả',
+                data: payAmounts,
+                borderColor: '#0d9488', // Teal
+                borderWidth: 3,
+                backgroundColor: gradient,
+                fill: true,
+                tension: 0.35,
+                pointBackgroundColor: '#0d9488',
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
         },
-        options: { responsive:true, maintainAspectRatio:false,
-            plugins:{ legend:{position:'top',labels:{boxWidth:10,padding:10,font:bf}},
-                      tooltip:{mode:'index',callbacks:{label:c=>'  '+c.dataset.label+': '+c.parsed.y+' phiếu'}} },
-            scales:{ x:{stacked:true,ticks:{color:'#475569',font:bf},grid:{display:false}},
-                     y:{stacked:true,beginAtZero:true,ticks:{precision:0,color:'#94a3b8',font:bf},grid:{color:'rgba(0,0,0,0.04)'}} } }
+        options: {
+            responsive:true, maintainAspectRatio:false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: c => {
+                            const val = c.parsed.y;
+                            return '  Chi trả: ' + new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { ticks: { color: '#475569', font: bf }, grid: { display: false } },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#94a3b8',
+                        font: bf,
+                        callback: val => {
+                            if (val >= 1e9) return (val / 1e9).toFixed(1) + 'B'; // Billions (Tỷ)
+                            if (val >= 1e6) return (val / 1e6).toFixed(0) + 'M'; // Millions (Triệu)
+                            return val;
+                        }
+                    },
+                    grid: { color: 'rgba(0,0,0,0.04)' }
+                }
+            }
+        }
     });
 });
 </script>

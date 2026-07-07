@@ -119,21 +119,16 @@ public class HrDashboardController extends HttpServlet {
                 request.setAttribute("contractTypeData",   ctData);
                 request.setAttribute("contractTypeHasData", !ctLabels.isEmpty());
 
-                // === CHART 4: Tình trạng bảng lương 6 tháng gần nhất (bar) ===
+                // === CHART 4: Tổng quỹ lương chi trả 6 tháng gần nhất ===
                 LocalDate now = LocalDate.now();
-                // Lấy tối đa 6 tháng gần nhất từ getMonthlySummaries()
                 List<PayrollDAO.PayrollMonthSummary> allSummaries = payrollDAO.getMonthlySummaries();
-                // Tạo map month/year → summary để lookup nhanh
-                Map<String, PayrollDAO.PayrollMonthSummary> summaryMap = new LinkedHashMap<>();
+                Map<String, java.math.BigDecimal> salaryMap = new java.util.HashMap<>();
                 for (PayrollDAO.PayrollMonthSummary s : allSummaries) {
-                    summaryMap.put(s.getYear() + "-" + s.getMonth(), s);
+                    salaryMap.put(s.getYear() + "-" + s.getMonth(), s.getTotalNet());
                 }
 
                 List<String> payrollLabels      = new ArrayList<>();
-                List<Integer> payrollDraft      = new ArrayList<>();
-                List<Integer> payrollPending    = new ArrayList<>();
-                List<Integer> payrollApproved   = new ArrayList<>();
-                List<Integer> payrollPaid       = new ArrayList<>();
+                List<java.math.BigDecimal> payrollAmounts = new ArrayList<>();
                 boolean payrollHasData = false;
 
                 for (int i = 5; i >= 0; i--) {
@@ -142,21 +137,17 @@ public class HrDashboardController extends HttpServlet {
                     String label = String.format("%02d/%d", mo, yr);
                     payrollLabels.add(label);
 
-                    int d = payrollDAO.countByStatus(mo, yr, "Draft");
-                    int p = payrollDAO.countByStatus(mo, yr, "Pending");
-                    int a = payrollDAO.countByStatus(mo, yr, "Approved");
-                    int pd= payrollDAO.countByStatus(mo, yr, "Paid");
-                    payrollDraft.add(d);
-                    payrollPending.add(p);
-                    payrollApproved.add(a);
-                    payrollPaid.add(pd);
-                    if (d + p + a + pd > 0) payrollHasData = true;
+                    java.math.BigDecimal totalNet = salaryMap.getOrDefault(yr + "-" + mo, java.math.BigDecimal.ZERO);
+                    if (totalNet == null) {
+                        totalNet = java.math.BigDecimal.ZERO;
+                    }
+                    payrollAmounts.add(totalNet);
+                    if (totalNet.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                        payrollHasData = true;
+                    }
                 }
                 request.setAttribute("payrollLabels",    payrollLabels);
-                request.setAttribute("payrollDraft",     payrollDraft);
-                request.setAttribute("payrollPending",   payrollPending);
-                request.setAttribute("payrollApproved",  payrollApproved);
-                request.setAttribute("payrollPaid",      payrollPaid);
+                request.setAttribute("payrollAmounts",   payrollAmounts);
                 request.setAttribute("payrollHasData",   payrollHasData);
 
                 // Stat card lương: tháng hiện tại
@@ -204,10 +195,7 @@ public class HrDashboardController extends HttpServlet {
                 request.setAttribute("contractTypeData", new ArrayList<>());
                 request.setAttribute("contractTypeHasData", false);
                 request.setAttribute("payrollLabels", new ArrayList<>());
-                request.setAttribute("payrollDraft", new ArrayList<>());
-                request.setAttribute("payrollPending", new ArrayList<>());
-                request.setAttribute("payrollApproved", new ArrayList<>());
-                request.setAttribute("payrollPaid", new ArrayList<>());
+                request.setAttribute("payrollAmounts", new ArrayList<>());
                 request.setAttribute("payrollHasData", false);
                 request.setAttribute("payrollDraftCount", 0);
                 request.setAttribute("payrollPendingCount", 0);
