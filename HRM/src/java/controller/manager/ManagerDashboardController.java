@@ -26,6 +26,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import model.KpiCycle;
 import model.KpiEvaluation;
+import model.TransferRequest;
 import model.User;
 import util.DBContext;
 
@@ -194,9 +195,14 @@ public class ManagerDashboardController extends HttpServlet {
                 KpiDAO kpiDAO = new KpiDAO();
                 int managerId = currentUser.getUserId();
 
-                // Card: Điều chuyển chờ duyệt
-                int pendingTransferCount = transferDAO.getEmployeeConfirmedRequestsForManager(deptId).size();
+                // Card + Bảng: Điều chuyển chờ duyệt
+                List<TransferRequest> pendingTransfers = transferDAO.getEmployeeConfirmedRequestsForManager(deptId);
+                int pendingTransferCount = pendingTransfers.size();
+                // Top 5 cho bảng
+                List<TransferRequest> top5Transfers = pendingTransfers.size() > 5
+                        ? pendingTransfers.subList(0, 5) : pendingTransfers;
                 request.setAttribute("pendingTransferCount", pendingTransferCount);
+                request.setAttribute("pendingTransferList", top5Transfers);
 
                 // Card: Điều chuyển sắp có hiệu lực (7 ngày tới)
                 int upcomingTransferCount = transferDAO.countUpcomingEffectiveTransfers(deptId, 7);
@@ -250,6 +256,7 @@ public class ManagerDashboardController extends HttpServlet {
                 // Fallback an toàn — set default nếu DAO lỗi
                 e.printStackTrace();
                 request.setAttribute("pendingTransferCount", 0);
+                request.setAttribute("pendingTransferList", new ArrayList<>());
                 request.setAttribute("upcomingTransferCount", 0);
                 request.setAttribute("activeKpiCycle", null);
                 request.setAttribute("kpiDaysLeft", 0L);

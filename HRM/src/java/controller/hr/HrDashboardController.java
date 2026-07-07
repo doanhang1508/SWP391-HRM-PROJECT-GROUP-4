@@ -2,12 +2,13 @@ package controller.hr;
 
 import dao.DepartmentDAO;
 import dao.EmployeeContractDAO;
-import dao.EmployeeProfileDAO;
 import dao.OnboardingDAO;
+import dao.PayrollDAO;
 import dao.UserDAO;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import jakarta.servlet.ServletException;
@@ -16,6 +17,8 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import model.EmployeeContract;
+import model.OnboardingRequest;
 import model.User;
 
 @WebServlet(name = "HrDashboardController", urlPatterns = {"/hr/dashboard"})
@@ -55,100 +58,164 @@ public class HrDashboardController extends HttpServlet {
             recentEmployees = recentEmployees.subList(recentEmployees.size() - 5, recentEmployees.size());
         }
         request.setAttribute("recentEmployees", recentEmployees);
-
         request.setAttribute("expiringContracts", 0);
         request.setAttribute("pendingLeaves", 0);
 
-        // ── TuVV: HR Staff Dashboard — thêm attribute khi roleId == 5 ──
+        //HR Staff Dashboard — thêm attribute khi roleId == 5 ──
         if (currentUser.getRoleId() == 5) {
             try {
                 EmployeeContractDAO contractDAO = new EmployeeContractDAO();
                 OnboardingDAO onboardingDAO = new OnboardingDAO();
-                EmployeeProfileDAO profileDAO = new EmployeeProfileDAO();
+                PayrollDAO payrollDAO = new PayrollDAO();
                 int userId = currentUser.getUserId();
 
-                // Card: Hợp đồng sắp hết hạn (30 ngày tới)
-                int expiringContractCount = contractDAO.getExpiringContracts(30).size();
-                request.setAttribute("expiringContractCount", expiringContractCount);
+                // === STAT CARDS ===
+                List<EmployeeContract> expiringList = contractDAO.getExpiringContracts(30);
+                request.setAttribute("expiringContractCount", expiringList.size());
 
-                // Card: Hợp đồng sắp hết hạn (7 ngày tới) — dùng cho bảng "việc cần xử lý"
-                int expiringContract7Days = contractDAO.getExpiringContracts(7).size();
-                request.setAttribute("expiringContract7Days", expiringContract7Days);
-
-                // Card: Chờ nhân viên ký
                 int pendingSignatureCount = contractDAO.countPendingSignatureContracts();
                 request.setAttribute("pendingSignatureCount", pendingSignatureCount);
 
-                // Card: Hồ sơ onboarding chờ duyệt (PENDING, do user tạo)
-                int onboardingPendingCount = onboardingDAO.countByCreatorAndStatus(userId, "PENDING");
-                request.setAttribute("onboardingPendingCount", onboardingPendingCount);
+                Map<String, Integer> onboardingCounts = onboardingDAO.getStatusCountsByCreator(userId);
+                int onboardingPending  = onboardingCounts.getOrDefault("PENDING",  0);
+                int onboardingRejected = onboardingCounts.getOrDefault("REJECTED", 0);
+                int onboardingDraft    = onboardingCounts.getOrDefault("DRAFT",    0);
+                int onboardingApproved = onboardingCounts.getOrDefault("APPROVED", 0);
+                request.setAttribute("onboardingPendingCount",  onboardingPending);
+                request.setAttribute("onboardingRejectedCount", onboardingRejected);
 
-                // Card: Hồ sơ onboarding bị từ chối (REJECTED, do user tạo)
-                int onboardingRejectedCount = onboardingDAO.countByCreatorAndStatus(userId, "REJECTED");
-                request.setAttribute("onboardingRejectedCount", onboardingRejectedCount);
+                // === CHART 1: Phân bố trạng thái hợp đồng (donut) ===
+                Map<String, Integer> contractCounts = contractDAO.getContractCounts();
+                int cActive     = contractCounts.getOrDefault("active",     0);
+                int cPending    = contractCounts.getOrDefault("pending",    0);
+                int cExpired    = contractCounts.getOrDefault("expired",    0);
+                int cExpiring   = contractCounts.getOrDefault("expiring",   0);
+                int cTerminated = contractCounts.getOrDefault("terminated", 0);
+                request.setAttribute("contractCountActive",     cActive);
+                request.setAttribute("contractCountPending",    cPending);
+                request.setAttribute("contractCountExpired",    cExpired);
+                request.setAttribute("contractCountExpiring",   cExpiring);
+                request.setAttribute("contractCountTerminated", cTerminated);
+                // flag: có dữ liệu không (tránh chart rỗng)
+                request.setAttribute("contractChartHasData", (cActive + cPending + cExpired + cExpiring + cTerminated) > 0);
 
-                // Khu vực: Tiến độ nhập hồ sơ — lấy tất cả status 1 lần
-                Map<String, Integer> onboardingStatusCounts = onboardingDAO.getStatusCountsByCreator(userId);
-                request.setAttribute("onboardingDraftCount",    onboardingStatusCounts.getOrDefault("DRAFT", 0));
-                request.setAttribute("onboardingPendingCountAll", onboardingStatusCounts.getOrDefault("PENDING", 0));
-                request.setAttribute("onboardingApprovedCount", onboardingStatusCounts.getOrDefault("APPROVED", 0));
-                request.setAttribute("onboardingRejectedCountAll", onboardingStatusCounts.getOrDefault("REJECTED", 0));
+                // === CHART 2: Pipeline Onboarding của HR Staff này (bar) ===
+                request.setAttribute("onboardingDraftCount",      onboardingDraft);
+                request.setAttribute("onboardingPendingCountAll", onboardingPending);
+                request.setAttribute("onboardingApprovedCount",   onboardingApproved);
+                request.setAttribute("onboardingRejectedCountAll",onboardingRejected);
+                request.setAttribute("onboardingChartHasData",
+                    (onboardingDraft + onboardingPending + onboardingApproved + onboardingRejected) > 0);
 
-                // Khu vực: Cảnh báo dữ liệu còn thiếu
-                Map<String, Integer> missingData = profileDAO.countMissingDataFields();
-                request.setAttribute("missingBankCount",      missingData.getOrDefault("missingBank", 0));
-                request.setAttribute("missingTaxCount",       missingData.getOrDefault("missingTax", 0));
-                request.setAttribute("missingSocialInsCount", missingData.getOrDefault("missingSocialIns", 0));
+                // === CHART 3: Loại hợp đồng (donut) ===
+                List<Map<String, Object>> contractTypeStats = contractDAO.getContractTypeStats();
+                List<String> ctLabels = new ArrayList<>();
+                List<Integer> ctData  = new ArrayList<>();
+                for (Map<String, Object> row : contractTypeStats) {
+                    ctLabels.add((String) row.get("typeName"));
+                    ctData.add(((Number) row.get("count")).intValue());
+                }
+                request.setAttribute("contractTypeLabels", ctLabels);
+                request.setAttribute("contractTypeData",   ctData);
+                request.setAttribute("contractTypeHasData", !ctLabels.isEmpty());
 
-                // Bảng: Việc cần xử lý — tổng hợp thành list
-                List<Map<String, Object>> taskList = new ArrayList<>();
+                // === CHART 4: Tình trạng bảng lương 6 tháng gần nhất (bar) ===
+                LocalDate now = LocalDate.now();
+                // Lấy tối đa 6 tháng gần nhất từ getMonthlySummaries()
+                List<PayrollDAO.PayrollMonthSummary> allSummaries = payrollDAO.getMonthlySummaries();
+                // Tạo map month/year → summary để lookup nhanh
+                Map<String, PayrollDAO.PayrollMonthSummary> summaryMap = new LinkedHashMap<>();
+                for (PayrollDAO.PayrollMonthSummary s : allSummaries) {
+                    summaryMap.put(s.getYear() + "-" + s.getMonth(), s);
+                }
 
-                Map<String, Object> task1 = new HashMap<>();
-                task1.put("name", "Hợp đồng hết hạn trong 7 ngày");
-                task1.put("count", expiringContract7Days);
-                task1.put("level", expiringContract7Days > 0 ? "danger" : "success");
-                task1.put("link", request.getContextPath() + "/hr/contracts?status=expiring");
-                taskList.add(task1);
+                List<String> payrollLabels      = new ArrayList<>();
+                List<Integer> payrollDraft      = new ArrayList<>();
+                List<Integer> payrollPending    = new ArrayList<>();
+                List<Integer> payrollApproved   = new ArrayList<>();
+                List<Integer> payrollPaid       = new ArrayList<>();
+                boolean payrollHasData = false;
 
-                Map<String, Object> task2 = new HashMap<>();
-                task2.put("name", "Hợp đồng chờ nhân viên ký");
-                task2.put("count", pendingSignatureCount);
-                task2.put("level", pendingSignatureCount > 0 ? "warning" : "success");
-                task2.put("link", request.getContextPath() + "/hr/contracts");
-                taskList.add(task2);
+                for (int i = 5; i >= 0; i--) {
+                    LocalDate m = now.minusMonths(i);
+                    int mo = m.getMonthValue(), yr = m.getYear();
+                    String label = String.format("%02d/%d", mo, yr);
+                    payrollLabels.add(label);
 
-                Map<String, Object> task3 = new HashMap<>();
-                task3.put("name", "Hồ sơ onboarding bị từ chối");
-                task3.put("count", onboardingRejectedCount);
-                task3.put("level", onboardingRejectedCount > 0 ? "danger" : "success");
-                task3.put("link", request.getContextPath() + "/hr/onboarding/list");
-                taskList.add(task3);
+                    int d = payrollDAO.countByStatus(mo, yr, "Draft");
+                    int p = payrollDAO.countByStatus(mo, yr, "Pending");
+                    int a = payrollDAO.countByStatus(mo, yr, "Approved");
+                    int pd= payrollDAO.countByStatus(mo, yr, "Paid");
+                    payrollDraft.add(d);
+                    payrollPending.add(p);
+                    payrollApproved.add(a);
+                    payrollPaid.add(pd);
+                    if (d + p + a + pd > 0) payrollHasData = true;
+                }
+                request.setAttribute("payrollLabels",    payrollLabels);
+                request.setAttribute("payrollDraft",     payrollDraft);
+                request.setAttribute("payrollPending",   payrollPending);
+                request.setAttribute("payrollApproved",  payrollApproved);
+                request.setAttribute("payrollPaid",      payrollPaid);
+                request.setAttribute("payrollHasData",   payrollHasData);
 
-                Map<String, Object> task4 = new HashMap<>();
-                task4.put("name", "Hồ sơ onboarding chờ duyệt");
-                task4.put("count", onboardingPendingCount);
-                task4.put("level", onboardingPendingCount > 0 ? "warning" : "success");
-                task4.put("link", request.getContextPath() + "/hr/onboarding/list");
-                taskList.add(task4);
+                // Stat card lương: tháng hiện tại
+                int currentMonth = now.getMonthValue(), currentYear = now.getYear();
+                int payrollDraftNow    = payrollDAO.countByStatus(currentMonth, currentYear, "Draft");
+                int payrollPendingNow  = payrollDAO.countByStatus(currentMonth, currentYear, "Pending");
+                int payrollApprovedNow = payrollDAO.countByStatus(currentMonth, currentYear, "Approved");
+                int payrollPaidNow     = payrollDAO.countByStatus(currentMonth, currentYear, "Paid");
+                request.setAttribute("payrollDraftCount",    payrollDraftNow);
+                request.setAttribute("payrollPendingCount",  payrollPendingNow);
+                request.setAttribute("payrollApprovedCount", payrollApprovedNow);
+                request.setAttribute("payrollPaidCount",     payrollPaidNow);
+                request.setAttribute("currentMonthLabel",    String.format("T%02d/%d", currentMonth, currentYear));
 
-                request.setAttribute("taskList", taskList);
+                // === BẢNG 1: Hợp đồng sắp hết hạn (top 5) ===
+                List<EmployeeContract> top5Expiring = expiringList.size() > 5
+                        ? expiringList.subList(0, 5) : expiringList;
+                request.setAttribute("top5ExpiringContracts", top5Expiring);
+
+                // === BẢNG 2: Hồ sơ onboarding gần nhất của HR Staff này (top 5) ===
+                List<OnboardingRequest> myOnboarding = onboardingDAO.getByCreator(userId);
+                List<OnboardingRequest> top5Onboarding = myOnboarding.size() > 5
+                        ? myOnboarding.subList(0, 5) : myOnboarding;
+                request.setAttribute("recentOnboarding", top5Onboarding);
 
             } catch (Exception e) {
-                // Fallback an toàn — set default nếu DAO lỗi
                 e.printStackTrace();
+                // Safe defaults
                 request.setAttribute("expiringContractCount", 0);
-                request.setAttribute("expiringContract7Days", 0);
                 request.setAttribute("pendingSignatureCount", 0);
                 request.setAttribute("onboardingPendingCount", 0);
                 request.setAttribute("onboardingRejectedCount", 0);
+                request.setAttribute("contractCountActive", 0);
+                request.setAttribute("contractCountPending", 0);
+                request.setAttribute("contractCountExpired", 0);
+                request.setAttribute("contractCountExpiring", 0);
+                request.setAttribute("contractCountTerminated", 0);
+                request.setAttribute("contractChartHasData", false);
                 request.setAttribute("onboardingDraftCount", 0);
                 request.setAttribute("onboardingPendingCountAll", 0);
                 request.setAttribute("onboardingApprovedCount", 0);
                 request.setAttribute("onboardingRejectedCountAll", 0);
-                request.setAttribute("missingBankCount", 0);
-                request.setAttribute("missingTaxCount", 0);
-                request.setAttribute("missingSocialInsCount", 0);
-                request.setAttribute("taskList", new ArrayList<>());
+                request.setAttribute("onboardingChartHasData", false);
+                request.setAttribute("contractTypeLabels", new ArrayList<>());
+                request.setAttribute("contractTypeData", new ArrayList<>());
+                request.setAttribute("contractTypeHasData", false);
+                request.setAttribute("payrollLabels", new ArrayList<>());
+                request.setAttribute("payrollDraft", new ArrayList<>());
+                request.setAttribute("payrollPending", new ArrayList<>());
+                request.setAttribute("payrollApproved", new ArrayList<>());
+                request.setAttribute("payrollPaid", new ArrayList<>());
+                request.setAttribute("payrollHasData", false);
+                request.setAttribute("payrollDraftCount", 0);
+                request.setAttribute("payrollPendingCount", 0);
+                request.setAttribute("payrollApprovedCount", 0);
+                request.setAttribute("payrollPaidCount", 0);
+                request.setAttribute("currentMonthLabel", "—");
+                request.setAttribute("top5ExpiringContracts", new ArrayList<>());
+                request.setAttribute("recentOnboarding", new ArrayList<>());
             }
         }
 

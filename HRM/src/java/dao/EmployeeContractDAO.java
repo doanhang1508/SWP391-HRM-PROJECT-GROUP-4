@@ -280,7 +280,7 @@ public class EmployeeContractDAO {
                      "SUM(CASE WHEN status = 'Active' THEN 1 ELSE 0 END) AS active, " +
                      "SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) AS pending, " +
                      "SUM(CASE WHEN status = 'Expired' THEN 1 ELSE 0 END) AS expired, " +
-                     "SUM(CASE WHEN status = 'Terminated' THEN 1 ELSE 0 END) AS terminated, " +
+                     "SUM(CASE WHEN status = 'Terminated' THEN 1 ELSE 0 END) AS `terminated`, " +
                      "SUM(CASE WHEN status = 'Active' AND end_date IS NOT NULL " +
                      "         AND end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) AS expiring " +
                      "FROM employee_contracts";
