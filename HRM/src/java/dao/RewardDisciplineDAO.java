@@ -401,7 +401,7 @@ public class RewardDisciplineDAO {
         }
         
         // Perfect attendance bonus
-        if (validPresentDays >= 22 && lateCount == 0) {
+        if (validPresentDays >= 26 && lateCount == 0) {
             RewardDiscipline rdBonus = this.getRewardDisciplineByName("Thưởng Chuyên cần");
             EmployeeRewardDiscipline erd2 = new EmployeeRewardDiscipline();
             erd2.setUserId(userId);

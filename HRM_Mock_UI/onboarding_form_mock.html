@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock UI - Tiếp nhận Nhân sự mới (Onboarding Form)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-gradient: linear-gradient(135deg, #f0f9ff 0%, #cbebff 100%);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --card-border: rgba(255, 255, 255, 0.5);
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --success-bg: #d1fae5;
+            --success-text: #065f46;
+            --error-bg: #fee2e2;
+            --error-text: #991b1b;
+            --input-bg: rgba(249, 250, 251, 0.8);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', 'Inter', sans-serif;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 3rem 1rem;
+            position: relative;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 950px;
+            animation: fadeIn 0.8s ease-out;
+            position: relative;
+            z-index: 10;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-header {
+            margin-bottom: 2.5rem;
+            text-align: center;
+        }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            color: #111827;
+            font-weight: 800;
+            background: linear-gradient(to right, #4f46e5, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .card-header {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding-bottom: 1rem;
+        }
+
+        .card-header svg { color: var(--primary-color); }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.75rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .form-group.full-width { grid-column: span 2; }
+
+        label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #4b5563;
+        }
+
+        .required {
+            color: #ef4444;
+            margin-left: 0.25rem;
+        }
+
+        input[type="text"], input[type="date"], select {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            color: var(--text-main);
+            font-size: 1rem;
+            outline: none;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+            background-color: #ffffff;
+        }
+
+        .actions {
+            margin-top: 2.5rem;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #3730a3 100%);
+            color: white;
+            padding: 0.875rem 2rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.05rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+        }
+
+        .result-box {
+            padding: 1.25rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .result-box.show { display: block; }
+
+        .result-box.success {
+            background-color: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid #34d399;
+        }
+
+        .result-box.error {
+            background-color: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid #f87171;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        th {
+            background-color: rgba(243, 244, 246, 0.8);
+            padding: 1rem 1.25rem;
+            text-align: left;
+            font-weight: 700;
+            color: #374151;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+        }
+
+        tr:hover td { background-color: rgba(249, 250, 251, 0.9); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="page-header">
+        <h1>Tiếp nhận Nhân sự mới</h1>
+        <p>Mock UI Test (Onboarding Form)</p>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            Thông tin nhân sự
+        </div>
+
+        <form id="onboardingForm" novalidate>
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label for="fullName">Họ và Tên <span class="required">*</span></label>
+                    <input type="text" id="fullName" placeholder="VD: Nguyễn Văn An" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="dateOfBirth">Ngày Sinh <span class="required">*</span></label>
+                    <input type="date" id="dateOfBirth" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="gender">Giới Tính <span class="required">*</span></label>
+                    <select id="gender" required>
+                        <option value="">-- Chọn giới tính --</option>
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                        <option value="Khác">Khác</option>
+                    </select>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="cccdNumber">Số CCCD <span class="required">*</span></label>
+                    <input type="text" id="cccdNumber" placeholder="12 chữ số" required>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button type="submit" id="btnSubmit">Tạo hồ sơ</button>
+            </div>
+        </form>
+
+        <div id="result-box" class="result-box"></div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Danh sách nhân viên (Mock Database)</div>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Họ Tên</th>
+                        <th>Ngày Sinh</th>
+                        <th>Giới Tính</th>
+                        <th>CCCD</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const DB_KEY = 'mock_onboarding_db';
+    const getDB = () => JSON.parse(localStorage.getItem(DB_KEY)) || [];
+    const saveDB = (data) => localStorage.setItem(DB_KEY, JSON.stringify(data));
+
+    // Seed mock data for test cases
+    if (getDB().length === 0) {
+        saveDB([
+            { fullName: 'Le Van B', dateOfBirth: '1990-01-01', gender: 'Nam', cccdNumber: '079203001111' }, // Used for TC-032
+            { fullName: 'Le Van C', dateOfBirth: '1992-02-02', gender: 'Nữ', cccdNumber: '0792030011' }     // Used for TC-035 (10 digits duplicate)
+        ]);
+    }
+
+    const renderTable = () => {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        getDB().forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.fullName}</td>
+                <td>${item.dateOfBirth}</td>
+                <td>${item.gender}</td>
+                <td>${item.cccdNumber}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    };
+
+    const showError = (msg) => {
+        const box = document.getElementById('result-box');
+        box.className = 'result-box show error';
+        box.innerText = msg;
+    };
+
+    const showSuccess = () => {
+        const box = document.getElementById('result-box');
+        box.className = 'result-box show success';
+        box.innerText = 'Tạo hồ sơ thành công';
+        document.getElementById('onboardingForm').reset();
+        renderTable();
+    };
+
+    document.getElementById('onboardingForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const data = {
+            fullName: document.getElementById('fullName').value.trim(),
+            dateOfBirth: document.getElementById('dateOfBirth').value,
+            gender: document.getElementById('gender').value, // No validation intentionally (DF-03)
+            cccdNumber: document.getElementById('cccdNumber').value.trim()
+        };
+
+        // 1. Validate fullName
+        if (data.fullName === "") {
+            return showError('Trường bắt buộc');
+        }
+        if (data.fullName.length < 2) {
+            return showError('Họ tên quá ngắn');
+        }
+        if (data.fullName.length > 50) {
+            return showError('Họ tên vượt quá 50 ký tự');
+        }
+        
+        // Bug DF-01: digits are allowed, only special chars are rejected
+        if (/[^a-zA-Z0-9\sÀ-ỹ]/.test(data.fullName)) { 
+            return showError('Họ tên sai định dạng'); 
+        }
+
+        // Bug DF-02 (a): Word count is checked ONLY IF length > 2 (so "An" length 2 is accepted)
+        const wordCount = data.fullName.trim().split(/\s+/).length;
+        if (data.fullName.length > 2 && wordCount < 2) {
+            return showError('Vui lòng nhập ít nhất 2 từ');
+        }
+
+        // 2. Validate dateOfBirth
+        if (!data.dateOfBirth) {
+            return showError('Trường bắt buộc');
+        }
+        const dob = new Date(data.dateOfBirth);
+        // Assuming current date for test is 2026-07-06
+        const testCurrentDate = new Date('2026-07-06'); 
+        if (dob >= testCurrentDate) {
+            return showError('Ngày sinh phải trước ngày hiện tại');
+        }
+        if (dob <= new Date('1960-01-01')) {
+            return showError('Không đủ tuổi lao động');
+        }
+        // Bug DF-02 (b): Accepted equal to 2006-01-01 (should be strictly BEFORE)
+        if (dob > new Date('2006-01-01')) {
+            return showError('Chưa đủ tuổi lao động');
+        }
+
+        // 3. Validate Gender
+        if (!data.gender && !document.getElementById('gender').value) {
+            // Note: If submitted via API with invalid gender, it will just pass (DF-03)
+            return showError('Vui lòng chọn giới tính');
+        }
+
+        // 4. Validate cccdNumber
+        if (!data.cccdNumber) {
+            return showError('Trường bắt buộc');
+        }
+
+        const db = getDB();
+        const isDuplicate = db.some(item => item.cccdNumber === data.cccdNumber);
+
+        // Bug DF-05: Duplicate checked BEFORE format, BUT only works if length < 12 
+        // Bug DF-04: If length is 12, duplicate check is skipped entirely!
+        if (data.cccdNumber.length < 12 && isDuplicate) {
+            return showError('Số CCCD đã tồn tại');
+        }
+
+        if (data.cccdNumber.length !== 12) {
+            return showError('CCCD phải đủ 12 số');
+        }
+
+        if (!/^\d+$/.test(data.cccdNumber)) {
+            return showError('CCCD chỉ được chứa chữ số');
+        }
+
+        // 5. Success
+        db.push(data);
+        saveDB(db);
+        showSuccess();
+    });
+
+    window.onload = renderTable;
+</script>
+
+</body>
+</html>
