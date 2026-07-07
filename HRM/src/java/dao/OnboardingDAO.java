@@ -423,4 +423,56 @@ public class OnboardingDAO {
         }
         return false;
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // TuVV: HR Staff Dashboard — thống kê onboarding theo người tạo
+    // ──────────────────────────────────────────────────────────────
+
+    /**
+     * Đếm số onboarding request theo người tạo và trạng thái.
+     * Dùng cho card "Hồ sơ onboarding chờ duyệt" / "bị từ chối" trên HR Staff Dashboard.
+     */
+    public int countByCreatorAndStatus(int createdBy, String status) {
+        String sql = "SELECT COUNT(*) FROM onboarding_requests WHERE created_by = ? AND status = ?";
+        try (Connection conn = DBContext.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, createdBy);
+            ps.setString(2, status);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("OnboardingDAO.countByCreatorAndStatus: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    /**
+     * Lấy tổng số onboarding theo từng trạng thái của một HR Staff (1 query GROUP BY).
+     * Dùng cho khu vực "Tiến độ nhập hồ sơ" trên HR Staff Dashboard.
+     * @return Map với key = status (DRAFT, PENDING, APPROVED, REJECTED), value = count
+     */
+    public java.util.Map<String, Integer> getStatusCountsByCreator(int createdBy) {
+        java.util.Map<String, Integer> counts = new java.util.LinkedHashMap<>();
+        // Khởi tạo mặc định để JSP không bị null
+        counts.put("DRAFT", 0);
+        counts.put("PENDING", 0);
+        counts.put("APPROVED", 0);
+        counts.put("REJECTED", 0);
+
+        String sql = "SELECT status, COUNT(*) AS cnt FROM onboarding_requests " +
+                     "WHERE created_by = ? GROUP BY status";
+        try (Connection conn = DBContext.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, createdBy);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    counts.put(rs.getString("status"), rs.getInt("cnt"));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("OnboardingDAO.getStatusCountsByCreator: " + e.getMessage());
+        }
+        return counts;
+    }
 }

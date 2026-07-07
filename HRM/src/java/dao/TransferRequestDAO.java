@@ -1110,4 +1110,29 @@ public class TransferRequestDAO {
             System.err.println("[TransferRequestDAO] Lỗi gửi notification HR Manager requestId=" + requestId + ": " + e.getMessage());
         }
     }
+
+    // ── TuVV: Department Manager Dashboard — đếm điều chuyển sắp có hiệu lực ──
+
+    /**
+     * Đếm số đơn điều chuyển đã duyệt và có effective_date trong N ngày tới.
+     * Dùng cho card "Điều chuyển sắp có hiệu lực" trên Department Manager Dashboard.
+     */
+    public int countUpcomingEffectiveTransfers(int managerDepartmentId, int days) {
+        String sql = "SELECT COUNT(*) FROM transfer_requests " +
+                     "WHERE old_department_id = ? " +
+                     "AND status IN ('MANAGER_APPROVED', 'APPROVED') " +
+                     "AND effective_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL ? DAY)";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, managerDepartmentId);
+            ps.setInt(2, days);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
 }
+

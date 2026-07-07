@@ -655,4 +655,24 @@ public class EmployeeContractDAO {
         }
         return null;
     }
+
+    // =========================================================================
+    // TuVV: HR Staff Dashboard — đếm hợp đồng chờ nhân viên ký
+    // =========================================================================
+
+    /**
+     * Đếm tổng số hợp đồng/phụ lục có sign_status = 'PENDING'.
+     * Dùng cho card "Chờ nhân viên ký" trên HR Staff Dashboard.
+     */
+    public int countPendingSignatureContracts() {
+        String sql = "SELECT COUNT(*) FROM employee_contracts WHERE sign_status = 'PENDING'";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) return rs.getInt(1);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
 }

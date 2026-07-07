@@ -221,4 +221,38 @@ public class EmployeeProfileDAO {
             ps.setInt(idx, val);
         }
     }
+
+    // ── TuVV: HR Staff Dashboard — đếm hồ sơ thiếu dữ liệu ───────────────────
+
+    /**
+     * Đếm số nhân viên active thiếu thông tin ngân hàng, mã số thuế, số BHXH.
+     * Dùng cho khu vực "Cảnh báo dữ liệu còn thiếu" trên HR Staff Dashboard.
+     * @return Map với key = tên field (missingBank, missingTax, missingSocialIns), value = count
+     */
+    public java.util.Map<String, Integer> countMissingDataFields() {
+        java.util.Map<String, Integer> counts = new java.util.HashMap<>();
+        counts.put("missingBank", 0);
+        counts.put("missingTax", 0);
+        counts.put("missingSocialIns", 0);
+
+        String sql = "SELECT " +
+                     "SUM(CASE WHEN ep.bank_account IS NULL OR ep.bank_account = '' THEN 1 ELSE 0 END) AS missing_bank, " +
+                     "SUM(CASE WHEN ep.tax_code IS NULL OR ep.tax_code = '' THEN 1 ELSE 0 END) AS missing_tax, " +
+                     "SUM(CASE WHEN ep.social_insurance_no IS NULL OR ep.social_insurance_no = '' THEN 1 ELSE 0 END) AS missing_social_ins " +
+                     "FROM employee_profiles ep " +
+                     "JOIN users u ON ep.user_id = u.user_id " +
+                     "WHERE u.status = 1";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                counts.put("missingBank", rs.getInt("missing_bank"));
+                counts.put("missingTax", rs.getInt("missing_tax"));
+                counts.put("missingSocialIns", rs.getInt("missing_social_ins"));
+            }
+        } catch (SQLException e) {
+            System.err.println("EmployeeProfileDAO.countMissingDataFields: " + e.getMessage());
+        }
+        return counts;
+    }
 }

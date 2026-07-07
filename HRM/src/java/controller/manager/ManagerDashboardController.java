@@ -1,6 +1,8 @@
 package controller.manager;
 
 import dao.DepartmentDAO;
+import dao.KpiDAO;
+import dao.TransferRequestDAO;
 import dao.UserDAO;
 import dao.OvertimeAssignmentDAO;
 import dao.OvertimeAssignmentDAOImpl;
@@ -13,6 +15,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import jakarta.servlet.ServletException;
@@ -21,6 +24,8 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import model.KpiCycle;
+import model.KpiEvaluation;
 import model.User;
 import util.DBContext;
 
@@ -182,7 +187,80 @@ public class ManagerDashboardController extends HttpServlet {
         request.setAttribute("shiftLabels", shiftLabels);
         request.setAttribute("shiftData", shiftData);
 
+        // ── TuVV: Department Manager Dashboard — thêm attribute khi roleId == 6 ──
+        if (currentUser.getRoleId() == 6) {
+            try {
+                TransferRequestDAO transferDAO = new TransferRequestDAO();
+                KpiDAO kpiDAO = new KpiDAO();
+                int managerId = currentUser.getUserId();
+
+                // Card: Điều chuyển chờ duyệt
+                int pendingTransferCount = transferDAO.getEmployeeConfirmedRequestsForManager(deptId).size();
+                request.setAttribute("pendingTransferCount", pendingTransferCount);
+
+                // Card: Điều chuyển sắp có hiệu lực (7 ngày tới)
+                int upcomingTransferCount = transferDAO.countUpcomingEffectiveTransfers(deptId, 7);
+                request.setAttribute("upcomingTransferCount", upcomingTransferCount);
+
+                // Card: Hạn đánh giá KPI
+                KpiCycle activeCycle = kpiDAO.getNearestActiveCycle();
+                request.setAttribute("activeKpiCycle", activeCycle);
+
+                long kpiDaysLeft = 0;
+                if (activeCycle != null && activeCycle.getDeadline() != null) {
+                    LocalDate deadline = activeCycle.getDeadline().toLocalDate();
+                    kpiDaysLeft = ChronoUnit.DAYS.between(today, deadline);
+                }
+                request.setAttribute("kpiDaysLeft", kpiDaysLeft);
+
+                // Card + Thanh tiến độ: KPI chưa đánh giá
+                int kpiTotalCount = 0;
+                int kpiPendingCount = 0;  // DRAFT = chưa đánh giá
+                int kpiCompletedCount = 0;
+                int kpiProgressPercent = 0;
+                List<KpiEvaluation> pendingKpiEvaluations = new ArrayList<>();
+
+                if (activeCycle != null) {
+                    List<KpiEvaluation> allEvals = kpiDAO.getEvaluationsByCycleAndManager(
+                            activeCycle.getCycleId(), managerId);
+                    kpiTotalCount = allEvals.size();
+
+                    for (KpiEvaluation eval : allEvals) {
+                        if ("DRAFT".equals(eval.getStatus())) {
+                            kpiPendingCount++;
+                            // Lấy tối đa 5 evaluation DRAFT cho bảng
+                            if (pendingKpiEvaluations.size() < 5) {
+                                pendingKpiEvaluations.add(eval);
+                            }
+                        }
+                    }
+                    kpiCompletedCount = kpiTotalCount - kpiPendingCount;
+                    if (kpiTotalCount > 0) {
+                        kpiProgressPercent = (kpiCompletedCount * 100) / kpiTotalCount;
+                    }
+                }
+
+                request.setAttribute("kpiTotalCount", kpiTotalCount);
+                request.setAttribute("kpiPendingCount", kpiPendingCount);
+                request.setAttribute("kpiCompletedCount", kpiCompletedCount);
+                request.setAttribute("kpiProgressPercent", kpiProgressPercent);
+                request.setAttribute("pendingKpiEvaluations", pendingKpiEvaluations);
+
+            } catch (Exception e) {
+                // Fallback an toàn — set default nếu DAO lỗi
+                e.printStackTrace();
+                request.setAttribute("pendingTransferCount", 0);
+                request.setAttribute("upcomingTransferCount", 0);
+                request.setAttribute("activeKpiCycle", null);
+                request.setAttribute("kpiDaysLeft", 0L);
+                request.setAttribute("kpiTotalCount", 0);
+                request.setAttribute("kpiPendingCount", 0);
+                request.setAttribute("kpiCompletedCount", 0);
+                request.setAttribute("kpiProgressPercent", 0);
+                request.setAttribute("pendingKpiEvaluations", new ArrayList<>());
+            }
+        }
+
         request.getRequestDispatcher("/manager/dashboard.jsp").forward(request, response);
     }
 }
-

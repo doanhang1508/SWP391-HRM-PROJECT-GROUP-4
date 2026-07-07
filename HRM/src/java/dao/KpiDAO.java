@@ -1250,4 +1250,30 @@ public class KpiDAO {
         }
         return list;
     }
+
+    // ── TuVV: Department Manager Dashboard — lấy kỳ KPI active gần nhất ──
+
+    /**
+     * Lấy kỳ KPI đang active có deadline gần nhất.
+     * Dùng cho card "Hạn đánh giá KPI" trên Department Manager Dashboard.
+     * @return KpiCycle hoặc null nếu không có kỳ KPI nào đang active
+     */
+    public KpiCycle getNearestActiveCycle() {
+        String sql = "SELECT c.*, t.name AS template_name, d.department_name AS template_department_name " +
+                     "FROM kpi_cycles c " +
+                     "LEFT JOIN kpi_templates t ON c.template_id = t.template_id " +
+                     "LEFT JOIN departments d ON t.department_id = d.department_id " +
+                     "WHERE c.status = 'ACTIVE' " +
+                     "ORDER BY c.deadline ASC LIMIT 1";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return mapCycleWithTemplate(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }
