@@ -1,6 +1,7 @@
 package controller.employee;
 
 import dao.KpiDAO;
+import dao.notificationDAO;
 import model.KpiComment;
 import model.KpiEvaluation;
 import model.KpiEvaluationItem;
@@ -99,6 +100,14 @@ public class EmployeeKpiController extends HttpServlet {
 
                     boolean success = kpiDAO.insertComment(comment);
                     if (success) {
+                        new notificationDAO().create(user.getUserId(), "kpi", "Đã gửi bình luận KPI",
+                            "Bạn đã thêm một bình luận vào bản đánh giá KPI #" + evaluationId + ".",
+                            "/employee/kpi-view?id=" + evaluationId);
+                        if (eval.getManagerId() > 0) {
+                            new notificationDAO().create(eval.getManagerId(), "kpi", "Nhân viên vừa bình luận KPI",
+                                user.getFullName() + " đã thêm bình luận vào bản đánh giá KPI #" + evaluationId + ".",
+                                "/manager/kpi-approvals?evaluationId=" + evaluationId);
+                        }
                         response.sendRedirect(request.getContextPath() + "/employee/kpi-view?id=" + evaluationId + "&success=comment_added");
                         return;
                     }

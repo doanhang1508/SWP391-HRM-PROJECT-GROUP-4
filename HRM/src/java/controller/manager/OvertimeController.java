@@ -259,6 +259,12 @@ public class OvertimeController extends HttpServlet {
         try {
             // <<include>> Validate OT Rules is called inside createAssignment()
             boolean ok = overtimeService.createAssignment(assignment);
+            if (ok) {
+                new dao.notificationDAO().create(userId, "overtime",
+                        "Bạn được phân công tăng ca",
+                        "Bạn được phân công tăng ca " + hours + " giờ.",
+                        "/employee/overtime");
+            }
             redirectOT(req, resp,
                     ok ? "message" : "error",
                     ok ? "Phân công tăng ca thành công" : "Phân công thất bại");
@@ -281,8 +287,15 @@ public class OvertimeController extends HttpServlet {
         }
 
         try {
+            model.OvertimeAssignment assignment = overtimeService.getById(assignmentId);
             // <<include>> Update OT Status in Attendance is called inside approveOTAssignment()
             boolean ok = overtimeService.approveOTAssignment(assignmentId);
+            if (ok && assignment != null) {
+                new dao.notificationDAO().create(assignment.getUserId(), "overtime",
+                        "Tăng ca của bạn đã được duyệt",
+                        "Đơn tăng ca " + assignment.getAssignedHours() + " giờ của bạn đã được duyệt.",
+                        "/employee/overtime");
+            }
             redirectOT(req, resp,
                     ok ? "message" : "error",
                     ok ? "Duyệt tăng ca thành công — đã cập nhật bảng chấm công" : "Duyệt thất bại");
@@ -303,7 +316,14 @@ public class OvertimeController extends HttpServlet {
             return;
         }
 
+        model.OvertimeAssignment assignment = overtimeService.getById(assignmentId);
         boolean ok = overtimeService.cancelOTAssignment(assignmentId);
+        if (ok && assignment != null) {
+            new dao.notificationDAO().create(assignment.getUserId(), "overtime",
+                    "Tăng ca của bạn đã bị hủy",
+                    "Đơn tăng ca " + assignment.getAssignedHours() + " giờ của bạn đã bị hủy.",
+                    "/employee/overtime");
+        }
         redirectOT(req, resp,
                 ok ? "message" : "error",
                 ok ? "Hủy tăng ca thành công" : "Hủy thất bại");

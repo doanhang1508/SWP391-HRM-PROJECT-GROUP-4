@@ -275,6 +275,10 @@ public class TransferApprovalController extends HttpServlet {
 
         boolean ok = trDAO.managerApproveTransferRequest(id, currentUser.getUserId());
         if (ok) {
+            new dao.notificationDAO().create(tr.getEmployeeId(), "transfer",
+                    "Yêu cầu điều chuyển đã qua bước 1",
+                    "Trưởng phòng " + currentUser.getFullName() + " đã duyệt yêu cầu điều chuyển của bạn. Đơn đang chờ HR Manager xác nhận cuối.",
+                    "/employee/transfer-request");
             session.setAttribute("successMessage",
                     "Đã phê duyệt Bước 1 thành công. Đơn đang chờ HR Manager xác nhận lần cuối.");
         } else {
@@ -309,6 +313,10 @@ public class TransferApprovalController extends HttpServlet {
 
         boolean ok = trDAO.rejectTransferRequest(id, currentUser.getUserId(), rejectReason.trim());
         if (ok) {
+            new dao.notificationDAO().create(tr.getEmployeeId(), "transfer",
+                    "Yêu cầu điều chuyển đã bị từ chối",
+                    "Trưởng phòng " + currentUser.getFullName() + " đã từ chối yêu cầu điều chuyển của bạn. Lý do: " + rejectReason.trim(),
+                    "/employee/transfer-request");
             session.setAttribute("successMessage", "Đã từ chối yêu cầu điều chuyển.");
         } else {
             session.setAttribute("errorMessage", "Từ chối thất bại. Vui lòng kiểm tra lại.");
@@ -360,6 +368,10 @@ public class TransferApprovalController extends HttpServlet {
 
         boolean ok = trDAO.rejectTransferRequest(id, currentUser.getUserId(), rejectReason.trim());
         if (ok) {
+            new dao.notificationDAO().create(tr.getEmployeeId(), "transfer",
+                    "Yêu cầu điều chuyển đã bị từ chối",
+                    "HR Manager " + currentUser.getFullName() + " đã từ chối yêu cầu điều chuyển của bạn. Lý do: " + rejectReason.trim(),
+                    "/employee/transfer-request");
             session.setAttribute("successMessage", "Đã từ chối yêu cầu điều chuyển.");
         } else {
             session.setAttribute("errorMessage", "Từ chối thất bại. Vui lòng kiểm tra lại.");

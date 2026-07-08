@@ -516,7 +516,8 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
      * Lấy thông tin đơn nghỉ phép theo requestId. Dùng nội bộ sau khi duyệt đơn
      * để lấy user_id, start_date, end_date phục vụ việc ghi nhận chấm công.
      */
-    private LeaveRequest getRequestById(int requestId) {
+    @Override
+    public LeaveRequest getRequestById(int requestId) {
         String sql = "SELECT * FROM leave_requests WHERE request_id = ?";
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {

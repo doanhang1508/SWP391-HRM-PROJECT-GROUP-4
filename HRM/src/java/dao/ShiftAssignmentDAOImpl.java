@@ -201,6 +201,23 @@ public class ShiftAssignmentDAOImpl implements ShiftAssignmentDAO {
     }
 
     @Override
+    public Integer getAssignmentUserId(int assignmentId) {
+        String sql = "SELECT user_id FROM shift_assignments WHERE assignment_id = ?";
+        try (Connection c = DBContext.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, assignmentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("user_id");
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi getAssignmentUserId: " + e.getMessage());
+        }
+        return null;
+    }
+
+    @Override
     public boolean deleteByUserAndDate(int userId, LocalDate date) {
         String sql = "DELETE FROM shift_assignments WHERE user_id = ? AND assigned_date = ?";
         try (Connection c = DBContext.getConnection();
@@ -401,8 +418,3 @@ public class ShiftAssignmentDAOImpl implements ShiftAssignmentDAO {
     }
 
 }
-
-
-
-
-

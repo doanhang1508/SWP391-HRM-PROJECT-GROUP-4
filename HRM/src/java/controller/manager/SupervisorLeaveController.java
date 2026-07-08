@@ -89,12 +89,26 @@ public class SupervisorLeaveController extends HttpServlet {
 
         try {
             if ("leave".equals(type)) {
+                model.LeaveRequest leaveRequest = service.getRequestById(id);
                 if ("approve".equals(action)) {
                     service.approveLeaveRequest(id, user.getUserId());
+                    if (leaveRequest != null) {
+                        new dao.notificationDAO().create(leaveRequest.getUserId(), "leave",
+                            "Đơn nghỉ phép đã được duyệt",
+                            "Quản lý " + user.getFullName() + " đã duyệt đơn nghỉ phép của bạn.",
+                            "/employee/leave");
+                    }
                     session.setAttribute("successMessage", "Đã duyệt đơn nghỉ phép thành công.");
                 } else if ("reject".equals(action)) {
                     String rejectReason = request.getParameter("rejectReason");
                     service.rejectLeaveRequest(id, user.getUserId(), rejectReason);
+                    if (leaveRequest != null) {
+                        new dao.notificationDAO().create(leaveRequest.getUserId(), "leave",
+                            "Đơn nghỉ phép đã bị từ chối",
+                            "Quản lý " + user.getFullName() + " đã từ chối đơn nghỉ phép của bạn. Lý do: "
+                                + (rejectReason != null ? rejectReason : "Không có lý do"),
+                            "/employee/leave");
+                    }
                     session.setAttribute("successMessage", "Đã từ chối đơn nghỉ phép.");
                 }
             }

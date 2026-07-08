@@ -10,6 +10,7 @@ import model.LeaveRequest;
 import model.User;
 import dao.LeaveRequestDAO;
 import dao.LeaveRequestDAOImpl;
+import dao.notificationDAO;
 
 import java.io.File;
 import java.io.IOException;
@@ -128,6 +129,15 @@ public class EmployeeLeaveController extends HttpServlet {
                 boolean success = service.submitLeaveRequest(lr);
                 if (success) {
                     session.setAttribute("successMessage", "Leave request submitted successfully.");
+                    new notificationDAO().create(user.getUserId(), "leave", "Đơn xin nghỉ phép đã được gửi",
+                        "Bạn đã gửi đơn xin nghỉ phép từ " + request.getParameter("startDate") +
+                        " đến " + request.getParameter("endDate") + ". Vui lòng chờ phê duyệt.",
+                        "/employee/leave");
+                    new notificationDAO().createForDepartmentHead(user.getDepartmentId(), "leave",
+                        "Đơn xin nghỉ phép mới cần duyệt",
+                        user.getFullName() + " đã gửi đơn xin nghỉ phép từ " + request.getParameter("startDate") +
+                        " đến " + request.getParameter("endDate") + ".",
+                        "/manager/leave");
                 } else {
                     session.setAttribute("errorMessage", "Failed to submit leave request. Please check database connection or schema.");
                 }

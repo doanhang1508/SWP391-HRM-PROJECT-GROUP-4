@@ -1,6 +1,7 @@
 package controller.employee;
 
 import dao.EmployeeContractDAO;
+import dao.notificationDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -72,6 +73,26 @@ public class EmployeeContractSigningController extends HttpServlet {
             boolean ok = ecDAO.updateSignStatus(contractId, userId, action, rejectReason);
             
             String msg = ok ? (action.equals("SIGNED") ? "signed" : "rejected") : "error";
+            if (ok) {
+                if ("SIGNED".equals(action)) {
+                    new notificationDAO().create(userId, "system", "Đã ký hợp đồng",
+                        "Bạn đã ký thành công hợp đồng/phụ lục #" + contractId + ".",
+                        "/employee/my-contract");
+                    new notificationDAO().createForRoles(new int[]{2, 5}, "system",
+                        "Nhân viên đã ký hợp đồng",
+                        currentUser.getFullName() + " đã ký hợp đồng/phụ lục #" + contractId + ".",
+                        "/hr/employee-contracts");
+                } else {
+                    new notificationDAO().create(userId, "system", "Đã từ chối ký hợp đồng",
+                        "Bạn đã từ chối ký hợp đồng/phụ lục #" + contractId + ".",
+                        "/employee/contract-signing");
+                    new notificationDAO().createForRoles(new int[]{2, 5}, "system",
+                        "Nhân viên đã từ chối ký hợp đồng",
+                        currentUser.getFullName() + " đã từ chối ký hợp đồng/phụ lục #" + contractId +
+                        (rejectReason != null && !rejectReason.isBlank() ? ". Lý do: " + rejectReason : "") + ".",
+                        "/hr/employee-contracts");
+                }
+            }
             response.sendRedirect(request.getContextPath() + "/employee/contract-signing?msg=" + msg);
         } catch (NumberFormatException e) {
             response.sendRedirect(request.getContextPath() + "/employee/contract-signing?msg=error");

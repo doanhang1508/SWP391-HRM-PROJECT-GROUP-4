@@ -131,4 +131,55 @@ public class notificationDAO {
             ps.executeUpdate();
         } catch (SQLException e) { e.printStackTrace(); }
     }
+
+    /*
+     * ── Utility: gửi thông báo cho TẤT CẢ user thuộc một hoặc nhiều role ──
+     *
+     * Dùng khi nhân viên thực hiện hành động cần thông báo cho các bên liên quan
+     * theo vai trò (VD: HR Manager, HR Staff) mà không phụ thuộc phòng ban.
+     *
+     *   new notificationDAO().createForRoles(new int[]{2, 5}, "system",
+     *       "Đơn xin nghỉ việc mới", "Nguyễn Văn A vừa gửi đơn xin nghỉ việc.", "/hr/resignation-approval");
+     */
+    public void createForRoles(int[] roleIds, String type, String title, String body, String link) {
+        if (roleIds == null || roleIds.length == 0) return;
+        StringBuilder placeholders = new StringBuilder();
+        for (int i = 0; i < roleIds.length; i++) {
+            if (i > 0) placeholders.append(",");
+            placeholders.append("?");
+        }
+        String sql = "SELECT user_id FROM users WHERE role_id IN (" + placeholders + ") AND status = 1";
+        try (Connection c = DBContext.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            for (int i = 0; i < roleIds.length; i++) {
+                ps.setInt(i + 1, roleIds[i]);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    create(rs.getInt("user_id"), type, title, body, link);
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
+
+    /*
+     * ── Utility: gửi thông báo cho Trưởng phòng / Tổ trưởng của một phòng ban ──
+     *
+     * Dùng khi nhân viên thực hiện hành động cần thông báo cho quản lý trực tiếp
+     * của phòng ban mình (role Factory Manager=3 hoặc Department Manager=6).
+     * Nếu không tìm thấy Trưởng phòng, sẽ không gửi (không có lỗi phát sinh).
+     */
+    public void createForDepartmentHead(int departmentId, String type, String title, String body, String link) {
+        String sql = "SELECT user_id FROM users WHERE department_id = ? AND role_id IN (3, 6) AND status = 1 " +
+                     "ORDER BY user_id ASC LIMIT 1";
+        try (Connection c = DBContext.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, departmentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    create(rs.getInt("user_id"), type, title, body, link);
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
 }

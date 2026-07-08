@@ -199,6 +199,13 @@ public class ShiftScheduleController extends HttpServlet {
 
         int inserted = assignmentService.batchAssign(userId, shiftId, from, to);
         if (inserted > 0) {
+            User manager = getCurrentUser(req);
+            String managerName = manager != null ? manager.getFullName() : "Quản đốc";
+            new dao.notificationDAO().create(userId, "shift",
+                    "Bạn được xếp lịch làm việc mới",
+                    managerName + " đã xếp " + inserted + " ca (" + shiftName + ") cho bạn từ "
+                            + from + " đến " + to + ".",
+                    "/employee/schedule");
             redirectSchedule(req, resp, "message", "Đã xếp lịch " + inserted + " ngày thành công.");
         } else {
             redirectSchedule(req, resp, "error", "Lỗi: Ca mới bị trùng giờ với ca cũ hoặc đã tồn tại.");
@@ -214,7 +221,16 @@ public class ShiftScheduleController extends HttpServlet {
             redirectSchedule(req, resp, "error", "ID không hợp lệ");
             return;
         }
+        Integer assignedUserId = assignmentService.getAssignmentUserId(id);
         boolean ok = assignmentService.deleteAssignment(id);
+        if (ok && assignedUserId != null) {
+            User manager = getCurrentUser(req);
+            String managerName = manager != null ? manager.getFullName() : "Quản đốc";
+            new dao.notificationDAO().create(assignedUserId, "shift",
+                    "Lịch làm việc của bạn đã bị xóa",
+                    managerName + " đã xóa một lịch làm việc đã xếp cho bạn.",
+                    "/employee/schedule");
+        }
         redirectSchedule(req, resp, ok ? "message" : "error",
                 ok ? "Xóa lịch thành công" : "Xóa lịch thất bại");
     }

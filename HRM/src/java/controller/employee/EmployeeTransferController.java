@@ -1,6 +1,7 @@
 package controller.employee;
 
 import dao.TransferRequestDAO;
+import dao.notificationDAO;
 import model.TransferRequest;
 import model.User;
 
@@ -105,6 +106,9 @@ public class EmployeeTransferController extends HttpServlet {
                               User currentUser, int requestId) throws IOException {
         boolean ok = trDAO.employeeConfirmTransfer(requestId, currentUser.getUserId());
         if (ok) {
+            new notificationDAO().create(currentUser.getUserId(), "system", "Đã xác nhận điều chuyển",
+                "Bạn đã xác nhận đồng ý với yêu cầu điều chuyển #" + requestId + ".",
+                "/employee/transfer-confirm");
             response.sendRedirect(request.getContextPath() + "/employee/transfer-confirm?msg=accept_success");
         } else {
             // Thất bại: đơn không còn PENDING hoặc không thuộc về nhân viên này
@@ -125,6 +129,9 @@ public class EmployeeTransferController extends HttpServlet {
 
         boolean ok = trDAO.employeeRejectTransfer(requestId, currentUser.getUserId(), rejectReason.trim());
         if (ok) {
+            new notificationDAO().create(currentUser.getUserId(), "system", "Đã từ chối điều chuyển",
+                "Bạn đã từ chối yêu cầu điều chuyển #" + requestId + ".",
+                "/employee/transfer-confirm");
             response.sendRedirect(request.getContextPath() + "/employee/transfer-confirm?msg=reject_success");
         } else {
             response.sendRedirect(request.getContextPath() + "/employee/transfer-confirm?msg=reject_error");

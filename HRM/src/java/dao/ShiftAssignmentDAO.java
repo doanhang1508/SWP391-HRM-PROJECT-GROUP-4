@@ -62,6 +62,12 @@ public interface ShiftAssignmentDAO {
     boolean deleteAssignment(int assignmentId);
 
     /**
+     * Get the user_id owning an assignment. Used to notify the employee before deletion.
+     * @return userId, or null if the assignment no longer exists.
+     */
+    Integer getAssignmentUserId(int assignmentId);
+
+    /**
      * Delete all assignments for a user on a specific date.
      */
     boolean deleteByUserAndDate(int userId, LocalDate date);

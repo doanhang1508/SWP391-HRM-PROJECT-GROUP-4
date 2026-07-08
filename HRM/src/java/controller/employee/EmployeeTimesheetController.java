@@ -2,6 +2,7 @@ package controller.employee;
 
 import dao.AttendanceDAO;
 import dao.TimesheetConfirmationDAO;
+import dao.notificationDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -129,6 +130,14 @@ public class EmployeeTimesheetController extends HttpServlet {
                     boolean success = tcDAO.confirmEmployeeTimesheet(userId, month, year, deptId);
                     if (success) {
                         session.setAttribute("successMessage", "Xác nhận phiếu công thành công.");
+                        new notificationDAO().create(userId, "attendance", "Đã xác nhận phiếu công",
+                            "Bạn đã xác nhận phiếu công tháng " + month + "/" + year + ".",
+                            "/employee/timesheet");
+                        if (tc.getCreatedBy() > 0) {
+                            new notificationDAO().create(tc.getCreatedBy(), "attendance", "Nhân viên đã xác nhận phiếu công",
+                                user.getFullName() + " đã xác nhận phiếu công tháng " + month + "/" + year + ".",
+                                "/manager/timesheet-confirm");
+                        }
                     } else {
                         session.setAttribute("errorMessage", "Xác nhận phiếu công thất bại.");
                     }

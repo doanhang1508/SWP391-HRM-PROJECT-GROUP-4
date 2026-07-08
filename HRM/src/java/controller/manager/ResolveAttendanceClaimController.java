@@ -103,6 +103,8 @@ public class ResolveAttendanceClaimController extends HttpServlet {
                     }
                 }
 
+                model.AttendanceClaim claim = attendanceDAO.getClaimById(claimId);
+
                 boolean ok = attendanceDAO.resolveClaim(
                     claimId, decision, hrNote.trim(), user.getUserId(),
                     "APPROVED".equals(decision) ? newStatus : null,
@@ -115,6 +117,17 @@ public class ResolveAttendanceClaimController extends HttpServlet {
                         ? "Đã duyệt đơn khiếu nại và cập nhật trạng thái chấm công."
                         : "Đã từ chối đơn khiếu nại.";
                     session.setAttribute("successMessage", msg);
+
+                    if (claim != null) {
+                        String notifTitle = "APPROVED".equals(decision)
+                                ? "Khiếu nại chấm công đã được duyệt"
+                                : "Khiếu nại chấm công đã bị từ chối";
+                        String notifBody = "Quản lý " + user.getFullName() + " đã "
+                                + ("APPROVED".equals(decision) ? "duyệt" : "từ chối")
+                                + " khiếu nại chấm công của bạn. Ghi chú: " + hrNote.trim();
+                        new dao.notificationDAO().create(claim.getUserId(), "attendance",
+                                notifTitle, notifBody, "/employee/attendance-claim");
+                    }
                 } else {
                     session.setAttribute("errorMessage", "Xử lý thất bại. Đơn có thể đã được giải quyết hoặc không tồn tại.");
                 }

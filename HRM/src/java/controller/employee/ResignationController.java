@@ -95,6 +95,10 @@ public class ResignationController extends HttpServlet {
                 if (r != null && r.getUserId() == user.getUserId() && "PENDING".equals(r.getStatus())) {
                     resignationDAO.updateStatus(id, "CANCELLED", "PENDING", 0, null, null);
                     session.setAttribute("successMessage", "Đã hủy đơn xin nghỉ việc.");
+                    new notificationDAO().create(user.getUserId(), "system", "Đã hủy đơn xin nghỉ việc",
+                        "Bạn đã hủy đơn xin nghỉ việc #" + id + ".", "/employee/resignation");
+                    new notificationDAO().createForRoles(new int[]{2, 5}, "system", "Nhân viên đã hủy đơn xin nghỉ việc",
+                        user.getFullName() + " đã hủy đơn xin nghỉ việc #" + id + ".", "/hr/resignation-approval");
                 } else {
                     session.setAttribute("errorMessage", "Không thể hủy đơn này.");
                 }
@@ -118,6 +122,8 @@ public class ResignationController extends HttpServlet {
                         if (updated) {
                             session.setAttribute("successMessage", "Đã gửi yêu cầu rút đơn. Vui lòng chờ HR phê duyệt.");
                             new notificationDAO().create(user.getUserId(), "system", "Yêu cầu rút đơn", "Yêu cầu rút đơn xin nghỉ việc của bạn đã được gửi tới HR.", "/employee/resignation");
+                            new notificationDAO().createForRoles(new int[]{2, 5}, "system", "Yêu cầu rút đơn nghỉ việc",
+                                user.getFullName() + " đã gửi yêu cầu rút đơn xin nghỉ việc #" + id + ".", "/hr/resignation-approval");
                         } else {
                             session.setAttribute("errorMessage", "Đơn đã bị thay đổi, vui lòng tải lại trang.");
                         }
@@ -171,6 +177,12 @@ public class ResignationController extends HttpServlet {
             boolean success = resignationDAO.insert(r);
             if (success) {
                 session.setAttribute("successMessage", "Đơn xin nghỉ việc đã được gửi thành công. Vui lòng chờ HR xem xét.");
+                new notificationDAO().create(user.getUserId(), "system", "Đơn xin nghỉ việc đã được gửi",
+                    "Bạn đã gửi đơn xin nghỉ việc với ngày mong muốn nghỉ là " + desiredLastDateStr + ". Vui lòng chờ HR xem xét.",
+                    "/employee/resignation");
+                new notificationDAO().createForRoles(new int[]{2, 5}, "system", "Đơn xin nghỉ việc mới",
+                    user.getFullName() + " đã gửi đơn xin nghỉ việc với ngày mong muốn nghỉ là " + desiredLastDateStr + ".",
+                    "/hr/resignation-approval");
             } else {
                 session.setAttribute("errorMessage",
                     "Gửi đơn thất bại. Có thể bảng resignation_requests chưa tồn tại trong database. " +

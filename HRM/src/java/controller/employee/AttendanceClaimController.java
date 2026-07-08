@@ -1,6 +1,7 @@
 package controller.employee;
 
 import dao.AttendanceDAO;
+import dao.notificationDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -109,6 +110,13 @@ public class AttendanceClaimController extends HttpServlet {
                 if (attendanceDAO.submitClaim(claim)) {
                     session.setAttribute("successMessage",
                         "Đơn khiếu nại đã được gửi thành công. HR sẽ xem xét trong thời gian sớm nhất.");
+                    new notificationDAO().create(user.getUserId(), "attendance", "Đơn khiếu nại chấm công đã được gửi",
+                        "Bạn đã gửi khiếu nại chấm công cho ngày " + workDateStr + ". HR sẽ xem xét trong thời gian sớm nhất.",
+                        "/employee/attendance-claim");
+                    new notificationDAO().createForDepartmentHead(user.getDepartmentId(), "attendance",
+                        "Đơn khiếu nại chấm công mới",
+                        user.getFullName() + " đã gửi khiếu nại chấm công cho ngày " + workDateStr + ".",
+                        "/manager/attendance-claims");
                 } else {
                     session.setAttribute("errorMessage", "Gửi đơn thất bại. Vui lòng thử lại.");
                 }

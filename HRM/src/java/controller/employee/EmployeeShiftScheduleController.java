@@ -31,7 +31,7 @@ import java.util.List;
  * Displays the logged-in employee's assigned shifts for the selected week,
  * with navigation to previous/next weeks.
  */
-@WebServlet(name = "EmployeeShiftScheduleController", urlPatterns = {"/employee/schedule"})
+@WebServlet(name = "EmployeeShiftScheduleController", urlPatterns = {"/employee/schedule", "/employee/shift-schedule"})
 public class EmployeeShiftScheduleController extends HttpServlet {
 
     private ShiftAssignmentDAO assignmentService;

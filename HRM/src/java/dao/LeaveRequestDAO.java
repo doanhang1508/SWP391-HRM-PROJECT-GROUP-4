@@ -33,6 +33,7 @@ public interface LeaveRequestDAO {
     List<LeaveRequest> getAllLeavesByDepartment(int departmentId);
     boolean approveLeaveRequest(int requestId, int approvedBy) throws Exception;
     boolean rejectLeaveRequest(int requestId, int approvedBy, String rejectReason) throws Exception;
+    LeaveRequest getRequestById(int requestId);
     List<LeaveRequest> getAllLeaveRequests();
     double getPaidLeaveDays(int employeeId, int month, int year);
     java.util.Set<LocalDate> getPaidLeaveDaySet(int employeeId, int month, int year);

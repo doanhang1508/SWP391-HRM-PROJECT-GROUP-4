@@ -178,6 +178,16 @@ public class ManagerKpiApprovalController extends HttpServlet {
                 
                 boolean updated = kpiDAO.updateEvaluationStatus(evaluationId, targetStatus, user.getUserId(), note);
                 if (updated) {
+                    String notifTitle = "APPROVED".equals(targetStatus)
+                            ? "Đánh giá KPI đã được duyệt"
+                            : "Đánh giá KPI đã bị từ chối";
+                    String notifBody = "Quản lý " + user.getFullName() + " đã "
+                            + ("APPROVED".equals(targetStatus) ? "duyệt" : "từ chối")
+                            + " đánh giá KPI của bạn."
+                            + (note != null && !note.trim().isEmpty() ? " Ghi chú: " + note : "");
+                    new dao.notificationDAO().create(eval.getEmployeeId(), "kpi",
+                            notifTitle, notifBody, "/employee/kpi");
+
                     if ("APPROVED".equals(targetStatus)) {
                         try {
                             // Integrate with Payroll System

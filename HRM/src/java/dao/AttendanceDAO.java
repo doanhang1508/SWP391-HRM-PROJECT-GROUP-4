@@ -397,6 +397,38 @@ public class AttendanceDAO {
     }
 
     /**
+     * Lấy 1 claim theo claim_id. Dùng để lấy user_id gửi thông báo sau khi resolve.
+     */
+    public AttendanceClaim getClaimById(int claimId) {
+        String sql = "SELECT ac.*, " +
+                     "u.full_name AS user_name, d.department_name AS user_dept, " +
+                     "a.status AS current_status, " +
+                     "s.shift_name, " +
+                     "resolver.full_name AS resolver_name " +
+                     "FROM attendance_claims ac " +
+                     "JOIN users u ON ac.user_id = u.user_id " +
+                     "LEFT JOIN employee_profiles ep ON u.user_id = ep.user_id " +
+                     "LEFT JOIN departments d ON ep.department_id = d.department_id " +
+                     "LEFT JOIN attendance a ON ac.attendance_id = a.attendance_id " +
+                     "LEFT JOIN shifts s ON a.shift_id = s.shift_id " +
+                     "LEFT JOIN users resolver ON ac.resolved_by = resolver.user_id " +
+                     "WHERE ac.claim_id = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, claimId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapClaimRow(rs);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
      * HR approve hoặc reject claim, đồng thời cập nhật attendance nếu approve.
      * @param correctedCheckIn  Giờ vào sửa (có thể null)
      * @param correctedCheckOut Giờ ra sửa (có thỉ null)
