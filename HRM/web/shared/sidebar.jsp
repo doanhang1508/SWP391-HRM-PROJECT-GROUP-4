@@ -404,7 +404,9 @@
 
                                             <%-- ══════ HR MANAGER (roleId=2): Quản lý nhân sự ══════ --%>
                                                 <c:if test="${sessionScope.currentUser.roleId == 2}">
-                                                    <li class="sidebar-menu-category">Quản lý nhân viên</li>
+
+                                                    <%-- ── Nhân viên & Hợp đồng ── --%>
+                                                    <li class="sidebar-menu-category">Nhân viên &amp; Hợp đồng</li>
                                                     <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/hr/employees"
                                                             class="sidebar-link ${param.activeMenu eq 'employees' ? 'active' : ''}">
@@ -423,6 +425,9 @@
                                                             <i class="fas fa-file-signature"></i> Quản lý Hợp đồng
                                                         </a>
                                                     </li>
+
+                                                    <%-- ── KPI ── --%>
+                                                    <li class="sidebar-menu-category">KPI</li>
                                                     <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/manager/kpi-history"
                                                             class="sidebar-link ${param.activeMenu eq 'kpi-history' ? 'active' : ''}">
@@ -430,66 +435,14 @@
                                                         </a>
                                                     </li>
 
-                                                    <li class="sidebar-menu-category">Cấu hình Chính sách</li>
-
-
-
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/leave"
-                                                            class="sidebar-link ${param.activeMenu eq 'leaveManagement' ? 'active' : ''}">
-                                                            <i class="fas fa-calendar-times"></i> Quản lý Nghỉ phép
-                                                        </a>
-                                                    </li>
-                                                    <li class="sidebar-item">
-
-                                                        <a href="${pageContext.request.contextPath}/hr/reward-disciplines"
-                                                            class="sidebar-link ${param.activeMenu eq 'reward-disciplines' ? 'active' : ''}">
-                                                            <i class="fas fa-award"></i> Danh mục Thưởng/Phạt
-                                                        </a>
-                                                    </li>
-
-                                                    <li class="sidebar-menu-category">Lương &amp; Phúc lợi</li>
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/payroll-configs"
-                                                            class="sidebar-link ${param.activeMenu eq 'payroll-configs' ? 'active' : ''}">
-                                                            <i class="fas fa-cogs"></i> Cấu hình lương
-                                                        </a>
-                                                    </li>
-
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/salary-grade"
-                                                            class="sidebar-link ${param.activeMenu eq 'salary-grade' ? 'active' : ''}">
-                                                            <i class="fas fa-money-bill-wave"></i> Bậc lương
-                                                        </a>
-                                                    </li>
-
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/payroll"
-                                                            class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
-                                                            <i class="fas fa-file-invoice-dollar"></i> Bảng lương
-                                                        </a>
-                                                    </li>
-
+                                                    <%-- ── Chấm công ── --%>
                                                     <li class="sidebar-menu-category">Chấm công</li>
-
                                                     <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/manager/timesheet-confirm"
                                                             class="sidebar-link ${param.activeMenu eq 'timesheet-confirm' ? 'active' : ''}">
                                                             <i class="fas fa-check-double"></i> Xác nhận bảng công
                                                         </a>
                                                     </li>
-                                                                    <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/manager/transfer-approvals"
-                                                                            class="sidebar-link ${param.activeMenu eq 'transfer-approvals' ? 'active' : ''}">
-                                                                            <i class="fas fa-tasks"></i> Phê duyệt điều chuyển (B1)
-                                                                        </a>
-                                                                    </li>
-                                                                    <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/manager/hr-transfer-confirm"
-                                                                            class="sidebar-link ${param.activeMenu eq 'hr-transfer-confirm' ? 'active' : ''}">
-                                                                            <i class="fas fa-check-double"></i> Xác nhận cuối điều chuyển
-                                                                        </a>
-                                                                    </li>
                                                     <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/hr/timesheet-approval"
                                                             class="sidebar-link ${param.activeMenu eq 'timesheet-approval' ? 'active' : ''}">
@@ -503,7 +456,14 @@
                                                         </a>
                                                     </li>
 
-                                                    <li class="sidebar-menu-category">Nhân sự</li>
+                                                    <%-- ── Nhân sự & Điều chuyển ── --%>
+                                                    <li class="sidebar-menu-category">Nhân sự &amp; Điều chuyển</li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/leave"
+                                                            class="sidebar-link ${param.activeMenu eq 'leaveManagement' ? 'active' : ''}">
+                                                            <i class="fas fa-calendar-times"></i> Quản lý Nghỉ phép
+                                                        </a>
+                                                    </li>
                                                     <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/hr/terminate-employee"
                                                             class="sidebar-link ${param.activeMenu eq 'termination' ? 'active' : ''}">
@@ -516,14 +476,72 @@
                                                             <i class="fas fa-door-open"></i> Duyệt đơn nghỉ việc
                                                         </a>
                                                     </li>
-                                                     <li class="sidebar-item">
-                                                         <a href="${pageContext.request.contextPath}/hr/transfer-requests"
-                                                             class="sidebar-link ${param.activeMenu eq 'transfer-list' || param.activeMenu eq 'transfer-create' ? 'active' : ''}">
-                                                             <i class="fas fa-exchange-alt"></i> Điều chuyển nhân sự
-                                                         </a>
-                                                     </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/transfer-requests"
+                                                            class="sidebar-link ${param.activeMenu eq 'transfer-list' || param.activeMenu eq 'transfer-create' ? 'active' : ''}">
+                                                            <i class="fas fa-exchange-alt"></i> Điều chuyển nhân sự
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/manager/transfer-approvals"
+                                                            class="sidebar-link ${param.activeMenu eq 'transfer-approvals' ? 'active' : ''}">
+                                                            <i class="fas fa-tasks"></i> Phê duyệt điều chuyển
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/manager/hr-transfer-confirm"
+                                                            class="sidebar-link ${param.activeMenu eq 'hr-transfer-confirm' ? 'active' : ''}">
+                                                            <i class="fas fa-check-double"></i> Xác nhận cuối điều chuyển
+                                                        </a>
+                                                    </li>
+
+                                                    <%-- ── Lương & Phúc lợi ── --%>
+                                                    <li class="sidebar-menu-category">Lương &amp; Phúc lợi</li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/payroll-configs"
+                                                            class="sidebar-link ${param.activeMenu eq 'payroll-configs' ? 'active' : ''}">
+                                                            <i class="fas fa-cogs"></i> Cấu hình lương
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/salary-grade"
+                                                            class="sidebar-link ${param.activeMenu eq 'salary-grade' ? 'active' : ''}">
+                                                            <i class="fas fa-money-bill-wave"></i> Bậc lương
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/reward-disciplines"
+                                                            class="sidebar-link ${param.activeMenu eq 'reward-disciplines' ? 'active' : ''}">
+                                                            <i class="fas fa-award"></i> Danh mục Thưởng/Phạt
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/manual-reward-discipline"
+                                                            class="sidebar-link ${param.activeMenu eq 'manual-reward' ? 'active' : ''}">
+                                                            <i class="fas fa-medal"></i> Khen thưởng/Kỷ luật
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/insurance-rate"
+                                                            class="sidebar-link ${param.activeMenu eq 'insurance-rate' ? 'active' : ''}">
+                                                            <i class="fas fa-shield-alt"></i> Bảo hiểm
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/tax-config"
+                                                            class="sidebar-link ${param.activeMenu eq 'tax-config' ? 'active' : ''}">
+                                                            <i class="fas fa-money-check-alt"></i> Thuế
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/payroll"
+                                                            class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
+                                                            <i class="fas fa-file-invoice-dollar"></i> Bảng lương
+                                                        </a>
+                                                    </li>
 
                                                 </c:if>
+
 
 
                                                 <%-- ══════ FACTORY MANAGER / SUPERVISOR (roleId=3) ══════ Quyền: xếp ca
