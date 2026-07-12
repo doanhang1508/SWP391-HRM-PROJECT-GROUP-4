@@ -131,19 +131,21 @@ public class ImportAttendanceController extends HttpServlet {
                 return;
             }
 
-            // ── Chặn cứng: không cho import lại các THÁNG ĐÃ QUA so với ngày hệ thống ──
-            // Một khi đã sang tháng mới, tháng cũ mặc định coi như đã "chốt công" và
-            // KHÔNG cho phép import lại (khác với khóa thủ công ở dưới, cái này không có
-            // checkbox xác nhận để bỏ qua). Chỉ khi Admin/Quản lý chủ động bấm "Mở khóa"
-            // cho tháng đó ở trang Lock Timesheet thì mới được import lại.
+            // ── Chặn: không cho import lại các THÁNG ĐÃ QUA nếu đã có dữ liệu ──
+            // Một khi đã sang tháng mới, nếu tháng cũ ĐÃ CÓ dữ liệu thì mặc định coi như đã "chốt công"
+            // và KHÔNG cho phép import đè. Tuy nhiên, nếu tháng cũ CHƯA CÓ dữ liệu (ví dụ hệ thống mới tạo)
+            // thì vẫn cho phép import. Chỉ khi Admin/Quản lý chủ động bấm "Mở khóa"
+            // cho tháng đó ở trang Lock Timesheet thì mới được import lại dữ liệu đã có.
             LocalDate today = LocalDate.now();
             boolean isPastMonth = (year < today.getYear())
                     || (year == today.getYear() && month < today.getMonthValue());
-            if (isPastMonth && !attendanceDAO.isExplicitlyUnlocked(month, year)) {
+            boolean hasData = attendanceDAO.hasAttendanceData(month, year);
+            
+            if (isPastMonth && hasData && !attendanceDAO.isExplicitlyUnlocked(month, year)) {
                 session.setAttribute("errorMessage",
                         "Tháng " + month + "/" + year + " đã qua (hiện tại là Tháng " + today.getMonthValue()
-                                + "/" + today.getYear() + ") và được xem là đã CHỐT CÔNG. "
-                                + "Hệ thống không cho phép import lại dữ liệu cho các tháng đã kết thúc. "
+                                + "/" + today.getYear() + ") và ĐÃ CÓ dữ liệu chấm công. "
+                                + "Hệ thống tự động khóa để tránh ghi đè làm sai lệch lương. "
                                 + "Nếu thực sự cần chỉnh sửa, vui lòng liên hệ Quản lý để MỞ KHÓA tháng này trước.");
                 response.sendRedirect(request.getContextPath() + "/hr/import-attendance");
                 return;
