@@ -470,8 +470,6 @@
                                                         </a>
                                                     </li>
 
-
-
                                                     <li class="sidebar-menu-category">Chấm công</li>
 
                                                     <li class="sidebar-item">
@@ -638,28 +636,9 @@
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
-                                                                    <a href="${pageContext.request.contextPath}/hr/kpi-templates"
-                                                                        class="sidebar-link ${param.activeMenu eq 'kpi-templates' || param.activeMenu eq 'kpi-template-edit' ? 'active' : ''}">
-                                                                        <i class="fas fa-cubes"></i> Mẫu KPI Tiêu chuẩn
-                                                                    </a>
-                                                                </li>
-                                                                <li class="sidebar-item">
-                                                                    <a href="${pageContext.request.contextPath}/hr/kpi-cycles"
-                                                                        class="sidebar-link ${param.activeMenu eq 'kpi-cycles' ? 'active' : ''}">
-                                                                        <i class="fas fa-sync-alt"></i> Chu kỳ Đánh giá
-                                                                    </a>
-                                                                </li>
-                                                                <li class="sidebar-item">
-                                                                    <a href="${pageContext.request.contextPath}/manager/kpi-history"
-                                                                        class="sidebar-link ${param.activeMenu eq 'kpi-history' ? 'active' : ''}">
-                                                                        <i class="fas fa-history"></i> Lịch sử đánh giá KPI
-                                                                    </a>
-                                                                </li>
-                                                                <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/contracts"
                                                                         class="sidebar-link ${param.activeMenu eq 'contract-management' ? 'active' : ''}">
-                                                                        <i class="fas fa-file-signature"></i> Quản lý
-                                                                        Hợp đồng
+                                                                        <i class="fas fa-file-signature"></i> Quản lý Hợp đồng
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
@@ -677,44 +656,65 @@
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/contract-type"
                                                                         class="sidebar-link ${param.activeMenu eq 'contract-type' ? 'active' : ''}">
-                                                                        <i class="fas fa-file-contract"></i> Loại hợp
-                                                                        đồng
+                                                                        <i class="fas fa-file-contract"></i> Loại hợp đồng
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/onboarding/list"
                                                                         class="sidebar-link ${param.activeMenu eq 'onboarding' ? 'active' : ''}">
-                                                                        <i class="fas fa-user-clock"></i> Tiếp nhận nhân
-                                                                        viên
+                                                                        <i class="fas fa-user-clock"></i> Tiếp nhận nhân viên
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/terminate-employee"
                                                                         class="sidebar-link ${param.activeMenu eq 'termination' ? 'active' : ''}">
-                                                                        <i class="fas fa-user-minus"></i> Quản lý nghỉ
-                                                                        việc
+                                                                        <i class="fas fa-user-minus"></i> Quản lý nghỉ việc
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/resignation-approval"
                                                                         class="sidebar-link ${param.activeMenu eq 'resignation-approval' ? 'active' : ''}">
-                                                                        <i class="fas fa-door-open"></i> Duyệt đơn nghỉ
-                                                                        việc
+                                                                        <i class="fas fa-door-open"></i> Duyệt đơn nghỉ việc
                                                                     </a>
                                                                 </li>
-                                                                 <li class="sidebar-item">
-                                                                     <a href="${pageContext.request.contextPath}/hr/transfer-requests"
-                                                                         class="sidebar-link ${param.activeMenu eq 'transfer-list' || param.activeMenu eq 'transfer-create' ? 'active' : ''}">
-                                                                         <i class="fas fa-exchange-alt"></i> Điều chuyển nhân sự
-                                                                     </a>
-                                                                 </li>
-
-                                                                <li class="sidebar-menu-category">Cấu hình Chính sách
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/transfer-requests"
+                                                                        class="sidebar-link ${param.activeMenu eq 'transfer-list' || param.activeMenu eq 'transfer-create' ? 'active' : ''}">
+                                                                        <i class="fas fa-exchange-alt"></i> Điều chuyển nhân sự
+                                                                    </a>
                                                                 </li>
+
+                                                                <li class="sidebar-menu-category">KPI</li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/kpi-templates"
+                                                                        class="sidebar-link ${param.activeMenu eq 'kpi-templates' || param.activeMenu eq 'kpi-template-edit' ? 'active' : ''}">
+                                                                        <i class="fas fa-cubes"></i> Mẫu KPI Tiêu chuẩn
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/kpi-cycles"
+                                                                        class="sidebar-link ${param.activeMenu eq 'kpi-cycles' ? 'active' : ''}">
+                                                                        <i class="fas fa-sync-alt"></i> Chu kỳ Đánh giá
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/manager/kpi-history"
+                                                                        class="sidebar-link ${param.activeMenu eq 'kpi-history' ? 'active' : ''}">
+                                                                        <i class="fas fa-history"></i> Lịch sử đánh giá KPI
+                                                                    </a>
+                                                                </li>
+
+                                                                <li class="sidebar-menu-category">Cấu hình Chính sách</li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/shifts"
                                                                         class="sidebar-link ${param.activeMenu eq 'shifts' ? 'active' : ''}">
                                                                         <i class="fas fa-clock"></i> Quản lý Ca làm việc
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/reward-disciplines"
+                                                                        class="sidebar-link ${param.activeMenu eq 'reward-disciplines' ? 'active' : ''}">
+                                                                        <i class="fas fa-award"></i> Danh mục Thưởng/Phạt
                                                                     </a>
                                                                 </li>
 
@@ -722,27 +722,23 @@
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/import-attendance"
                                                                         class="sidebar-link ${param.activeMenu eq 'import-attendance' ? 'active' : ''}">
-                                                                        <i class="fas fa-file-import"></i> Import chấm
-                                                                        công
+                                                                        <i class="fas fa-file-import"></i> Import chấm công
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/manager/timesheet-confirm"
                                                                         class="sidebar-link ${param.activeMenu eq 'timesheet-confirm' ? 'active' : ''}">
-                                                                        <i class="fas fa-check-double"></i> Xác nhận
-                                                                        bảng công
+                                                                        <i class="fas fa-check-double"></i> Xác nhận bảng công
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/attendance-management?action=summary"
                                                                         class="sidebar-link ${param.activeMenu eq 'attendance-summary' || param.activeMenu eq 'attendance-detail' ? 'active' : ''}">
-                                                                        <i class="fas fa-clipboard-check"></i> Quản lý
-                                                                        bảng công
+                                                                        <i class="fas fa-clipboard-check"></i> Quản lý bảng công
                                                                     </a>
                                                                 </li>
 
-                                                                <li class="sidebar-menu-category">Lương &amp; Phúc lợi
-                                                                </li>
+                                                                <li class="sidebar-menu-category">Lương &amp; Phúc lợi</li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/allowance"
                                                                         class="sidebar-link ${param.activeMenu eq 'allowance' ? 'active' : ''}">
@@ -750,14 +746,17 @@
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
-                                                                    <a href="${pageContext.request.contextPath}/hr/payroll"
-                                                                        class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
-                                                                        <i class="fas fa-file-invoice-dollar"></i> Bảng
-                                                                        lương
+                                                                    <a href="${pageContext.request.contextPath}/hr/position-allowance"
+                                                                        class="sidebar-link ${param.activeMenu eq 'position-allowance' ? 'active' : ''}">
+                                                                        <i class="fas fa-table"></i> Cấu hình Phụ cấp
                                                                     </a>
                                                                 </li>
-
-
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/payroll"
+                                                                        class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
+                                                                        <i class="fas fa-file-invoice-dollar"></i> Bảng lương
+                                                                    </a>
+                                                                </li>
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/insurance-rate"
                                                                         class="sidebar-link ${param.activeMenu eq 'insurance-rate' ? 'active' : ''}">
