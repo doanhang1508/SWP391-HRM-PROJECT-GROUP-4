@@ -736,14 +736,14 @@ public class PayrollDAO {
             int roleId = (salaryInfo != null) ? salaryInfo.roleId : -1;
             
             EmployeeContractDAO ecDAO = new EmployeeContractDAO();
-            // Dùng getContractAsOf (lọc theo ngày cuối tháng) thay vì getActiveContract (lọc theo status).
-            // Lý do: nhân viên nghỉ giữa kỳ (Case 2) có hợp đồng đã chuyển Terminated nhưng
+            // Dùng getContractForMonth (truyền firstDay và lastDay của tháng) thay vì getContractAsOf
+            // Lý do: nhân viên nghỉ giữa kỳ (Case 2) hoặc hết hạn hợp đồng giữa tháng
             // vẫn cần lấy đúng base_salary/tax_calc_type từ hợp đồng đó để tính lương.
-            // getActiveContract() sẽ trả về null → fallback sai. getContractAsOf() trả về đúng.
-            java.time.LocalDate lastDayLocal = java.time.LocalDate.of(year, month, 1)
-                    .with(java.time.temporal.TemporalAdjusters.lastDayOfMonth());
+            java.time.LocalDate firstDayLocal = java.time.LocalDate.of(year, month, 1);
+            java.time.LocalDate lastDayLocal = firstDayLocal.with(java.time.temporal.TemporalAdjusters.lastDayOfMonth());
+            java.sql.Date sqlFirstDayOfMonth = java.sql.Date.valueOf(firstDayLocal);
             java.sql.Date sqlLastDayOfMonth = java.sql.Date.valueOf(lastDayLocal);
-            EmployeeContract activeContract = ecDAO.getContractAsOf(userId, sqlLastDayOfMonth);
+            EmployeeContract activeContract = ecDAO.getContractForMonth(userId, sqlFirstDayOfMonth, sqlLastDayOfMonth);
             
             BigDecimal baseSalary = BigDecimal.ZERO;
             int taxCalcType = 1;

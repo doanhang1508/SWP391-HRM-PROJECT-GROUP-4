@@ -1147,53 +1147,15 @@ INSERT INTO overtime_plans (plan_id, dept_id, supervisor_id, target_date, descri
 INSERT INTO overtime_assignments (assignment_id, plan_id, user_id, assigned_hours, status) VALUES
 (1, 1, 5,  3.0, 'Pending');   -- Phạm Công Nhân: 3h OT
 
--- TABLE 4: payroll_claims
-DROP TABLE IF EXISTS payroll_claims;
-CREATE TABLE IF NOT EXISTS payroll_claims (
-    claim_id INT PRIMARY KEY AUTO_INCREMENT,
-    payroll_id INT NOT NULL,
-    complaint_type VARCHAR(100) NOT NULL,
-    description TEXT NOT NULL,
-    expected_amount DECIMAL(15,2) DEFAULT 0,
-    evidence VARCHAR(255) DEFAULT NULL,
-    status VARCHAR(50) DEFAULT 'Pending',
-    hr_staff_id INT DEFAULT NULL,
-    hr_staff_note TEXT DEFAULT NULL,
-    accountant_id INT DEFAULT NULL,
-    accountant_note TEXT DEFAULT NULL,
-    proposed_adjustment DECIMAL(15,2) DEFAULT 0,
-    hr_manager_id INT DEFAULT NULL,
-    hr_manager_note TEXT DEFAULT NULL,
-    director_id INT DEFAULT NULL,
-    director_note TEXT DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (payroll_id) REFERENCES payroll(payroll_id) ON DELETE CASCADE,
-    FOREIGN KEY (hr_staff_id) REFERENCES users(user_id) ON DELETE SET NULL,
-    FOREIGN KEY (accountant_id) REFERENCES users(user_id) ON DELETE SET NULL,
-    FOREIGN KEY (hr_manager_id) REFERENCES users(user_id) ON DELETE SET NULL,
-    FOREIGN KEY (director_id) REFERENCES users(user_id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- (payroll_claims đã bỏ - chưa được implement trong code)
 
 /* ================================================================
-   MIGRATION: Progressive PIT (Personal Income Tax) Module
-   
-   Mô tả: Tạo các bảng phục vụ tính thuế TNCN lũy tiến theo
-   Quest.md cho HRM Payroll system.
-   
-   Bảng mới:
+   MODULE: Progressive PIT (Personal Income Tax)
+   Mô tả: Biểu thuế TNCN lũy tiến, giảm trừ và profile thuế NV.
+   Bảng:
      - tax_brackets         (Bậc thuế lũy tiến, versioned)
      - tax_deductions       (Giảm trừ bản thân, người phụ thuộc)
      - employee_tax_profiles(Đăng ký thuế của nhân viên)
-     - payroll_periods      (Kỳ lương)
-     - payroll_runs         (Mỗi lần chạy tính lương)
-     - payroll_run_items    (Kết quả từng nhân viên trong kỳ)
-     - audit_logs           (Nhật ký thay đổi)
-     - payslips             (Phiếu lương cuối cùng)
-   
-   Bảng hiện có KHÔNG tạo lại:
-     - employees (= users), employee_contracts (= employee_profiles),
-       salary_components (= employee_allowances + employee_rewards_disciplines),
-       payroll, dependents, insurance_rates
    ================================================================ */
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -1259,116 +1221,7 @@ CREATE TABLE IF NOT EXISTS employee_tax_profiles (
     CONSTRAINT fk_etp_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ══════════════════════════════════════════════════════
--- TABLE 4: payroll_periods (Kỳ lương)
--- ══════════════════════════════════════════════════════
-CREATE TABLE IF NOT EXISTS payroll_periods (
-    period_id       INT             PRIMARY KEY AUTO_INCREMENT,
-    period_name     VARCHAR(100)    NOT NULL COMMENT 'VD: Tháng 06/2026',
-    month           INT             NOT NULL,
-    year            INT             NOT NULL,
-    start_date      DATE            NOT NULL,
-    end_date        DATE            NOT NULL,
-    status          VARCHAR(20)     NOT NULL DEFAULT 'OPEN' COMMENT 'OPEN, LOCKED, CLOSED',
-    locked_by       INT             NULL,
-    locked_at       TIMESTAMP       NULL,
-    created_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uk_period_month_year (month, year),
-    CONSTRAINT fk_pp_locked_by FOREIGN KEY (locked_by) REFERENCES users(user_id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- ══════════════════════════════════════════════════════
--- TABLE 5: payroll_runs (Mỗi lần chạy tính lương)
--- ══════════════════════════════════════════════════════
-CREATE TABLE IF NOT EXISTS payroll_runs (
-    run_id          INT             PRIMARY KEY AUTO_INCREMENT,
-    period_id       INT             NOT NULL,
-    run_type        VARCHAR(20)     NOT NULL DEFAULT 'CALCULATE' COMMENT 'CALCULATE, RECALCULATE',
-    run_by          INT             NOT NULL COMMENT 'User thực hiện',
-    status          VARCHAR(20)     NOT NULL DEFAULT 'RUNNING' COMMENT 'RUNNING, COMPLETED, FAILED',
-    total_employees INT             NOT NULL DEFAULT 0,
-    total_gross     DECIMAL(15,2)   DEFAULT 0,
-    total_pit       DECIMAL(15,2)   DEFAULT 0,
-    total_net       DECIMAL(15,2)   DEFAULT 0,
-    error_count     INT             DEFAULT 0,
-    started_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    completed_at    TIMESTAMP       NULL,
-    notes           VARCHAR(500)    NULL,
-    CONSTRAINT fk_pr_period FOREIGN KEY (period_id) REFERENCES payroll_periods(period_id) ON DELETE CASCADE,
-    CONSTRAINT fk_pr_user   FOREIGN KEY (run_by)    REFERENCES users(user_id)             ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- ══════════════════════════════════════════════════════
--- TABLE 6: payroll_run_items (Kết quả từng NV trong kỳ)
--- ══════════════════════════════════════════════════════
-CREATE TABLE IF NOT EXISTS payroll_run_items (
-    item_id             INT             PRIMARY KEY AUTO_INCREMENT,
-    run_id              INT             NOT NULL,
-    user_id             INT             NOT NULL,
-    base_salary         DECIMAL(15,2)   NOT NULL DEFAULT 0,
-    overtime_amount     DECIMAL(15,2)   NOT NULL DEFAULT 0,
-    allowance_amount    DECIMAL(15,2)   NOT NULL DEFAULT 0,
-    bonus_amount        DECIMAL(15,2)   NOT NULL DEFAULT 0,
-    gross_income        DECIMAL(15,2)   NOT NULL DEFAULT 0,
-    insurance_amount    DECIMAL(15,2)   NOT NULL DEFAULT 0,
-    personal_deduction  DECIMAL(15,2)   NOT NULL DEFAULT 0,
-    dependent_deduction DECIMAL(15,2)   NOT NULL DEFAULT 0,
-    other_deduction     DECIMAL(15,2)   NOT NULL DEFAULT 0,
-    taxable_income      DECIMAL(15,2)   NOT NULL DEFAULT 0,
-    pit_amount          DECIMAL(15,2)   NOT NULL DEFAULT 0,
-    pit_breakdown       TEXT            NULL COMMENT 'JSON breakdown theo bậc thuế',
-    net_salary          DECIMAL(15,2)   NOT NULL DEFAULT 0,
-    has_warning         TINYINT(1)      NOT NULL DEFAULT 0,
-    warning_message     VARCHAR(500)    NULL,
-    UNIQUE KEY uk_run_user (run_id, user_id),
-    CONSTRAINT fk_pri_run   FOREIGN KEY (run_id)  REFERENCES payroll_runs(run_id) ON DELETE CASCADE,
-    CONSTRAINT fk_pri_user  FOREIGN KEY (user_id) REFERENCES users(user_id)       ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- ══════════════════════════════════════════════════════
--- TABLE 7: audit_logs (Nhật ký thay đổi)
--- ══════════════════════════════════════════════════════
-CREATE TABLE IF NOT EXISTS audit_logs (
-    log_id          INT             PRIMARY KEY AUTO_INCREMENT,
-    entity_type     VARCHAR(50)     NOT NULL COMMENT 'payroll, tax_bracket, tax_deduction, etc.',
-    entity_id       INT             NOT NULL,
-    action          VARCHAR(50)     NOT NULL COMMENT 'CREATE, UPDATE, DELETE, CALCULATE, APPROVE, REJECT',
-    old_value       TEXT            NULL COMMENT 'JSON old values',
-    new_value       TEXT            NULL COMMENT 'JSON new values',
-    changed_by      INT             NOT NULL,
-    changed_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    ip_address      VARCHAR(50)     NULL,
-    description     VARCHAR(500)    NULL,
-    CONSTRAINT fk_al_user FOREIGN KEY (changed_by) REFERENCES users(user_id) ON DELETE CASCADE,
-    INDEX idx_audit_entity (entity_type, entity_id),
-    INDEX idx_audit_date (changed_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- ══════════════════════════════════════════════════════
--- TABLE 8: payslips (Phiếu lương)
--- ══════════════════════════════════════════════════════
-CREATE TABLE IF NOT EXISTS payslips (
-    payslip_id      INT             PRIMARY KEY AUTO_INCREMENT,
-    payroll_id      INT             NOT NULL,
-    user_id         INT             NOT NULL,
-    period_id       INT             NULL,
-    payslip_code    VARCHAR(50)     NOT NULL COMMENT 'Mã phiếu lương VD: PS-2026-06-001',
-    gross_income    DECIMAL(15,2)   NOT NULL DEFAULT 0,
-    total_deduction DECIMAL(15,2)   NOT NULL DEFAULT 0,
-    insurance_amount DECIMAL(15,2)  NOT NULL DEFAULT 0,
-    pit_amount      DECIMAL(15,2)   NOT NULL DEFAULT 0,
-    net_salary      DECIMAL(15,2)   NOT NULL DEFAULT 0,
-    pit_breakdown   TEXT            NULL COMMENT 'JSON PIT breakdown theo bậc',
-    status          VARCHAR(20)     NOT NULL DEFAULT 'GENERATED' COMMENT 'GENERATED, FINALIZED',
-    generated_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    finalized_by    INT             NULL,
-    finalized_at    TIMESTAMP       NULL,
-    UNIQUE KEY uk_payslip_code (payslip_code),
-    CONSTRAINT fk_ps_payroll  FOREIGN KEY (payroll_id)   REFERENCES payroll(payroll_id)          ON DELETE CASCADE,
-    CONSTRAINT fk_ps_user     FOREIGN KEY (user_id)      REFERENCES users(user_id)               ON DELETE CASCADE,
-    CONSTRAINT fk_ps_period   FOREIGN KEY (period_id)    REFERENCES payroll_periods(period_id)   ON DELETE SET NULL,
-    CONSTRAINT fk_ps_finalize FOREIGN KEY (finalized_by) REFERENCES users(user_id)               ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- (payroll_periods, payroll_runs, payroll_run_items, audit_logs, payslips đã bỏ - không được implement trong code)
 
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -1590,17 +1443,7 @@ CREATE TABLE IF NOT EXISTS kpi_status_history (
     FOREIGN KEY (changed_by) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS kpi_audit_logs (
-    audit_id INT AUTO_INCREMENT PRIMARY KEY,
-    evaluation_id INT NOT NULL,
-    changed_by INT NOT NULL,
-    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    action VARCHAR(100) NOT NULL,
-    old_value TEXT,
-    new_value TEXT,
-    FOREIGN KEY (evaluation_id) REFERENCES kpi_evaluations(evaluation_id) ON DELETE CASCADE,
-    FOREIGN KEY (changed_by) REFERENCES users(user_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- (kpi_audit_logs đã bỏ - thay bằng kpi_status_history)
 
 -- Seed default criteria and template
 -- ── KPI Templates ──
