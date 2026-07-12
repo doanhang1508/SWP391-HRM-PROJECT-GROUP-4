@@ -5,6 +5,8 @@ import dao.EmployeeContractDAO;
 import dao.OnboardingDAO;
 import dao.PayrollDAO;
 import dao.UserDAO;
+import dao.ResignationDAO;
+import dao.TransferRequestDAO;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -60,6 +62,15 @@ public class HrDashboardController extends HttpServlet {
         request.setAttribute("recentEmployees", recentEmployees);
         request.setAttribute("expiringContracts", 0);
         request.setAttribute("pendingLeaves", 0);
+        
+        //HR Manager Dashboard — thêm attribute khi roleId == 2 ──
+        if (currentUser.getRoleId() == 2) {
+            ResignationDAO resignationDAO = new ResignationDAO();
+            TransferRequestDAO transferDAO = new TransferRequestDAO();
+            
+            request.setAttribute("pendingResignations", resignationDAO.countPendingResignations());
+            request.setAttribute("pendingTransfers", transferDAO.countManagerApprovedRequests());
+        }
 
         //HR Staff Dashboard — thêm attribute khi roleId == 5 ──
         if (currentUser.getRoleId() == 5) {

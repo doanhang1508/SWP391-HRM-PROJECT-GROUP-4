@@ -1,6 +1,8 @@
 package controller.director;
 
 import dao.UserDAO;
+import dao.KpiDAO;
+import dao.ResignationDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -10,18 +12,12 @@ import jakarta.servlet.http.HttpSession;
 import model.User;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.StringJoiner;
 
 /**
  * DirectorDashboardController — Dashboard tổng quan cho Giám đốc (role 4).
- *
- * URL  : /director/dashboard
- * Role : 4 (Director / Giám đốc)
- *
- * Hiển thị số liệu tổng hợp cấp cao:
- *   - Tổng nhân sự toàn công ty
- *   - Số phòng ban / xưởng
- *   - Hợp đồng sắp hết hạn (TODO Iter 2)
- *   - Bảng lương chờ duyệt chốt (TODO Iter 2)
  */
 @WebServlet(name = "DirectorDashboardController", urlPatterns = {"/director/dashboard"})
 public class DirectorDashboardController extends HttpServlet {
@@ -29,10 +25,14 @@ public class DirectorDashboardController extends HttpServlet {
     private static final int ROLE_DIRECTOR = 4;
 
     private UserDAO userDAO;
+    private KpiDAO kpiDAO;
+    private ResignationDAO resignationDAO;
 
     @Override
     public void init() throws ServletException {
         userDAO = new UserDAO();
+        kpiDAO = new KpiDAO();
+        resignationDAO = new ResignationDAO();
     }
 
     @Override
@@ -53,10 +53,45 @@ public class DirectorDashboardController extends HttpServlet {
         req.setAttribute("totalEmployees", userDAO.getTotalUsers());
         req.setAttribute("activeEmployees", userDAO.getActiveUsers());
 
-        // TODO Iteration 2: thêm số liệu:
-        //   - Tổng quỹ lương tháng hiện tại (PayrollDAO)
-        //   - Số hợp đồng sắp hết hạn trong 30 ngày (ContractDAO)
-        //   - Số bảng lương chờ Director duyệt chốt (PayrollDAO)
+        // 1. KPI Average Scores
+        List<Map<String, Object>> kpiData = kpiDAO.getAverageKpiScorePerCycle();
+        StringJoiner kpiLabels = new StringJoiner("','", "'", "'");
+        StringJoiner kpiScores = new StringJoiner(",");
+        if (kpiData.isEmpty()) {
+            kpiLabels = new StringJoiner("");
+            kpiScores = new StringJoiner("");
+        } else {
+            for (Map<String, Object> map : kpiData) {
+                kpiLabels.add((String) map.get("cycleName"));
+                kpiScores.add(String.valueOf(map.get("avgScore")));
+            }
+        }
+        req.setAttribute("kpiLabels", kpiLabels.toString());
+        req.setAttribute("kpiScores", kpiScores.toString());
+        req.setAttribute("kpiHasData", !kpiData.isEmpty());
+
+        // 2. Turnover Rates
+        List<Map<String, Object>> turnoverData = resignationDAO.getMonthlyTurnoverStats();
+        StringJoiner turnoverLabels = new StringJoiner("','", "'", "'");
+        StringJoiner turnoverRates = new StringJoiner(",");
+        int activeUsers = userDAO.getActiveUsers();
+        if (activeUsers == 0) activeUsers = 1; // Prevent div by 0
+
+        if (turnoverData.isEmpty()) {
+            turnoverLabels = new StringJoiner("");
+            turnoverRates = new StringJoiner("");
+        } else {
+            for (Map<String, Object> map : turnoverData) {
+                turnoverLabels.add((String) map.get("month"));
+                int resCount = (int) map.get("resignationCount");
+                // Tỉ lệ = (Số người nghỉ / Tổng nhân sự active hiện tại) * 100
+                double rate = (double) resCount / activeUsers * 100;
+                turnoverRates.add(String.format(java.util.Locale.US, "%.2f", rate));
+            }
+        }
+        req.setAttribute("turnoverLabels", turnoverLabels.toString());
+        req.setAttribute("turnoverRates", turnoverRates.toString());
+        req.setAttribute("turnoverHasData", !turnoverData.isEmpty());
 
         req.getRequestDispatcher("/director/dashboard.jsp").forward(req, resp);
     }

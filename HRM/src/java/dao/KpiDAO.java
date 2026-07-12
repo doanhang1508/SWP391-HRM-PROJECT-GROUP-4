@@ -1215,4 +1215,29 @@ public class KpiDAO {
         }
         return null;
     }
+
+    // ── Thống kê cho Director Dashboard ──
+    public List<java.util.Map<String, Object>> getAverageKpiScorePerCycle() {
+        List<java.util.Map<String, Object>> list = new ArrayList<>();
+        String sql = "SELECT c.name, AVG(e.weighted_score) AS avg_score " +
+                     "FROM kpi_evaluations e " +
+                     "JOIN kpi_cycles c ON e.cycle_id = c.cycle_id " +
+                     "WHERE e.status = 'APPROVED' " +
+                     "GROUP BY c.cycle_id, c.name, c.end_date " +
+                     "ORDER BY c.end_date ASC " +
+                     "LIMIT 6";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                java.util.Map<String, Object> map = new java.util.HashMap<>();
+                map.put("cycleName", rs.getString("name"));
+                map.put("avgScore", rs.getDouble("avg_score"));
+                list.add(map);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }

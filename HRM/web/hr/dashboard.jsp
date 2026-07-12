@@ -179,15 +179,15 @@ body { background: #f0f4f8 !important; font-family: 'Inter', sans-serif !importa
                     <div class="sc-val">${not empty totalDepartments ? totalDepartments : '—'}</div>
                     <div class="sc-sub">Đang hoạt động</div>
                 </div>
-                <div class="stat-card c-orange">
-                    <div class="sc-head"><span class="sc-title">HĐ Sắp Hết Hạn</span><div class="sc-icon"><i class="fas fa-file-contract"></i></div></div>
-                    <div class="sc-val">0</div>
-                    <div class="sc-sub warn">Trong 30 ngày tới</div>
+                <div class="stat-card c-orange" onclick="window.location.href='${pageContext.request.contextPath}/hr/transfers'" style="cursor:pointer;">
+                    <div class="sc-head"><span class="sc-title">Đơn Điều Chuyển</span><div class="sc-icon"><i class="fas fa-exchange-alt"></i></div></div>
+                    <div class="sc-val">${pendingTransfers != null ? pendingTransfers : 0}</div>
+                    <div class="sc-sub warn">Chờ duyệt</div>
                 </div>
-                <div class="stat-card c-red">
-                    <div class="sc-head"><span class="sc-title">Đơn Nghỉ Phép</span><div class="sc-icon"><i class="fas fa-calendar-days"></i></div></div>
-                    <div class="sc-val">0</div>
-                    <div class="sc-sub">Chờ duyệt</div>
+                <div class="stat-card c-red" onclick="window.location.href='${pageContext.request.contextPath}/hr/resignations'" style="cursor:pointer;">
+                    <div class="sc-head"><span class="sc-title">Đơn Nghỉ Việc</span><div class="sc-icon"><i class="fas fa-sign-out-alt"></i></div></div>
+                    <div class="sc-val">${pendingResignations != null ? pendingResignations : 0}</div>
+                    <div class="sc-sub danger">Chờ duyệt</div>
                 </div>
                 <div class="stat-card c-blue" onclick="window.location.href='${pageContext.request.contextPath}/hr/payroll'" style="cursor:pointer;">
                     <div class="sc-head"><span class="sc-title">Quản Lý Bảng Lương</span><div class="sc-icon"><i class="fas fa-file-invoice-dollar"></i></div></div>

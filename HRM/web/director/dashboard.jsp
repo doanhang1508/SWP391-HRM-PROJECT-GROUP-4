@@ -147,15 +147,33 @@ body {
             <div class="dash-charts-grid">
                 <div class="dash-card">
                     <div class="dash-card-header">
-                        <h3 class="dash-card-title">Biểu Đồ Chi Phí Nhân Sự</h3>
+                        <h3 class="dash-card-title">Biểu Đồ Điểm Trung Bình KPI</h3>
                     </div>
-                    <div style="height:300px;"><canvas id="costChart"></canvas></div>
+                    <div style="height:300px;">
+                        <c:choose>
+                            <c:when test="${kpiHasData}">
+                                <canvas id="kpiChart"></canvas>
+                            </c:when>
+                            <c:otherwise>
+                                <div style="display:flex; height:100%; align-items:center; justify-content:center; color:#94a3b8;">Chưa có dữ liệu KPI</div>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
                 </div>
                 <div class="dash-card">
                     <div class="dash-card-header">
-                        <h3 class="dash-card-title">Cơ Cấu Phòng Ban</h3>
+                        <h3 class="dash-card-title">Tỉ Lệ Nghỉ Việc Hàng Tháng (%)</h3>
                     </div>
-                    <div style="height:300px;"><canvas id="deptChart"></canvas></div>
+                    <div style="height:300px;">
+                        <c:choose>
+                            <c:when test="${turnoverHasData}">
+                                <canvas id="turnoverChart"></canvas>
+                            </c:when>
+                            <c:otherwise>
+                                <div style="display:flex; height:100%; align-items:center; justify-content:center; color:#94a3b8;">Chưa có dữ liệu nghỉ việc</div>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
                 </div>
             </div>
 
@@ -166,25 +184,33 @@ body {
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    new Chart(document.getElementById('costChart').getContext('2d'), {
+    <c:if test="${kpiHasData}">
+    new Chart(document.getElementById('kpiChart').getContext('2d'), {
         type: 'line',
         data: {
-            labels: ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6'],
+            labels: [${kpiLabels}],
             datasets: [
-                { label: 'Chi phí Lương', data: [150, 160, 155, 170, 165, 180],
-                  borderColor:'#8b5cf6', backgroundColor:'rgba(139,92,246,0.1)', fill:true, tension:0.4 }
+                { label: 'Điểm trung bình KPI', data: [${kpiScores}],
+                  borderColor:'#0d9488', backgroundColor:'rgba(13,148,136,0.1)', fill:true, tension:0.4 }
             ]
         },
         options: { responsive:true, maintainAspectRatio:false }
     });
-    new Chart(document.getElementById('deptChart').getContext('2d'), {
-        type: 'doughnut',
+    </c:if>
+
+    <c:if test="${turnoverHasData}">
+    new Chart(document.getElementById('turnoverChart').getContext('2d'), {
+        type: 'bar',
         data: {
-            labels: ['Sản xuất','Kinh doanh','Hành chính','Kỹ thuật'],
-            datasets: [{ data:[45,30,15,10], backgroundColor:['#0d9488','#3b82f6','#f59e0b','#ec4899'] }]
+            labels: [${turnoverLabels}],
+            datasets: [{ label: 'Turnover Rate (%)', data:[${turnoverRates}], backgroundColor:'#f59e0b', borderRadius: 8 }]
         },
-        options: { responsive:true, maintainAspectRatio:false, cutout:'65%' }
+        options: { 
+            responsive:true, maintainAspectRatio:false,
+            scales: { y: { beginAtZero: true, max: 100 } }
+        }
     });
+    </c:if>
 });
 </script>
 

@@ -222,9 +222,6 @@ public class TransferRequestDAO {
         return list;
     }
 
-    /**
-     * [2-STEP] Lấy danh sách đơn MANAGER_APPROVED (HR Manager xác nhận bước 2).
-     */
     public List<TransferRequest> getManagerApprovedRequests() {
         List<TransferRequest> list = new ArrayList<>();
         String sql = BASE_SELECT_SQL +
@@ -240,6 +237,20 @@ public class TransferRequestDAO {
             e.printStackTrace();
         }
         return list;
+    }
+
+    public int countManagerApprovedRequests() {
+        String sql = "SELECT COUNT(*) FROM transfer_requests WHERE status = 'MANAGER_APPROVED'";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 
     /**

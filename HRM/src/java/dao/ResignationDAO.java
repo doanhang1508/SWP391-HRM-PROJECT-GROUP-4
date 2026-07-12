@@ -2,7 +2,6 @@ package dao;
 
 import model.ResignationRequest;
 import model.ResignationChecklist;
-import model.ExitInterview;
 import util.DBContext;
 
 import java.sql.*;
@@ -10,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * DAO cho bảng resignation_requests, resignation_checklist, exit_interviews.
+ * DAO cho bảng resignation_requests, resignation_checklist.
  * Xử lý luồng nhân viên tự xin nghỉ việc.
  */
 public class ResignationDAO {
@@ -364,46 +363,49 @@ public class ResignationDAO {
         }
     }
 
-    // ── Exit Interview methods ─────────────────────────────────────────────────────────
-
-    public ExitInterview getExitInterview(int resignationId) {
-        String sql = "SELECT * FROM exit_interviews WHERE resignation_id = ?";
+    // ── Dashboard Methods ───────────────────────────────────────────────────────
+    
+    public List<java.util.Map<String, Object>> getMonthlyTurnoverStats() {
+        List<java.util.Map<String, Object>> list = new ArrayList<>();
+        String sql = "SELECT YEAR(last_working_day) AS yr, MONTH(last_working_day) AS mth, COUNT(*) AS cnt " +
+                     "FROM resignation_requests " +
+                     "WHERE status IN ('APPROVED', 'COMPLETED') " +
+                     "  AND last_working_day IS NOT NULL " +
+                     "GROUP BY YEAR(last_working_day), MONTH(last_working_day) " +
+                     "ORDER BY yr DESC, mth DESC " +
+                     "LIMIT 6";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, resignationId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    ExitInterview e = new ExitInterview();
-                    e.setExitInterviewId(rs.getInt("exit_interview_id"));
-                    e.setResignationId(rs.getInt("resignation_id"));
-                    e.setReasonCategory(rs.getString("reason_category"));
-                    e.setComment(rs.getString("comment"));
-                    e.setCreatedAt(rs.getTimestamp("created_at"));
-                    return e;
-                }
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                java.util.Map<String, Object> map = new java.util.HashMap<>();
+                map.put("month", String.format("Tháng %d", rs.getInt("mth")));
+                map.put("resignationCount", rs.getInt("cnt"));
+                list.add(map);
             }
         } catch (SQLException e) {
-            System.err.println("ResignationDAO.getExitInterview error: " + e.getMessage());
+            e.printStackTrace();
         }
-        return null;
+        // Đảo ngược list để hiển thị theo thứ tự thời gian tăng dần trên chart
+        java.util.Collections.reverse(list);
+        return list;
     }
-
-    public boolean insertExitInterview(ExitInterview exit) {
-        String sql = "INSERT INTO exit_interviews (resignation_id, reason_category, comment) VALUES (?, ?, ?)";
+    
+    public int countPendingResignations() {
+        String sql = "SELECT COUNT(*) FROM resignation_requests WHERE status = 'PENDING'";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, exit.getResignationId());
-            ps.setString(2, exit.getReasonCategory());
-            ps.setString(3, exit.getComment());
-            return ps.executeUpdate() > 0;
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
         } catch (SQLException e) {
-            System.err.println("ResignationDAO.insertExitInterview error: " + e.getMessage());
-            return false;
+            e.printStackTrace();
         }
+        return 0;
     }
-
 
     // ── Private Helpers ───────────────────────────────────────────────────────
 
