@@ -252,6 +252,70 @@ public class AllowanceDAO {
         return list;
     }
 
+    // ─────────────────────────────────────────────────────────────────
+    // POSITION-ALLOWANCE MATRIX  (dùng cho màn hình cấu hình ma trận)
+    // ─────────────────────────────────────────────────────────────────
+
+    /**
+     * Lấy tập hợp allowance_id hiện đang được gán cho một chức vụ.
+     * Dùng để render trạng thái checked/unchecked trong ma trận checkbox.
+     */
+    public java.util.Set<Integer> getAssignedAllowanceIds(int positionId) {
+        java.util.Set<Integer> ids = new java.util.HashSet<>();
+        String sql = "SELECT allowance_id FROM position_allowances WHERE position_id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, positionId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) ids.add(rs.getInt("allowance_id"));
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return ids;
+    }
+
+    /**
+     * Thay toàn bộ phụ cấp của một chức vụ bằng tập hợp mới (replace strategy).
+     * Sử dụng transaction: xóa cũ → insert mới.
+     *
+     * @param positionId   ID chức vụ cần cập nhật
+     * @param allowanceIds tập hợp allowance_id được chọn (rỗng = bỏ hết)
+     * @return true nếu thành công
+     */
+    public boolean setAllowancesForPosition(int positionId, java.util.Set<Integer> allowanceIds) {
+        String del = "DELETE FROM position_allowances WHERE position_id = ?";
+        String ins = "INSERT INTO position_allowances (position_id, allowance_id) VALUES (?, ?)";
+        try (Connection conn = DBContext.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement ps = conn.prepareStatement(del)) {
+                    ps.setInt(1, positionId);
+                    ps.executeUpdate();
+                }
+                if (allowanceIds != null && !allowanceIds.isEmpty()) {
+                    try (PreparedStatement ps = conn.prepareStatement(ins)) {
+                        for (int aid : allowanceIds) {
+                            ps.setInt(1, positionId);
+                            ps.setInt(2, aid);
+                            ps.addBatch();
+                        }
+                        ps.executeBatch();
+                    }
+                }
+                conn.commit();
+                return true;
+            } catch (Exception ex) {
+                conn.rollback();
+                ex.printStackTrace();
+                return false;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     /**
      * Lấy lương cơ bản hiện tại (từ hợp đồng Active mới nhất) của nhân viên.
      * Trả về null nếu không có hợp đồng Active.
