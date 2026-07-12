@@ -68,12 +68,3 @@ CREATE TABLE IF NOT EXISTS resignation_checklist (
     CONSTRAINT fk_checklist_user FOREIGN KEY (completed_by) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 5. Bảng Exit Interview
-CREATE TABLE IF NOT EXISTS exit_interviews (
-    exit_interview_id  INT PRIMARY KEY AUTO_INCREMENT,
-    resignation_id     INT NOT NULL UNIQUE,
-    reason_category    ENUM('Salary','Career','Study','Family','Health','Other') NOT NULL,
-    comment            TEXT NULL,
-    created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_exit_resignation FOREIGN KEY (resignation_id) REFERENCES resignation_requests(resignation_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

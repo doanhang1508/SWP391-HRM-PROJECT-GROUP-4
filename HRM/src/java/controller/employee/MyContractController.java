@@ -35,8 +35,9 @@ public class MyContractController extends HttpServlet {
         // Lịch sử hợp đồng
         List<EmployeeContract> contracts = ecDAO.getByUserId(userId);
 
-        // Hợp đồng đang hiệu lực
-        EmployeeContract activeContract = ecDAO.getActiveContract(userId);
+        // Hợp đồng đang hiệu lực (lấy chính xác theo ngày hôm nay để tránh lấy nhầm hợp đồng của tháng sau)
+        java.sql.Date today = new java.sql.Date(System.currentTimeMillis());
+        EmployeeContract activeContract = ecDAO.getContractForMonth(userId, today, today);
 
         // Tính tổng phụ cấp và lương Gross dự kiến cho hợp đồng hiện tại
         double totalAllowance = 0;

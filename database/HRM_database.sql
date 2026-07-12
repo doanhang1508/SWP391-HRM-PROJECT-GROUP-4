@@ -376,16 +376,7 @@ CREATE TABLE resignation_checklist (
         FOREIGN KEY (completed_by)   REFERENCES users(user_id)                       ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- BẢNG: exit_interviews (Phỏng vấn thôi việc)
-CREATE TABLE exit_interviews (
-    exit_interview_id  INT    PRIMARY KEY AUTO_INCREMENT,
-    resignation_id     INT    NOT NULL UNIQUE,
-    reason_category    ENUM('Salary','Career','Study','Family','Health','Other') NOT NULL,
-    comment            TEXT   NULL,
-    created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_exit_resignation
-        FOREIGN KEY (resignation_id) REFERENCES resignation_requests(resignation_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 
 -- =============================================================
@@ -1147,15 +1138,53 @@ INSERT INTO overtime_plans (plan_id, dept_id, supervisor_id, target_date, descri
 INSERT INTO overtime_assignments (assignment_id, plan_id, user_id, assigned_hours, status) VALUES
 (1, 1, 5,  3.0, 'Pending');   -- Phạm Công Nhân: 3h OT
 
--- (payroll_claims đã bỏ - chưa được implement trong code)
+-- TABLE 4: payroll_claims
+DROP TABLE IF EXISTS payroll_claims;
+CREATE TABLE IF NOT EXISTS payroll_claims (
+    claim_id INT PRIMARY KEY AUTO_INCREMENT,
+    payroll_id INT NOT NULL,
+    complaint_type VARCHAR(100) NOT NULL,
+    description TEXT NOT NULL,
+    expected_amount DECIMAL(15,2) DEFAULT 0,
+    evidence VARCHAR(255) DEFAULT NULL,
+    status VARCHAR(50) DEFAULT 'Pending',
+    hr_staff_id INT DEFAULT NULL,
+    hr_staff_note TEXT DEFAULT NULL,
+    accountant_id INT DEFAULT NULL,
+    accountant_note TEXT DEFAULT NULL,
+    proposed_adjustment DECIMAL(15,2) DEFAULT 0,
+    hr_manager_id INT DEFAULT NULL,
+    hr_manager_note TEXT DEFAULT NULL,
+    director_id INT DEFAULT NULL,
+    director_note TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (payroll_id) REFERENCES payroll(payroll_id) ON DELETE CASCADE,
+    FOREIGN KEY (hr_staff_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (accountant_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (hr_manager_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    FOREIGN KEY (director_id) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /* ================================================================
-   MODULE: Progressive PIT (Personal Income Tax)
-   Mô tả: Biểu thuế TNCN lũy tiến, giảm trừ và profile thuế NV.
-   Bảng:
+   MIGRATION: Progressive PIT (Personal Income Tax) Module
+   
+   Mô tả: Tạo các bảng phục vụ tính thuế TNCN lũy tiến theo
+   Quest.md cho HRM Payroll system.
+   
+   Bảng mới:
      - tax_brackets         (Bậc thuế lũy tiến, versioned)
      - tax_deductions       (Giảm trừ bản thân, người phụ thuộc)
      - employee_tax_profiles(Đăng ký thuế của nhân viên)
+     - payroll_periods      (Kỳ lương)
+     - payroll_runs         (Mỗi lần chạy tính lương)
+     - payroll_run_items    (Kết quả từng nhân viên trong kỳ)
+     - audit_logs           (Nhật ký thay đổi)
+     - payslips             (Phiếu lương cuối cùng)
+   
+   Bảng hiện có KHÔNG tạo lại:
+     - employees (= users), employee_contracts (= employee_profiles),
+       salary_components (= employee_allowances + employee_rewards_disciplines),
+       payroll, dependents, insurance_rates
    ================================================================ */
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -1221,9 +1250,7 @@ CREATE TABLE IF NOT EXISTS employee_tax_profiles (
     CONSTRAINT fk_etp_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- (payroll_periods, payroll_runs, payroll_run_items, audit_logs, payslips đã bỏ - không được implement trong code)
 
-SET FOREIGN_KEY_CHECKS = 1;
 
 -- ══════════════════════════════════════════════════════
 -- SEED DATA: Biểu thuế TNCN — Đóng 7 bậc cũ (2020) + 5 bậc mới Luật 109/2025/QH15
@@ -1443,7 +1470,7 @@ CREATE TABLE IF NOT EXISTS kpi_status_history (
     FOREIGN KEY (changed_by) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- (kpi_audit_logs đã bỏ - thay bằng kpi_status_history)
+
 
 -- Seed default criteria and template
 -- ── KPI Templates ──
@@ -1714,313 +1741,3 @@ INSERT INTO payroll_configs (config_key, description, config_value, unit) VALUES
 
 -- 5. Số ngày công chuẩn trong tháng (Tùy công ty, thường là 22, 24 hoặc 26)
 ('STANDARD_WORK_DAYS', 'Số ngày công chuẩn trong tháng', 26.00, 'Ngày');
-
-
--- =============================================================
--- BẬT LẠI KIỂM TRA KHÓA NGOẠI
--- =============================================================
-SET FOREIGN_KEY_CHECKS = 1;
-
-
--- =========================================================================
--- MIGRATION 1: Đổi luồng điều chuyển sang 5 bước (New Transfer Flow)
--- Nguồn gốc: transfer_new_flow_migration.sql
--- Tương thích MySQL 5.7+  |  Ngày: 2026-07-02
--- =========================================================================
-
-SET FOREIGN_KEY_CHECKS = 0;
-
--- BƯỚC 1: Mở rộng ENUM status (luôn an toàn khi chạy lại)
-ALTER TABLE transfer_requests
-  MODIFY COLUMN status 
-    ENUM(
-      'PENDING',
-      'EMPLOYEE_CONFIRMED',
-      'MANAGER_APPROVED',
-      'APPROVED',
-      'REJECTED',
-      'EMPLOYEE_REJECTED',
-      'CANCELLED'
-    ) NOT NULL DEFAULT 'PENDING';
-
--- BƯỚC 2: Thêm các cột mới (dùng stored procedure để kiểm tra trước)
-DROP PROCEDURE IF EXISTS sp_add_column_if_not_exists;
-
-DELIMITER $$
-CREATE PROCEDURE sp_add_column_if_not_exists(
-    IN p_table   VARCHAR(100),
-    IN p_column  VARCHAR(100),
-    IN p_def     TEXT
-)
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.COLUMNS
-        WHERE TABLE_SCHEMA = DATABASE()
-          AND TABLE_NAME   = p_table
-          AND COLUMN_NAME  = p_column
-    ) THEN
-        SET @sql = CONCAT('ALTER TABLE `', p_table, '` ADD COLUMN `', p_column, '` ', p_def);
-        PREPARE stmt FROM @sql;
-        EXECUTE stmt;
-        DEALLOCATE PREPARE stmt;
-    ELSE
-        SELECT CONCAT('Column already exists, skipping: ', p_column) AS info;
-    END IF;
-END$$
-DELIMITER ;
-
--- Thêm employee_confirmed_at
-CALL sp_add_column_if_not_exists(
-    'transfer_requests',
-    'employee_confirmed_at',
-    'TIMESTAMP NULL COMMENT "Thoi diem nhan vien xac nhan dong y dieu chuyen" AFTER updated_at'
-);
-
--- Thêm employee_reject_reason
-CALL sp_add_column_if_not_exists(
-    'transfer_requests',
-    'employee_reject_reason',
-    'TEXT NULL COMMENT "Ly do nhan vien tu choi dieu chuyen" AFTER employee_confirmed_at'
-);
-
--- Thêm manager_approved_by (nếu chưa có từ phase trước)
-CALL sp_add_column_if_not_exists(
-    'transfer_requests',
-    'manager_approved_by',
-    'INT NULL COMMENT "User ID cua Truong phong da duyet buoc 1" AFTER approved_at'
-);
-
--- Thêm manager_approved_at (nếu chưa có từ phase trước)
-CALL sp_add_column_if_not_exists(
-    'transfer_requests',
-    'manager_approved_at',
-    'TIMESTAMP NULL COMMENT "Thoi diem Truong phong duyet buoc 1" AFTER manager_approved_by'
-);
-
-DROP PROCEDURE IF EXISTS sp_add_column_if_not_exists;
-
--- BƯỚC 3: Thêm FK cho manager_approved_by (bỏ qua nếu đã tồn tại)
-DROP PROCEDURE IF EXISTS sp_add_fk_if_not_exists;
-
-DELIMITER $$
-CREATE PROCEDURE sp_add_fk_if_not_exists()
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.TABLE_CONSTRAINTS
-        WHERE TABLE_SCHEMA     = DATABASE()
-          AND TABLE_NAME       = 'transfer_requests'
-          AND CONSTRAINT_NAME  = 'fk_transfer_mgr_approver'
-          AND CONSTRAINT_TYPE  = 'FOREIGN KEY'
-    ) THEN
-        ALTER TABLE transfer_requests
-          ADD CONSTRAINT fk_transfer_mgr_approver
-            FOREIGN KEY (manager_approved_by) REFERENCES users(user_id) ON DELETE SET NULL;
-        SELECT 'FK fk_transfer_mgr_approver added.' AS info;
-    ELSE
-        SELECT 'FK fk_transfer_mgr_approver already exists, skipping.' AS info;
-    END IF;
-END$$
-DELIMITER ;
-
-CALL sp_add_fk_if_not_exists();
-DROP PROCEDURE IF EXISTS sp_add_fk_if_not_exists;
-
--- BƯỚC 4: Tạo bảng transfer_request_allowances (nếu chưa có)
-CREATE TABLE IF NOT EXISTS transfer_request_allowances (
-  transfer_request_id INT NOT NULL,
-  allowance_id        INT NOT NULL,
-  PRIMARY KEY (transfer_request_id, allowance_id),
-  CONSTRAINT fk_tra_transfer FOREIGN KEY (transfer_request_id)
-    REFERENCES transfer_requests(transfer_request_id) ON DELETE CASCADE,
-  CONSTRAINT fk_tra_allowance FOREIGN KEY (allowance_id)
-    REFERENCES allowances(allowance_id) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='Phụ cấp dự kiến đi kèm phiếu điều chuyển (chỉ áp dụng khi approve)';
-
-SET FOREIGN_KEY_CHECKS = 1;
-
-
--- =========================================================================
--- MIGRATION 2: Transfer Effective Date Flow
--- Nguồn gốc: transfer_effective_date_migration.sql
--- Thêm trạng thái COMPLETED và cột applied_at cho transfer_requests
--- MySQL 5.7+  |  Ngày: 2026-07-02
--- =========================================================================
--- Ý nghĩa 2 trạng thái:
---   APPROVED   = HR Manager đã duyệt cuối, CHƯA áp dụng (chờ effective_date)
---   COMPLETED  = Đã đến ngày hiệu lực, hệ thống đã cập nhật dept/pos/role/contract
--- =========================================================================
-
-SET FOREIGN_KEY_CHECKS = 0;
-
--- BƯỚC 1: Mở rộng ENUM status (thêm COMPLETED)
-ALTER TABLE transfer_requests
-  MODIFY COLUMN status
-    ENUM(
-      'PENDING',
-      'EMPLOYEE_CONFIRMED',
-      'MANAGER_APPROVED',
-      'APPROVED',
-      'COMPLETED',
-      'REJECTED',
-      'EMPLOYEE_REJECTED',
-      'CANCELLED'
-    ) NOT NULL DEFAULT 'PENDING';
-
--- BƯỚC 2: Thêm cột applied_at (nếu chưa tồn tại)
-DROP PROCEDURE IF EXISTS sp_add_applied_at;
-DELIMITER $$
-CREATE PROCEDURE sp_add_applied_at()
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.COLUMNS
-        WHERE TABLE_SCHEMA = DATABASE()
-          AND TABLE_NAME   = 'transfer_requests'
-          AND COLUMN_NAME  = 'applied_at'
-    ) THEN
-        ALTER TABLE transfer_requests
-          ADD COLUMN applied_at TIMESTAMP NULL
-            COMMENT 'Thoi diem he thong thuc su thuc thi doi phong ban/chuc vu/vai tro (NULL = chua ap dung)'
-            AFTER updated_at;
-        SELECT 'Column applied_at added.' AS info;
-    ELSE
-        SELECT 'Column applied_at already exists, skipping.' AS info;
-    END IF;
-END$$
-DELIMITER ;
-CALL sp_add_applied_at();
-DROP PROCEDURE IF EXISTS sp_add_applied_at;
-
--- BƯỚC 3: Migrate data cũ
--- Các đơn đang ở APPROVED trước migration coi như đã được áp dụng rồi
--- -> chuyển thành COMPLETED, applied_at = thời điểm approved/updated/now
-UPDATE transfer_requests
-SET
-    status     = 'COMPLETED',
-    applied_at = COALESCE(approved_at, updated_at, NOW())
-WHERE status = 'APPROVED';
-
-SET FOREIGN_KEY_CHECKS = 1;
-
-
--- =========================================================================
--- MIGRATION 3: Payroll Workflow (Tasks 23-28)
--- Nguồn gốc: payroll_workflow_migration.sql
--- Mô tả: Thêm các cột và trạng thái cần thiết cho quy trình duyệt lương:
---        Draft → Pending → Approved/Rejected → Paid
---        Thêm role Accountant (roleId=8) và user kế toán mẫu.
--- =========================================================================
-
--- 1. ALTER bảng payroll: mở rộng ENUM status + thêm cột
-ALTER TABLE payroll 
-  MODIFY COLUMN status ENUM('Draft','Pending','Verified','Approved','Rejected','Paid') DEFAULT 'Draft';
-
--- Thêm cột tracking cho việc duyệt
-ALTER TABLE payroll
-  ADD COLUMN IF NOT EXISTS approved_by    INT          NULL AFTER status,
-  ADD COLUMN IF NOT EXISTS approved_at    TIMESTAMP    NULL AFTER approved_by,
-  ADD COLUMN IF NOT EXISTS reject_reason  VARCHAR(500) NULL AFTER approved_at,
-  ADD COLUMN IF NOT EXISTS paid_by        INT          NULL AFTER reject_reason,
-  ADD COLUMN IF NOT EXISTS paid_at        TIMESTAMP    NULL AFTER paid_by,
-  ADD COLUMN IF NOT EXISTS payment_note   VARCHAR(500) NULL AFTER paid_at;
-
--- Thêm UNIQUE constraint cho user_id + month + year (bỏ qua nếu đã có)
-ALTER TABLE payroll
-  ADD UNIQUE IF NOT EXISTS uk_user_month_year (user_id, month, year);
-
--- 2. Thêm role Accountant
-INSERT INTO roles (role_id, role_name, description) VALUES
-(8, 'Accountant', 'Kế toán - xem bảng lương, xác nhận chuyển khoản')
-ON DUPLICATE KEY UPDATE role_name = VALUES(role_name);
-
--- Phân quyền cho Accountant
-INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
-(8, 18),  -- PAYROLL_VIEW
-(8, 28);  -- PROFILE_VIEW
-
--- 3. Thêm user kế toán mẫu
-INSERT INTO users (user_id, username, password, full_name, email, phone, role_id, department_id, position_id) VALUES
-(33, 'ke_toan_01', '@123456', 'Nguyễn Thị Kế Toán', 'ketoan01@hrm.com', '0901000033', 8, 3, 7)
-ON DUPLICATE KEY UPDATE role_id = 8;
-
-INSERT INTO employee_profiles (user_id, department_id, id_card, dob, gender, address, hire_date, tax_code, social_insurance_no, bank_account, bank_name, contract_type_id, salary_grade_id, employment_status_id, education_level_id) VALUES
-(33, 3, '024910000033', '1991-07-15', 0, 'Cầu Giấy, Hà Nội', '2020-03-01', '8012345733', '0200001033', '0011234533', 'Vietcombank', 4, 2, 2, 2)
-ON DUPLICATE KEY UPDATE department_id = 3;
-
-
--- =============================================================
--- MIGRATION 4: Nghỉ việc v3
--- Nguồn gốc: resignation_v3_migration.sql
--- Mô tả:
---   1. Thêm trạng thái WITHDRAW_REQUESTED, WITHDRAWN vào ENUM
---   2. Thêm cột previous_employment_status_id
--- =============================================================
-
-ALTER TABLE resignation_requests 
-MODIFY COLUMN status ENUM('PENDING','APPROVED','REJECTED','COMPLETED','CANCELLED','WITHDRAW_REQUESTED','WITHDRAWN') NOT NULL DEFAULT 'PENDING',
-ADD COLUMN IF NOT EXISTS previous_employment_status_id INT NULL COMMENT 'Lưu trạng thái làm việc (của bảng employee_profiles) trước khi chuyển sang NoticePeriod';
-
-
--- =====================================================================
--- MIGRATION 5: Leave Insurance Rates Table
--- Nguồn gốc: leave_insurance_migration.sql
--- Mục đích: Bảng riêng tính mức hưởng BHXH cho các kỳ nghỉ phép
--- Tham chiếu: Luật BHXH 2024 hiệu lực 2025
--- =====================================================================
-
--- 1. Tạo bảng leave_insurance_rates
-CREATE TABLE IF NOT EXISTS leave_insurance_rates (
-    leave_insurance_rate_id INT PRIMARY KEY AUTO_INCREMENT,
-    leave_type_id           INT NOT NULL,
-    insurance_rate_percent  DECIMAL(5,2) NOT NULL COMMENT 'Percentage of base salary covered by BHXH (e.g. 75.00 for 75%)',
-    description             NVARCHAR(500),
-    effective_from          DATE DEFAULT (CURRENT_DATE),
-    effective_to            DATE DEFAULT NULL,
-    status                  TINYINT(1) NOT NULL DEFAULT 1 COMMENT '1=Active, 0=Inactive',
-    created_at              DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at              DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (leave_type_id) REFERENCES leave_types(leave_type_id)
-);
-
--- 2. Thêm loại nghỉ thai sản nam nếu chưa có
-INSERT INTO leave_types (type_name, description, paid_leave, max_days_per_year, status)
-SELECT N'Nghỉ thai sản nam', 
-       N'Nghỉ phép cho lao động nam khi vợ sinh con. Thời gian: 5-14 ngày làm việc tùy trường hợp sinh. Hưởng BHXH 100% mức bình quân lương đóng BHXH 6 tháng trước nghỉ.', 
-       0,    -- NOT paid by company
-       14,   -- max 14 working days per year
-       1
-WHERE NOT EXISTS (
-    SELECT 1 FROM leave_types WHERE type_name = N'Nghỉ thai sản nam'
-);
-
--- 3. Seed data cho leave_insurance_rates
--- Dựa trên Luật BHXH 2024 (hiệu lực 2025):
-
--- Nghỉ ốm (leave_type_id = 2): 75% lương cơ bản
-INSERT INTO leave_insurance_rates (leave_type_id, insurance_rate_percent, description, effective_from) 
-SELECT 2, 75.00, 
-       N'Nghỉ ốm: Hưởng 75% mức tiền lương đóng BHXH theo quy định Luật BHXH. Người lao động nghỉ ốm được quỹ BHXH chi trả 75% lương đóng BHXH.',
-       '2026-01-01'
-WHERE NOT EXISTS (SELECT 1 FROM leave_insurance_rates WHERE leave_type_id = 2 AND status = 1);
-
--- Nghỉ thai sản nữ (leave_type_id = 3): 100% bình quân 6 tháng
-INSERT INTO leave_insurance_rates (leave_type_id, insurance_rate_percent, description, effective_from)
-SELECT 3, 100.00, 
-       N'Nghỉ thai sản nữ: Hưởng 100% mức bình quân tiền lương tháng đóng BHXH 6 tháng trước khi nghỉ. Được BHXH chi trả toàn bộ.',
-       '2026-01-01'
-WHERE NOT EXISTS (SELECT 1 FROM leave_insurance_rates WHERE leave_type_id = 3 AND status = 1);
-
--- Nghỉ thai sản nam (auto-detect leave_type_id): 100%
-INSERT INTO leave_insurance_rates (leave_type_id, insurance_rate_percent, description, effective_from)
-SELECT lt.leave_type_id, 100.00,
-       N'Nghỉ thai sản nam: Hưởng 100% mức bình quân tiền lương đóng BHXH 6 tháng trước khi nghỉ. Thời gian nghỉ: sinh thường 5 ngày, mổ/sinh non 7 ngày, sinh đôi 10 ngày, sinh đôi mổ 14 ngày. Phải nghỉ trong 60 ngày đầu kể từ ngày sinh.',
-       '2026-01-01'
-FROM leave_types lt
-WHERE lt.type_name = N'Nghỉ thai sản nam'
-  AND NOT EXISTS (SELECT 1 FROM leave_insurance_rates lir WHERE lir.leave_type_id = lt.leave_type_id AND lir.status = 1);
-
-
--- =============================================================
--- KẾT THÚC SCRIPT HRM DATABASE (BAO GỒM TẤT CẢ MIGRATION)
--- Ghi chú: SQL_gan ca cho nhan vien.sql để tách riêng (data ca làm việc)
--- =============================================================

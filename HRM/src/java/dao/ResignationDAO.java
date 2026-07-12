@@ -407,6 +407,7 @@ public class ResignationDAO {
         return 0;
     }
 
+
     // ── Private Helpers ───────────────────────────────────────────────────────
 
     private ResignationRequest mapRow(ResultSet rs) throws SQLException {
