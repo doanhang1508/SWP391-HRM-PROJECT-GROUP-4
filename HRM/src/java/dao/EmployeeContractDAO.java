@@ -134,7 +134,7 @@ public class EmployeeContractDAO {
      * @param asOfDate  ngày cần kiểm tra (thường = ngày cuối tháng lương)
      * @return hợp đồng hiệu lực vào ngày đó, hoặc null nếu không có
      */
-    public EmployeeContract getContractAsOf(int userId, java.sql.Date asOfDate) {
+    public EmployeeContract getContractForMonth(int userId, java.sql.Date firstDay, java.sql.Date lastDay) {
         String sql = "SELECT ec.*, ct.type_name, p.position_name, d.department_name, sg.grade_name " +
                      "FROM employee_contracts ec " +
                      "LEFT JOIN contract_types ct ON ec.contract_type_id = ct.contract_type_id " +
@@ -142,17 +142,19 @@ public class EmployeeContractDAO {
                      "LEFT JOIN departments d ON ec.department_id = d.department_id " +
                      "LEFT JOIN salary_grades sg ON ec.salary_grade_id = sg.salary_grade_id " +
                      "WHERE ec.user_id = ? " +
-                     "  AND ec.status IN ('Active', 'Terminated') " +
+                     "  AND ec.status IN ('Active', 'Terminated', 'Expired') " +
                      "  AND ec.sign_status IN ('SIGNED', 'N/A') " +
                      "  AND ec.start_date <= ? " +
                      "  AND (ec.end_date IS NULL OR ec.end_date >= ?) " +
+                     "  AND (ec.actual_end_date IS NULL OR ec.actual_end_date >= ?) " +
                      "ORDER BY ec.start_date DESC, ec.contract_id DESC " +
                      "LIMIT 1";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
-            ps.setDate(2, asOfDate);
-            ps.setDate(3, asOfDate);
+            ps.setDate(2, lastDay);
+            ps.setDate(3, firstDay);
+            ps.setDate(4, firstDay);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return mapRow(rs);
             }

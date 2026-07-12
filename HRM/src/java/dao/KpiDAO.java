@@ -503,10 +503,6 @@ public class KpiDAO {
                 // Record status history
                 KpiStatusHistory history = new KpiStatusHistory(0, evaluationId, oldStatus, status, userId, null, note);
                 insertStatusHistory(history);
-
-                // Record audit log
-                KpiAuditLog audit = new KpiAuditLog(0, evaluationId, userId, null, "UPDATE_STATUS", oldStatus, status);
-                insertAuditLog(audit);
             }
             return success;
         } catch (SQLException e) {
@@ -619,18 +615,7 @@ public class KpiDAO {
                         .filter(x -> x.getTemplateItemId() == item.getTemplateItemId())
                         .findFirst().orElse(null);
                     if (match != null && (match.getScore() != item.getScore() || !java.util.Objects.equals(match.getComment(), item.getComment()))) {
-                        String oldVal = "Score: " + match.getScore() + ", Comm: " + match.getComment();
-                        String newVal = "Score: " + item.getScore() + ", Comm: " + item.getComment();
-                        
-                        String auditSql = "INSERT INTO kpi_audit_logs (evaluation_id, changed_by, action, old_value, new_value) VALUES (?, ?, ?, ?, ?)";
-                        try (PreparedStatement psAudit = conn.prepareStatement(auditSql)) {
-                            psAudit.setInt(1, evaluationId);
-                            psAudit.setInt(2, updatedBy);
-                            psAudit.setString(3, "EDIT_CRITERION_" + item.getTemplateItemId());
-                            psAudit.setString(4, oldVal);
-                            psAudit.setString(5, newVal);
-                            psAudit.executeUpdate();
-                        }
+                        // Score changed - logged via status history only
                     }
                 }
                 psIns.executeBatch();
@@ -720,7 +705,7 @@ public class KpiDAO {
     }
 
     // ==========================================
-    // 6. HISTORY & AUDIT LOGS
+    // 6. HISTORY
     // ==========================================
 
     public List<KpiStatusHistory> getStatusHistory(int evaluationId) {
@@ -742,39 +727,6 @@ public class KpiDAO {
         return list;
     }
 
-    public List<KpiAuditLog> getAuditLogs(int evaluationId) {
-        List<KpiAuditLog> list = new ArrayList<>();
-        String sql = "SELECT al.*, u.full_name AS changed_by_name FROM kpi_audit_logs al " +
-                     "JOIN users u ON al.changed_by = u.user_id " +
-                     "WHERE al.evaluation_id = ? ORDER BY al.changed_at DESC";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, evaluationId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapAuditLog(rs));
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return list;
-    }
-
-    public void insertAuditLog(KpiAuditLog log) {
-        String sql = "INSERT INTO kpi_audit_logs (evaluation_id, changed_by, action, old_value, new_value) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, log.getEvaluationId());
-            ps.setInt(2, log.getChangedBy());
-            ps.setString(3, log.getAction());
-            ps.setString(4, log.getOldValue());
-            ps.setString(5, log.getNewValue());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
 
     public void insertStatusHistory(KpiStatusHistory history) {
         String sql = "INSERT INTO kpi_status_history (evaluation_id, from_status, to_status, changed_by, note) VALUES (?, ?, ?, ?, ?)";
@@ -922,19 +874,6 @@ public class KpiDAO {
         return sh;
     }
 
-    private KpiAuditLog mapAuditLog(ResultSet rs) throws SQLException {
-        KpiAuditLog al = new KpiAuditLog(
-            rs.getInt("audit_id"),
-            rs.getInt("evaluation_id"),
-            rs.getInt("changed_by"),
-            rs.getTimestamp("changed_at"),
-            rs.getString("action"),
-            rs.getString("old_value"),
-            rs.getString("new_value")
-        );
-        al.setChangedByName(rs.getString("changed_by_name"));
-        return al;
-    }
 
     /**
      * Checks whether a user (manager) is authorized to view/edit a specific evaluation.

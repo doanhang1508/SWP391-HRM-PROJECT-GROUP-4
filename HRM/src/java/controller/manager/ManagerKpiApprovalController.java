@@ -97,7 +97,6 @@ public class ManagerKpiApprovalController extends HttpServlet {
                 request.setAttribute("detailEval", detailEval);
                 request.setAttribute("detailItems", detailItems);
                 request.setAttribute("statusHistory", kpiDAO.getStatusHistory(viewId));
-                request.setAttribute("auditLogs", kpiDAO.getAuditLogs(viewId));
                 request.setAttribute("comments", kpiDAO.getComments(viewId));
             }
         }

@@ -101,7 +101,6 @@ public class ManagerKpiController extends HttpServlet {
                 request.setAttribute("detailEval", detailEval);
                 request.setAttribute("detailItems", detailItems);
                 request.setAttribute("statusHistory", kpiDAO.getStatusHistory(editId));
-                request.setAttribute("auditLogs", kpiDAO.getAuditLogs(editId));
                 request.setAttribute("comments", kpiDAO.getComments(editId));
                 boolean isLocked = kpiDAO.isCycleLockedByEvaluationId(editId);
                 request.setAttribute("isEditMode", !isLocked);
@@ -122,7 +121,6 @@ public class ManagerKpiController extends HttpServlet {
                 request.setAttribute("detailEval", detailEval);
                 request.setAttribute("detailItems", detailItems);
                 request.setAttribute("statusHistory", kpiDAO.getStatusHistory(viewId));
-                request.setAttribute("auditLogs", kpiDAO.getAuditLogs(viewId));
                 request.setAttribute("comments", kpiDAO.getComments(viewId));
                 request.setAttribute("isEditMode", false);
             }

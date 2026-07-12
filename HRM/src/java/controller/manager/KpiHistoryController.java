@@ -6,7 +6,6 @@ import model.Department;
 import model.KpiEvaluation;
 import model.KpiEvaluationItem;
 import model.KpiStatusHistory;
-import model.KpiAuditLog;
 import model.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -106,12 +105,10 @@ public class KpiHistoryController extends HttpServlet {
                     if (authorized) {
                         List<KpiEvaluationItem> detailItems = kpiDAO.getEvaluationItems(viewId);
                         List<KpiStatusHistory> statusHistory = kpiDAO.getStatusHistory(viewId);
-                        List<KpiAuditLog> auditLogs = kpiDAO.getAuditLogs(viewId);
                         
                         request.setAttribute("detailEval", detailEval);
                         request.setAttribute("detailItems", detailItems);
                         request.setAttribute("statusHistory", statusHistory);
-                        request.setAttribute("auditLogs", auditLogs);
                     }
                 }
             } catch (NumberFormatException ignored) {}
