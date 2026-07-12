@@ -491,7 +491,7 @@
                                                     <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/manager/hr-transfer-confirm"
                                                             class="sidebar-link ${param.activeMenu eq 'hr-transfer-confirm' ? 'active' : ''}">
-                                                            <i class="fas fa-check-double"></i> Xác nhận cuối điều chuyển
+                                                            <i class="fas fa-check-double"></i> Xác nhận điều chuyển
                                                         </a>
                                                     </li>
 

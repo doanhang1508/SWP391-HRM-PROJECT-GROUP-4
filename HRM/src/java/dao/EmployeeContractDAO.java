@@ -485,11 +485,34 @@ public class EmployeeContractDAO {
                 try (ResultSet keys = ps.getGeneratedKeys()) {
                     if (keys.next()) c.setContractId(keys.getInt(1));
                 }
+
+                // ── Đóng hợp đồng cha ────────────────────────────────────────
+                // Sau khi ADDENDUM mới đã được tạo thành công (và đã có contractId mới),
+                // terminate đúng hợp đồng cha (parentContractId) trong cùng transaction.
+                // Dùng contract_id = ? thay vì != ? để chỉ đóng đúng 1 bản ghi biết trước,
+                // tránh lỡ tay terminate hợp đồng Active khác trong edge case dữ liệu bẩn.
+                if (c.getParentContractId() != null) {
+                    String closeOldSql = "UPDATE employee_contracts SET status = 'Terminated' " +
+                                         "WHERE user_id = ? AND status = 'Active' AND contract_id = ?";
+                    try (PreparedStatement psClose = conn.prepareStatement(closeOldSql)) {
+                        psClose.setInt(1, c.getUserId());
+                        psClose.setInt(2, c.getParentContractId());
+                        psClose.executeUpdate();
+                    }
+                } else {
+                    // parentContractId null không xảy ra trong luồng điều chuyển bình thường,
+                    // nhưng guard để tránh NPE phá vỡ transaction nếu có edge case.
+                    System.err.println("[WARN] insertAddendumInTransaction: parentContractId is null " +
+                                       "for userId=" + c.getUserId() + " — bỏ qua bước đóng hợp đồng cha.");
+                }
+                // ─────────────────────────────────────────────────────────────
+
                 return true;
             }
         }
         return false;
     }
+
 
     /**
      * Thêm phụ lục hợp đồng (ADDENDUM).
