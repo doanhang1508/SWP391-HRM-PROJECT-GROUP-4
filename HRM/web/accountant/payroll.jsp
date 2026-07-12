@@ -1,4 +1,4 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+﻿<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
@@ -480,7 +480,7 @@
                                     </span>
                                 </div>
                                 <div class="d-flex justify-content-between">
-                                    <span class="text-muted">Tiền tăng ca:</span>
+                                    <span class="text-muted" id="modalOvertimeLabel">Tiền tăng ca:</span>
                                     <span class="fw-semibold text-dark text-success" id="modalOvertime">+ 0 ₫</span>
                                 </div>
                                 <div class="d-flex justify-content-between">
@@ -934,3 +934,4 @@ function empNextPage() {
 </script>
 
 <jsp:include page="../footer.jsp" />
+

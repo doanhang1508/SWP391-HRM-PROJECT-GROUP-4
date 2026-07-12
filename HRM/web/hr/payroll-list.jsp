@@ -1,4 +1,4 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+﻿<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
@@ -711,7 +711,7 @@
                                     </span>
                                 </div>
                                 <div class="d-flex justify-content-between">
-                                    <span class="text-muted">Tiền tăng ca:</span>
+                                    <span class="text-muted" id="modalOvertimeLabel">Tiền tăng ca:</span>
                                     <span class="fw-semibold text-dark text-success" id="modalOvertime">+ 0 ₫</span>
                                 </div>
                                 <div class="d-flex justify-content-between">
@@ -955,6 +955,12 @@ document.addEventListener("DOMContentLoaded", function() {
                         return;
                     }
                     
+                                        if (data.overtimeHours !== undefined) {
+                        const otLabel = document.getElementById('modalOvertimeLabel');
+                        if (otLabel) {
+                            otLabel.innerHTML = `Tiền tăng ca <span style="font-size: 0.8rem;">(${data.overtimeHours} giờ)</span>:`;
+                        }
+                    }
                     const baseWorkedEl = document.getElementById('modalBaseWorkedSalary');
                     if (baseWorkedEl && data.baseWorkedSalary !== undefined) {
                         baseWorkedEl.textContent = new Intl.NumberFormat('vi-VN').format(Math.round(data.baseWorkedSalary)) + ' ₫';
@@ -1182,3 +1188,4 @@ function empNextPage() {
 </script>
 
 <jsp:include page="../footer.jsp" />
+
