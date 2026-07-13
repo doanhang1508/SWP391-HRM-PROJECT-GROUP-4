@@ -48,7 +48,7 @@ public class HrReportController extends HttpServlet {
 
         // Load data for dropdown
         DepartmentDAO deptDAO = new DepartmentDAO();
-        List<Department> departments = deptDAO.getAllDepartments();
+        List<Department> departments = deptDAO.getAll();
         request.setAttribute("departments", departments);
 
         // Fetch reports data
