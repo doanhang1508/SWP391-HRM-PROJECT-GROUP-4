@@ -221,11 +221,29 @@
 
 
 
-<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 16px;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
     <h3 style="font-size: 1.1rem; font-weight: 700; color: #1a1a1a; margin: 0;"><i class="fas fa-file-contract" style="color: #6b7280; margin-right: 6px;"></i> Chi tiết Hợp đồng Hiện tại</h3>
-    <c:if test="${not empty currentContract && sessionScope.currentUser.roleId == 5}">
-      <button class="btn-outline btn-sm" onclick="openModal('addendumModal')"><i class="fas fa-plus"></i> Tạo phụ lục</button>
-    </c:if>
+    <div style="display:flex; gap: 8px;">
+        <c:if test="${not empty currentContract}">
+            <c:choose>
+                <c:when test="${not empty currentContract.filePath}">
+                    <a href="${pageContext.request.contextPath}${currentContract.filePath}" target="_blank" class="btn-outline btn-sm" style="color: #2563eb; border-color: #bfdbfe; background: #eff6ff;"><i class="fas fa-file-pdf"></i> Xem bản Scan (PDF)</a>
+                    <c:if test="${sessionScope.currentUser.roleId == 5}">
+                        <button type="button" class="btn-outline btn-sm" onclick="openUploadPdfModal(${currentContract.contractId})" title="Tải lại file"><i class="fas fa-sync-alt"></i></button>
+                    </c:if>
+                </c:when>
+                <c:otherwise>
+                    <c:if test="${sessionScope.currentUser.roleId == 5}">
+                        <button type="button" class="btn-primary btn-sm" onclick="openUploadPdfModal(${currentContract.contractId})"><i class="fas fa-upload"></i> Tải lên bản Scan</button>
+                    </c:if>
+                </c:otherwise>
+            </c:choose>
+        </c:if>
+        
+        <c:if test="${not empty currentContract && sessionScope.currentUser.roleId == 5}">
+          <button class="btn-outline btn-sm" onclick="openModal('addendumModal')"><i class="fas fa-plus"></i> Tạo phụ lục</button>
+        </c:if>
+    </div>
 </div>
 
 <div class="contract-detail-box" style="margin: 0 0 32px 0; max-width: 100%;">
@@ -373,7 +391,8 @@
                 data-alw-html="${fn:escapeXml(c.allowanceHtml)}"
                 data-tax="<c:choose><c:when test='${c.taxCalcType == 1}'>Biểu thuế lũy tiến</c:when><c:when test='${c.taxCalcType == 2}'>Khấu trừ 10%</c:when><c:otherwise>Miễn thuế</c:otherwise></c:choose>"
                 data-doctype="${c.docType}"
-                data-parent="${c.parentContractId}">
+                data-parent="${c.parentContractId}"
+                data-filepath="${c.filePath}">
               <td style="padding: 16px 20px; font-weight: 600; color: #1a1a1a; font-size: 0.9rem;">
                 <c:choose>
                     <c:when test="${c.docType == 'ADDENDUM'}">
@@ -480,7 +499,10 @@
         <i class="fas fa-file-contract" style="color: #6b7280; margin-right: 8px;"></i>
         <span id="hmTitleText">Chi tiết Hợp đồng Lịch sử</span>
       </h3>
-      <button type="button" onclick="closeModal('historyModal')" style="background: transparent; border: none; font-size: 1.4rem; color: #9ca3af; cursor: pointer;">&times;</button>
+      <div style="display: flex; gap: 8px; align-items: center;">
+          <div id="hmPdf" style="display: flex; align-items: center; gap: 8px;"></div>
+          <button type="button" onclick="closeModal('historyModal')" style="background: transparent; border: none; font-size: 1.4rem; color: #9ca3af; cursor: pointer; margin-left: 8px;">&times;</button>
+      </div>
     </div>
     <div style="padding: 24px; max-height: 70vh; overflow-y: auto;">
         <div class="detail-grid" style="grid-template-columns: 160px 1fr; row-gap: 12px;">
@@ -529,6 +551,26 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="uploadPdfModal">
+  <div class="modal-box" style="max-width: 500px;">
+    <div class="modal-title"><i class="fas fa-file-upload"></i> Tải lên bản Scan Hợp đồng</div>
+    <form action="${pageContext.request.contextPath}/hr/employee-contracts" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="action" value="uploadPdf">
+      <input type="hidden" name="userId" value="${employee.userId}">
+      <input type="hidden" name="contractId" id="uploadContractId" value="">
+      <div class="form-group full">
+        <label class="form-label">Chọn file PDF <span class="required">*</span></label>
+        <input type="file" name="contractFile" accept="application/pdf" class="form-control" required>
+        <span class="form-hint" style="margin-top: 6px; display: block;">Chỉ chấp nhận file .pdf (Tối đa 15MB)</span>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-outline" onclick="closeModal('uploadPdfModal')">Hủy</button>
+        <button type="submit" class="btn-primary"><i class="fas fa-upload"></i> Tải lên</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
 function viewHistoryModal(row) {
     var d = row.dataset;
@@ -556,7 +598,47 @@ function viewHistoryModal(row) {
     alwHtml = alwHtml.replace(/&#013;/g, '\n').replace(/&#10;/g, '\n');
     document.getElementById('hmAlw').textContent = alwHtml;
     
+    var pdfContainer = document.getElementById('hmPdf');
+    pdfContainer.innerHTML = '';
+    var isHrStaff = ${sessionScope.currentUser.roleId == 5};
+    if (d.filepath && d.filepath.trim() !== '') {
+        var viewLink = document.createElement('a');
+        viewLink.href = '${pageContext.request.contextPath}' + d.filepath;
+        viewLink.target = '_blank';
+        viewLink.className = 'btn-outline btn-sm';
+        viewLink.style.color = '#2563eb';
+        viewLink.style.borderColor = '#bfdbfe';
+        viewLink.style.background = '#eff6ff';
+        viewLink.innerHTML = '<i class="fas fa-file-pdf"></i> Xem bản Scan (PDF)';
+        pdfContainer.appendChild(viewLink);
+        
+        if (isHrStaff) {
+            var reuploadBtn = document.createElement('button');
+            reuploadBtn.type = 'button';
+            reuploadBtn.className = 'btn-outline btn-sm';
+            reuploadBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Tải lại file';
+            reuploadBtn.onclick = function() { openUploadPdfModal(d.cid); };
+            pdfContainer.appendChild(reuploadBtn);
+        }
+    } else {
+        if (isHrStaff) {
+            var uploadBtn = document.createElement('button');
+            uploadBtn.type = 'button';
+            uploadBtn.className = 'btn-primary btn-sm';
+            uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Tải lên bản Scan';
+            uploadBtn.onclick = function() { openUploadPdfModal(d.cid); };
+            pdfContainer.appendChild(uploadBtn);
+        } else {
+            pdfContainer.innerHTML = '<span style="color: #6b7280; font-style: italic;">Chưa cập nhật</span>';
+        }
+    }
+    
     openModal('historyModal');
+}
+
+function openUploadPdfModal(contractId) {
+    document.getElementById('uploadContractId').value = contractId;
+    openModal('uploadPdfModal');
 }
 
 function openModal(id){var m=document.getElementById(id);if(m){m.classList.add('open');document.body.style.overflow='hidden';}}

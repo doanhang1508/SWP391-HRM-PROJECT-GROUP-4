@@ -633,4 +633,29 @@ public class UserDAO {
         }
         return map;
     }
+
+    // ── Thống kê cho HR Report ──
+    public int countNewEmployeesThisMonth() {
+        String sql = "SELECT COUNT(*) FROM users WHERE status = 1 AND MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())";
+        return countQuery(sql);
+    }
+
+    public java.util.Map<String, Integer> getHeadcountByDepartment() {
+        java.util.Map<String, Integer> map = new java.util.LinkedHashMap<>();
+        String sql = "SELECT d.department_name, COUNT(u.user_id) as count " +
+                     "FROM departments d LEFT JOIN users u ON d.department_id = u.department_id AND u.status = 1 " +
+                     "GROUP BY d.department_name " +
+                     "ORDER BY count DESC";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                map.put(rs.getString("department_name"), rs.getInt("count"));
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi getHeadcountByDepartment: " + e.getMessage());
+        }
+        return map;
+    }
 }

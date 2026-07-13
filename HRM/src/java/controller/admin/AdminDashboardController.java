@@ -48,6 +48,10 @@ public class AdminDashboardController extends HttpServlet {
         request.setAttribute("lockedUsers", lockedUsers);
         request.setAttribute("totalRoles",  totalRoles);
 
+        // ── Thống kê Nhân sự (HR Report) ──
+        int newEmployeesThisMonth = userDAO.countNewEmployeesThisMonth();
+        request.setAttribute("newEmployeesThisMonth", newEmployeesThisMonth);
+
         // ── Thống kê Onboarding ──
         OnboardingDAO onboardingDAO = new OnboardingDAO();
         request.setAttribute("onboardingTotal", onboardingDAO.countByStatus("ALL"));
@@ -77,6 +81,17 @@ public class AdminDashboardController extends HttpServlet {
         }
         request.setAttribute("growthLabels", growthLabels.toString());
         request.setAttribute("growthValues", growthValues.toString());
+
+        // 3. Tỉ lệ nhân sự theo phòng ban (HR Report)
+        Map<String, Integer> deptHeadcount = userDAO.getHeadcountByDepartment();
+        JSONArray deptLabels = new JSONArray();
+        JSONArray deptValues = new JSONArray();
+        for (Map.Entry<String, Integer> entry : deptHeadcount.entrySet()) {
+            deptLabels.put(entry.getKey() != null ? entry.getKey() : "Chưa xếp phòng");
+            deptValues.put(entry.getValue());
+        }
+        request.setAttribute("deptLabels", deptLabels.toString());
+        request.setAttribute("deptValues", deptValues.toString());
 
         List<User> recentUsers = userDAO.getAllUsers();
         if (recentUsers.size() > 10) {

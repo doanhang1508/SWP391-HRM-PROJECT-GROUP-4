@@ -11,12 +11,15 @@ import model.User;
 import model.SalaryGrade;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 
 import java.io.IOException;
+import java.io.File;
 import java.util.List;
 import dao.EmployeeContractDAO;
 import dao.ContractTypeDAO;
@@ -32,6 +35,11 @@ import java.util.stream.Collectors;
  * URL: /hr/employee-contracts?userId=...  (GET)
  */
 @WebServlet(name = "HrEmployeeContractsController", urlPatterns = {"/hr/employee-contracts", "/manager/employee-contracts"})
+@MultipartConfig(
+    fileSizeThreshold = 1024 * 1024 * 2,  // 2MB
+    maxFileSize = 1024 * 1024 * 15,       // 15MB
+    maxRequestSize = 1024 * 1024 * 50     // 50MB
+)
 public class HrEmployeeContractsController extends HttpServlet {
 
     @Override
@@ -370,6 +378,50 @@ public class HrEmployeeContractsController extends HttpServlet {
             } catch (Exception e) {
                 e.printStackTrace();
                 session.setAttribute("errorMsg", "Lỗi hệ thống khi phê duyệt hợp đồng.");
+                response.sendRedirect(request.getContextPath() + "/hr/contracts");
+            }
+        } else if ("uploadPdf".equals(action)) {
+            try {
+                if (currentRoleId != 5 && currentRoleId != 2) {
+                    session.setAttribute("errorMsg", "Lỗi: Bạn không có quyền tải lên file hợp đồng.");
+                    response.sendRedirect(request.getContextPath() + "/hr/contracts");
+                    return;
+                }
+                int contractId = Integer.parseInt(request.getParameter("contractId"));
+                int targetUserId = Integer.parseInt(request.getParameter("userId"));
+                
+                Part filePart = request.getPart("contractFile");
+                if (filePart != null && filePart.getSize() > 0) {
+                    String uploadPath = getServletContext().getRealPath("") + File.separator + "uploads" + File.separator + "contracts";
+                    File uploadDir = new File(uploadPath);
+                    if (!uploadDir.exists()) {
+                        uploadDir.mkdirs();
+                    }
+                    
+                    String submittedFileName = filePart.getSubmittedFileName();
+                    String extension = ".pdf";
+                    if (submittedFileName != null && submittedFileName.lastIndexOf(".") > 0) {
+                        extension = submittedFileName.substring(submittedFileName.lastIndexOf("."));
+                    }
+                    
+                    String fileName = "contract_" + contractId + "_" + System.currentTimeMillis() + extension;
+                    filePart.write(uploadPath + File.separator + fileName);
+                    
+                    String dbFilePath = "/uploads/contracts/" + fileName;
+                    EmployeeContractDAO ecDAO = new EmployeeContractDAO();
+                    if (ecDAO.updateFilePath(contractId, dbFilePath)) {
+                        session.setAttribute("successMsg", "Đã tải lên bản scan hợp đồng thành công!");
+                    } else {
+                        session.setAttribute("errorMsg", "Lỗi: Không thể lưu đường dẫn vào database.");
+                    }
+                } else {
+                    session.setAttribute("errorMsg", "Lỗi: Không tìm thấy file hợp đồng tải lên.");
+                }
+                
+                response.sendRedirect(request.getContextPath() + "/hr/employee-contracts?userId=" + targetUserId);
+            } catch (Exception e) {
+                e.printStackTrace();
+                session.setAttribute("errorMsg", "Lỗi hệ thống khi tải lên file.");
                 response.sendRedirect(request.getContextPath() + "/hr/contracts");
             }
         }

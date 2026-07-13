@@ -655,8 +655,71 @@ public class EmployeeContractDAO {
     }
 
     // =========================================================================
+    // WRITE: Cập nhật đường dẫn file (PDF Hợp đồng / Phụ lục)
+    // =========================================================================
+
+    /**
+     * Cập nhật đường dẫn file PDF bản scan đã ký vào hợp đồng/phụ lục.
+     */
+    public boolean updateFilePath(int contractId, String filePath) {
+        String sql = "UPDATE employee_contracts SET file_path = ? WHERE contract_id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, filePath);
+            ps.setInt(2, contractId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    // =========================================================================
     // Utility
     // =========================================================================
+
+    public java.util.List<java.util.Map<String, Object>> getExpiringContracts(java.sql.Date fromDate, java.sql.Date toDate, Integer departmentId) {
+        java.util.List<java.util.Map<String, Object>> list = new java.util.ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            "SELECT u.user_id, u.full_name, d.department_name, ct.type_name, ec.end_date, DATEDIFF(ec.end_date, CURDATE()) as days_left " +
+            "FROM employee_contracts ec " +
+            "JOIN users u ON ec.user_id = u.user_id " +
+            "LEFT JOIN departments d ON u.department_id = d.department_id " +
+            "LEFT JOIN contract_types ct ON ec.contract_type_id = ct.contract_type_id " +
+            "WHERE ec.status = 'Active' AND ec.end_date IS NOT NULL " +
+            "AND ec.end_date BETWEEN ? AND ? "
+        );
+        if (departmentId != null && departmentId > 0) {
+            sql.append(" AND u.department_id = ? ");
+        }
+        sql.append(" ORDER BY ec.end_date ASC");
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            
+            ps.setDate(1, fromDate);
+            ps.setDate(2, toDate);
+            if (departmentId != null && departmentId > 0) {
+                ps.setInt(3, departmentId);
+            }
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    java.util.Map<String, Object> map = new java.util.HashMap<>();
+                    map.put("userId", rs.getInt("user_id"));
+                    map.put("fullName", rs.getString("full_name"));
+                    map.put("departmentName", rs.getString("department_name") != null ? rs.getString("department_name") : "Không xác định");
+                    map.put("typeName", rs.getString("type_name"));
+                    map.put("endDate", rs.getDate("end_date"));
+                    map.put("daysLeft", rs.getInt("days_left"));
+                    list.add(map);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 
     /**
      * Lấy 1 hợp đồng theo ID.

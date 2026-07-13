@@ -259,11 +259,11 @@ body {
                 </div>
             </div>
             <div class="stat-card purple">
-                <div class="stat-icon"><i class="fas fa-shield-alt"></i></div>
+                <div class="stat-icon"><i class="fas fa-user-plus"></i></div>
                 <div class="stat-body">
-                    <div class="stat-val">${totalRoles}</div>
-                    <div class="stat-lbl">Vai Trò</div>
-                    <span class="stat-pct pct-purple">Nhóm phân quyền</span>
+                    <div class="stat-val">${newEmployeesThisMonth}</div>
+                    <div class="stat-lbl">Nhân Sự Mới</div>
+                    <span class="stat-pct pct-purple">Trong tháng này</span>
                 </div>
             </div>
         </div>
@@ -285,11 +285,11 @@ body {
                 <div class="card-head">
                     <h3 class="card-title">
                         <div class="card-icon ci-teal"><i class="fas fa-chart-pie"></i></div>
-                        Phân Bổ Vai Trò
+                        Cơ Cấu Nhân Sự Theo Phòng Ban
                     </h3>
                 </div>
                 <div style="position:relative;height:260px;display:flex;align-items:center;justify-content:center;">
-                    <canvas id="rolesChart"></canvas>
+                    <canvas id="deptChart"></canvas>
                 </div>
             </div>
         </div>
@@ -384,8 +384,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const growthLabels = ${growthLabels};
     const growthValues = ${growthValues};
-    const roleLabels   = ${roleLabels};
-    const roleValues   = ${roleValues};
+    const deptLabels   = ${deptLabels};
+    const deptValues   = ${deptValues};
 
     // Line Chart
     const ctxG = document.getElementById('growthChart').getContext('2d');
@@ -439,13 +439,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Doughnut Chart
-    new Chart(document.getElementById('rolesChart').getContext('2d'), {
+    // Doughnut Chart (Phân bổ phòng ban)
+    new Chart(document.getElementById('deptChart').getContext('2d'), {
         type: 'doughnut',
         data: {
-            labels: roleLabels,
+            labels: deptLabels,
             datasets: [{
-                data: roleValues,
+                data: deptValues,
                 backgroundColor: ['#4f7ef8','#22c55e','#f59e0b','#a855f7','#14b8a6','#f43f5e','#6b7280'],
                 borderWidth: 3,
                 borderColor: '#fff',
