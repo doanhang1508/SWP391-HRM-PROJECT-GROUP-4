@@ -1304,4 +1304,33 @@ public class AttendanceDAO {
         }
         return list;
     }
+
+    public BigDecimal getOvertimeAmountWithHolidayRate(int userId, int month, int year, BigDecimal hourlyRate, BigDecimal normalMultiplier) {
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        String sql = "SELECT a.work_date, a.overtime_hrs, h.ot_multiplier " +
+                     "FROM attendance a " +
+                     "LEFT JOIN holidays h ON h.holiday_date = a.work_date AND h.status = 1 " +
+                     "WHERE a.user_id = ? AND MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? AND a.overtime_hrs > 0";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    BigDecimal overtimeHrs = rs.getBigDecimal("overtime_hrs");
+                    if (overtimeHrs != null && overtimeHrs.compareTo(BigDecimal.ZERO) > 0) {
+                        BigDecimal otMultiplier = rs.getBigDecimal("ot_multiplier");
+                        BigDecimal currentMultiplier = (otMultiplier != null) ? otMultiplier : normalMultiplier;
+                        BigDecimal dailyOtAmount = overtimeHrs.multiply(hourlyRate).multiply(currentMultiplier);
+                        totalAmount = totalAmount.add(dailyOtAmount);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return totalAmount.setScale(2, java.math.RoundingMode.HALF_UP);
+    }
 }

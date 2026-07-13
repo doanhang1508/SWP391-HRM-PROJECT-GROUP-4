@@ -43,19 +43,35 @@ public class HrDashboardController extends HttpServlet {
             return;
         }
 
-        // ── Code gốc — chạy cho CẢ HAI role (2 + 5), giữ nguyên 100% ──
+        // ── Code gốc — chạy cho CẢ HAI role (2 + 5) ──
         UserDAO userDAO = new UserDAO();
         DepartmentDAO deptDAO = new DepartmentDAO();
 
-        int totalEmployees   = userDAO.getTotalUsers();
-        int activeEmployees  = userDAO.getActiveUsers();
+        int deptId = currentUser.getDepartmentId();
+        int totalEmployees = 0;
+        int activeEmployees = 0;
+        List<User> recentEmployees = new ArrayList<>();
+
+        if (deptId > 0) {
+            List<User> allDeptUsers = userDAO.getAllUsers().stream()
+                    .filter(u -> u.getDepartmentId() == deptId)
+                    .collect(java.util.stream.Collectors.toList());
+            
+            totalEmployees = allDeptUsers.size();
+            activeEmployees = (int) allDeptUsers.stream().filter(u -> u.getStatus() == 1).count();
+            recentEmployees = allDeptUsers;
+        } else {
+            totalEmployees = userDAO.getTotalUsers();
+            activeEmployees = userDAO.getActiveUsers();
+            recentEmployees = userDAO.getAllUsers();
+        }
+
         int totalDepartments = deptDAO.getAll().size();
 
         request.setAttribute("totalEmployees",   totalEmployees);
         request.setAttribute("activeEmployees",  activeEmployees);
         request.setAttribute("totalDepartments", totalDepartments);
 
-        List<User> recentEmployees = userDAO.getAllUsers();
         if (recentEmployees.size() > 5) {
             recentEmployees = recentEmployees.subList(recentEmployees.size() - 5, recentEmployees.size());
         }

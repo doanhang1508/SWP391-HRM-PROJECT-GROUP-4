@@ -18,6 +18,9 @@ public class AllowanceDAO {
             rs.getString("description"),
             rs.getBigDecimal("amount"),
             rs.getString("apply_condition"),
+            rs.getString("calculation_type"),
+            rs.getInt("is_bhxh_applied") == 1,
+            rs.getInt("is_taxable") == 1,
             rs.getBoolean("status")
         );
     }
@@ -105,27 +108,33 @@ public class AllowanceDAO {
 
     /** Thêm phụ cấp mới */
     public void insert(Allowance a) {
-        String sql = "INSERT INTO allowances (allowance_name, description, amount, apply_condition, status) VALUES (?, ?, ?, ?, 1)";
+        String sql = "INSERT INTO allowances (allowance_name, description, amount, apply_condition, calculation_type, is_bhxh_applied, is_taxable, status) VALUES (?, ?, ?, ?, ?, ?, ?, 1)";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, a.getAllowanceName());
             ps.setString(2, a.getDescription());
             ps.setBigDecimal(3, a.getAmount());
             ps.setString(4, a.getApplyCondition());
+            ps.setString(5, a.getCalculationType());
+            ps.setInt(6, a.isBhxhApplied() ? 1 : 0);
+            ps.setInt(7, a.isTaxable() ? 1 : 0);
             ps.executeUpdate();
         } catch (Exception e) { e.printStackTrace(); }
     }
 
     /** Cập nhật phụ cấp (tên, mô tả, mức tiền, điều kiện) */
     public void update(Allowance a) {
-        String sql = "UPDATE allowances SET allowance_name=?, description=?, amount=?, apply_condition=? WHERE allowance_id=?";
+        String sql = "UPDATE allowances SET allowance_name=?, description=?, amount=?, apply_condition=?, calculation_type=?, is_bhxh_applied=?, is_taxable=? WHERE allowance_id=?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, a.getAllowanceName());
             ps.setString(2, a.getDescription());
             ps.setBigDecimal(3, a.getAmount());
             ps.setString(4, a.getApplyCondition());
-            ps.setInt(5, a.getAllowanceId());
+            ps.setString(5, a.getCalculationType());
+            ps.setInt(6, a.isBhxhApplied() ? 1 : 0);
+            ps.setInt(7, a.isTaxable() ? 1 : 0);
+            ps.setInt(8, a.getAllowanceId());
             ps.executeUpdate();
         } catch (Exception e) { e.printStackTrace(); }
     }

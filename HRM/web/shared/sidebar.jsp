@@ -534,6 +534,12 @@
                                                         </a>
                                                     </li>
                                                     <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/holiday"
+                                                            class="sidebar-link ${param.activeMenu eq 'holiday' ? 'active' : ''}">
+                                                            <i class="fas fa-calendar-day"></i> Ngày nghỉ lễ
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/hr/payroll"
                                                             class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
                                                             <i class="fas fa-file-invoice-dollar"></i> Bảng lương

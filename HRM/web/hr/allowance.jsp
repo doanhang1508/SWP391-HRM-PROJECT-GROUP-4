@@ -336,7 +336,8 @@
                                     <th>#</th>
                                     <th>Tên Phụ Cấp</th>
                                     <th>Mức Tiền</th>
-                                    <th>Điều Kiện</th>
+                                    <th>Cách Tính</th>
+                                    <th>BHXH / Thuế</th>
                                     <th>Trạng Thái</th>
                                     <th style="text-align:center;">Thao Tác</th>
                                 </tr>
@@ -373,11 +374,24 @@
                                             </c:choose>
                                         </td>
                                         <td>
-                                            <div class="item-desc" title="${a.applyCondition}" style="max-width:180px;">
+                                            <div style="font-size:.85rem;">
+                                                <c:choose>
+                                                    <c:when test="${a.calculationType == 'PER_DAY'}">Theo ngày công</c:when>
+                                                    <c:when test="${a.calculationType == 'CONDITIONAL'}">Theo điều kiện</c:when>
+                                                    <c:otherwise>Cố định</c:otherwise>
+                                                </c:choose>
+                                            </div>
+                                            <div class="item-desc" title="${a.applyCondition}" style="max-width:180px; margin-top:4px;">
                                                 <c:choose>
                                                     <c:when test="${not empty a.applyCondition}">${a.applyCondition}</c:when>
                                                     <c:otherwise><span style="color:#cbd5e1;font-style:italic;">—</span></c:otherwise>
                                                 </c:choose>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style="display:flex;gap:4px;flex-direction:column;font-size:.8rem;">
+                                                <span class="${a.bhxhApplied ? 'text-success' : 'text-muted'}"><i class="${a.bhxhApplied ? 'fas fa-check' : 'fas fa-times'}"></i> BHXH</span>
+                                                <span class="${a.taxable ? 'text-danger' : 'text-muted'}"><i class="${a.taxable ? 'fas fa-check' : 'fas fa-times'}"></i> Thuế TNCN</span>
                                             </div>
                                         </td>
                                         <td>
@@ -401,7 +415,7 @@
                                                 <%-- Edit (chỉ khi active) --%>
                                                 <c:if test="${a.status}">
                                                     <button class="action-btn btn-edit"
-                                                            onclick="openEditModal(${a.allowanceId},'${fn:escapeXml(a.allowanceName)}','${fn:escapeXml(a.description)}','${a.amount}','${fn:escapeXml(a.applyCondition)}')"
+                                                            onclick="openEditModal(${a.allowanceId},'${fn:escapeXml(a.allowanceName)}','${fn:escapeXml(a.description)}','${a.amount}','${fn:escapeXml(a.applyCondition)}','${a.calculationType}',${a.bhxhApplied},${a.taxable})"
                                                             title="Chỉnh sửa">
                                                         <i class="fas fa-pen"></i>
                                                     </button>
@@ -497,9 +511,29 @@
                     </div>
                 </div>
             </div>
-            <div class="form-group">
-                <label class="form-label">Điều Kiện Hưởng</label>
-                <input type="text" name="applyCondition" class="form-control" placeholder="Vd: Áp dụng cho tất cả nhân viên chính thức...">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Điều Kiện Hưởng</label>
+                    <input type="text" name="applyCondition" class="form-control" placeholder="Vd: Áp dụng cho tất cả nhân viên chính thức...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cách Tính</label>
+                    <select name="calculationType" class="form-control">
+                        <option value="FIXED">Cố định mỗi tháng</option>
+                        <option value="PER_DAY">Nhân với ngày công thực tế</option>
+                        <option value="CONDITIONAL">Theo điều kiện</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" name="isBhxhApplied" id="addBhxh" value="true">
+                    <label for="addBhxh" style="margin-bottom:0; cursor:pointer;">Cộng vào nền đóng BHXH</label>
+                </div>
+                <div class="form-group" style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" name="isTaxable" id="addTax" value="true">
+                    <label for="addTax" style="margin-bottom:0; cursor:pointer;">Tính thuế TNCN</label>
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Mô Tả</label>
@@ -536,9 +570,29 @@
                     </div>
                 </div>
             </div>
-            <div class="form-group">
-                <label class="form-label">Điều Kiện Hưởng</label>
-                <input type="text" name="applyCondition" id="editCondition" class="form-control">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Điều Kiện Hưởng</label>
+                    <input type="text" name="applyCondition" id="editCondition" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cách Tính</label>
+                    <select name="calculationType" id="editCalcType" class="form-control">
+                        <option value="FIXED">Cố định mỗi tháng</option>
+                        <option value="PER_DAY">Nhân với ngày công thực tế</option>
+                        <option value="CONDITIONAL">Theo điều kiện</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" name="isBhxhApplied" id="editBhxh" value="true">
+                    <label for="editBhxh" style="margin-bottom:0; cursor:pointer;">Cộng vào nền đóng BHXH</label>
+                </div>
+                <div class="form-group" style="display:flex; align-items:center; gap:8px;">
+                    <input type="checkbox" name="isTaxable" id="editTax" value="true">
+                    <label for="editTax" style="margin-bottom:0; cursor:pointer;">Tính thuế TNCN</label>
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Mô Tả</label>
@@ -571,12 +625,15 @@
 
     // ── Modals ────────────────────────────────────────────────────────
     function openAddModal() { document.getElementById('addModal').classList.add('show'); }
-    function openEditModal(id, name, desc, amount, condition) {
+    function openEditModal(id, name, desc, amount, condition, calcType, isBhxh, isTax) {
         document.getElementById('editId').value        = id;
         document.getElementById('editName').value      = name;
         document.getElementById('editDesc').value      = desc;
         document.getElementById('editAmount').value    = amount || '';
         document.getElementById('editCondition').value = condition || '';
+        document.getElementById('editCalcType').value  = calcType || 'FIXED';
+        document.getElementById('editBhxh').checked    = isBhxh;
+        document.getElementById('editTax').checked     = isTax;
         document.getElementById('editModal').classList.add('show');
     }
     function openDeactModal(id, name) {
@@ -675,7 +732,8 @@
             footer.innerHTML =
                 '<button class="btn-drawer-edit" onclick="openEditFromDrawer(' + a.allowanceId + ',' +
                     JSON.stringify(a.allowanceName) + ',' + JSON.stringify(a.description || '') + ',' +
-                    (a.amount || 0) + ',' + JSON.stringify(a.applyCondition || '') + ')">' +
+                    (a.amount || 0) + ',' + JSON.stringify(a.applyCondition || '') + ',' +
+                    JSON.stringify(a.calculationType || 'FIXED') + ',' + a.isBhxhApplied + ',' + a.isTaxable + ')">' +
                     '<i class="fas fa-pen"></i> Chỉnh Sửa</button>' +
                 '<button class="btn-drawer-deact" onclick="openDeactFromDrawer(' + a.allowanceId + ',' +
                     JSON.stringify(a.allowanceName) + ')">' +
@@ -688,9 +746,9 @@
         }
     }
 
-    function openEditFromDrawer(id, name, desc, amount, condition) {
+    function openEditFromDrawer(id, name, desc, amount, condition, calcType, isBhxh, isTax) {
         closeDrawer();
-        setTimeout(function() { openEditModal(id, name, desc, amount, condition); }, 220);
+        setTimeout(function() { openEditModal(id, name, desc, amount, condition, calcType, isBhxh, isTax); }, 220);
     }
     function openDeactFromDrawer(id, name) {
         closeDrawer();
@@ -802,7 +860,7 @@
         fetch(CTX + '/hr/allowance?action=detail&id=' + id)
             .then(function(r) { return r.json(); })
             .then(function(a) {
-                openEditModal(a.allowanceId, a.allowanceName, a.description || '', a.amount || 0, a.applyCondition || '');
+                openEditModal(a.allowanceId, a.allowanceName, a.description || '', a.amount || 0, a.applyCondition || '', a.calculationType || 'FIXED', a.isBhxhApplied, a.isTaxable);
             });
     })();
     </c:if>
