@@ -89,7 +89,7 @@ public class InsuranceRateDAO {
     }
 
     public boolean isDuplicate(String insuranceName, int excludeId) {
-        String sql = "SELECT COUNT(*) FROM insurance_rates WHERE insurance_name = ? AND insurance_rate_id != ? AND status = 1";
+        String sql = "SELECT COUNT(*) FROM insurance_rates WHERE insurance_name = ? AND insurance_rate_id != ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, insuranceName);
@@ -104,7 +104,7 @@ public class InsuranceRateDAO {
     }
 
     public boolean isCodeDuplicate(String code, int excludeId) {
-        String sql = "SELECT COUNT(*) FROM insurance_rates WHERE insurance_code = ? AND insurance_rate_id != ? AND status = 1";
+        String sql = "SELECT COUNT(*) FROM insurance_rates WHERE insurance_code = ? AND insurance_rate_id != ?";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, code);
@@ -118,7 +118,7 @@ public class InsuranceRateDAO {
         return false;
     }
 
-    public void insert(InsuranceRate ir) {
+    public boolean insert(InsuranceRate ir) {
         String sql = "INSERT INTO insurance_rates " +
                      "(insurance_code, insurance_name, company_rate, employee_rate, description, effective_from, effective_to, status) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, 1)";
@@ -131,9 +131,11 @@ public class InsuranceRateDAO {
             ps.setString(5, ir.getDescription());
             ps.setDate(6, ir.getEffectiveFrom());
             ps.setDate(7, ir.getEffectiveTo());
-            ps.executeUpdate();
+            int rows = ps.executeUpdate();
+            return rows > 0;
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
     }
 

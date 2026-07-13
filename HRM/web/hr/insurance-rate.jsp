@@ -169,8 +169,8 @@
             <div class="alert alert-success"><i class="fas fa-check-circle"></i> ${sessionScope.successMsg}</div>
             <c:remove var="successMsg" scope="session"/>
         </c:if>
-        <c:if test="${not empty sessionScope.errorMsg}">
-            <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> ${sessionScope.errorMsg}</div>
+        <c:if test="${not empty sessionScope.errorMsg || not empty requestScope.errorMsg}">
+            <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> ${not empty requestScope.errorMsg ? requestScope.errorMsg : sessionScope.errorMsg}</div>
             <c:remove var="errorMsg" scope="session"/>
         </c:if>
 
@@ -433,34 +433,38 @@
             <h3 class="modal-title"><i class="fas fa-plus-circle" style="color:var(--blue);"></i> Thêm Mức Bảo Hiểm Mới</h3>
             <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
         </div>
-        <form method="post" action="${pageContext.request.contextPath}/hr/insurance-rate">
+        <form method="post" action="${pageContext.request.contextPath}/hr/insurance-rate" id="addInsuranceRateForm">
             <input type="hidden" name="action" value="add">
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Mã Bảo Hiểm <span style="color:#e11d48;">*</span></label>
-                    <input type="text" name="insuranceCode" class="form-control" placeholder="VD: BHXH" style="text-transform:uppercase;">
+                    <input type="text" name="insuranceCode" id="addInsuranceCode" class="form-control" placeholder="VD: BHXH" style="text-transform:uppercase;" value="${fn:escapeXml(insuranceCode)}">
+                    <span class="error-msg" id="errAddCode" style="color:#e11d48; font-size:0.75rem; display:none; margin-top:4px;"></span>
                     <div class="hint-text">Mã viết tắt, không trùng</div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Tên Loại Bảo Hiểm <span style="color:#e11d48;">*</span></label>
-                    <input type="text" name="insuranceName" class="form-control" placeholder="VD: Bảo hiểm xã hội">
+                    <input type="text" name="insuranceName" id="addInsuranceName" class="form-control" placeholder="VD: Bảo hiểm xã hội" value="${fn:escapeXml(insuranceName)}">
+                    <span class="error-msg" id="errAddName" style="color:#e11d48; font-size:0.75rem; display:none; margin-top:4px;"></span>
                 </div>
             </div>
             <div class="form-row-3">
                 <div class="form-group">
                     <label class="form-label">Tỷ Lệ DN (%) <span style="color:#e11d48;">*</span></label>
                     <div class="input-group">
-                        <input type="text" name="companyRate" id="addCompany" class="form-control" placeholder="0.00" style="padding-right:34px;" oninput="calcAddTotal()">
+                        <input type="text" name="companyRate" id="addCompany" class="form-control" placeholder="0.00" style="padding-right:34px;" oninput="calcAddTotal()" value="${fn:escapeXml(companyRate)}">
                         <span class="input-suffix">%</span>
                     </div>
+                    <span class="error-msg" id="errAddCompany" style="color:#e11d48; font-size:0.75rem; display:none; margin-top:4px;"></span>
                     <div class="hint-text">Phần DN đóng góp</div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Tỷ Lệ NV (%) <span style="color:#e11d48;">*</span></label>
                     <div class="input-group">
-                        <input type="text" name="employeeRate" id="addEmployee" class="form-control" placeholder="0.00" style="padding-right:34px;" oninput="calcAddTotal()">
+                        <input type="text" name="employeeRate" id="addEmployee" class="form-control" placeholder="0.00" style="padding-right:34px;" oninput="calcAddTotal()" value="${fn:escapeXml(employeeRate)}">
                         <span class="input-suffix">%</span>
                     </div>
+                    <span class="error-msg" id="errAddEmployee" style="color:#e11d48; font-size:0.75rem; display:none; margin-top:4px;"></span>
                     <div class="hint-text">Phần NV phải đóng</div>
                 </div>
                 <div class="form-group">
@@ -475,16 +479,18 @@
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Ngày Bắt Đầu Áp Dụng</label>
-                    <input type="date" name="effectiveFrom" class="form-control">
+                    <input type="date" name="effectiveFrom" id="addFrom" class="form-control" value="${fn:escapeXml(effectiveFrom)}">
+                    <span class="error-msg" id="errAddFrom" style="color:#e11d48; font-size:0.75rem; display:none; margin-top:4px;"></span>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Ngày Kết Thúc Áp Dụng</label>
-                    <input type="date" name="effectiveTo" class="form-control">
+                    <input type="date" name="effectiveTo" id="addTo" class="form-control" value="${fn:escapeXml(effectiveTo)}">
                 </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Mô Tả</label>
-                <textarea name="description" class="form-control" placeholder="Mô tả chi tiết về loại bảo hiểm..."></textarea>
+                <textarea name="description" id="addDesc" class="form-control" placeholder="Mô tả chi tiết về loại bảo hiểm...">${fn:escapeXml(description)}</textarea>
+                <span class="error-msg" id="errAddDesc" style="color:#e11d48; font-size:0.75rem; display:none; margin-top:4px;"></span>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-cancel" onclick="closeModal('addModal')">Hủy</button>
@@ -741,6 +747,182 @@ function nextPage()   {
 /* ─── Init on load ─── */
 document.addEventListener('DOMContentLoaded', function() {
     filterTable(); // default: show "active" only
+    
+    // Auto-open modal on validation error
+    <c:if test="${param.action == 'add'}">
+        <c:if test="${not empty requestScope.errorMsg || not empty sessionScope.errorMsg}">
+            openAddModal();
+            calcAddTotal();
+        </c:if>
+    </c:if>
+
+    const addForm = document.getElementById("addInsuranceRateForm");
+    if (addForm) {
+        addForm.addEventListener("submit", function(event) {
+            let isValid = true;
+            
+            // Clear all errors
+            document.querySelectorAll("#addInsuranceRateForm .error-msg").forEach(function(el) {
+                el.textContent = "";
+                el.style.display = "none";
+            });
+            
+            // Validate Code
+            const codeInput = document.getElementById("addInsuranceCode");
+            const codeVal = codeInput ? codeInput.value.trim() : "";
+            if (codeVal === "") {
+                const err = document.getElementById("errAddCode");
+                if (err) {
+                    err.textContent = "Mã bảo hiểm không được để trống.";
+                    err.style.display = "block";
+                }
+                isValid = false;
+            } else if (codeVal.length > 20) {
+                const err = document.getElementById("errAddCode");
+                if (err) {
+                    err.textContent = "Mã bảo hiểm không được vượt quá 20 ký tự.";
+                    err.style.display = "block";
+                }
+                isValid = false;
+            } else {
+                const regex = /^[\p{L}0-9_\-\s]+$/u;
+                if (!regex.test(codeVal)) {
+                    const err = document.getElementById("errAddCode");
+                    if (err) {
+                        err.textContent = "Mã bảo hiểm chỉ được chứa chữ cái, số, khoảng trắng, gạch ngang và gạch dưới.";
+                        err.style.display = "block";
+                    }
+                    isValid = false;
+                }
+            }
+            
+            // Validate Name
+            const nameInput = document.getElementById("addInsuranceName");
+            const nameVal = nameInput ? nameInput.value.trim() : "";
+            if (nameVal === "") {
+                const err = document.getElementById("errAddName");
+                if (err) {
+                    err.textContent = "Tên loại bảo hiểm không được để trống.";
+                    err.style.display = "block";
+                }
+                isValid = false;
+            } else if (nameVal.length > 100) {
+                const err = document.getElementById("errAddName");
+                if (err) {
+                    err.textContent = "Tên loại bảo hiểm không được vượt quá 100 ký tự.";
+                    err.style.display = "block";
+                }
+                isValid = false;
+            }
+            
+            // Validate Company Rate
+            const compInput = document.getElementById("addCompany");
+            const compVal = compInput ? compInput.value.trim() : "";
+            if (compVal === "") {
+                const err = document.getElementById("errAddCompany");
+                if (err) {
+                    err.textContent = "Tỷ lệ đóng của doanh nghiệp không được để trống.";
+                    err.style.display = "block";
+                }
+                isValid = false;
+            } else {
+                const compNum = Number(compVal);
+                if (isNaN(compNum)) {
+                    const err = document.getElementById("errAddCompany");
+                    if (err) {
+                        err.textContent = "Tỷ lệ đóng của doanh nghiệp phải là số.";
+                        err.style.display = "block";
+                    }
+                    isValid = false;
+                } else if (compNum < 0) {
+                    const err = document.getElementById("errAddCompany");
+                    if (err) {
+                        err.textContent = "Tỷ lệ đóng của doanh nghiệp không được nhỏ hơn 0.";
+                        err.style.display = "block";
+                    }
+                    isValid = false;
+                } else if (compNum > 100) {
+                    const err = document.getElementById("errAddCompany");
+                    if (err) {
+                        err.textContent = "Tỷ lệ đóng của doanh nghiệp không được vượt quá 100.";
+                        err.style.display = "block";
+                    }
+                    isValid = false;
+                }
+            }
+            
+            // Validate Employee Rate
+            const empInput = document.getElementById("addEmployee");
+            const empVal = empInput ? empInput.value.trim() : "";
+            if (empVal === "") {
+                const err = document.getElementById("errAddEmployee");
+                if (err) {
+                    err.textContent = "Tỷ lệ đóng của nhân viên không được để trống.";
+                    err.style.display = "block";
+                }
+                isValid = false;
+            } else {
+                const empNum = Number(empVal);
+                if (isNaN(empNum)) {
+                    const err = document.getElementById("errAddEmployee");
+                    if (err) {
+                        err.textContent = "Tỷ lệ đóng của nhân viên phải là số.";
+                        err.style.display = "block";
+                    }
+                    isValid = false;
+                } else if (empNum < 0) {
+                    const err = document.getElementById("errAddEmployee");
+                    if (err) {
+                        err.textContent = "Tỷ lệ đóng của nhân viên không được nhỏ hơn 0.";
+                        err.style.display = "block";
+                    }
+                    isValid = false;
+                } else if (empNum > 100) {
+                    const err = document.getElementById("errAddEmployee");
+                    if (err) {
+                        err.textContent = "Tỷ lệ đóng của nhân viên không được vượt quá 100.";
+                        err.style.display = "block";
+                    }
+                    isValid = false;
+                }
+            }
+            
+            // Validate Dates
+            const fromInput = document.getElementById("addFrom");
+            const toInput = document.getElementById("addTo");
+            if (fromInput && toInput) {
+                const fromVal = fromInput.value;
+                const toVal = toInput.value;
+                if (fromVal && toVal) {
+                    if (new Date(fromVal) > new Date(toVal)) {
+                        const err = document.getElementById("errAddFrom");
+                        if (err) {
+                            err.textContent = "Ngày bắt đầu không được lớn hơn ngày kết thúc.";
+                            err.style.display = "block";
+                        }
+                        isValid = false;
+                    }
+                }
+            }
+
+            // Validate Description
+            const descInput = document.getElementById("addDesc");
+            const descVal = descInput ? descInput.value.trim() : "";
+            if (descVal.length > 255) {
+                const err = document.getElementById("errAddDesc");
+                if (err) {
+                    err.textContent = "Mô tả không được vượt quá 255 ký tự.";
+                    err.style.display = "block";
+                }
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                event.preventDefault();
+            }
+        });
+    }
+
     // Auto-dismiss alerts after 4 s
     setTimeout(function() {
         document.querySelectorAll('.alert').forEach(function(el) {
