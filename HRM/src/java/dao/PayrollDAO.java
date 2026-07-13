@@ -485,27 +485,32 @@ public class PayrollDAO {
     }
 
     public BigDecimal getTotalOTPay(int empId, int month, int year, BigDecimal hourlyRate) {
-        String sql = "SELECT SUM(oa.assigned_hours) FROM overtime_assignments oa " +
+        String sql = "SELECT oa.assigned_hours, h.ot_multiplier " +
+                     "FROM overtime_assignments oa " +
                      "JOIN overtime_plans op ON oa.plan_id = op.plan_id " +
+                     "LEFT JOIN holidays h ON h.holiday_date = op.target_date AND h.status = 1 " +
                      "WHERE oa.user_id = ? AND oa.status = 'Approved' " +
                      "AND MONTH(op.target_date) = ? AND YEAR(op.target_date) = ?";
+        BigDecimal totalOtAmount = BigDecimal.ZERO;
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, empId);
             ps.setInt(2, month);
             ps.setInt(3, year);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    BigDecimal hours = rs.getBigDecimal(1);
-                    if (hours != null) {
-                        return hours.multiply(hourlyRate).multiply(new BigDecimal("1.5"));
+                while (rs.next()) {
+                    BigDecimal hours = rs.getBigDecimal("assigned_hours");
+                    if (hours != null && hours.compareTo(BigDecimal.ZERO) > 0) {
+                        BigDecimal otMultiplier = rs.getBigDecimal("ot_multiplier");
+                        BigDecimal currentMultiplier = (otMultiplier != null) ? otMultiplier : new BigDecimal("1.5");
+                        totalOtAmount = totalOtAmount.add(hours.multiply(hourlyRate).multiply(currentMultiplier));
                     }
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return BigDecimal.ZERO;
+        return totalOtAmount;
     }
 
     /**
@@ -838,7 +843,7 @@ public class PayrollDAO {
             }
             
             BigDecimal overtimeHours = attendanceDAO.getTotalOvertimeHoursFromAttendance(userId, month, year);
-            BigDecimal overtimeAmount = overtimeHours.multiply(hourlyRate).multiply(new BigDecimal("1.5")).setScale(2, java.math.RoundingMode.HALF_UP);
+            BigDecimal overtimeAmount = attendanceDAO.getOvertimeAmountWithHolidayRate(userId, month, year, hourlyRate, new BigDecimal("1.5"));
 
             // TÃ­nh phá»¥ cáº¥p: chá»‰ láº¥y khoáº£n thuá»™c há»£p Ä‘á»“ng Ä‘ang hiá»‡u lá»±c HOáº¸C phá»¥ cáº¥p váº­n hÃ nh (contract_id IS NULL)
             int activeContractId = (activeContract != null) ? activeContract.getContractId() : 0;

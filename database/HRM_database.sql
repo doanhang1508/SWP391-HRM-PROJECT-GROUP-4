@@ -677,7 +677,9 @@ INSERT INTO allowances (allowance_id, allowance_name, description, amount, apply
 -- Điện thoại: miễn thuế, cố định
 (5, 'Điện thoại',  'Phụ cấp cước viễn thông',          500000,  'Nhân viên kinh doanh, quản lý',                 'FIXED',       0, 0),
 -- Trách nhiệm Giám Đốc
-(6, 'Trách nhiệm GĐ', 'Phụ cấp chức vụ cho Giám đốc', 5000000, 'Giám đốc', 'FIXED', 1, 1);
+(6, 'Trách nhiệm GĐ', 'Phụ cấp chức vụ cho Giám đốc', 5000000, 'Giám đốc', 'FIXED', 1, 1),
+-- Vùng miền: thuộc nền BHXH + chịu thuế
+(7, 'Vùng miền', 'Phụ cấp vùng miền', 200000, 'Tùy theo vị trí địa lý của cơ sở làm việc', 'FIXED', 1, 1);
 
 -- ── 7. Insurance Rates (BHXH / BHYT / BHTN) ──
 INSERT INTO insurance_rates (insurance_rate_id, insurance_code, insurance_name, company_rate, employee_rate, description, effective_from) VALUES
@@ -1741,3 +1743,42 @@ INSERT INTO payroll_configs (config_key, description, config_value, unit) VALUES
 
 -- 5. Số ngày công chuẩn trong tháng (Tùy công ty, thường là 22, 24 hoặc 26)
 ('STANDARD_WORK_DAYS', 'Số ngày công chuẩn trong tháng', 26.00, 'Ngày');
+
+-- =====================================================================
+-- BẢNG HOLIDAYS (Ngày nghỉ lễ)
+-- =====================================================================
+SET FOREIGN_KEY_CHECKS = 0;
+
+CREATE TABLE IF NOT EXISTS holidays (
+    holiday_id     INT           PRIMARY KEY AUTO_INCREMENT,
+    holiday_name   VARCHAR(150)  NOT NULL,
+    holiday_date   DATE          NOT NULL,
+    calendar_type  ENUM('SOLAR','LUNAR') NOT NULL DEFAULT 'SOLAR',
+    ot_multiplier  DECIMAL(4,2)  NOT NULL DEFAULT 3.00,
+    description    VARCHAR(255)  NULL,
+    status         TINYINT(1)    NOT NULL DEFAULT 1,
+    created_at     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_holiday_date (holiday_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO holidays (holiday_name, holiday_date, calendar_type, ot_multiplier, status) VALUES
+('Tết Dương lịch', '2026-01-01', 'SOLAR', 3.00, 1),
+('Tết Nguyên Đán (29 Tết)', '2026-02-16', 'LUNAR', 3.00, 1),
+('Tết Nguyên Đán (Mùng 1)', '2026-02-17', 'LUNAR', 3.00, 1),
+('Tết Nguyên Đán (Mùng 2)', '2026-02-18', 'LUNAR', 3.00, 1),
+('Tết Nguyên Đán (Mùng 3)', '2026-02-19', 'LUNAR', 3.00, 1),
+('Tết Nguyên Đán (Mùng 4)', '2026-02-20', 'LUNAR', 3.00, 1),
+('Giỗ Tổ Hùng Vương', '2026-04-26', 'LUNAR', 3.00, 1),
+('Giỗ Tổ Hùng Vương (nghỉ bù)', '2026-04-27', 'LUNAR', 3.00, 1),
+('Ngày Giải phóng miền Nam', '2026-04-30', 'SOLAR', 3.00, 1),
+('Ngày Quốc tế Lao động', '2026-05-01', 'SOLAR', 3.00, 1),
+('Quốc khánh (liền kề)', '2026-09-01', 'SOLAR', 3.00, 1),
+('Quốc khánh', '2026-09-02', 'SOLAR', 3.00, 1)
+ON DUPLICATE KEY UPDATE 
+    holiday_name = VALUES(holiday_name),
+    calendar_type = VALUES(calendar_type),
+    ot_multiplier = VALUES(ot_multiplier),
+    status = VALUES(status);
+
+SET FOREIGN_KEY_CHECKS = 1;

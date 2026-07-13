@@ -115,6 +115,13 @@ public class AllowanceController extends HttpServlet {
         String amountStr      = request.getParameter("amount");
         String applyCondition = request.getParameter("applyCondition");
         String idStr          = request.getParameter("id");
+        String calculationType= request.getParameter("calculationType");
+        boolean isBhxhApplied = request.getParameter("isBhxhApplied") != null;
+        boolean isTaxable     = request.getParameter("isTaxable") != null;
+
+        if (calculationType == null || calculationType.isBlank()) {
+            calculationType = "FIXED";
+        }
 
         if (allowanceName == null || allowanceName.isBlank()) {
             request.getSession().setAttribute("errorMsg", "Tên phụ cấp không được để trống.");
@@ -137,7 +144,7 @@ public class AllowanceController extends HttpServlet {
                     request.getSession().setAttribute("errorMsg",
                         "Tên phụ cấp \"" + allowanceName + "\" đã tồn tại.");
                 } else {
-                    dao.insert(new Allowance(0, allowanceName.trim(), description, amount, applyCondition, true));
+                    dao.insert(new Allowance(0, allowanceName.trim(), description, amount, applyCondition, calculationType, isBhxhApplied, isTaxable, true));
                     request.getSession().setAttribute("successMsg", "Thêm loại phụ cấp thành công.");
                 }
             } else if ("edit".equals(action) && idStr != null) {
@@ -146,7 +153,7 @@ public class AllowanceController extends HttpServlet {
                     request.getSession().setAttribute("errorMsg",
                         "Tên phụ cấp \"" + allowanceName + "\" đã tồn tại.");
                 } else {
-                    dao.update(new Allowance(id, allowanceName.trim(), description, amount, applyCondition, true));
+                    dao.update(new Allowance(id, allowanceName.trim(), description, amount, applyCondition, calculationType, isBhxhApplied, isTaxable, true));
                     request.getSession().setAttribute("successMsg", "Cập nhật loại phụ cấp thành công.");
                 }
             }
@@ -165,6 +172,9 @@ public class AllowanceController extends HttpServlet {
             + "\"description\":"   + jsonStr(a.getDescription())               + ","
             + "\"amount\":"        + (a.getAmount() != null ? a.getAmount().toPlainString() : "0") + ","
             + "\"applyCondition\":" + jsonStr(a.getApplyCondition())           + ","
+            + "\"calculationType\":"+ jsonStr(a.getCalculationType())          + ","
+            + "\"isBhxhApplied\":"  + a.isBhxhApplied()                        + ","
+            + "\"isTaxable\":"      + a.isTaxable()                            + ","
             + "\"status\":"        + a.isStatus()
             + "}";
     }
