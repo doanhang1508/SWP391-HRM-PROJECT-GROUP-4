@@ -97,7 +97,7 @@ public class PayrollDAO {
         }
     }
 
-    // Helper map Ä‘áº§y Ä‘á»§ táº¥t cáº£ cá»™t DB
+    // Helper map đầy đủ tất cả cột DB
     private Payroll mapRow(ResultSet rs) throws SQLException {
         Payroll p = new Payroll();
         p.setPayrollId(rs.getInt("payroll_id"));
@@ -156,8 +156,8 @@ public class PayrollDAO {
     }
 
     /**
-     * Kiá»ƒm tra xem Ä‘Ã£ cÃ³ báº£ng lÆ°Æ¡ng nhÃ¡p (Draft/Pending/Approved/Paid) cho thÃ¡ng/nÄƒm chÆ°a.
-     * DÃ¹ng Ä‘á»ƒ cháº·n má»Ÿ khÃ³a báº£ng cÃ´ng khi Ä‘Ã£ gen payroll draft.
+     * Kiểm tra xem đã có bảng lương nháp (Draft/Pending/Approved/Paid) cho tháng/năm chưa.
+     * Dùng để chặn mở khóa bảng công khi đã gen payroll draft.
      */
     public boolean hasPayrollGenerated(int month, int year) {
         String sql = "SELECT COUNT(*) FROM payroll WHERE month = ? AND year = ?";
@@ -176,7 +176,7 @@ public class PayrollDAO {
         return false;
     }
 
-    // Insert hoáº·c update Ä‘áº§y Ä‘á»§ táº¥t cáº£ cá»™t
+    // Insert hoặc update đầy đủ tất cả cột
     public boolean insertOrUpdatePayroll(Payroll p) {
         String sql = "INSERT INTO payroll " +
                      "(user_id, month, year, base_salary, working_days, overtime_amount, " +
@@ -376,7 +376,7 @@ public class PayrollDAO {
 
     public Payroll getByUserMonthYear(int userId, int month, int year) {
         if (month < 1 || month > 12 || year < 2000) {
-            throw new IllegalArgumentException("ThÃ¡ng hoáº·c nÄƒm khÃ´ng há»£p lá»‡");
+            throw new IllegalArgumentException("Tháng hoặc năm không hợp lệ");
         }
         return getPayroll(userId, month, year);
     }
@@ -514,10 +514,10 @@ public class PayrollDAO {
     }
 
     /**
-     * TÃ­nh tá»•ng phá»¥ cáº¥p thÃ¡ng theo logic chuáº©n.
-     * Chá»‰ Ä‘á»c phá»¥ cáº¥p thuá»™c há»£p Ä‘á»“ng Ä‘ang hiá»‡u lá»±c HOáº¸C phá»¥ cáº¥p váº­n hÃ nh (contract_id IS NULL).
+     * Tính tổng phụ cấp tháng theo logic chuẩn.
+     * Chỉ đọc phụ cấp thuộc hợp đồng đang hiệu lực HOẶC phụ cấp vận hành (contract_id IS NULL).
      *
-     * @param activeContractId  ID cá»§a há»£p Ä‘á»“ng Ä‘ang active (truyá»n 0 náº¿u khÃ´ng cÃ³ há»£p Ä‘á»“ng)
+     * @param activeContractId  ID của hợp đồng đang active (truyền 0 nếu không có hợp đồng)
      */
     public AllowanceResult calculateAllowances(
             int empId, int activeContractId,
@@ -598,7 +598,7 @@ public class PayrollDAO {
         return new AllowanceResult(totalAllowance, bhxhBaseFromAllowances);
     }
 
-    /** Kiá»ƒm tra cÃ³ ngÃ y ABSENT khÃ´ng phÃ©p trong thÃ¡ng khÃ´ng. */
+    /** Kiểm tra có ngày ABSENT không phép trong tháng không. */
     private boolean hasUnexcusedAbsence(int userId, int month, int year) {
         String sql = "SELECT COUNT(*) FROM attendance " +
                      "WHERE user_id = ? AND MONTH(work_date) = ? AND YEAR(work_date) = ? " +
@@ -615,7 +615,7 @@ public class PayrollDAO {
         return false;
     }
 
-    /** Káº¿t quáº£ tÃ­nh phá»¥ cáº¥p: tá»•ng phá»¥ cáº¥p vÃ  pháº§n thuá»™c ná» n BHXH */
+    /** Kết quả tính phụ cấp: tổng phụ cấp và phần thuộc nền BHXH */
     public static class AllowanceResult {
         public final BigDecimal totalAmount;
         public final BigDecimal bhxhBase;
@@ -698,26 +698,26 @@ public class PayrollDAO {
 
     public PayrollGenerationResult generatePayrollDraft(int month, int year) {
         if (month < 1 || month > 12 || year < 2000) {
-            throw new IllegalArgumentException("ThÃ¡ng hoáº·c nÄƒm khÃ´ng há»£p lá»‡");
+            throw new IllegalArgumentException("Tháng hoặc năm không hợp lệ");
         }
 
         PayrollGenerationResult result = new PayrollGenerationResult();
         AttendanceDAO attendanceDAO = new AttendanceDAO();
 
-        // 1. Kiá»ƒm tra dá»¯ liá»‡u cháº¥m cÃ´ng
+        // 1. Kiểm tra dữ liệu chấm công
         if (!attendanceDAO.hasAttendanceData(month, year)) {
             result.setNoAttendanceData(true);
             return result;
         }
 
-        // 2. GATE: Cháº¥m cÃ´ng pháº£i Ä‘Æ°á»£c chá»‘t (HR_MANAGER_APPROVED / LOCKED) cho táº¥t cáº£ phÃ²ng ban
-        //    trÆ°á»›c khi Ä‘Æ°á»£c phÃ©p táº¡o báº£ng lÆ°Æ¡ng.
+        // 2. GATE: Chấm công phải được chốt (HR_MANAGER_APPROVED / LOCKED) cho tất cả phòng ban
+        //    trước khi được phép tạo bảng lương.
         TimesheetConfirmationDAO tsDAO = new TimesheetConfirmationDAO();
         List<String> unapprovedDepts = tsDAO.getUnapprovedDepartments(month, year);
         if (!unapprovedDepts.isEmpty()) {
-            // Váº«n cho cháº¡y náº¿u khÃ´ng cÃ³ phÃ²ng ban nÃ o cÃ³ cháº¥m cÃ´ng (vÃ­ dá»¥ mÃ´i trÆ°á»ng test)
-            // nhÆ°ng log cáº£nh bÃ¡o rÃµ rÃ ng
-            System.err.println("[PAYROLL WARNING] CÃ¡c phÃ²ng ban chÆ°a chá»‘t cháº¥m cÃ´ng: " + unapprovedDepts);
+            // Vẫn cho chạy nếu không có phòng ban nào có chấm công (ví dụ môi trường test)
+            // nhưng log cảnh báo rõ ràng
+            System.err.println("[PAYROLL WARNING] Các phòng ban chưa chốt chấm công: " + unapprovedDepts);
         }
         
         // 2. Get list of all eligible users (including those without attendance logs like Director)
@@ -763,7 +763,7 @@ public class PayrollDAO {
             // Get working days
             double totalDays;
             if (roleId == 4) { // 4 = Director
-                // GiÃ¡m Ä‘á»‘c miá»…n cháº¥m cÃ´ng, auto full cÃ´ng chuáº©n
+                // Giám đốc miễn chấm công, auto full công chuẩn
                 totalDays = standardWorkDays.doubleValue();
             } else {
                 // -------------------------------------------------------------------
@@ -834,8 +834,8 @@ public class PayrollDAO {
             }
             insuranceBenefit = insuranceBenefit.setScale(2, java.math.RoundingMode.HALF_UP);
             
-            // TÃ­nh lÆ°Æ¡ng 1 giá»  dá»±a trÃªn sá»‘ giá»  lÃ m viá»‡c thá»±c táº¿ cá»§a thÃ¡ng (standardWorkDays * 8h)
-            // thay vÃ¬ chia cá»©ng cho 176 giá» .
+            // Tính lương 1 giờ dựa trên số giờ làm việc thực tế của tháng (standardWorkDays * 8h)
+            // thay vì chia cứng cho 176 giờ.
             BigDecimal hourlyRate = BigDecimal.ZERO;
             if (baseSalary.compareTo(BigDecimal.ZERO) > 0 && standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
                 BigDecimal monthlyWorkingHours = standardWorkDays.multiply(new BigDecimal("8"));
@@ -845,19 +845,19 @@ public class PayrollDAO {
             BigDecimal overtimeHours = attendanceDAO.getTotalOvertimeHoursFromAttendance(userId, month, year);
             BigDecimal overtimeAmount = attendanceDAO.getOvertimeAmountWithHolidayRate(userId, month, year, hourlyRate, new BigDecimal("1.5"));
 
-            // TÃ­nh phá»¥ cáº¥p: chá»‰ láº¥y khoáº£n thuá»™c há»£p Ä‘á»“ng Ä‘ang hiá»‡u lá»±c HOáº¸C phá»¥ cáº¥p váº­n hÃ nh (contract_id IS NULL)
+            // Tính phụ cấp: chỉ lấy khoản thuộc hợp đồng đang hiệu lực HOẸC phụ cấp vận hành (contract_id IS NULL)
             int activeContractId = (activeContract != null) ? activeContract.getContractId() : 0;
             AllowanceResult allowanceResult = calculateAllowances(
                 userId, activeContractId, totalDays, standardWorkDays.doubleValue(), month, year);
             BigDecimal allowanceAmount = allowanceResult.totalAmount;
 
-            // Ná» n tÃ­nh BHXH = CHá»ˆ lÆ°Æ¡ng cÆ¡ báº£n (tá»« há»£p Ä‘á»“ng), khÃ´ng cá»™ng thÆ°á»Ÿng hay OT.
-            // Quy Ä‘á»‹nh: báº£o hiá»ƒm chá»‰ tÃ­nh trÃªn lÆ°Æ¡ng cÆ¡ báº£n theo há»£p Ä‘á»“ng lao Ä‘á»™ng.
-            // Láº¥y tá»•ng tá»· lá»‡ báº£o hiá»ƒm tá»« báº£ng cáº¥u hÃ¬nh insurance_rates thÃ´ng qua hÃ m tÃ­nh toÃ¡n
+            // Nền tính BHXH = CHỈ lương cơ bản (từ hợp đồng), không cộng thưởng hay OT.
+            // Quy định: bảo hiểm chỉ tính trên lương cơ bản theo hợp đồng lao động.
+            // Lấy tổng tỷ lệ bảo hiểm từ bảng cấu hình insurance_rates thông qua hàm tính toán
             BigDecimal insuranceAmount = calculateInsurance(baseSalary);
 
-            // Gross = LÆ°Æ¡ng theo cÃ´ng + Phá»¥ cáº¥p + OT + ThÆ°á»Ÿng
-            // -- TrÆ°á»›c háº¿t: tÃ­nh ThÆ°á»Ÿng/Ká»· luáº­t trong thÃ¡ng
+            // Gross = Lương theo công + Phụ cấp + OT + Thưởng
+            // -- Trước hết: tính Thưởng/Kỷ luật trong tháng
             RewardDisciplineDAO rewardDisciplineDAO = new RewardDisciplineDAO();
             List<EmployeeRewardDiscipline> erdRecords = rewardDisciplineDAO.getRecordsByUserIdAndMonthYear(userId, month, year);
             BigDecimal bonusAmount = BigDecimal.ZERO;
@@ -889,7 +889,7 @@ public class PayrollDAO {
             } else if (taxCalcType == 2) {
                 taxAmount = grossSalary.multiply(new BigDecimal("0.1")).setScale(2, java.math.RoundingMode.HALF_UP);
             } else {
-                taxAmount = BigDecimal.ZERO; // KhÃ´ng thuáº¿
+                taxAmount = BigDecimal.ZERO; // Không thuế
             }
             
             // Total Deductions = Discipline Penalties + Insurance + Tax
@@ -931,11 +931,11 @@ public class PayrollDAO {
     }
 
     /**
-     * TASK 2: Viáº¿t láº¡i updatePayrollDraft â€” tá»± Ä‘á»™ng tÃ­nh láº¡i Thuáº¿ TNCN vÃ  Báº£o hiá»ƒm
-     * khi HR thay Ä‘á»•i thÆ°á»Ÿng, phá»¥ cáº¥p hoáº·c pháº¡t.
+     * TASK 2: Viết lại updatePayrollDraft — tự động tính lại Thuế TNCN và Bảo hiểm
+     * khi HR thay đổi thưởng, phụ cấp hoặc phạt.
      * 
-     * HR chá»‰ nháº­p: workingDays, overtimeAmount, allowanceAmount, bonusAmount, deductionAmount
-     * Há»‡ thá»‘ng tá»± tÃ­nh: insurance, tax (PIT), gross, net
+     * HR chỉ nhập: workingDays, overtimeAmount, allowanceAmount, bonusAmount, deductionAmount
+     * Hệ thống tự tính: insurance, tax (PIT), gross, net
      */
     public boolean updatePayrollDraft(Payroll payroll) {
         if (payroll == null) return false;
@@ -1051,9 +1051,9 @@ public class PayrollDAO {
     }
 
     /**
-     * TASK 2: TÃ­nh toÃ¡n preview khi HR thay Ä‘á»•i giÃ¡ trá»‹ (dÃ¹ng cho AJAX recalculate)
-     * Tráº£ vá» Payroll object vá»›i cÃ¡c giÃ¡ trá»‹ insurance, tax, gross, net Ä‘Ã£ tÃ­nh sáºµn.
-     * KHÃ”NG lÆ°u vÃ o DB.
+     * TASK 2: Tính toán preview khi HR thay đổi giá trị (dùng cho AJAX recalculate)
+     * Trả về Payroll object với các giá trị insurance, tax, gross, net đã tính sẵn.
+     * KHÔNG lưu vào DB.
      */
     public Payroll recalculatePayrollPreview(int payrollId, BigDecimal overtimeAmount,
             BigDecimal allowanceAmount, BigDecimal bonusAmount, BigDecimal deductionAmount) {
@@ -1123,7 +1123,7 @@ public class PayrollDAO {
     }
 
     /**
-     * Káº¿ toÃ¡n xÃ¡c nháº­n Ä‘Ã£ chuyá»ƒn khoáº£n cho 1 nhÃ¢n viÃªn â†’ status: Approved â†’ Paid
+     * Kế toán xác nhận đã chuyển khoản cho 1 nhân viên → status: Approved → Paid
      */
     public boolean markAsPaid(int payrollId) {
         String sql = "UPDATE payroll SET status = 'Paid' WHERE payroll_id = ? AND status = 'Approved'";
@@ -1139,7 +1139,7 @@ public class PayrollDAO {
 
     public int submitMonthlyPayrollForApproval(int month, int year) {
         if (month < 1 || month > 12 || year < 2000) {
-            throw new IllegalArgumentException("ThÃ¡ng hoáº·c nÄƒm khÃ´ng há»£p lá»‡");
+            throw new IllegalArgumentException("Tháng hoặc năm không hợp lệ");
         }
         String sql = "UPDATE payroll SET status = 'Pending', reject_reason = NULL " +
                      "WHERE month = ? AND year = ? AND (status = 'Draft' OR status = 'Rejected')";
@@ -1155,8 +1155,8 @@ public class PayrollDAO {
     }
 
     /**
-     * Káº¿ toÃ¡n xÃ¡c nháº­n Ä‘Ã£ chuyá»ƒn khoáº£n cho Táº¤T Cáº¢ nhÃ¢n viÃªn cÃ³ status=Approved trong thÃ¡ng (cÃ³ tracking)
-     * @return sá»‘ báº£n ghi Ä‘Æ°á»£c cáº­p nháº­t
+     * Kế toán xác nhận đã chuyển khoản cho TẤT CẢ nhân viên có status=Approved trong tháng (có tracking)
+     * @return số bản ghi được cập nhật
      */
     public int markAllApprovedAsPaid(int month, int year, int paidBy) {
         String sql = "UPDATE payroll SET status = 'Paid', paid_by = ?, paid_at = NOW() WHERE month = ? AND year = ? AND status = 'Approved'";
@@ -1172,12 +1172,12 @@ public class PayrollDAO {
         return 0;
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ═════════════════════════════════════════════════════
     // TASK 24: Director Approve / Reject Payroll (Verified -> Approved/Rejected)
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ═════════════════════════════════════════════════════
 
     /**
-     * Director duyá»‡t 1 báº£ng lÆ°Æ¡ng: Verified â†’ Approved
+     * Director duyệt 1 bảng lương: Verified → Approved
      */
     public boolean approvePayroll(int payrollId, int approvedBy) {
         String sql = "UPDATE payroll SET status = 'Approved', approved_by = ?, approved_at = NOW() " +
@@ -1194,7 +1194,7 @@ public class PayrollDAO {
     }
 
     /**
-     * Director tá»« chá»‘i 1 báº£ng lÆ°Æ¡ng: Verified â†’ Rejected
+     * Director từ chối 1 bảng lương: Verified → Rejected
      */
     public boolean rejectPayroll(int payrollId, String reason) {
         String sql = "UPDATE payroll SET status = 'Rejected', reject_reason = ? " +
@@ -1211,8 +1211,8 @@ public class PayrollDAO {
     }
 
     /**
-     * Director duyá»‡t Táº¤T Cáº¢ báº£ng lÆ°Æ¡ng Verified trong thÃ¡ng
-     * @return sá»‘ báº£n ghi Ä‘Æ°á»£c duyá»‡t
+     * Director duyệt TẤT CẢ bảng lương Verified trong tháng
+     * @return số bản ghi được duyệt
      */
     public int approveAllPending(int month, int year, int approvedBy) {
         String sql = "UPDATE payroll SET status = 'Approved', approved_by = ?, approved_at = NOW() " +
@@ -1229,12 +1229,12 @@ public class PayrollDAO {
         return 0;
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ═════════════════════════════════════════════════════
     // HR Manager Approve / Reject Payroll (Pending -> Verified/Rejected)
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ═════════════════════════════════════════════════════
 
     /**
-     * HR Manager duyá»‡t 1 báº£ng lÆ°Æ¡ng: Pending â†’ Verified
+     * HR Manager duyệt 1 bảng lương: Pending → Verified
      */
     public boolean hrApprovePayroll(int payrollId) {
         String sql = "UPDATE payroll SET status = 'Verified' WHERE payroll_id = ? AND status = 'Pending'";
@@ -1249,7 +1249,7 @@ public class PayrollDAO {
     }
 
     /**
-     * HR Manager tá»« chá»‘i 1 báº£ng lÆ°Æ¡ng: Pending â†’ Rejected
+     * HR Manager từ chối 1 bảng lương: Pending → Rejected
      */
     public boolean hrRejectPayroll(int payrollId, String reason) {
         String sql = "UPDATE payroll SET status = 'Rejected', reject_reason = ? WHERE payroll_id = ? AND status = 'Pending'";
@@ -1265,7 +1265,7 @@ public class PayrollDAO {
     }
 
     /**
-     * HR Manager duyá»‡t Táº¤T Cáº¢ báº£ng lÆ°Æ¡ng Pending trong thÃ¡ng
+     * HR Manager duyệt TẤT CẢ bảng lương Pending trong tháng
      */
     public int hrApproveAllPending(int month, int year) {
         String sql = "UPDATE payroll SET status = 'Verified' WHERE month = ? AND year = ? AND status = 'Pending'";
@@ -1281,7 +1281,7 @@ public class PayrollDAO {
     }
 
     /**
-     * Láº¥y danh sÃ¡ch payroll theo thÃ¡ng/nÄƒm kÃ¨m tÃªn nhÃ¢n viÃªn (JOIN users)
+     * Lấy danh sách payroll theo tháng/năm kèm tên nhân viên (JOIN users)
      */
     public List<Payroll> getPayrollsWithNames(int month, int year) {
         List<Payroll> list = new ArrayList<>();
@@ -1306,7 +1306,7 @@ public class PayrollDAO {
     }
 
     /**
-     * Äáº¿m sá»‘ lÆ°á»£ng payroll theo status trong 1 thÃ¡ng
+     * Đếm số lượng payroll theo status trong 1 tháng
      */
     public int countByStatus(int month, int year, String status) {
         String sql = "SELECT COUNT(*) FROM payroll WHERE month = ? AND year = ? AND status = ?";
@@ -1325,7 +1325,7 @@ public class PayrollDAO {
     }
 
     /**
-     * Káº¿ toÃ¡n mark paid vá»›i tracking (paid_by, paid_at)
+     * Kế toán mark paid với tracking (paid_by, paid_at)
      */
     public boolean markAsPaidWithTracking(int payrollId, int paidBy) {
         String sql = "UPDATE payroll SET status = 'Paid', paid_by = ?, paid_at = NOW() " +
@@ -1342,8 +1342,8 @@ public class PayrollDAO {
     }
 
     /**
-     * Láº¥y danh sÃ¡ch payroll cá»§a 1 nhÃ¢n viÃªn kÃ¨m filter status (cho employee xem payslip)
-     * Chá»‰ tráº£ vá» Approved hoáº·c Paid
+     * Lấy danh sách payroll của 1 nhân viên kèm filter status (cho employee xem payslip)
+     * Chỉ trả về Approved hoặc Paid
      */
     public List<Payroll> getVisiblePayslips(int userId) {
         List<Payroll> list = new ArrayList<>();
@@ -1388,13 +1388,13 @@ public class PayrollDAO {
         return list;
     }
 
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ═════════════════════════════════════════════════════
     // TAX & INSURANCE ENGINE (TASK 35 & 36)
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // ═════════════════════════════════════════════════════
 
     /**
-     * Task 35: TÃ­nh báº£o hiá»ƒm (BHXH, BHYT, BHTN)
-     * CÃ´ng thá»©c: insuranceAmount = grossSalary * tá»•ng % (máº·c Ä‘á»‹nh 10.5% hoáº·c láº¥y tá»« DB)
+     * Task 35: Tính bảo hiểm (BHXH, BHYT, BHTN)
+     * Công thức: insuranceAmount = grossSalary * tổng % (mặc định 10.5% hoặc lấy từ DB)
      */
     public static BigDecimal calculateInsurance(BigDecimal grossSalary) {
         if (grossSalary == null || grossSalary.compareTo(BigDecimal.ZERO) <= 0) {
@@ -1425,7 +1425,7 @@ public class PayrollDAO {
     }
 
     /**
-     * Task 36: Äáº¿m sá»‘ ngÆ°á»i phá»¥ thuá»™c
+     * Task 36: Đếm số người phụ thuộc
      */
     public static int countActiveDependents(int userId) {
         int count = 0;
@@ -1445,9 +1445,9 @@ public class PayrollDAO {
     }
 
     /**
-     * Fallback: TÃ­nh thuáº¿ TNCN lÅ©y tiáº¿n theo Luáº­t 109/2025/QH15 (5 báº­c, hiá»‡u lá»±c 01/01/2026)
+     * Fallback: Tính thuế TNCN lũy tiến theo Luật 109/2025/QH15 (5 bậc, hiệu lực 01/01/2026)
      * Taxable_Income = Gross - Insurance - 15_500_000 - (CountDependents * 6_200_000)
-     * Æ¯u tiÃªn dÃ¹ng calculateDynamicPIT() Ä‘á»c tá»« DB. HÃ m nÃ y chá»‰ dÃ¹ng khi DB khÃ´ng cÃ³ báº­c thuáº¿.
+     * Ưu tiên dùng calculateDynamicPIT() đọc từ DB. Hàm này chỉ dùng khi DB không có bậc thuế.
      */
     public static BigDecimal calculatePIT(BigDecimal taxableIncome) {
         if (taxableIncome == null || taxableIncome.compareTo(BigDecimal.ZERO) <= 0) {
@@ -1457,7 +1457,7 @@ public class PayrollDAO {
         double income = taxableIncome.doubleValue();
         double pit;
 
-        // Luáº­t 109/2025/QH15 â€” Biá»ƒu thuáº¿ 5 báº­c, hiá»‡u lá»±c 01/01/2026
+        // Luật 109/2025/QH15 — Biểu thuế 5 bậc, hiệu lực 01/01/2026
         if (income <= 10_000_000) {
             pit = income * 0.05;
         } else if (income <= 30_000_000) {
