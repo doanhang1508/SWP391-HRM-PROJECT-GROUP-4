@@ -328,37 +328,7 @@ public class PayrollDAO {
 
     // --- Merged from Service ---
 
-    private RewardDisciplineDAO rewardDisciplineDAO = new RewardDisciplineDAO();
 
-    public void calculate13thMonthBonus(int userId, int currentYear) {
-        PayrollDAO.EmployeeSalaryInfo info = this.getEmployeeSalaryInfo(userId);
-        if (info == null || info.baseSalary == null) return;
-
-        java.time.LocalDate hireDate = (info.hireDate != null) ? info.hireDate.toLocalDate() : java.time.LocalDate.of(currentYear, 1, 1);
-        
-        int monthsWorked = 12;
-        if (hireDate.getYear() == currentYear) {
-            monthsWorked = 12 - hireDate.getMonthValue() + 1; // e.g. joined in June = 12 - 6 + 1 = 7 months
-        } else if (hireDate.getYear() > currentYear) {
-            monthsWorked = 0;
-        }
-
-        if (monthsWorked > 0) {
-            BigDecimal bonus = info.baseSalary.multiply(new BigDecimal(monthsWorked)).divide(new BigDecimal(12), 2, java.math.RoundingMode.HALF_UP);
-
-            model.RewardDiscipline rd13th = rewardDisciplineDAO.getRewardDisciplineByName("13th Month Bonus");
-            int rewardTypeId = (rd13th != null) ? rd13th.getId() : 5; // Fallback ID
-
-            EmployeeRewardDiscipline bonusRecord = new EmployeeRewardDiscipline();
-            bonusRecord.setUserId(userId);
-            bonusRecord.setRewardDisciplineId(rewardTypeId);
-            bonusRecord.setAmount(bonus);
-            bonusRecord.setNote("13th Month Bonus for " + currentYear + " (" + monthsWorked + " months)");
-            bonusRecord.setAppliedDate(java.sql.Date.valueOf(java.time.LocalDate.of(currentYear, 12, 31)));
-
-            rewardDisciplineDAO.insertManualRecord(bonusRecord);
-        }
-    }
 
     public Payroll getById(int payrollId) {
         String sql = "SELECT * FROM payroll WHERE payroll_id = ?";
@@ -374,27 +344,7 @@ public class PayrollDAO {
         return null;
     }
 
-    public Payroll getByUserMonthYear(int userId, int month, int year) {
-        if (month < 1 || month > 12 || year < 2000) {
-            throw new IllegalArgumentException("Tháng hoặc năm không hợp lệ");
-        }
-        return getPayroll(userId, month, year);
-    }
 
-    public List<Integer> getAllActiveEmployeeIds() {
-        List<Integer> list = new ArrayList<>();
-        String sql = "SELECT user_id FROM users WHERE status = 1";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                list.add(rs.getInt("user_id"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return list;
-    }
 
     public List<Integer> getAllEligibleEmployeeIds(int month, int year) {
         List<Integer> list = new ArrayList<>();
@@ -484,34 +434,7 @@ public class PayrollDAO {
         return list;
     }
 
-    public BigDecimal getTotalOTPay(int empId, int month, int year, BigDecimal hourlyRate) {
-        String sql = "SELECT oa.assigned_hours, h.ot_multiplier " +
-                     "FROM overtime_assignments oa " +
-                     "JOIN overtime_plans op ON oa.plan_id = op.plan_id " +
-                     "LEFT JOIN holidays h ON h.holiday_date = op.target_date AND h.status = 1 " +
-                     "WHERE oa.user_id = ? AND oa.status = 'Approved' " +
-                     "AND MONTH(op.target_date) = ? AND YEAR(op.target_date) = ?";
-        BigDecimal totalOtAmount = BigDecimal.ZERO;
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, empId);
-            ps.setInt(2, month);
-            ps.setInt(3, year);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    BigDecimal hours = rs.getBigDecimal("assigned_hours");
-                    if (hours != null && hours.compareTo(BigDecimal.ZERO) > 0) {
-                        BigDecimal otMultiplier = rs.getBigDecimal("ot_multiplier");
-                        BigDecimal currentMultiplier = (otMultiplier != null) ? otMultiplier : new BigDecimal("1.5");
-                        totalOtAmount = totalOtAmount.add(hours.multiply(hourlyRate).multiply(currentMultiplier));
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return totalOtAmount;
-    }
+
 
     /**
      * Tính tổng phụ cấp tháng theo logic chuẩn.
@@ -625,37 +548,7 @@ public class PayrollDAO {
         }
     }
 
-    /** Giữ lại method cũ để backward-compatible */
-    public BigDecimal getFixedAllowances(int empId) {
-        BigDecimal total = BigDecimal.ZERO;
-        // Lấy contract hiện tại
-        EmployeeContractDAO ecDao = new EmployeeContractDAO();
-        EmployeeContract c = ecDao.getActiveContract(empId);
-        if (c != null && c.getPositionId() > 0) {
-            String sql = "SELECT SUM(a.amount) FROM position_allowances pa " +
-                         "JOIN allowances a ON pa.allowance_id = a.allowance_id " +
-                         "WHERE pa.position_id = ? AND a.status = 1 AND a.calculation_type = 'FIXED'";
-            try (Connection conn = DBContext.getConnection();
-                 PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setInt(1, c.getPositionId());
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        BigDecimal amt = rs.getBigDecimal(1);
-                        if (amt != null) total = total.add(amt);
-                    }
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-        
-        AllowanceDAO alwDao = new AllowanceDAO();
-        int tenureMonths = alwDao.getTenureMonths(empId);
-        BigDecimal seniorityAmount = alwDao.getSeniorityAmount(tenureMonths);
-        total = total.add(seniorityAmount);
 
-        return total;
-    }
 
     public boolean updateDraftWithAttendance(Payroll p) {
         String sql = "UPDATE payroll SET " +
@@ -1122,20 +1015,7 @@ public class PayrollDAO {
         return false;
     }
 
-    /**
-     * Kế toán xác nhận đã chuyển khoản cho 1 nhân viên → status: Approved → Paid
-     */
-    public boolean markAsPaid(int payrollId) {
-        String sql = "UPDATE payroll SET status = 'Paid' WHERE payroll_id = ? AND status = 'Approved'";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, payrollId);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
+
 
     public int submitMonthlyPayrollForApproval(int month, int year) {
         if (month < 1 || month > 12 || year < 2000) {
@@ -1473,19 +1353,7 @@ public class PayrollDAO {
         return BigDecimal.valueOf(pit).setScale(2, java.math.RoundingMode.HALF_UP);
     }
 
-    public boolean deletePayrollDraft(int userId, int month, int year) {
-        String sql = "DELETE FROM payroll WHERE user_id = ? AND month = ? AND year = ? AND status = 'Draft'";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            ps.setInt(2, month);
-            ps.setInt(3, year);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
+
 
     public static class TaxProfileInfo {
         public BigDecimal personalDeduction = null;
