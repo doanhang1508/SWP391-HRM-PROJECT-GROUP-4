@@ -214,7 +214,10 @@ public class RewardDisciplineDAO {
 
     public List<EmployeeRewardDiscipline> getRecordsByUserIdAndMonthYear(int userId, int month, int year) {
         List<EmployeeRewardDiscipline> list = new ArrayList<>();
-        String sql = "SELECT erd.*, rd.name as rd_name, rd.type as rd_type "
+        // SELECT thêm is_bhxh_applied và is_taxable từ bảng reward_disciplines
+        // để PayrollDAO biết kể này có tính vào nền BHXH / chịu thuế hay không
+        String sql = "SELECT erd.*, rd.name as rd_name, rd.type as rd_type, "
+                + "rd.is_bhxh_applied as rd_bhxh, rd.is_taxable as rd_taxable "
                 + "FROM employee_rewards_disciplines erd "
                 + "JOIN reward_disciplines rd ON erd.reward_discipline_id = rd.id "
                 + "WHERE erd.user_id = ? AND MONTH(erd.applied_date) = ? AND YEAR(erd.applied_date) = ?";
@@ -234,6 +237,13 @@ public class RewardDisciplineDAO {
                     erd.setAppliedDate(rs.getDate("applied_date"));
                     erd.setRewardDisciplineName(rs.getString("rd_name"));
                     erd.setType(rs.getString("rd_type"));
+                    // Đọc 2 cột mới — backward-compatible: nếu migration chưa chạy thì giữ default
+                    try {
+                        erd.setBhxhApplied(rs.getInt("rd_bhxh") == 1);
+                    } catch (SQLException ignored) { /* cột chưa tồn tại, giữ default = false */ }
+                    try {
+                        erd.setTaxable(rs.getInt("rd_taxable") == 1);
+                    } catch (SQLException ignored) { /* cột chưa tồn tại, giữ default = true */ }
                     list.add(erd);
                 }
             }
@@ -338,6 +348,13 @@ public class RewardDisciplineDAO {
         try {
             rd.setCreatedByName(rs.getString("creator_name"));
         } catch (SQLException ignored) {}
+        // Payroll tax/insurance flags — backward-compatible
+        try {
+            rd.setBhxhApplied(rs.getInt("is_bhxh_applied") == 1);
+        } catch (SQLException ignored) { /* cột chưa tồn tại, giữ default = false */ }
+        try {
+            rd.setTaxable(rs.getInt("is_taxable") == 1);
+        } catch (SQLException ignored) { /* cột chưa tồn tại, giữ default = true */ }
         return rd;
     }
 

@@ -137,14 +137,18 @@ CREATE TABLE leave_types (
 
 -- BẢNG 12: reward_disciplines
 CREATE TABLE reward_disciplines (
-    id          INT          PRIMARY KEY AUTO_INCREMENT,
-    name        VARCHAR(100) NOT NULL,
-    type        VARCHAR(20)  NOT NULL,
-    description VARCHAR(255),
-    apply_level VARCHAR(50)  DEFAULT 'Cá nhân',
-    status      TINYINT(1)   NOT NULL DEFAULT 1,
-    created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by  INT          NULL
+    id               INT          PRIMARY KEY AUTO_INCREMENT,
+    name             VARCHAR(100) NOT NULL,
+    type             VARCHAR(20)  NOT NULL,
+    description      VARCHAR(255),
+    apply_level      VARCHAR(50)  DEFAULT 'Cá nhân',
+    status           TINYINT(1)   NOT NULL DEFAULT 1,
+    is_bhxh_applied  TINYINT(1)   NOT NULL DEFAULT 0
+                     COMMENT '1=Khoản này cộng vào nền tính BHXH/BHYT/BHTN, 0=Không',
+    is_taxable       TINYINT(1)   NOT NULL DEFAULT 1
+                     COMMENT '1=Chịu thuế TNCN, 0=Miễn thuế (VD: thưởng KPI/năng suất)',
+    created_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by       INT          NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- =============================================================
@@ -429,29 +433,34 @@ CREATE TABLE leave_requests (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE payroll (
-    payroll_id       INT PRIMARY KEY AUTO_INCREMENT,
-    user_id          INT NOT NULL,
-    month            INT NOT NULL,
-    year             INT NOT NULL,
-    base_salary      DECIMAL(15,2),
-    working_days     DECIMAL(5,1),
-    overtime_amount  DECIMAL(15,2),
-    allowance_amount DECIMAL(15,2),
-    bonus_amount     DECIMAL(15,2),
-    deduction_amount DECIMAL(15,2),
-    insurance_amount DECIMAL(15,2),
-    tax_amount       DECIMAL(15,2),
-    gross_salary     DECIMAL(15,2),
-    net_salary       DECIMAL(15,2),
-    insurance_benefit DECIMAL(15,2) DEFAULT 0.00,
-    status           ENUM('Draft','Pending','Verified','Approved','Rejected','Paid') DEFAULT 'Draft',
-    approved_by      INT NULL,
-    approved_at      TIMESTAMP NULL,
-    reject_reason    VARCHAR(500) NULL,
-    paid_by          INT NULL,
-    paid_at          TIMESTAMP NULL,
-    payment_note     VARCHAR(500) NULL,
-    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    payroll_id            INT PRIMARY KEY AUTO_INCREMENT,
+    user_id               INT NOT NULL,
+    month                 INT NOT NULL,
+    year                  INT NOT NULL,
+    base_salary           DECIMAL(15,2),
+    working_days          DECIMAL(5,1),
+    overtime_amount       DECIMAL(15,2),
+    allowance_amount      DECIMAL(15,2),
+    bonus_amount          DECIMAL(15,2),
+    deduction_amount      DECIMAL(15,2),
+    insurance_amount      DECIMAL(15,2),
+    tax_amount            DECIMAL(15,2),
+    gross_salary          DECIMAL(15,2),
+    net_salary            DECIMAL(15,2),
+    insurance_benefit     DECIMAL(15,2) DEFAULT 0.00,
+    -- Audit columns: breakdown tính BHXH và thuế để hiển thị phiếu lương
+    insurance_base_amount DECIMAL(15,2) DEFAULT 0
+                          COMMENT 'Nền tính BHXH/BHYT/BHTN thực tế (lương cơ bản + phụ cấp/thưởng chịu BH)',
+    taxable_income_base   DECIMAL(15,2) DEFAULT 0
+                          COMMENT 'Thu nhập chịu thuế TNCN trước khi trừ giảm trừ gia cảnh',
+    status                ENUM('Draft','Pending','Verified','Approved','Rejected','Paid') DEFAULT 'Draft',
+    approved_by           INT NULL,
+    approved_at           TIMESTAMP NULL,
+    reject_reason         VARCHAR(500) NULL,
+    paid_by               INT NULL,
+    paid_at               TIMESTAMP NULL,
+    payment_note          VARCHAR(500) NULL,
+    created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id),
     FOREIGN KEY (approved_by) REFERENCES users(user_id) ON DELETE SET NULL,
     FOREIGN KEY (paid_by) REFERENCES users(user_id) ON DELETE SET NULL,
@@ -728,15 +737,18 @@ INSERT INTO leave_insurance_rates (leave_type_id, insurance_rate_percent, descri
 (6, 100.00, 'Nghỉ thai sản nam: Hưởng 100% mức bình quân tiền lương đóng BHXH 6 tháng', '2026-01-01');
 
 -- ── 12. Reward Disciplines ──
-INSERT INTO reward_disciplines (id, name, type, description, apply_level, created_by) VALUES
-(1, 'Thưởng KPI Tháng',      'Reward',    'Thưởng dựa trên đánh giá hiệu suất',                           'Cá nhân',    1),
-(2, 'Thưởng Dự án',          'Reward',    'Thưởng hoàn thành xuất sắc dự án',                             'Nhóm/Dự án', 1),
-(3, 'Thưởng Chuyên cần',     'Reward',    'Không đi muộn, không nghỉ phép trong tháng',                   'Cá nhân',    1),
-(4, 'Đi muộn/Về sớm',        'Discipline','Phạt đi muộn theo quy định',                                    'Cá nhân',    1),
-(5, 'Vi phạm An toàn LĐ',    'Discipline','Phạt do không tuân thủ an toàn tại xưởng',                     'Cá nhân',    1),
-(6, 'Warning',               'Discipline','Cảnh báo vi phạm kỷ luật',                                     'Cá nhân',    1),
-(7, 'Vi phạm kỷ luật khác',  'Discipline','Các hình thức vi phạm nội quy khác',                           'Cá nhân',    1),
-(8, 'Dismissal',             'Discipline','Sa thải / Chấm dứt hợp đồng lao động do vi phạm nghiêm trọng','Cá nhân',    1);
+-- is_bhxh_applied: 1=cộng vào nền BHXH, 0=không (thưởng KPI/năng suất luôn = 0)
+-- is_taxable: 1=chịu thuế TNCN, 0=miễn thuế (thưởng KPI/năng suất = 0)
+INSERT INTO reward_disciplines (id, name, type, description, apply_level, is_bhxh_applied, is_taxable, created_by) VALUES
+(1, 'Thưởng KPI Tháng',      'Reward',    'Thưởng dựa trên đánh giá hiệu suất, miễn BHXH và thuế TNCN',  'Cá nhân',    0, 0, 1),
+(2, 'Thưởng Dự án',          'Reward',    'Thưởng hoàn thành xuất sắc dự án',                             'Nhóm/Dự án', 0, 1, 1),
+(3, 'Thưởng Chuyên cần',     'Reward',    'Không đi muộn, không nghỉ phép trong tháng',                   'Cá nhân',    0, 1, 1),
+(4, 'Đi muộn/Về sớm',        'Discipline','Phạt đi muộn theo quy định',                                    'Cá nhân',    0, 1, 1),
+(5, 'Vi phạm An toàn LĐ',    'Discipline','Phạt do không tuân thủ an toàn tại xưởng',                     'Cá nhân',    0, 1, 1),
+(6, 'Warning',               'Discipline','Cảnh báo vi phạm kỷ luật',                                     'Cá nhân',    0, 1, 1),
+(7, 'Vi phạm kỷ luật khác',  'Discipline','Các hình thức vi phạm nội quy khác',                           'Cá nhân',    0, 1, 1),
+(8, 'Dismissal',             'Discipline','Sa thải / Chấm dứt hợp đồng lao động do vi phạm nghiêm trọng','Cá nhân',    0, 1, 1),
+(9, 'Thưởng Năng suất',      'Reward',    'Thưởng theo năng suất lao động, miễn BHXH và thuế TNCN',       'Cá nhân',    0, 0, 1);
 
 -- ── 13. Roles (8 roles) ──
 INSERT INTO roles (role_id, role_name, description) VALUES

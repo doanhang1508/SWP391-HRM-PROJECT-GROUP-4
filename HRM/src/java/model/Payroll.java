@@ -21,6 +21,13 @@ public class Payroll {
     private BigDecimal insuranceBenefit;
     private String status;
     private Timestamp createdAt;
+    // Audit: breakdown tính BHXH và thuế TNCN — lưu riêng để hiển thị phiếu lương và audit
+    // insurance_base_amount = baseSalary + phụ cấp is_bhxh_applied=1 + thưởng is_bhxh_applied=1
+    private BigDecimal insuranceBaseAmount;
+    // taxable_income_base = baseWorkedSalary + OT + phụ cấp is_taxable=1 + thưởng is_taxable=1
+    // (trước khi trừ giảm trừ gia cảnh)
+    private BigDecimal taxableIncomeBase;
+
     // New fields for approval and payment flow
     private Integer approvedBy;
     private Timestamp approvedAt;
@@ -124,6 +131,12 @@ public class Payroll {
 
     public BigDecimal getInsuranceBenefit() { return insuranceBenefit; }
     public void setInsuranceBenefit(BigDecimal insuranceBenefit) { this.insuranceBenefit = insuranceBenefit; }
+
+    public BigDecimal getInsuranceBaseAmount() { return insuranceBaseAmount; }
+    public void setInsuranceBaseAmount(BigDecimal insuranceBaseAmount) { this.insuranceBaseAmount = insuranceBaseAmount; }
+
+    public BigDecimal getTaxableIncomeBase() { return taxableIncomeBase; }
+    public void setTaxableIncomeBase(BigDecimal taxableIncomeBase) { this.taxableIncomeBase = taxableIncomeBase; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

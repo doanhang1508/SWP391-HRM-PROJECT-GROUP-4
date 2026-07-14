@@ -252,11 +252,11 @@
                 <span>+ <fmt:formatNumber value="${payroll.overtimeAmount != null ? payroll.overtimeAmount : 0}" type="number" groupingUsed='true'/> ₫</span>
             </div>
             <div class="row-item">
-                <span>Phụ cấp:</span>
+                <span>Phụ cấp: <span style="font-size:0.8em; color:#64748b; font-weight:400;">(ăn trưa/xăng xe/ĐT: miễn BH+Thuế)</span></span>
                 <span>+ <fmt:formatNumber value="${payroll.allowanceAmount != null ? payroll.allowanceAmount : 0}" type="number" groupingUsed='true'/> ₫</span>
             </div>
             <div class="row-item">
-                <span>Thưởng:</span>
+                <span>Thưởng: <span style="font-size:0.8em; color:#64748b; font-weight:400;">(KPI/Năng suất: miễn BH+Thuế)</span></span>
                 <span>+ <fmt:formatNumber value="${payroll.bonusAmount != null ? payroll.bonusAmount : 0}" type="number" groupingUsed='true'/> ₫</span>
             </div>
             <c:if test="${payroll.insuranceBenefit != null && payroll.insuranceBenefit > 0}">
@@ -265,6 +265,7 @@
                     <span>+ <fmt:formatNumber value="${payroll.insuranceBenefit}" type="number" groupingUsed='true'/> ₫</span>
                 </div>
             </c:if>
+
             <div class="total-row-item text-success">
                 <span>Lương Gross:</span>
                 <span><fmt:formatNumber value="${payroll.grossSalary}" type="number" groupingUsed="true"/> ₫</span>
@@ -278,10 +279,24 @@
                 <span>Bảo hiểm xã hội:</span>
                 <span style="color: #dc2626;">- <fmt:formatNumber value="${payroll.insuranceAmount != null ? payroll.insuranceAmount : 0}" type="number" groupingUsed="true"/> ₫</span>
             </div>
+            <!-- Nền BHXH audit: baseSalary + phụ cấp is_bhxh_applied=1 (không gồm ăn uống, xăng xe, điện thoại) -->
+            <c:if test="${payroll.insuranceBaseAmount != null && payroll.insuranceBaseAmount > 0}">
+            <div class="row-item" style="font-size: 0.82em; color: #92400e; background: #fffbeb; padding: 3px 6px; border-radius: 4px; border-left: 3px solid #f59e0b; margin-top: -4px; margin-bottom: 4px;">
+                <span>↳ Nền đóng BHXH:</span>
+                <span><fmt:formatNumber value="${payroll.insuranceBaseAmount}" type="number" groupingUsed="true"/> ₫</span>
+            </div>
+            </c:if>
             <div class="row-item">
                 <span>Thuế TNCN:</span>
                 <span style="color: #dc2626;">- <fmt:formatNumber value="${payroll.taxAmount != null ? payroll.taxAmount : 0}" type="number" groupingUsed="true"/> ₫</span>
             </div>
+            <!-- Thu nhập chịu thuế audit: không gồm ăn uống/xăng xe/thưởng KPI/năng suất -->
+            <c:if test="${payroll.taxableIncomeBase != null && payroll.taxableIncomeBase > 0}">
+            <div class="row-item" style="font-size: 0.82em; color: #92400e; background: #fffbeb; padding: 3px 6px; border-radius: 4px; border-left: 3px solid #f59e0b; margin-top: -4px; margin-bottom: 4px;">
+                <span>↳ Thu nhập chịu thuế:</span>
+                <span><fmt:formatNumber value="${payroll.taxableIncomeBase}" type="number" groupingUsed="true"/> ₫</span>
+            </div>
+            </c:if>
             <div class="row-item">
                 <span>Phạt / Khấu trừ khác:</span>
                 <span style="color: #dc2626;">- <fmt:formatNumber value="${payroll.deductionAmount != null ? payroll.deductionAmount : 0}" type="number" groupingUsed="true"/> ₫</span>
@@ -295,6 +310,7 @@
             </div>
         </div>
     </div>
+
 
     <!-- Net Salary Highlight -->
     <div class="net-salary-container">

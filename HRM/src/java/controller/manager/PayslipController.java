@@ -304,6 +304,9 @@ public class PayslipController extends HttpServlet {
             json.append("\"workingDays\":").append(p.getWorkingDays()).append(",");
             json.append("\"standardWorkDays\":").append(standardWorkDays).append(",");
             json.append("\"insuranceBenefit\":").append(p.getInsuranceBenefit() != null ? p.getInsuranceBenefit() : BigDecimal.ZERO).append(",");
+            json.append("\"insuranceBaseAmount\":").append(p.getInsuranceBaseAmount() != null ? p.getInsuranceBaseAmount() : BigDecimal.ZERO).append(",");
+            json.append("\"taxableIncomeBase\":").append(p.getTaxableIncomeBase() != null ? p.getTaxableIncomeBase() : BigDecimal.ZERO).append(",");
+
 
             dao.AttendanceDAO attDao = new dao.AttendanceDAO();
             BigDecimal overtimeHours = attDao.getTotalOvertimeHoursFromAttendance(requestedUserId, month, year);
@@ -350,16 +353,16 @@ public class PayslipController extends HttpServlet {
                 }
             }
             
-            // Tính thâm niên
+            // Tinh tham nien — luon chiu BHXH va thue TNCN
             dao.AllowanceDAO alwDao = new dao.AllowanceDAO();
             int tenureMonths = alwDao.getTenureMonths(requestedUserId);
             BigDecimal seniorityAmount = alwDao.getSeniorityAmount(tenureMonths);
             if (seniorityAmount.compareTo(BigDecimal.ZERO) > 0) {
                 if (!firstAllow) json.append(",");
                 json.append("{");
-                json.append("\"name\":\"").append(escapeHtml("Phụ cấp thâm niên")).append("\",");
+                json.append("\"name\":\"").append(escapeHtml("Ph\u1ee5 c\u1ea5p th\u00e2m ni\u00ean")).append("\",");
                 json.append("\"amount\":").append(seniorityAmount).append(",");
-                json.append("\"isBhxh\":false");
+                json.append("\"isBhxh\":true");
                 json.append("}");
             }
             
@@ -369,10 +372,15 @@ public class PayslipController extends HttpServlet {
             InsuranceRateDAO irDAO = new InsuranceRateDAO();
             List<InsuranceRate> rates = irDAO.getAllActiveRates();
             boolean firstIns = true;
+            // Tinh tren nen BHXH (da luu san trong cot insurance_base_amount)
+            // = baseSalary + phu cap is_bhxh_applied=1 + thuong is_bhxh_applied=1
+            BigDecimal insuranceBase = p.getInsuranceBaseAmount() != null && p.getInsuranceBaseAmount().compareTo(BigDecimal.ZERO) > 0
+                    ? p.getInsuranceBaseAmount()
+                    : p.getBaseSalary(); // fallback neu ban ghi cu chua co nen BHXH
             for (InsuranceRate r : rates) {
                 if ("Employee".equalsIgnoreCase(r.getAppliedTo())) {
                     if (!firstIns) json.append(",");
-                    BigDecimal amt = p.getBaseSalary().multiply(r.getRatePercentage()).divide(new BigDecimal("100")).setScale(2, java.math.RoundingMode.HALF_UP);
+                    BigDecimal amt = insuranceBase.multiply(r.getRatePercentage()).divide(new BigDecimal("100")).setScale(2, java.math.RoundingMode.HALF_UP);
                     json.append("{");
                     json.append("\"name\":\"").append(escapeHtml(r.getName())).append(" (").append(r.getRatePercentage()).append("%)\",");
                     json.append("\"amount\":").append(amt);
@@ -393,7 +401,9 @@ public class PayslipController extends HttpServlet {
                     String noteVal = formatNoteSafe(erd.getNote());
                     String note = !noteVal.isEmpty() ? " - " + noteVal : "";
                     json.append("\"name\":\"").append(escapeHtml(erd.getRewardDisciplineName() + note)).append("\",");
-                    json.append("\"amount\":").append(erd.getAmount());
+                    json.append("\"amount\":").append(erd.getAmount()).append(",");
+                    json.append("\"isBhxh\":").append(erd.isBhxhApplied()).append(",");
+                    json.append("\"isTaxable\":").append(erd.isTaxable());
                     json.append("}");
                     firstBonus = false;
                 }

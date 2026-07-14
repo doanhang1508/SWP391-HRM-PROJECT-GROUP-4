@@ -15,6 +15,12 @@ public class RewardDiscipline {
     // Display-only field (joined from users table)
     private String createdByName;
 
+    // Payroll tax/insurance flags
+    // is_bhxh_applied: true = kỏ này cộng vào nền tính BHXH/BHYT/BHTN
+    private boolean bhxhApplied = false;
+    // is_taxable: true = chịu thuế TNCN (default true = chịu thuế bình thường)
+    private boolean taxable = true;
+
     public RewardDiscipline() {}
 
     public RewardDiscipline(int id, String name, String type) {
@@ -63,4 +69,10 @@ public class RewardDiscipline {
     public void setCreatedBy(int createdBy) { this.createdBy = createdBy; }
     public String getCreatedByName() { return createdByName; }
     public void setCreatedByName(String createdByName) { this.createdByName = createdByName; }
+
+    public boolean isBhxhApplied() { return bhxhApplied; }
+    public void setBhxhApplied(boolean bhxhApplied) { this.bhxhApplied = bhxhApplied; }
+
+    public boolean isTaxable() { return taxable; }
+    public void setTaxable(boolean taxable) { this.taxable = taxable; }
 }

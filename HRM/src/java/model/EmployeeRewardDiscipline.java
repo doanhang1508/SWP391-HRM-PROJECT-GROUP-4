@@ -15,6 +15,11 @@ public class EmployeeRewardDiscipline {
     private String rewardDisciplineName;
     private String type;
 
+    // Propagated from reward_disciplines JOIN:
+    // is_bhxh_applied và is_taxable để PayrollDAO biết kể này miễn BH/thuế hay không
+    private boolean bhxhApplied = false;  // default: không cộng vào nền BHXH (thưởng luôn = false)
+    private boolean taxable = true;       // default: chịu thuế (an toàn, tránh miễn nhầm)
+
     public EmployeeRewardDiscipline() {}
 
     public EmployeeRewardDiscipline(int id, int userId, int rewardDisciplineId, BigDecimal amount, String note, Date appliedDate) {
@@ -43,6 +48,12 @@ public class EmployeeRewardDiscipline {
     public void setRewardDisciplineName(String rewardDisciplineName) { this.rewardDisciplineName = rewardDisciplineName; }
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
+
+    public boolean isBhxhApplied() { return bhxhApplied; }
+    public void setBhxhApplied(boolean bhxhApplied) { this.bhxhApplied = bhxhApplied; }
+
+    public boolean isTaxable() { return taxable; }
+    public void setTaxable(boolean taxable) { this.taxable = taxable; }
 
     /**
      * Kiểm tra dữ liệu khen thưởng/kỷ luật hợp lệ.

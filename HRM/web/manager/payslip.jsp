@@ -1,4 +1,4 @@
-﻿<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
@@ -294,6 +294,8 @@
                                             data-gross="<fmt:formatNumber value='${p.grossSalary != null ? p.grossSalary : 0}' type='number' groupingUsed='true'/> ₫"
                                             data-net="<fmt:formatNumber value='${p.netSalary != null ? p.netSalary : 0}' type='number' groupingUsed='true'/> ₫"
                                             data-insurancebenefit="<fmt:formatNumber value='${p.insuranceBenefit != null ? p.insuranceBenefit : 0}' type='number' groupingUsed='true'/> ₫"
+                                            data-insurancebase="<fmt:formatNumber value='${p.insuranceBaseAmount != null ? p.insuranceBaseAmount : 0}' type='number' groupingUsed='true'/> ₫"
+                                            data-taxablebase="<fmt:formatNumber value='${p.taxableIncomeBase != null ? p.taxableIncomeBase : 0}' type='number' groupingUsed='true'/> ₫"
                                             data-status="${p.status}">
                                         <i class="fas fa-eye"></i>
                                     </button>
@@ -410,11 +412,29 @@
                                     <span class="fw-semibold text-dark text-danger" id="modalInsurance">- 0 ₫</span>
                                 </div>
                                 <div id="modalInsuranceDetails" style="padding-left: 15px; font-size: 0.8rem; display: none;"></div>
+                                <!-- Dòng audit: Nền đóng BHXH = baseSalary + phụ cấp/thưởng is_bhxh_applied=1 -->
+                                <div class="d-flex justify-content-between" id="modalInsuranceBaseRow"
+                                     style="background: rgba(251,191,36,.08); border-radius: 6px; padding: 4px 8px; margin-top: 2px;">
+                                    <span class="text-muted" style="font-size: 0.8rem;"
+                                          title="Lương cơ bản + phụ cấp và thưởng có đóng BHXH">
+                                        <i class="fas fa-info-circle me-1" style="color: #f59e0b;"></i>Nền đóng BHXH:
+                                    </span>
+                                    <span class="fw-semibold" style="color: #b45309; font-size: 0.8rem;" id="modalInsuranceBase">0 ₫</span>
+                                </div>
                                 <div class="d-flex justify-content-between">
                                     <span class="text-muted">Thuế TNCN:</span>
                                     <span class="fw-semibold text-dark text-danger" id="modalTax">- 0 ₫</span>
                                 </div>
                                 <div id="modalTaxDetails" style="padding-left: 15px; font-size: 0.8rem; display: none;"></div>
+                                <!-- Dòng audit: Thu nhập chịu thuế trước giảm trừ gia cảnh -->
+                                <div class="d-flex justify-content-between" id="modalTaxableBaseRow"
+                                     style="background: rgba(251,191,36,.08); border-radius: 6px; padding: 4px 8px; margin-top: 2px;">
+                                    <span class="text-muted" style="font-size: 0.8rem;"
+                                          title="Lương theo công + OT + phụ cấp/thưởng chịu thuế (trước giảm trừ)">
+                                        <i class="fas fa-info-circle me-1" style="color: #f59e0b;"></i>Thu nhập chịu thuế:
+                                    </span>
+                                    <span class="fw-semibold" style="color: #b45309; font-size: 0.8rem;" id="modalTaxableBase">0 ₫</span>
+                                </div>
                                 <div class="d-flex justify-content-between">
                                     <span class="text-muted">Phạt / Khấu trừ khác:</span>
                                     <span class="fw-semibold text-dark text-danger" id="modalDeduction">- 0 ₫</span>
@@ -462,6 +482,8 @@
                 const gross = button.getAttribute('data-gross');
                 const net = button.getAttribute('data-net');
                 const insuranceBenefit = button.getAttribute('data-insurancebenefit') || '0 ₫';
+                const insuranceBase   = button.getAttribute('data-insurancebase')   || '0 ₫';
+                const taxableBase     = button.getAttribute('data-taxablebase')     || '0 ₫';
                 const status = button.getAttribute('data-status');
 
                 // Populate Modal Fields
@@ -478,6 +500,9 @@
                 document.getElementById('modalTax').textContent = '- ' + tax;
                 document.getElementById('modalDeduction').textContent = '- ' + deduction;
                 document.getElementById('modalNet').textContent = net;
+                // Audit breakdown: nền đóng BHXH và thu nhập chịu thuế
+                document.getElementById('modalInsuranceBase').textContent = insuranceBase;
+                document.getElementById('modalTaxableBase').textContent = taxableBase;
 
                 document.getElementById('modalInsuranceBenefit').textContent = '+ ' + insuranceBenefit;
                 const numericBenefit = parseFloat(insuranceBenefit.replace(/[^\d]/g, '')) || 0;
@@ -538,9 +563,13 @@
                         let allowHtml = '';
                         if (data.allowances && data.allowances.length > 0) {
                             data.allowances.forEach(a => {
-                                allowHtml += `<div class="d-flex justify-content-between text-muted">
-                                    <span>+ \${new Intl.NumberFormat('vi-VN').format(Math.round(a.amount))} ₫</span>
-                                </div>`;
+                                const badge = a.isBhxh
+                                    ? '<span style="font-size:0.72em;background:#fee2e2;color:#b91c1c;padding:1px 5px;border-radius:4px;margin-left:4px;">(chịu BH)</span>'
+                                    : '<span style="font-size:0.72em;background:#d1fae5;color:#065f46;padding:1px 5px;border-radius:4px;margin-left:4px;">(miễn BH)</span>';
+                                allowHtml += '<div class="d-flex justify-content-between text-muted" style="align-items:center;">' +
+                                    '<span>- ' + a.name + ':' + badge + '</span>' +
+                                    '<span>+ ' + new Intl.NumberFormat('vi-VN').format(Math.round(a.amount)) + ' ₫</span>' +
+                                '</div>';
                             });
                         } else {
                             allowHtml = '<div class="text-muted fst-italic">Không có</div>';
@@ -550,10 +579,21 @@
                         let bonusHtml = '';
                         if (data.bonuses && data.bonuses.length > 0) {
                             data.bonuses.forEach(b => {
-                                bonusHtml += `<div class="d-flex justify-content-between text-muted">
-                                    <span>- \${b.name}:</span>
-                                    <span>+ \${new Intl.NumberFormat('vi-VN').format(Math.round(b.amount))} ₫</span>
-                                </div>`;
+                                let badges = '';
+                                if (b.isBhxh === false) {
+                                    badges += '<span style="font-size:0.72em;background:#d1fae5;color:#065f46;padding:1px 5px;border-radius:4px;margin-left:4px;">(miễn BH)</span>';
+                                } else {
+                                    badges += '<span style="font-size:0.72em;background:#fee2e2;color:#b91c1c;padding:1px 5px;border-radius:4px;margin-left:4px;">(chịu BH)</span>';
+                                }
+                                if (b.isTaxable === false) {
+                                    badges += '<span style="font-size:0.72em;background:#d1fae5;color:#065f46;padding:1px 5px;border-radius:4px;margin-left:3px;">(miễn Thuế)</span>';
+                                } else {
+                                    badges += '<span style="font-size:0.72em;background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:4px;margin-left:3px;">(chịu Thuế)</span>';
+                                }
+                                bonusHtml += '<div class="d-flex justify-content-between text-muted" style="align-items:center;">' +
+                                    '<span>- ' + b.name + ':' + badges + '</span>' +
+                                    '<span>+ ' + new Intl.NumberFormat('vi-VN').format(Math.round(b.amount)) + ' ₫</span>' +
+                                '</div>';
                             });
                         } else {
                             bonusHtml = '<div class="text-muted fst-italic">Không có</div>';
