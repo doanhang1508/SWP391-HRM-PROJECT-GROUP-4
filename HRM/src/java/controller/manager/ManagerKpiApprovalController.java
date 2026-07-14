@@ -206,7 +206,7 @@ public class ManagerKpiApprovalController extends HttpServlet {
                                 if (month > 0 && year > 0) {
                                     RewardDisciplineDAO rdDAO = new RewardDisciplineDAO();
                                     // Pass kpiScore as a ratio (e.g. 8.5/10 = 0.85)
-                                    rdDAO.calculateKPIBonus(eval.getEmployeeId(), month, year, contract.getBaseSalary(), eval.getScore() / 10.0);
+                                    rdDAO.calculateKPIBonus(eval.getEmployeeId(), month, year, contract.getBaseSalary(), eval.getWeightedScore() / 10.0);
                                 }
                             }
                         } catch (Exception e) {
