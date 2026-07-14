@@ -743,7 +743,7 @@
                             </h6>
                             <div class="d-flex flex-column gap-2" style="font-size: 0.88rem;">
                                 <div class="d-flex justify-content-between">
-                                    <span class="text-muted">Bảo hiểm xã hội:</span>
+                                    <span class="text-muted">Bảo hiểm:</span>
                                     <span class="fw-semibold text-dark text-danger" id="modalInsurance">- 0 ₫</span>
                                 </div>
                                 <div id="modalInsuranceDetails" style="padding-left: 15px; font-size: 0.8rem; display: none;"></div>
@@ -752,7 +752,7 @@
                                      style="background: rgba(251,191,36,.08); border-radius: 6px; padding: 4px 8px; margin-top: 2px;">
                                     <span class="text-muted" style="font-size: 0.8rem;"
                                           title="Lương cơ bản + phụ cấp và thưởng có đóng BHXH">
-                                        <i class="fas fa-info-circle me-1" style="color: #f59e0b;"></i>Nền đóng BHXH:
+                                        <i class="fas fa-info-circle me-1" style="color: #f59e0b;"></i>Nền đóng bảo hiểm:
                                     </span>
                                     <span class="fw-semibold" style="color: #b45309; font-size: 0.8rem;" id="modalInsuranceBase">0 ₫</span>
                                 </div>
