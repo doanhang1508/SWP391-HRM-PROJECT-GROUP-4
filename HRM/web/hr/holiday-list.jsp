@@ -127,9 +127,25 @@
                 </div>
                 <h1><i class="fas fa-calendar-day" style="color:var(--blue);margin-right:10px;font-size:1.3rem;"></i>Quản Lý Ngày Nghỉ Lễ</h1>
             </div>
-            <button class="btn-primary" onclick="openAddModal()">
-                <i class="fas fa-plus"></i> Thêm ngày lễ
-            </button>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <form action="${pageContext.request.contextPath}/hr/holiday" method="GET" id="yearForm" style="margin:0;">
+                    <select name="year" class="status-select" onchange="document.getElementById('yearForm').submit()" style="font-weight: 600;">
+                        <c:forEach items="${availableYears}" var="y">
+                            <option value="${y}" ${selectedYear == y ? 'selected' : ''}>Năm ${y}</option>
+                        </c:forEach>
+                    </select>
+                </form>
+                <form action="${pageContext.request.contextPath}/hr/holiday" method="POST" style="margin:0;" onsubmit="return confirm('Hệ thống sẽ tự động sinh và bổ sung các ngày lễ còn thiếu cho năm ${selectedYear}. Bạn có chắc chắn không?');">
+                    <input type="hidden" name="action" value="generate">
+                    <input type="hidden" name="year" value="${selectedYear}">
+                    <button type="submit" class="btn-primary" style="background:#16a34a;">
+                        <i class="fas fa-magic"></i> Sinh lịch nghỉ năm ${selectedYear}
+                    </button>
+                </form>
+                <button class="btn-primary" onclick="openAddModal()">
+                    <i class="fas fa-plus"></i> Thêm ngày lễ
+                </button>
+            </div>
         </div>
 
         <!-- JSTL Tính toán Summary Cards -->
@@ -143,6 +159,14 @@
                 </c:choose>
             </c:if>
         </c:forEach>
+
+        <c:if test="${not empty sessionScope.successMsg}">
+            <div style="background-color: #dcfce7; color: #166534; padding: 12px 16px; border-radius: 8px; margin-bottom: 24px; font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-check-circle"></i>
+                ${sessionScope.successMsg}
+            </div>
+            <c:remove var="successMsg" scope="session"/>
+        </c:if>
 
         <div class="summary-grid">
             <div class="summary-card">
@@ -195,6 +219,7 @@
                             <th>Ngày Dương Lịch</th>
                             <th style="text-align:center;">Loại Lịch</th>
                             <th style="text-align:center;">Hệ số OT</th>
+                            <th style="text-align:center;">Nguồn</th>
                             <th style="text-align:center;">Trạng thái</th>
                             <th style="text-align:center;">Hành động</th>
                         </tr>
@@ -238,6 +263,21 @@
                                             <span class="badge-ot" title="Hệ số lương làm thêm giờ">
                                                 x${h.otMultiplier}
                                             </span>
+                                        </td>
+                                        <td style="text-align:center;">
+                                            <c:choose>
+                                                <c:when test="${h.source eq 'AUTO'}">
+                                                    <span style="font-size:.75rem; color:#64748b; background:#f1f5f9; padding:3px 8px; border-radius:12px; font-weight:600;"><i class="fas fa-robot"></i> Tự động</span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span style="font-size:.75rem; color:#0f766e; background:#ccfbf1; padding:3px 8px; border-radius:12px; font-weight:600;"><i class="fas fa-user-edit"></i> Thủ công</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                            <c:if test="${h.makeupDay}">
+                                                <div style="margin-top: 4px;">
+                                                    <span style="font-size:.7rem; color:#b45309; background:#fef3c7; padding:2px 6px; border-radius:8px; font-weight:600;">Nghỉ bù</span>
+                                                </div>
+                                            </c:if>
                                         </td>
                                         <td style="text-align:center;">
                                             <c:choose>

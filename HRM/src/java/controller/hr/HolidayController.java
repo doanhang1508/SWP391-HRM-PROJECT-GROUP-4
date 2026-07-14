@@ -9,9 +9,11 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 import model.Holiday;
 import model.User;
+import service.HolidayGeneratorService;
 
 @WebServlet("/hr/holiday")
 public class HolidayController extends HttpServlet {
@@ -23,6 +25,7 @@ public class HolidayController extends HttpServlet {
     private static final String VIEW_PAGE = "/hr/holiday-list.jsp";
 
     private final HolidayDAO dao = new HolidayDAO();
+    private final HolidayGeneratorService generatorService = new HolidayGeneratorService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -30,8 +33,29 @@ public class HolidayController extends HttpServlet {
             return;
         }
 
-        List<Holiday> holidayList = dao.getAll();
+        String yearStr = request.getParameter("year");
+        int year;
+        if (yearStr != null && !yearStr.trim().isEmpty()) {
+            year = parseInt(yearStr);
+        } else {
+            year = LocalDate.now().getYear();
+        }
+
+        List<Holiday> holidayList = dao.getByYear(year);
+        List<Integer> availableYears = dao.getAvailableYears();
+        
+        // Ensure current year and next year are always in the list even if no data
+        if (!availableYears.contains(LocalDate.now().getYear())) {
+            availableYears.add(LocalDate.now().getYear());
+        }
+        if (!availableYears.contains(LocalDate.now().getYear() + 1)) {
+            availableYears.add(LocalDate.now().getYear() + 1);
+        }
+        availableYears.sort((a, b) -> b.compareTo(a));
+
         request.setAttribute("holidayList", holidayList);
+        request.setAttribute("availableYears", availableYears);
+        request.setAttribute("selectedYear", year);
         forwardToView(request, response);
     }
 
@@ -56,9 +80,28 @@ public class HolidayController extends HttpServlet {
         String calendarType = request.getParameter("calendarType");
         String otMultiplierStr = request.getParameter("otMultiplier");
         String description = request.getParameter("description");
+        String yearStr = request.getParameter("year");
+
+        if ("generate".equals(action)) {
+            int year = parseInt(yearStr);
+            if (year > 0) {
+                generatorService.generateHolidaysForYear(year);
+                request.getSession().setAttribute("successMsg", "Đã sinh lịch nghỉ lễ cho năm " + year + " thành công!");
+                redirect(response, request.getContextPath() + REDIRECT_URL + "?year=" + year);
+                return;
+            }
+        }
 
         processAction(action, idStr, name, holidayDateStr, calendarType, otMultiplierStr, description);
-        redirect(response, request.getContextPath() + REDIRECT_URL);
+        
+        int redirectYear = LocalDate.now().getYear();
+        if (holidayDateStr != null && !holidayDateStr.isEmpty()) {
+            redirectYear = Date.valueOf(holidayDateStr).toLocalDate().getYear();
+        } else if (yearStr != null && !yearStr.isEmpty()) {
+            redirectYear = parseInt(yearStr);
+        }
+        
+        redirect(response, request.getContextPath() + REDIRECT_URL + "?year=" + redirectYear);
     }
 
     private void processAction(String action, String idStr, String name, String holidayDateStr, 
@@ -73,13 +116,27 @@ public class HolidayController extends HttpServlet {
             changeStatusIfIdPresent(idStr, true);
         } else if ("add".equals(action)) {
             if (name != null && !name.trim().isEmpty() && holidayDateStr != null && !holidayDateStr.isEmpty()) {
-                dao.insert(new Holiday(0, name.trim(), Date.valueOf(holidayDateStr), 
+                Date date = Date.valueOf(holidayDateStr);
+                int year = date.toLocalDate().getYear();
+                dao.insert(new Holiday(0, name.trim(), date, year, null, "MANUAL", false,
                         parseCalendarType(calendarType), parseOtMultiplier(otMultiplierStr), description, true));
             }
         } else if ("edit".equals(action) && idStr != null) {
             if (name != null && !name.trim().isEmpty() && holidayDateStr != null && !holidayDateStr.isEmpty()) {
-                dao.update(new Holiday(parseInt(idStr), name.trim(), Date.valueOf(holidayDateStr), 
-                        parseCalendarType(calendarType), parseOtMultiplier(otMultiplierStr), description, true));
+                Date date = Date.valueOf(holidayDateStr);
+                int year = date.toLocalDate().getYear();
+                Holiday existing = dao.getById(parseInt(idStr));
+                if (existing != null) {
+                    existing.setHolidayName(name.trim());
+                    existing.setHolidayDate(date);
+                    existing.setHolidayYear(year);
+                    existing.setCalendarType(parseCalendarType(calendarType));
+                    existing.setOtMultiplier(parseOtMultiplier(otMultiplierStr));
+                    existing.setDescription(description);
+                    // Automatically mark as MANUAL if it was AUTO and we are editing it
+                    existing.setSource("MANUAL");
+                    dao.update(existing);
+                }
             }
         }
     }

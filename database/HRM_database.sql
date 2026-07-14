@@ -1765,6 +1765,10 @@ CREATE TABLE IF NOT EXISTS holidays (
     holiday_id     INT           PRIMARY KEY AUTO_INCREMENT,
     holiday_name   VARCHAR(150)  NOT NULL,
     holiday_date   DATE          NOT NULL,
+    holiday_year   INT           NOT NULL,
+    rule_code      VARCHAR(50)   NULL,
+    source         ENUM('AUTO','MANUAL') NOT NULL DEFAULT 'MANUAL',
+    is_makeup_day  TINYINT(1)    NOT NULL DEFAULT 0,
     calendar_type  ENUM('SOLAR','LUNAR') NOT NULL DEFAULT 'SOLAR',
     ot_multiplier  DECIMAL(4,2)  NOT NULL DEFAULT 3.00,
     description    VARCHAR(255)  NULL,
@@ -1774,19 +1778,50 @@ CREATE TABLE IF NOT EXISTS holidays (
     UNIQUE KEY uk_holiday_date (holiday_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO holidays (holiday_name, holiday_date, calendar_type, ot_multiplier, status) VALUES
-('Tết Dương lịch', '2026-01-01', 'SOLAR', 3.00, 1),
-('Tết Nguyên Đán (29 Tết)', '2026-02-16', 'LUNAR', 3.00, 1),
-('Tết Nguyên Đán (Mùng 1)', '2026-02-17', 'LUNAR', 3.00, 1),
-('Tết Nguyên Đán (Mùng 2)', '2026-02-18', 'LUNAR', 3.00, 1),
-('Tết Nguyên Đán (Mùng 3)', '2026-02-19', 'LUNAR', 3.00, 1),
-('Tết Nguyên Đán (Mùng 4)', '2026-02-20', 'LUNAR', 3.00, 1),
-('Giỗ Tổ Hùng Vương', '2026-04-26', 'LUNAR', 3.00, 1),
-('Giỗ Tổ Hùng Vương (nghỉ bù)', '2026-04-27', 'LUNAR', 3.00, 1),
-('Ngày Giải phóng miền Nam', '2026-04-30', 'SOLAR', 3.00, 1),
-('Ngày Quốc tế Lao động', '2026-05-01', 'SOLAR', 3.00, 1),
-('Quốc khánh (liền kề)', '2026-09-01', 'SOLAR', 3.00, 1),
-('Quốc khánh', '2026-09-02', 'SOLAR', 3.00, 1)
+CREATE TABLE IF NOT EXISTS holiday_rules (
+    rule_code       VARCHAR(50) PRIMARY KEY,
+    rule_name       VARCHAR(150),
+    calendar_type   ENUM('SOLAR','LUNAR'),
+    ref_month       INT,
+    ref_day         INT,
+    day_offset      INT DEFAULT 0,
+    ot_multiplier   DECIMAL(4,2) DEFAULT 3.00,
+    active          TINYINT(1) DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO holiday_rules (rule_code, rule_name, calendar_type, ref_month, ref_day, day_offset, ot_multiplier, active) VALUES
+('TET_DUONG_LICH', 'Tết Dương lịch', 'SOLAR', 1, 1, 0, 3.00, 1),
+('TET_29', 'Tết Nguyên Đán (29 Tết)', 'LUNAR', 1, 1, -2, 3.00, 1),
+('TET_30', 'Tết Nguyên Đán (30 Tết)', 'LUNAR', 1, 1, -1, 3.00, 1),
+('TET_MUNG_1', 'Tết Nguyên Đán (Mùng 1)', 'LUNAR', 1, 1, 0, 3.00, 1),
+('TET_MUNG_2', 'Tết Nguyên Đán (Mùng 2)', 'LUNAR', 1, 1, 1, 3.00, 1),
+('TET_MUNG_3', 'Tết Nguyên Đán (Mùng 3)', 'LUNAR', 1, 1, 2, 3.00, 1),
+('GIO_TO', 'Giỗ Tổ Hùng Vương', 'LUNAR', 3, 10, 0, 3.00, 1),
+('GIAI_PHONG', 'Ngày Giải phóng miền Nam', 'SOLAR', 4, 30, 0, 3.00, 1),
+('QUOC_TE_LAO_DONG', 'Ngày Quốc tế Lao động', 'SOLAR', 5, 1, 0, 3.00, 1),
+('QUOC_KHANH_1', 'Quốc khánh (liền kề)', 'SOLAR', 9, 1, 0, 3.00, 1),
+('QUOC_KHANH_2', 'Quốc khánh', 'SOLAR', 9, 2, 0, 3.00, 1)
+ON DUPLICATE KEY UPDATE
+    rule_name = VALUES(rule_name),
+    calendar_type = VALUES(calendar_type),
+    ref_month = VALUES(ref_month),
+    ref_day = VALUES(ref_day),
+    day_offset = VALUES(day_offset),
+    ot_multiplier = VALUES(ot_multiplier);
+
+INSERT INTO holidays (holiday_name, holiday_date, holiday_year, rule_code, source, calendar_type, ot_multiplier, status) VALUES
+('Tết Dương lịch', '2026-01-01', 2026, 'TET_DUONG_LICH', 'AUTO', 'SOLAR', 3.00, 1),
+('Tết Nguyên Đán (29 Tết)', '2026-02-16', 2026, 'TET_29', 'AUTO', 'LUNAR', 3.00, 1),
+('Tết Nguyên Đán (Mùng 1)', '2026-02-17', 2026, 'TET_MUNG_1', 'AUTO', 'LUNAR', 3.00, 1),
+('Tết Nguyên Đán (Mùng 2)', '2026-02-18', 2026, 'TET_MUNG_2', 'AUTO', 'LUNAR', 3.00, 1),
+('Tết Nguyên Đán (Mùng 3)', '2026-02-19', 2026, 'TET_MUNG_3', 'AUTO', 'LUNAR', 3.00, 1),
+('Tết Nguyên Đán (Mùng 4)', '2026-02-20', 2026, 'TET_MUNG_4', 'AUTO', 'LUNAR', 3.00, 1),
+('Giỗ Tổ Hùng Vương', '2026-04-26', 2026, 'GIO_TO', 'AUTO', 'LUNAR', 3.00, 1),
+('Giỗ Tổ Hùng Vương (nghỉ bù)', '2026-04-27', 2026, 'GIO_TO', 'AUTO', 'LUNAR', 3.00, 1),
+('Ngày Giải phóng miền Nam', '2026-04-30', 2026, 'GIAI_PHONG', 'AUTO', 'SOLAR', 3.00, 1),
+('Ngày Quốc tế Lao động', '2026-05-01', 2026, 'QUOC_TE_LAO_DONG', 'AUTO', 'SOLAR', 3.00, 1),
+('Quốc khánh (liền kề)', '2026-09-01', 2026, 'QUOC_KHANH_1', 'AUTO', 'SOLAR', 3.00, 1),
+('Quốc khánh', '2026-09-02', 2026, 'QUOC_KHANH_2', 'AUTO', 'SOLAR', 3.00, 1)
 ON DUPLICATE KEY UPDATE 
     holiday_name = VALUES(holiday_name),
     calendar_type = VALUES(calendar_type),

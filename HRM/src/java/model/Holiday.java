@@ -8,6 +8,10 @@ public class Holiday {
     private int holidayId;
     private String holidayName;
     private Date holidayDate;
+    private int holidayYear;
+    private String ruleCode;
+    private String source; // AUTO or MANUAL
+    private boolean isMakeupDay;
     private String calendarType; // SOLAR or LUNAR
     private BigDecimal otMultiplier;
     private String description;
@@ -19,10 +23,14 @@ public class Holiday {
     }
 
     // Constructor without timestamps (for insert/update)
-    public Holiday(int holidayId, String holidayName, Date holidayDate, String calendarType, BigDecimal otMultiplier, String description, boolean status) {
+    public Holiday(int holidayId, String holidayName, Date holidayDate, int holidayYear, String ruleCode, String source, boolean isMakeupDay, String calendarType, BigDecimal otMultiplier, String description, boolean status) {
         this.holidayId = holidayId;
         this.holidayName = holidayName;
         this.holidayDate = holidayDate;
+        this.holidayYear = holidayYear;
+        this.ruleCode = ruleCode;
+        this.source = source;
+        this.isMakeupDay = isMakeupDay;
         this.calendarType = calendarType;
         this.otMultiplier = otMultiplier;
         this.description = description;
@@ -30,10 +38,14 @@ public class Holiday {
     }
 
     // Constructor with all fields
-    public Holiday(int holidayId, String holidayName, Date holidayDate, String calendarType, BigDecimal otMultiplier, String description, boolean status, Timestamp createdAt, Timestamp updatedAt) {
+    public Holiday(int holidayId, String holidayName, Date holidayDate, int holidayYear, String ruleCode, String source, boolean isMakeupDay, String calendarType, BigDecimal otMultiplier, String description, boolean status, Timestamp createdAt, Timestamp updatedAt) {
         this.holidayId = holidayId;
         this.holidayName = holidayName;
         this.holidayDate = holidayDate;
+        this.holidayYear = holidayYear;
+        this.ruleCode = ruleCode;
+        this.source = source;
+        this.isMakeupDay = isMakeupDay;
         this.calendarType = calendarType;
         this.otMultiplier = otMultiplier;
         this.description = description;
@@ -64,6 +76,38 @@ public class Holiday {
 
     public void setHolidayDate(Date holidayDate) {
         this.holidayDate = holidayDate;
+    }
+
+    public int getHolidayYear() {
+        return holidayYear;
+    }
+
+    public void setHolidayYear(int holidayYear) {
+        this.holidayYear = holidayYear;
+    }
+
+    public String getRuleCode() {
+        return ruleCode;
+    }
+
+    public void setRuleCode(String ruleCode) {
+        this.ruleCode = ruleCode;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public boolean isMakeupDay() {
+        return isMakeupDay;
+    }
+
+    public void setMakeupDay(boolean makeupDay) {
+        isMakeupDay = makeupDay;
     }
 
     public String getCalendarType() {
