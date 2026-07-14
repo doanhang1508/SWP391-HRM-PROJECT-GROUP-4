@@ -299,7 +299,7 @@
                                             data-status="${p.status}">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <a href="${pageContext.request.contextPath}/manager/payslip?action=print&month=${p.month}&year=${p.year}" 
+                                    <a href="${pageContext.request.contextPath}/employee/payslip?action=print&month=${p.month}&year=${p.year}" 
                                        target="_blank" 
                                        class="btn-action btn-pdf ms-1" 
                                        title="Xuất file PDF">
@@ -532,7 +532,7 @@
                     taxDetailsEl.style.display = 'block';
                 }
 
-                fetch(contextPath + '/manager/payslip?action=details_json&userId=' + userId + '&month=' + month + '&year=' + year)
+                fetch(contextPath + '/employee/payslip?action=details_json&userId=' + userId + '&month=' + month + '&year=' + year)
                     .then(response => response.json())
                     .then(data => {
                         if (data.error) {

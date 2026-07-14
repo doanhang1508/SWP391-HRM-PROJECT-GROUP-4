@@ -127,7 +127,7 @@ public class DirectorPayrollController extends HttpServlet {
                                 notificationDAO notiDAO = new notificationDAO();
                                 notiDAO.create(p.getUserId(), "payroll", "Bảng lương đã được duyệt", 
                                     "Bảng lương tháng " + p.getMonth() + "/" + p.getYear() + " của bạn đã được Giám đốc phê duyệt.", 
-                                    "/manager/payslip");
+                                    "/employee/payslip");
                             }
                         } else {
                             session.setAttribute("errorMessage", "Không thể duyệt. Bảng lương không ở trạng thái Verified.");
@@ -154,7 +154,7 @@ public class DirectorPayrollController extends HttpServlet {
                                  notificationDAO notiDAO = new notificationDAO();
                                  notiDAO.create(p.getUserId(), "payroll", "Bảng lương bị từ chối", 
                                      "Bảng lương tháng " + p.getMonth() + "/" + p.getYear() + " của bạn bị Giám đốc từ chối. Lý do: " + reason, 
-                                     "/manager/payslip");
+                                     "/employee/payslip");
                             }
                         } else {
                             session.setAttribute("errorMessage", "Không thể từ chối. Bảng lương không ở trạng thái Verified.");
@@ -174,7 +174,7 @@ public class DirectorPayrollController extends HttpServlet {
                     for (Payroll p : verifiedPayrolls) {
                         notiDAO.create(p.getUserId(), "payroll", "Bảng lương đã được duyệt", 
                             "Bảng lương tháng " + p.getMonth() + "/" + p.getYear() + " của bạn đã được Giám đốc phê duyệt.", 
-                            "/manager/payslip");
+                            "/employee/payslip");
                     }
                 }
                 session.setAttribute("successMessage", "Đã duyệt thành công " + count + " bảng lương!");

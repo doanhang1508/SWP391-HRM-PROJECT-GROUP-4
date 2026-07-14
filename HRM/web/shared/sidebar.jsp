@@ -922,7 +922,7 @@
                                                                             </a>
                                                                         </li>
                                                                         <li class="sidebar-item">
-                                                                            <a href="${pageContext.request.contextPath}/manager/payslip"
+                                                                             <a href="${pageContext.request.contextPath}/employee/payslip"
                                                                                 class="sidebar-link ${param.activeMenu eq 'personal-payslip' ? 'active' : ''}">
                                                                                 <i
                                                                                     class="fas fa-file-invoice-dollar"></i>
@@ -993,7 +993,7 @@
                                                                                 <c:if
                                                                                     test="${sessionScope.currentUser.roleId != 1 && sessionScope.currentUser.roleId != 7}">
                                                                                     <li class="sidebar-item">
-                                                                                        <a href="${pageContext.request.contextPath}/manager/payslip"
+                                                                                        <a href="${pageContext.request.contextPath}/employee/payslip"
                                                                                             class="sidebar-link ${param.activeMenu eq 'personal-payslip' ? 'active' : ''}">
                                                                                             <i
                                                                                                 class="fas fa-file-invoice-dollar"></i>

@@ -1,4 +1,4 @@
-package controller.manager;
+package controller.employee;
 
 import dao.PayrollDAO;
 import jakarta.servlet.ServletException;
@@ -26,14 +26,14 @@ import java.sql.ResultSet;
 
 /**
  * Personal PayslipController
- * URL: /manager/payslip
+ * URL: /employee/payslip
  *
  * GET (no action) → Hiển thị danh sách phiếu lương của nhân viên đang đăng nhập
  * GET action=view  → Xem chi tiết 1 phiếu lương
  *
  * Chỉ hiển thị payroll có status Approved hoặc Paid.
  */
-@WebServlet(name = "PayslipController", urlPatterns = {"/manager/payslip"})
+@WebServlet(name = "PayslipController", urlPatterns = {"/employee/payslip"})
 public class PayslipController extends HttpServlet {
 
     private final PayrollDAO payrollDAO = new PayrollDAO();
@@ -79,11 +79,11 @@ public class PayslipController extends HttpServlet {
                         request.setAttribute("viewMode", "detail");
                     } else {
                         request.getSession().setAttribute("errorMessage", "Phiếu lương không tồn tại hoặc chưa được duyệt.");
-                        response.sendRedirect(request.getContextPath() + "/manager/payslip");
+                        response.sendRedirect(request.getContextPath() + "/employee/payslip");
                         return;
                     }
                 } catch (NumberFormatException e) {
-                    response.sendRedirect(request.getContextPath() + "/manager/payslip");
+                    response.sendRedirect(request.getContextPath() + "/employee/payslip");
                     return;
                 }
             }
@@ -103,14 +103,14 @@ public class PayslipController extends HttpServlet {
                     if (payroll != null && ("Approved".equals(payroll.getStatus()) || "Paid".equals(payroll.getStatus()))) {
                         request.setAttribute("payroll", payroll);
                         request.setAttribute("employeeName", currentUser.getFullName());
-                        request.getRequestDispatcher("/manager/payslip-print.jsp").forward(request, response);
+                        request.getRequestDispatcher("/employee/payslip-print.jsp").forward(request, response);
                         return;
                     } else {
                         response.getWriter().write("Phiếu lương không tồn tại hoặc chưa được duyệt.");
                         return;
                     }
                 } catch (NumberFormatException e) {
-                    response.sendRedirect(request.getContextPath() + "/manager/payslip");
+                    response.sendRedirect(request.getContextPath() + "/employee/payslip");
                     return;
                 }
             }
@@ -258,7 +258,7 @@ public class PayslipController extends HttpServlet {
         }
 
         request.setAttribute("employeeName", currentUser.getFullName());
-        request.getRequestDispatcher("/manager/payslip.jsp").forward(request, response);
+        request.getRequestDispatcher("/employee/payslip.jsp").forward(request, response);
     }
 
     private void getPayslipDetailsJson(HttpServletRequest request, HttpServletResponse response, int loggedInUserId) throws IOException {

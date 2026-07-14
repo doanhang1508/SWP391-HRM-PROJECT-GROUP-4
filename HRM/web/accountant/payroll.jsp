@@ -712,7 +712,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
             // We need to fetch from PayslipDetailAPIController or hr/payroll?action=details_json 
             // but accountant/payroll.jsp might not have access to hr/payroll if it's role-based.
-            // Let's use PayslipController (/manager/payslip) details_json since it only allows own payslip. 
+            // Let's use PayslipController (/employee/payslip) details_json since it only allows own payslip. 
             // Wait, for accountant to view others, they need an accountant API.
             // Let's fetch from accountant api if it exists. 
             // In the previous code there was NO fetch for details in accountant/payroll.jsp!
