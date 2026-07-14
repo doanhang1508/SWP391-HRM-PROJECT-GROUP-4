@@ -231,7 +231,7 @@ CREATE TABLE employee_contracts (
     user_id          INT           NOT NULL,
     contract_type_id INT           NOT NULL,
     position_id      INT           NOT NULL,
-    department_id    INT           NOT NULL,
+    department_id    INT           NULL,
     salary_grade_id  INT           NOT NULL,
     start_date            DATE          NOT NULL,
     end_date              DATE          NULL,
@@ -262,7 +262,7 @@ CREATE TABLE employee_contracts (
     CONSTRAINT fk_contract_user FOREIGN KEY (user_id)          REFERENCES users(user_id)                         ON DELETE CASCADE,
     CONSTRAINT fk_contract_type FOREIGN KEY (contract_type_id) REFERENCES contract_types(contract_type_id)       ON DELETE RESTRICT,
     CONSTRAINT fk_contract_pos  FOREIGN KEY (position_id)      REFERENCES positions(position_id)                 ON DELETE RESTRICT,
-    CONSTRAINT fk_contract_dept FOREIGN KEY (department_id)    REFERENCES departments(department_id)             ON DELETE RESTRICT,
+    CONSTRAINT fk_contract_dept FOREIGN KEY (department_id)    REFERENCES departments(department_id)             ON DELETE SET NULL,
     CONSTRAINT fk_contract_sg   FOREIGN KEY (salary_grade_id)  REFERENCES salary_grades(salary_grade_id)         ON DELETE RESTRICT,
     CONSTRAINT fk_ec_parent     FOREIGN KEY (parent_contract_id) REFERENCES employee_contracts(contract_id)       ON DELETE SET NULL,
     INDEX idx_ec_user_status    (user_id, status),
@@ -638,10 +638,8 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- ── 1. Departments ──
 INSERT INTO departments (department_id, department_name, description) VALUES
-(1, 'Hành chính',     'Phụ trách thiết bị, văn phòng phẩm, lễ tân'),
 (2, 'Nhân sự',        'Tuyển dụng, đào tạo, C&B'),
-(3, 'Kế toán',        'Tài chính, công nợ, thuế'),
-(4, 'Kinh doanh',     'Sales thương mại, phát triển thị trường'),
+(3, 'Tài chính',      'Tài chính, công nợ, thuế'),
 (5, 'Xưởng sản xuất', 'Trực tiếp sản xuất sản phẩm');
 
 -- ── 2. Positions ──
@@ -850,23 +848,19 @@ INSERT INTO role_permissions (role_id, permission_id) VALUES
 -- ── 16a. Users cốt lõi (user_id 1-5) ──
 INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
 (1,'admin',     '$2a$12$rYoA1kECJ6UezPnfPqISP.Gg1Goc4FUiqLGQIFBOHqFbiBis2C4.i','Quản Trị Viên',          'admin@hrm.com',     '0900000001',1,NULL,NULL),
-(2,'giam_doc',  '$2a$12$VmGdTMHeOmArIfaKnIm7KuR4IeZScPaJatyvb8aq6bQDqDUvU0FWe','Nguyễn Văn Giám Đốc',    'giamdoc@hrm.com',   '0901000002',4,1,1),
+(2,'giam_doc',  '$2a$12$VmGdTMHeOmArIfaKnIm7KuR4IeZScPaJatyvb8aq6bQDqDUvU0FWe','Nguyễn Văn Giám Đốc',    'giamdoc@hrm.com',   '0901000002',4,NULL,1),
 (3,'hr_manager','$2a$12$KlvlpagR4obNSuv2XfM32uWEVqKfNFT5t5JUzRMCrYGi.1QetPgEy','Trần Thị Nhân Sự',       'hr@hrm.com',        '0901000003',2,2,2),
 (4,'quan_doc',  '$2a$12$Pz91uQpiTf8GgwrkbiA/ReDRjxRk48K4lu2Y5yxLGlxQQutJ2xUIm','Lê Văn Quản Đốc',        'quandoc@hrm.com',   '0901000004',3,5,4),
 (5,'cong_nhan', '$2a$12$9rsQL.viVSSU3uxAqO4aI.LVVYSyc6i1BaZSvrF5SPnAKijaaMmFK','Phạm Công Nhân',          'cn1@hrm.com',       '0901000005',7,5,9);
 
 -- ── 16b. Profiles users 2-5 ──
 INSERT INTO employee_profiles (user_id,department_id,id_card,dob,gender,address,hire_date,tax_code,social_insurance_no,bank_account,bank_name,contract_type_id,salary_grade_id,employment_status_id,education_level_id) VALUES
-(2,1,'001085000001','1985-01-01',1,'Hà Nội',     '2020-01-01','8012345678','0100001001','190300001','Vietcombank',4,1,2,1),
+(2,NULL,'001085000001','1985-01-01',1,'Hà Nội',     '2020-01-01','8012345678','0100001001','190300001','Vietcombank',4,1,2,1),
 (3,2,'001090000002','1990-05-15',0,'Hà Nội',     '2021-03-10','8012345679','0100001002','190300002','BIDV',        4,2,2,2),
 (4,5,'001088000003','1988-08-20',1,'Hải Phòng',  '2020-06-01','8012345680','0100001003','190300003','Techcombank',4,2,2,2),
 (5,5,'001095000004','1995-12-10',1,'Bắc Ninh',   '2026-02-15','8012345681','0100001004','190300004','Agribank',   2,4,2,5);
 
 -- ── 17. Nhân viên Quản lý (user_id 6-32, 27 người) ──
-
--- Phòng Hành Chính (dept=1)
-INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
-(6, 'tp_hanh_chinh','$2a$12$iXJpwqZER8kK7i8kvvEGO.jfomkoEBpy3Nd8JwXQJ7pFXGtJX6JsC','Đỗ Thị Hà',    'tp_hc@hrm.com',  '0901000006',6,1,2);
 
 -- Phòng Nhân Sự (dept=2)
 INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
@@ -876,33 +870,23 @@ INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,depar
 INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
 (14,'ke_toan_truong','$2a$12$CX4AKldReVh0P34bzQGNOeTYMKuSgZ/BScaFnB2mdUJ7mMaku/K3W','Phan Thị Khánh','ktt@hrm.com',    '0901000014',6,3,6);
 
--- Phòng Kinh Doanh (dept=4)
-INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
-(19,'tp_kinh_doanh','$2a$12$IYsk5pMFaUR2Fi5y4evcN.d2.lVrO7aHpCHjUxpLywiQsJ3EnFuz.','Hoàng Văn Lộc', 'tp_kd@hrm.com',  '0901000019',6,4,2),
-(20,'pp_kinh_doanh','$2a$12$84xjtVEmBcw2CbrX2ERHueEVouBMPPWQKdkJvGbYQwqrH1AbFun8.','Vũ Thị Thủy',   'pp_kd@hrm.com',  '0901000020',7,4,3);
-
 -- Xưởng Sản Xuất (dept=5) + Ke Toan
 INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
-(33, 'ke_toan_01', '$2a$12$6P4evU5n2Vb5yujdiEVTo.X9yVsr4m0wVGnzr..W2DCY4j1WposdW', 'Nguyễn Thị Kế Toán', 'ketoan01@hrm.com', '0901000033', 8, 3, 7),
-(11, 'nv_nghi_viec', '$2a$12$w5u/sMxKGlOB7jPBXU1FK.ULSY5NkOptWLXDNfg8mRGNtbBCBIjKS', 'Nguyễn Văn Đã Nghỉ', 'nghiviec@hrm.com', '0901000011', 7, 5, 9);
+(33, 'ke_toan_01', '$2a$12$6P4evU5n2Vb5yujdiEVTo.X9yVsr4m0wVGnzr..W2DCY4j1WposdW', 'Nguyễn Thị Kế Toán', 'ketoan01@hrm.com', '0901000033', 8, 3, 7);
 
 -- ── Profiles quản lý ──
 -- Format: (uid, dept_id, id_card, dob, gender, address, hire_date, tax_code, social_insurance_no, bank_account, bank_name, ct, sg, es, el)
 INSERT INTO employee_profiles (user_id,department_id,id_card,dob,gender,address,hire_date,tax_code,social_insurance_no,bank_account,bank_name,contract_type_id,salary_grade_id,employment_status_id,education_level_id) VALUES
-(6, 1,'024880000006','1988-06-20',0,'Cầu Giấy, Hà Nội',     '2018-03-01','8012345706','0200001006','0011234506','Vietcombank',4,1,2,2),
 (10,2,'024940000010','1994-02-28',0,'Hà Nội',                 '2024-06-01','8012345710','0200001010','0011234510','VPBank',      3,2,2,2),
 (14,3,'024820000014','1982-12-10',0,'Hai Bà Trưng, Hà Nội',  '2026-02-01','8012345714','0200001014','0011234514','Vietcombank', 2,1,2,1),
-(19,4,'024830000019','1983-07-22',1,'Đống Đa, Hà Nội',       '2024-01-01','8012345719','0200001019','0011234519','Vietcombank', 3,1,2,2),
-(20,4,'024890000020','1989-11-08',0,'Hà Nội',                 '2026-05-15','8012345720','0200001020','0011234520','BIDV',        1,2,2,2),
-(33,3,'024910000033','1991-07-15',0,'Cầu Giấy, Hà Nội',       '2026-03-01','8012345733','0200001033','0011234533','Vietcombank', 2,2,2,2),
-(11,5,'024920000011','1992-05-10',1,'Hà Nội',                 '2021-01-01','8012345711','0200001011','0011234511','Vietcombank', 3,4,4,5); -- employment_status_id=4: Đã nghỉ việc
+(33,3,'024910000033','1991-07-15',0,'Cầu Giấy, Hà Nội',       '2026-03-01','8012345733','0200001033','0011234533','Vietcombank', 2,2,2,2); -- employment_status_id=4: Đã nghỉ việc
 
 -- ── 16d. Employee Contracts (Dữ liệu cụ thể cho từng nhân viên) ──
 -- Cột: user_id, contract_type_id, position_id, department_id, salary_grade_id,
 --       start_date,    end_date,       base_salary,  status
 INSERT INTO employee_contracts (user_id, contract_type_id, position_id, department_id, salary_grade_id, start_date, end_date, base_salary, status) VALUES
 -- user 2:  Giám đốc          | Vô thời hạn | Lương 30.000.000
-(2,  4, 1, 1, 1, '2020-01-01', NULL,         30000000, 'Active'),
+(2,  4, 1, NULL, 1, '2020-01-01', NULL,         30000000, 'Active'),
 
 -- ════ user 3: HR Manager — có 2 hợp đồng để test lịch sử ════
 -- HĐ cũ: 3 năm, 2021-03-10 → 2024-03-10, lương 12tr (đã hết hạn)
@@ -915,29 +899,12 @@ INSERT INTO employee_contracts (user_id, contract_type_id, position_id, departme
 -- user 5:  Công nhân         | 1 năm       | Lương 5.000.000
 (5,  2, 9, 5, 4, '2026-02-15', '2027-02-15',  5000000, 'Active'),
 
--- ════ user 6: Trưởng phòng HC — có 2 hợp đồng để test lịch sử ════
--- HĐ cũ: 3 năm, 2018-03-01 → 2021-03-01, lương 16tr (đã hết hạn)
-(6,  3, 2, 1, 1, '2018-03-01', '2021-03-01', 16000000, 'Expired'),
--- HĐ mới: Vô thời hạn, gia hạn từ 2021-03-01, lương 20tr (đang hiệu lực)
-(6,  4, 2, 1, 1, '2021-03-01', NULL,         20000000, 'Active'),
-
 -- user 10: HR Staff          | 3 năm       | Lương 10.000.000
 (10, 3, 8, 2, 2, '2024-06-01', '2027-06-01', 10000000, 'Active'),
--- user 11: Công nhân nghỉ    | 3 năm       | Đã hết hạn 2024-01-01
-(11, 3, 9, 5, 4, '2021-01-01', '2024-01-01',  5000000, 'Expired'),
 -- user 14: Kế toán trưởng   | 1 năm       | Lương 20.000.000
 (14, 2, 6, 3, 1, '2026-02-01', '2027-02-01', 20000000, 'Active'),
--- user 19: Trưởng phòng KD  | 3 năm       | Lương 20.000.000
-(19, 3, 2, 4, 1, '2024-01-01', '2027-01-01', 20000000, 'Active'),
--- user 20: Phó phòng KD     | Thử việc    | Lương 8.500.000 (= 10tr * 85%)
-(20, 1, 3, 4, 2, '2026-05-15', '2026-07-15',  8500000, 'Active'),
 -- user 33: Kế toán viên     | 1 năm       | Lương 10.000.000
 (33, 2, 7, 3, 2, '2026-03-01', '2027-03-01', 10000000, 'Active');
-
--- ── 16d.2 Insert Phụ lục Hợp đồng (Addendum) mẫu ──
-INSERT INTO employee_contracts (user_id, contract_type_id, position_id, department_id, salary_grade_id, start_date, end_date, base_salary, tax_calc_type, status, doc_type, parent_contract_id, addendum_reason, sign_status) VALUES
--- Phụ lục của user 19 (Trưởng phòng KD): Tăng lương lên 25tr, đã ký, tham chiếu hợp đồng gốc id = 11
-(19, 3, 2, 4, 1, '2025-01-01', '2027-01-01', 25000000, 1, 'Active', 'ADDENDUM', 11, 'Tăng lương', 'SIGNED');
 
 
 
@@ -947,14 +914,7 @@ UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 3;  -- 1 ngư�
 UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 4;  -- 1 người phụ thuộc
 UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 5;  -- 1 người phụ thuộc
 UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 10; -- 1 người phụ thuộc
-UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 14; -- 1 người phụ thuộc
-UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 19; -- 1 người phụ thuộc
-UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 20;
-
--- Fix user 11 "Đã Nghỉ": user này được dùng để test payroll eligibility — phải có status=0
--- và employment_status_id=4 (đã nghỉ), hợp đồng Expired từ 2024-01-01.
--- Kết quả mong đợi: không xuất hiện trong Payroll Draft cho bất kỳ tháng nào sau 2024-01.
-UPDATE users SET status = 0 WHERE user_id = 11;
+UPDATE employee_profiles SET dependent_count = 1 WHERE user_id = 14; -- 1 người phụ thuộc;
 
 -- ================================================================
 -- 18. MOCK DATA (Kỷ luật, ca làm việc, nghỉ phép, lịch sử)
@@ -966,10 +926,7 @@ INSERT INTO employee_rewards_disciplines (user_id, reward_discipline_id, amount,
 (3,  1, 2500000, 'Thưởng KPI tháng 5/2026 - Hoàn thành mục tiêu tuyển dụng', '2026-05-31'),
 (4,  1, 2000000, 'Thưởng KPI tháng 5/2026 - Đảm bảo tiến độ sản xuất', '2026-05-31'),
 (5,  1, 1000000, 'Thưởng KPI tháng 5/2026 - Hoàn thành chỉ tiêu', '2026-05-31'),
-(6,  1, 2000000, 'Thưởng KPI tháng 5/2026 - Hoàn thành 110% chỉ tiêu',    '2026-05-31'),
 (10, 1, 1500000, 'Thưởng KPI tháng 5/2026 - Hoàn thành 105% chỉ tiêu',    '2026-05-31'),
-(19, 1, 3000000, 'Thưởng KPI tháng 5/2026 - Doanh thu vượt mục tiêu',      '2026-05-31'),
-(20, 1, 1500000, 'Thưởng KPI tháng 5/2026 - Vượt doanh số cá nhân', '2026-05-31'),
 (33, 1, 1000000, 'Thưởng KPI tháng 5/2026 - Quyết toán chuẩn xác', '2026-05-31'),
 -- Thưởng Dự án (reward_discipline_id = 2)
 (14, 2, 5000000, 'Thưởng hoàn thành xuất sắc dự án kiểm toán nội bộ Q1',   '2026-04-30');
@@ -979,24 +936,18 @@ INSERT INTO employee_shifts (user_id, shift_id, work_date) VALUES
 (3,  1, '2026-06-03'),
 (4,  1, '2026-06-03'),
 (5,  1, '2026-06-03'),
-(6,  1, '2026-06-03'),
 (10, 1, '2026-06-03'),
 (14, 1, '2026-06-03'),
-(19, 1, '2026-06-03'),
-(20, 1, '2026-06-03'),
 (33, 1, '2026-06-03');
 
 INSERT INTO leave_requests (user_id, leave_type_id, start_date, end_date, total_days, reason, status, approved_by) VALUES
 -- Nghỉ phép năm (leave_type_id = 1)
 (2,  1, '2026-06-10', '2026-06-11', 2.0, 'Nghỉ giải quyết việc riêng', 'Approved', 1),
 (4,  1, '2026-06-15', '2026-06-16', 2.0, 'Đưa gia đình đi khám bệnh', 'Approved', 2),
-(6,  1, '2026-06-05', '2026-06-06', 2.0, 'Về quê thăm gia đình',                    'Approved', 2),
-(19, 1, '2026-06-20', '2026-06-21', 2.0, 'Giải quyết việc cá nhân', 'Approved', 2),
 -- Nghỉ ốm hưởng BHXH (leave_type_id = 2)
 (3,  2, '2026-06-01', '2026-06-02', 2.0, 'Ốm sốt siêu vi', 'Approved', 2),
 (5,  2, '2026-06-08', '2026-06-09', 2.0, 'Cảm cúm', 'Approved', 3),
 (10, 2, '2026-06-03', '2026-06-04', 2.0, 'Sốt cao, có giấy nghỉ của bác sĩ',        'Approved', 3),
-(20, 2, '2026-06-12', '2026-06-13', 2.0, 'Viêm họng cấp', 'Approved', 19),
 (33, 2, '2026-06-18', '2026-06-19', 2.0, 'Điều trị dạ dày', 'Approved', 14);
 
 -- Seed data for position_allowances
@@ -1031,11 +982,8 @@ INSERT INTO shift_assignments (user_id, shift_id, assigned_date) VALUES
 (3,  1, '2026-06-04'),
 (4,  1, '2026-06-04'),
 (5,  1, '2026-06-04'),
-(6,  1, '2026-06-04'),
 (10, 1, '2026-06-04'),
 (14, 1, '2026-06-04'),
-(19, 1, '2026-06-04'),
-(20, 1, '2026-06-04'),
 (33, 1, '2026-06-04');
 
 INSERT INTO work_history (user_id, position_title, company_name, location, start_date, end_date, description, is_current) VALUES
@@ -1052,15 +1000,8 @@ INSERT INTO work_history (user_id, position_title, company_name, location, start
 -- Kế toán trưởng (user 14)
 (14, 'Kế toán trưởng', 'Công ty TNHH Group4', 'Hà Nội', '2015-02-01', NULL, 'Phụ trách tài chính, công nợ, thuế và báo cáo tài chính định kỳ', 1),
 (14, 'Kế toán tổng hợp', 'Công ty TNHH Tài Chính Minh Phát', 'Hà Nội', '2009-08-01', '2015-01-31', 'Lập báo cáo tài chính, quyết toán thuế hàng năm', 0),
--- Trưởng phòng Kinh doanh (user 19)
-(19, 'Trưởng phòng Kinh doanh', 'Công ty TNHH Group4', 'Hà Nội', '2016-01-01', NULL, 'Phụ trách phát triển thị trường, quản lý đội ngũ sales 10 người', 1),
-(19, 'Nhân viên Kinh doanh', 'Công ty CP Thương Mại Sao Việt', 'TP. Hồ Chí Minh', '2010-03-01', '2015-12-31', 'Phát triển khách hàng mới, chăm sóc khách hàng khu vực miền Nam', 0),
--- Trưởng phòng Hành chính (user 6)
-(6,  'Trưởng phòng Hành chính', 'Công ty TNHH Group4', 'Hà Nội', '2018-03-01', NULL, 'Quản lý văn phòng phẩm, thiết bị, lễ tân và công tác hành chính nội bộ', 1),
 -- HR Staff (user 10)
 (10, 'Chuyên viên Nhân sự', 'Công ty TNHH Group4', 'Hà Nội', '2021-06-01', NULL, 'Quản lý hợp đồng, bảo hiểm, data nhân sự', 1),
--- Sales (user 20)
-(20, 'Nhân viên Kinh doanh', 'Công ty TNHH Group4', 'Hà Nội', '2026-05-15', NULL, 'Sales khu vực phía Bắc', 1),
 -- Kế toán (user 33)
 (33, 'Kế toán viên', 'Công ty TNHH Group4', 'Hà Nội', '2025-03-01', NULL, 'Thanh toán nội bộ', 1);
 
@@ -1137,10 +1078,8 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- Default shift assignments for departments
 INSERT INTO department_shifts (department_id, shift_id) VALUES
-(1, 1),  -- Hành chính → Ca Hành Chính
 (2, 1),  -- Nhân sự → Ca Hành Chính
-(3, 1),  -- Kế toán → Ca Hành Chính
-(4, 1),  -- Kinh doanh → Ca Hành Chính
+(3, 1),  -- Kế toán/Tài chính → Ca Hành Chính
 (5, 1);  -- Xưởng sản xuất → Ca Hành Chính (default)
 
 -- Sample overtime plan (created by Quản đốc - user 4)
@@ -1369,7 +1308,7 @@ CREATE TABLE IF NOT EXISTS timesheet_confirmations (
     created_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_by      INT          NULL,
     updated_at      TIMESTAMP    NULL,
-    CONSTRAINT fk_tc_dept   FOREIGN KEY (department_id) REFERENCES departments(department_id),
+    CONSTRAINT fk_tc_dept   FOREIGN KEY (department_id) REFERENCES departments(department_id) ON DELETE CASCADE,
     CONSTRAINT fk_tc_creator FOREIGN KEY (created_by) REFERENCES users(user_id),
     CONSTRAINT fk_tc_updater FOREIGN KEY (updated_by) REFERENCES users(user_id),
     UNIQUE KEY uk_dept_month_year (department_id, month, year)
@@ -1492,21 +1431,13 @@ INSERT INTO kpi_templates
 (template_id, name, description, status, created_by, department_id)
 VALUES
 
-(1, 'KPI Khối Hành Chính',
- 'Mẫu KPI đánh giá hiệu quả làm việc của khối hành chính',
- 1, 1, 1),
-
 (2, 'KPI Khối Nhân Sự',
  'Mẫu KPI đánh giá hiệu quả công việc phòng nhân sự',
  1, 1, 2),
 
-(3, 'KPI Khối Kế Toán',
- 'Mẫu KPI đánh giá hiệu quả công việc phòng kế toán',
+(3, 'KPI Khối Tài Chính',
+ 'Mẫu KPI đánh giá hiệu quả công việc phòng tài chính',
  1, 1, 3),
-
-(4, 'KPI Khối Kinh Doanh',
- 'Mẫu KPI đánh giá hiệu quả hoạt động kinh doanh và doanh số',
- 1, 1, 4),
 
 (5, 'KPI Xưởng Sản Xuất',
  'Mẫu KPI đánh giá năng suất, chất lượng và hiệu quả sản xuất',
@@ -1524,37 +1455,7 @@ INSERT INTO kpi_template_items
 (template_id, criterion_name, description, weight)
 VALUES
 
--- =============================================================
--- 1. KPI KHỐI HÀNH CHÍNH
--- =============================================================
 
-(1, 'Hiệu quả xử lý công việc hành chính',
- 'Hoàn thành đầy đủ công việc hành chính đúng thời hạn, đảm bảo tiến độ công việc',
- 25),
-
-(1, 'Quản lý hồ sơ, văn bản và tài liệu',
- 'Lưu trữ, cập nhật hồ sơ, công văn đúng quy định, hạn chế sai sót',
- 15),
-
-(1, 'Tuân thủ quy trình và nội quy công ty',
- 'Thực hiện đúng quy trình hành chính, bảo mật và quy định nội bộ',
- 15),
-
-(1, 'Chất lượng phục vụ các phòng ban',
- 'Hỗ trợ các bộ phận nhanh chóng, chuyên nghiệp, đảm bảo sự hài lòng',
- 15),
-
-(1, 'Quản lý tài sản và trang thiết bị',
- 'Theo dõi, kiểm kê và sử dụng tài sản văn phòng hiệu quả',
- 10),
-
-(1, 'Quản lý chi phí hành chính',
- 'Kiểm soát chi phí văn phòng, đề xuất giải pháp tiết kiệm',
- 10),
-
-(1, 'Cải tiến quy trình hành chính',
- 'Đề xuất giải pháp nâng cao hiệu quả hoạt động',
- 5),
 
 
 -- =============================================================
@@ -1623,37 +1524,7 @@ VALUES
  5),
 
 
--- =============================================================
--- 4. KPI KHỐI KINH DOANH
--- =============================================================
 
-(4, 'Doanh số và chỉ tiêu kinh doanh',
- 'Hoàn thành mục tiêu doanh thu được giao',
- 30),
-
-(4, 'Phát triển khách hàng mới',
- 'Tìm kiếm và mở rộng danh sách khách hàng',
- 15),
-
-(4, 'Chăm sóc khách hàng',
- 'Duy trì quan hệ và mức độ hài lòng khách hàng',
- 15),
-
-(4, 'Hiệu quả tư vấn và chốt đơn',
- 'Nâng cao tỷ lệ chuyển đổi bán hàng',
- 15),
-
-(4, 'Quản lý dữ liệu kinh doanh',
- 'Cập nhật khách hàng và báo cáo kinh doanh đầy đủ',
- 10),
-
-(4, 'Tuân thủ quy trình kinh doanh',
- 'Thực hiện đúng quy trình bán hàng của công ty',
- 10),
-
-(4, 'Phối hợp đội nhóm',
- 'Hỗ trợ đồng nghiệp và phối hợp các phòng ban',
- 5),
 
 
 -- =============================================================
