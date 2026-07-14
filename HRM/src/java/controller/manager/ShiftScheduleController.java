@@ -27,35 +27,35 @@ import java.util.Map;
 /**
  * ShiftScheduleController — Xếp lịch ca và phân tăng ca cho công nhân xưởng.
  *
- * URL   : /manager/shift-schedule
- * Role  : 3 (Supervisor / Quản đốc) — AuthFilter đã bảo vệ /manager/*
+ * URL : /manager/shift-schedule
+ * Role : 3 (Supervisor / Quản đốc) — AuthFilter đã bảo vệ /manager/*
  *
  * Khác với ShiftController (/admin/shifts) chỉ dành cho HR Manager định nghĩa
  * ca (tạo/sửa/xoá), controller này cho phép Supervisor XẾP CA (gán ca đã có
  * sẵn cho công nhân trong tuần) và phân ca tăng ca (OT).
  *
- * GET  ?action=schedule  → hiển thị bảng lịch tuần
- * POST ?action=assign    → gán ca cho nhân viên (date range)
- * POST ?action=delete    → xoá một lịch ca đã gán
+ * GET ?action=schedule → hiển thị bảng lịch tuần
+ * POST ?action=assign → gán ca cho nhân viên (date range)
+ * POST ?action=delete → xoá một lịch ca đã gán
  */
-@WebServlet(name = "ShiftScheduleController", urlPatterns = {"/manager/shift-schedule"})
+@WebServlet(name = "ShiftScheduleController", urlPatterns = { "/manager/shift-schedule" })
 public class ShiftScheduleController extends HttpServlet {
 
     private static final int ROLE_SUPERVISOR = 3;
 
-    private ShiftDAO           shiftService;
+    private ShiftDAO shiftService;
     private ShiftAssignmentDAO assignmentService;
-    private UserDAO                userDAO;
+    private UserDAO userDAO;
 
     @Override
     public void init() throws ServletException {
-        shiftService      = new ShiftDAOImpl();
+        shiftService = new ShiftDAOImpl();
         assignmentService = new ShiftAssignmentDAOImpl();
-        userDAO           = new UserDAO();
+        userDAO = new UserDAO();
     }
 
     // ════════════════════════════════════════════════════════
-    //  GET
+    // GET
     // ════════════════════════════════════════════════════════
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -81,7 +81,7 @@ public class ShiftScheduleController extends HttpServlet {
     }
 
     // ════════════════════════════════════════════════════════
-    //  POST
+    // POST
     // ════════════════════════════════════════════════════════
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
@@ -112,7 +112,7 @@ public class ShiftScheduleController extends HttpServlet {
     }
 
     // ════════════════════════════════════════════════════════
-    //  Business Logic
+    // Business Logic
     // ════════════════════════════════════════════════════════
 
     /**
@@ -124,12 +124,13 @@ public class ShiftScheduleController extends HttpServlet {
 
         // Xác định tuần cần xem
         LocalDate targetDate = parseDate(req.getParameter("week"));
-        if (targetDate == null) targetDate = LocalDate.now();
+        if (targetDate == null)
+            targetDate = LocalDate.now();
         LocalDate weekStart = targetDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
 
         // Ma trận lịch tuần
-        Map<Integer, Map<Integer, List<ShiftAssignment>>> matrix =
-                assignmentService.buildWeeklyScheduleMatrix(weekStart);
+        Map<Integer, Map<Integer, List<ShiftAssignment>>> matrix = assignmentService
+                .buildWeeklyScheduleMatrix(weekStart);
 
         // Danh sách ca đang hoạt động (để Supervisor chọn khi gán)
         List<Shift> activeShifts = shiftService.getActiveShifts();
@@ -142,13 +143,14 @@ public class ShiftScheduleController extends HttpServlet {
 
         // Build mảng ngày trong tuần
         LocalDate[] weekDates = new LocalDate[7];
-        for (int i = 0; i < 7; i++) weekDates[i] = weekStart.plusDays(i);
+        for (int i = 0; i < 7; i++)
+            weekDates[i] = weekStart.plusDays(i);
 
-        req.setAttribute("weekStart",    weekStart);
-        req.setAttribute("weekDates",    weekDates);
-        req.setAttribute("matrix",       matrix);
+        req.setAttribute("weekStart", weekStart);
+        req.setAttribute("weekDates", weekDates);
+        req.setAttribute("matrix", matrix);
         req.setAttribute("activeShifts", activeShifts);
-        req.setAttribute("workers",      workers);
+        req.setAttribute("workers", workers);
 
         req.getRequestDispatcher("/manager/shift-schedule.jsp").forward(req, resp);
     }
@@ -160,16 +162,16 @@ public class ShiftScheduleController extends HttpServlet {
     private void assignShift(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
-        Integer  userId  = parseIntParam(req, "userId");
-        LocalDate from   = parseDate(req.getParameter("fromDate"));
-        LocalDate to     = parseDate(req.getParameter("toDate"));
+        Integer userId = parseIntParam(req, "userId");
+        LocalDate from = parseDate(req.getParameter("fromDate"));
+        LocalDate to = parseDate(req.getParameter("toDate"));
         String otType = req.getParameter("otType");
 
         if (userId == null || from == null || to == null || otType == null || otType.isEmpty()) {
             redirectSchedule(req, resp, "error", "Vui lòng điền đầy đủ thông tin");
             return;
         }
-        
+
         java.time.LocalTime startTime = java.time.LocalTime.of(18, 0);
         java.time.LocalTime endTime;
         java.time.LocalTime breakStart = null;
@@ -188,10 +190,11 @@ public class ShiftScheduleController extends HttpServlet {
             redirectSchedule(req, resp, "error", "Loại ca OT không hợp lệ");
             return;
         }
-        
-        // Create a custom shift for OT so it saves the actual times, but hides from HR Manager
+
+        // Create a custom shift for OT so it saves the actual times, but hides from HR
+        // Manager
         int shiftId = shiftService.findOrCreateCustomShift(startTime, endTime, breakStart, breakEnd, shiftName);
-        
+
         if (to.isBefore(from)) {
             redirectSchedule(req, resp, "error", "Ngày kết thúc phải sau ngày bắt đầu");
             return;
@@ -236,7 +239,7 @@ public class ShiftScheduleController extends HttpServlet {
     }
 
     // ════════════════════════════════════════════════════════
-    //  Helpers
+    // Helpers
     // ════════════════════════════════════════════════════════
     private User getCurrentUser(HttpServletRequest req) {
         HttpSession s = req.getSession(false);
@@ -250,19 +253,27 @@ public class ShiftScheduleController extends HttpServlet {
 
     private Integer parseIntParam(HttpServletRequest req, String name) {
         String raw = req.getParameter(name);
-        if (raw == null || raw.trim().isEmpty()) return null;
-        try { return Integer.parseInt(raw.trim()); }
-        catch (NumberFormatException e) { return null; }
+        if (raw == null || raw.trim().isEmpty())
+            return null;
+        try {
+            return Integer.parseInt(raw.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private LocalDate parseDate(String s) {
-        if (s == null || s.trim().isEmpty()) return null;
-        try { return LocalDate.parse(s.trim()); }
-        catch (DateTimeParseException e) { return null; }
+        if (s == null || s.trim().isEmpty())
+            return null;
+        try {
+            return LocalDate.parse(s.trim());
+        } catch (DateTimeParseException e) {
+            return null;
+        }
     }
 
     private void redirectSchedule(HttpServletRequest req, HttpServletResponse resp,
-                                  String key, String msg) throws IOException {
+            String key, String msg) throws IOException {
         resp.sendRedirect(req.getContextPath() + "/manager/shift-schedule?"
                 + key + "=" + java.net.URLEncoder.encode(msg, java.nio.charset.StandardCharsets.UTF_8));
     }
