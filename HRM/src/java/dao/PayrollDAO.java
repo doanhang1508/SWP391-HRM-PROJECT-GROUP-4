@@ -861,7 +861,7 @@ public class PayrollDAO {
             p.setInsuranceBenefit(insuranceBenefit);
             // Lưu breakdown audit để hiển thị phiếu lương và kiểm tra sau này
             p.setInsuranceBaseAmount(insuranceBase);
-            p.setTaxableIncomeBase(taxableIncomeBeforeDeduction);
+            p.setTaxableIncomeBase(taxableIncomeBeforeDeduction.subtract(insuranceAmount).max(BigDecimal.ZERO));
             p.setStatus("Draft");
 
             if (existing == null) {
@@ -1004,7 +1004,7 @@ public class PayrollDAO {
         payroll.setNetSalary(netSalary);
         payroll.setInsuranceBenefit(insuranceBenefit);
         payroll.setInsuranceBaseAmount(insuranceBase);
-        payroll.setTaxableIncomeBase(taxableIncomeBeforeDeduction);
+        payroll.setTaxableIncomeBase(taxableIncomeBeforeDeduction.subtract(insuranceAmount).max(BigDecimal.ZERO));
 
         String sql = "UPDATE payroll SET " +
                      "working_days = ?, " +
@@ -1033,7 +1033,7 @@ public class PayrollDAO {
             ps.setBigDecimal(9, netSalary);
             ps.setBigDecimal(10, insuranceBenefit);
             ps.setBigDecimal(11, insuranceBase);
-            ps.setBigDecimal(12, taxableIncomeBeforeDeduction);
+            ps.setBigDecimal(12, taxableIncomeBeforeDeduction.subtract(insuranceAmount).max(BigDecimal.ZERO));
             ps.setInt(13, payroll.getPayrollId());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
