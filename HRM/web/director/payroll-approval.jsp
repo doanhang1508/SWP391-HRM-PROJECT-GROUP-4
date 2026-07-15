@@ -391,7 +391,8 @@
                                                                 data-net="<fmt:formatNumber value="${p.netSalary}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>"
                                                                 data-status="${p.status}"
                                                                 data-insurancebase="<fmt:formatNumber value="${p.insuranceBaseAmount}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>"
-                                                                data-taxablebase="<fmt:formatNumber value="${p.taxableIncomeBase}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>">
+                                                                data-taxablebase="<fmt:formatNumber value="${p.taxableIncomeBase}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>"
+                                                                data-insurancebenefit="<fmt:formatNumber value="${p.insuranceBenefit}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>">
                                                             <i class="fas fa-eye"></i> Chi tiết
                                                         </button>
 
@@ -530,6 +531,10 @@
                                 <div class="d-flex justify-content-between fw-bold text-dark" style="font-size: 0.95rem;">
                                     <span>Lương Gross:</span>
                                     <span id="modalGross">0 ₫</span>
+                                </div>
+                                <div class="d-flex justify-content-between mt-2" style="font-size: 0.88rem;">
+                                    <span class="text-muted">Trợ cấp bảo hiểm (ốm/thai sản):</span>
+                                    <span class="fw-semibold text-success" id="modalInsuranceBenefit">+ 0 ₫</span>
                                 </div>
                             </div>
                         </div>
@@ -695,6 +700,7 @@ document.addEventListener("DOMContentLoaded", function() {
             const status = button.getAttribute('data-status');
             const insuranceBase = button.getAttribute('data-insurancebase') || '0 ₫';
             const taxableBase = button.getAttribute('data-taxablebase') || '0 ₫';
+            const insuranceBenefit = button.getAttribute('data-insurancebenefit') || '0 ₫';
 
             // Populate Modal Fields
             document.getElementById('modalEmpName').textContent = fullName;
@@ -712,6 +718,7 @@ document.addEventListener("DOMContentLoaded", function() {
             document.getElementById('modalNet').textContent = net;
             document.getElementById('modalInsuranceBase').textContent = insuranceBase;
             document.getElementById('modalTaxableBase').textContent = taxableBase;
+            document.getElementById('modalInsuranceBenefit').textContent = '+ ' + insuranceBenefit;
 
             const contextPath = '${pageContext.request.contextPath}';
             const [month, year] = monthYear.split('/');

@@ -602,7 +602,7 @@ public class OvertimeAssignmentDAOImpl implements OvertimeAssignmentDAO {
                 try { conn.close(); } catch (SQLException ignored) {}
             }
         }
-    }
+    }}
 
 
 

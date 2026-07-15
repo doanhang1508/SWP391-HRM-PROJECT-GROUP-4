@@ -891,6 +891,12 @@
                                                                             </a>
                                                                         </li>
                                                                         <li class="sidebar-item">
+                                                                            <a href="${pageContext.request.contextPath}/employee/overtime"
+                                                                                class="sidebar-link ${param.activeMenu eq 'personal-overtime' ? 'active' : ''}">
+                                                                                <i class="fas fa-business-time"></i> Tăng ca của tôi
+                                                                            </a>
+                                                                        </li>
+                                                                        <li class="sidebar-item">
                                                                             <a href="${pageContext.request.contextPath}/employee/timesheet"
                                                                                 class="sidebar-link ${param.activeMenu eq 'personal-timesheet' ? 'active' : ''}">
                                                                                 <i class="fas fa-fingerprint"></i> Bảng

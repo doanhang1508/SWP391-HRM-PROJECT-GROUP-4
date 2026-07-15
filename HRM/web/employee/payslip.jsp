@@ -387,14 +387,13 @@
                                     <span class="fw-semibold text-dark text-success" id="modalBonus">+ 0 ₫</span>
                                 </div>
                                 <div id="modalBonusDetails" style="padding-left: 15px; font-size: 0.8rem; display: none;"></div>
-                                <div class="d-flex justify-content-between" id="modalInsuranceBenefitRow" style="display: none !important;">
-                                    <span class="text-muted">Trợ cấp BHXH (Thai sản/Ốm đau...):</span>
-                                    <span class="fw-semibold text-dark text-success" id="modalInsuranceBenefit">+ 0 ₫</span>
-                                </div>
-                                <hr style="margin: 10px 0; border-color: rgba(16,185,129,.2);">
                                 <div class="d-flex justify-content-between fw-bold text-dark" style="font-size: 0.95rem;">
                                     <span>Lương Gross:</span>
                                     <span id="modalGross">0 ₫</span>
+                                </div>
+                                <div class="d-flex justify-content-between mt-2" id="modalInsuranceBenefitRow" style="font-size: 0.88rem;">
+                                    <span class="text-muted">Trợ cấp bảo hiểm (ốm/thai sản):</span>
+                                    <span class="fw-semibold text-success" id="modalInsuranceBenefit">+ 0 ₫</span>
                                 </div>
                             </div>
                         </div>
@@ -505,12 +504,6 @@
                 document.getElementById('modalTaxableBase').textContent = taxableBase;
 
                 document.getElementById('modalInsuranceBenefit').textContent = '+ ' + insuranceBenefit;
-                const numericBenefit = parseFloat(insuranceBenefit.replace(/[^\d]/g, '')) || 0;
-                if (numericBenefit > 0) {
-                    document.getElementById('modalInsuranceBenefitRow').style.setProperty('display', 'flex', 'important');
-                } else {
-                    document.getElementById('modalInsuranceBenefitRow').style.setProperty('display', 'none', 'important');
-                }
 
                 // Fetch detailed breakdowns
                 const contextPath = '${pageContext.request.contextPath}';

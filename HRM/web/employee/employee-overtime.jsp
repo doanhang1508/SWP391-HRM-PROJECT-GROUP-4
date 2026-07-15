@@ -1,6 +1,7 @@
 <%@page contentType="text/html" pageEncoding="UTF-8" %>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <c:set var="pageTitle" value="Tăng Ca Của Tôi - Enterprise HRM" scope="request" />
 <jsp:include page="../header.jsp" />
@@ -131,7 +132,9 @@
 </style>
 
 <div class="emp-layout">
-    <jsp:include page="../sidebar.jsp" />
+    <jsp:include page="../shared/sidebar.jsp">
+        <jsp:param name="activeMenu" value="personal-overtime" />
+    </jsp:include>
 
     <div class="emp-content">
 
