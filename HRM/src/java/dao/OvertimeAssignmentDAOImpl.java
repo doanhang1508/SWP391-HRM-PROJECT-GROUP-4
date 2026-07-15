@@ -27,6 +27,27 @@ public class OvertimeAssignmentDAOImpl implements OvertimeAssignmentDAO {
         a.setPlanDescription(rs.getString("plan_description"));
         a.setTargetDate(rs.getDate("target_date"));
         a.setDepartmentName(rs.getString("department_name"));
+
+        // Phase 2A — backward-compatible: bỏ qua nếu cột chưa tồn tại (migration chưa chạy)
+        try {
+            double ah = rs.getDouble("actual_hours");
+            if (!rs.wasNull()) a.setActualHours(ah);
+        } catch (SQLException ignored) {}
+        try {
+            double apph = rs.getDouble("approved_hours");
+            if (!rs.wasNull()) a.setApprovedHours(apph);
+        } catch (SQLException ignored) {}
+        try {
+            String er = rs.getString("employee_response");
+            if (er != null) a.setEmployeeResponse(er);
+        } catch (SQLException ignored) {}
+        try {
+            a.setEmployeeResponseAt(rs.getTimestamp("employee_response_at"));
+        } catch (SQLException ignored) {}
+        try {
+            a.setEmployeeResponseNote(rs.getString("employee_response_note"));
+        } catch (SQLException ignored) {}
+
         return a;
     }
 
@@ -295,8 +316,16 @@ public class OvertimeAssignmentDAOImpl implements OvertimeAssignmentDAO {
         if (assignment == null) {
             throw new Exception("Phân công tăng ca không tồn tại");
         }
+
         if (!"Pending".equals(assignment.getStatus())) {
             throw new Exception("Chỉ có thể duyệt phân công đang ở trạng thái 'Chờ duyệt'");
+        }
+
+        // Phase 2A: chặn nếu nhân viên chưa ACCEPTED
+        String empResp = assignment.getEmployeeResponse();
+        if (empResp != null && !"ACCEPTED".equals(empResp) && !"PENDING".equals(empResp)) {
+            // DECLINED → không cho duyệt
+            throw new Exception("Không thể duyệt: nhân viên đã từ chối tăng ca này.");
         }
 
         // Get plan for target_date
@@ -324,6 +353,12 @@ public class OvertimeAssignmentDAOImpl implements OvertimeAssignmentDAO {
                 }
             }
 
+            // Phần số giờ OT đưa vào attendance:
+            // ưu tiên approved_hours (nếu đã nhập); fallback về assigned_hours.
+            double hoursToSync = (assignment.getApprovedHours() != null && assignment.getApprovedHours() > 0)
+                    ? assignment.getApprovedHours()
+                    : assignment.getAssignedHours();
+
             // Step 2: <<include>> Update OT Status in Attendance
             // Check if attendance record exists for this user and date
             String sqlCheck = "SELECT attendance_id, overtime_hrs FROM attendance "
@@ -335,7 +370,7 @@ public class OvertimeAssignmentDAOImpl implements OvertimeAssignmentDAO {
                     if (rs.next()) {
                         // Record exists → UPDATE overtime_hrs
                         double existingHrs = rs.getDouble("overtime_hrs");
-                        double newHrs = existingHrs + assignment.getAssignedHours();
+                        double newHrs = existingHrs + hoursToSync;
                         String sqlUpdate = "UPDATE attendance SET overtime_hrs = ? "
                                          + "WHERE user_id = ? AND work_date = ?";
                         try (PreparedStatement psUpd = rawConn.prepareStatement(sqlUpdate)) {
@@ -371,7 +406,7 @@ public class OvertimeAssignmentDAOImpl implements OvertimeAssignmentDAO {
                                 psIns.setNull(2, java.sql.Types.INTEGER);
                             }
                             psIns.setDate(3, plan.getTargetDate());
-                            psIns.setDouble(4, assignment.getAssignedHours());
+                            psIns.setDouble(4, hoursToSync);
                             psIns.setString(5, plan.getDescription() != null ? plan.getDescription() : "Tăng ca được duyệt");
                             
                             int attRows = psIns.executeUpdate();
@@ -471,7 +506,103 @@ public class OvertimeAssignmentDAOImpl implements OvertimeAssignmentDAO {
     public List<OvertimeAssignment> getAssignmentsByPlan(int planId) {
         return this.getByPlanId(planId);
     }
-}
+
+    // ═══════════════════════════════════════════════════════════════
+    // Phase 2A: Employee Self-Service — respondToAssignment
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Nhân viên ACCEPT hoặc DECLINE đơn tăng ca của mình.
+     *
+     * Business rules:
+     *   1. Chỉ có thể phản hồi nếu hiện tại là PENDING (chưa phản hồi).
+     *   2. Nếu DECLINED thì phải có lý do (note != null && !note.isEmpty()).
+     *   3. Không được phản hồi sau khi assignment đã bị Cancelled.
+     *   4. Không nhật: xác nhận nguyên tắt (read assignment, write response) trên cùng 1 connection.
+     *
+     * @param assignmentId ID đơn tăng ca (phải thuộc nhân viên hiện tại)
+     * @param response     "ACCEPTED" hoặc "DECLINED"
+     * @param note         Lý do từ chối (bắt buộc khi DECLINED)
+     * @throws Exception nếu business rule bị vi phạm hoặc lỗi DB
+     */
+    @Override
+    public boolean respondToAssignment(int assignmentId, String response, String note) throws Exception {
+        // Validate response value
+        if (!"ACCEPTED".equals(response) && !"DECLINED".equals(response)) {
+            throw new Exception("Phản hồi không hợp lệ. Chỉ chấp nhận ACCEPTED hoặc DECLINED.");
+        }
+        if ("DECLINED".equals(response) && (note == null || note.trim().isEmpty())) {
+            throw new Exception("Vui lòng cung cấp lý do khi từ chối tăng ca.");
+        }
+
+        Connection conn = null;
+        try {
+            conn = DBContext.getConnection();
+            Connection rawConn = DBContext.unwrap(conn);
+            rawConn.setAutoCommit(false);
+
+            // ── Đọc trạng thái hiện tại trong cùng transaction ──
+            String sqlCheck = "SELECT status, employee_response FROM overtime_assignments WHERE assignment_id = ? FOR UPDATE";
+            String currentStatus = null;
+            String currentResponse = null;
+            try (PreparedStatement psCheck = rawConn.prepareStatement(sqlCheck)) {
+                psCheck.setInt(1, assignmentId);
+                try (ResultSet rs = psCheck.executeQuery()) {
+                    if (!rs.next()) {
+                        rawConn.rollback();
+                        throw new Exception("Đơn tăng ca không tồn tại.");
+                    }
+                    currentStatus   = rs.getString("status");
+                    currentResponse = rs.getString("employee_response");
+                }
+            }
+
+            // Business rule checks
+            if ("Cancelled".equals(currentStatus)) {
+                rawConn.rollback();
+                throw new Exception("Đơn tăng ca đã bị hủy, không thể phản hồi.");
+            }
+            if (!"PENDING".equals(currentResponse)) {
+                rawConn.rollback();
+                throw new Exception("Bạn đã phản hồi đơn tăng ca này rồi (đã " + currentResponse + ").");
+            }
+
+            // ── Cập nhật phản hồi ──
+            String sqlUpd = "UPDATE overtime_assignments "
+                          + "SET employee_response = ?, employee_response_at = NOW(), employee_response_note = ? "
+                          + "WHERE assignment_id = ?";
+            try (PreparedStatement psUpd = rawConn.prepareStatement(sqlUpd)) {
+                psUpd.setString(1, response);
+                psUpd.setString(2, note != null ? note.trim() : null);
+                psUpd.setInt(3, assignmentId);
+                int rows = psUpd.executeUpdate();
+                if (rows == 0) {
+                    rawConn.rollback();
+                    return false;
+                }
+            }
+
+            rawConn.commit();
+            rawConn.setAutoCommit(true);
+            return true;
+
+        } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    Connection rawConn = DBContext.unwrap(conn);
+                    rawConn.rollback();
+                    rawConn.setAutoCommit(true);
+                } catch (SQLException ex) {
+                    System.err.println("Rollback error (respondToAssignment): " + ex.getMessage());
+                }
+            }
+            throw new Exception("Lỗi DB khi cập nhật phản hồi: " + e.getMessage());
+        } finally {
+            if (conn != null) {
+                try { conn.close(); } catch (SQLException ignored) {}
+            }
+        }
+    }
 
 
 

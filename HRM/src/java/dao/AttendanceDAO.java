@@ -1305,32 +1305,146 @@ public class AttendanceDAO {
         return list;
     }
 
-    public BigDecimal getOvertimeAmountWithHolidayRate(int userId, int month, int year, BigDecimal hourlyRate, BigDecimal normalMultiplier) {
+    // ═══════════════════════════════════════════════════════════════
+    // Phase 2B — OT 3-level rate engine
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Hằng số bội số OT theo loại ngày (Bộ Luật Lao động Việt Nam).
+     *   NORMAL_WORKING_DAY  = 150%  (ngày làm việc bình thường theo lịch)
+     *   WEEKLY_REST_DAY     = 200%  (ngày nghỉ theo tuần, không nằm trong shift plan)
+     *   HOLIDAY / 5/1 etc.  = 300%  (ngày lễ — đọc từ bảng holidays.ot_multiplier)
+     */
+    private static final BigDecimal OT_MULTIPLIER_NORMAL       = new BigDecimal("1.5");
+    private static final BigDecimal OT_MULTIPLIER_WEEKLY_REST  = new BigDecimal("2.0");
+    private static final BigDecimal OT_MULTIPLIER_HOLIDAY_DEFAULT = new BigDecimal("3.0");
+
+    /**
+     * Phân loại loại ngày của 1 ngày cụ thể theo thứ tự ưu tiên:
+     *   1. Nếu ngày thuộc bảng holidays (status=1) → "HOLIDAY"
+     *   2. Nếu ngày có trong shift_assignments của nhân viên → "NORMAL"
+     *   3. Còn lại → "WEEKLY_REST" (ngày nghỉ cuối tuần, lễ không chính thức)
+     *
+     * @param conn   Connection đang dùng (cùng transaction)
+     * @param userId ID nhân viên
+     * @param date   Ngày cần phân loại
+     * @return "HOLIDAY", "NORMAL", hoặc "WEEKLY_REST"
+     */
+    private String resolveWorkDayType(Connection conn, int userId, java.sql.Date date) throws SQLException {
+        // 1. Kiểm tra ngày lễ
+        String sqlH = "SELECT 1 FROM holidays WHERE holiday_date = ? AND status = 1 LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(sqlH)) {
+            ps.setDate(1, date);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return "HOLIDAY";
+            }
+        }
+
+        // 2. Kiểm tra roster (shift_assignments = nguồn lịch làm việc chính thức)
+        String sqlS = "SELECT 1 FROM shift_assignments WHERE user_id = ? AND assigned_date = ? LIMIT 1";
+        try (PreparedStatement ps = conn.prepareStatement(sqlS)) {
+            ps.setInt(1, userId);
+            ps.setDate(2, date);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return "NORMAL";
+            }
+        }
+
+        // 3. Không thuộc cả hai → ngày nghỉ theo tuần
+        return "WEEKLY_REST";
+    }
+
+    /**
+     * Trả về bội số OT dựa trên loại ngày và multiplier cấu hình từ holidays table.
+     *
+     * @param workDayType     "HOLIDAY" | "NORMAL" | "WEEKLY_REST"
+     * @param holidayMultiplier  ot_multiplier từ bảng holidays (có thể null nếu không phải holiday)
+     * @return BigDecimal bội số OT
+     */
+    private BigDecimal resolveOvertimeMultiplier(String workDayType, BigDecimal holidayMultiplier) {
+        return switch (workDayType) {
+            case "HOLIDAY"     -> (holidayMultiplier != null && holidayMultiplier.compareTo(BigDecimal.ZERO) > 0)
+                                   ? holidayMultiplier
+                                   : OT_MULTIPLIER_HOLIDAY_DEFAULT;
+            case "WEEKLY_REST" -> OT_MULTIPLIER_WEEKLY_REST;
+            default            -> OT_MULTIPLIER_NORMAL;      // "NORMAL"
+        };
+    }
+
+    /**
+     * Tính tổng tiền OT tháng với 3 mức bội số theo loại ngày.
+     *
+     * Thay thế phiên bản cũ chỉ phân biệt holiday/non-holiday.
+     * Phiên bản mới:
+     *   - HOLIDAY      → ot_multiplier từ bảng holidays (mặc định 3.0)
+     *   - WEEKLY_REST  → 2.0 (ngày nghỉ tuần không được phân ca)
+     *   - NORMAL       → normalMultiplier (truyền vào, mặc định 1.5)
+     *
+     * Nguồn giờ OT: attendance.overtime_hrs (có thể được sync từ overtime_assignments sau khi approve).
+     *
+     * @param userId           ID nhân viên
+     * @param month            Tháng cần tính
+     * @param year             Năm cần tính
+     * @param hourlyRate       Lương 1 giờ = baseSalary / (standardWorkDays * 8)
+     * @param normalMultiplier Bội số ngày làm việc bình thường (truyền 1.5)
+     */
+    public BigDecimal getOvertimeAmountWithHolidayRate(
+            int userId, int month, int year,
+            BigDecimal hourlyRate, BigDecimal normalMultiplier) {
+
+        if (hourlyRate == null || hourlyRate.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        // Query attendance kèm holiday multiplier (để tránh query lặp lại)
+        String sql = "SELECT a.work_date, a.overtime_hrs, h.ot_multiplier "
+                   + "FROM attendance a "
+                   + "LEFT JOIN holidays h ON h.holiday_date = a.work_date AND h.status = 1 "
+                   + "WHERE a.user_id = ? AND MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? "
+                   + "AND a.overtime_hrs > 0";
+
         BigDecimal totalAmount = BigDecimal.ZERO;
-        String sql = "SELECT a.work_date, a.overtime_hrs, h.ot_multiplier " +
-                     "FROM attendance a " +
-                     "LEFT JOIN holidays h ON h.holiday_date = a.work_date AND h.status = 1 " +
-                     "WHERE a.user_id = ? AND MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? AND a.overtime_hrs > 0";
         DBContext dbContext = new DBContext();
+
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setInt(1, userId);
             ps.setInt(2, month);
             ps.setInt(3, year);
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     BigDecimal overtimeHrs = rs.getBigDecimal("overtime_hrs");
-                    if (overtimeHrs != null && overtimeHrs.compareTo(BigDecimal.ZERO) > 0) {
-                        BigDecimal otMultiplier = rs.getBigDecimal("ot_multiplier");
-                        BigDecimal currentMultiplier = (otMultiplier != null) ? otMultiplier : normalMultiplier;
-                        BigDecimal dailyOtAmount = overtimeHrs.multiply(hourlyRate).multiply(currentMultiplier);
-                        totalAmount = totalAmount.add(dailyOtAmount);
+                    if (overtimeHrs == null || overtimeHrs.compareTo(BigDecimal.ZERO) <= 0) continue;
+
+                    java.sql.Date workDate   = rs.getDate("work_date");
+                    BigDecimal holidayMulti  = rs.getBigDecimal("ot_multiplier"); // null nếu không phải holiday
+
+                    // Phân loại ngày và xác định bội số OT
+                    // holidayMulti != null → chắc chắn là ngày lễ (đã JOIN được)
+                    String dayType;
+                    if (holidayMulti != null) {
+                        dayType = "HOLIDAY";
+                    } else {
+                        // Phân loại tiếp: NORMAL vs WEEKLY_REST qua roster
+                        dayType = resolveWorkDayType(conn, userId, workDate);
                     }
+
+                    BigDecimal multiplier = resolveOvertimeMultiplier(dayType, holidayMulti);
+                    BigDecimal dailyOt    = overtimeHrs.multiply(hourlyRate).multiply(multiplier);
+                    totalAmount           = totalAmount.add(dailyOt);
+
+                    System.out.printf("[OT-CALC] userId=%d date=%s type=%-12s hrs=%.2f rate=%.2f × %.1f = %.2f%n",
+                        userId, workDate, dayType,
+                        overtimeHrs.doubleValue(), hourlyRate.doubleValue(),
+                        multiplier.doubleValue(), dailyOt.doubleValue());
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
         return totalAmount.setScale(2, java.math.RoundingMode.HALF_UP);
     }
 }

@@ -50,5 +50,15 @@ public interface OvertimeAssignmentDAO {
     List<OvertimeAssignment> getAssignmentsByUser(int userId);
     List<OvertimeAssignment> getUpcomingAssignmentsByUser(int userId);
     List<OvertimeAssignment> getPastAssignmentsByUser(int userId);
+
+    /**
+     * Nhân viên phản hồi (ACCEPT / DECLINE) đơn tăng ca của mình.
+     * 
+     * @param assignmentId ID đơn tăng ca
+     * @param response     "ACCEPTED" hoặc "DECLINED"
+     * @param note         Lý do từ chối (bắt buộc khi DECLINED, có thể null khi ACCEPTED)
+     * @throws Exception nếu assignment không tồn tại hoặc trạng thái không hợp lệ
+     */
+    boolean respondToAssignment(int assignmentId, String response, String note) throws Exception;
 }
 

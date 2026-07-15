@@ -620,6 +620,67 @@ public class PayrollDAO {
         return false;
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // INSURANCE BENEFIT HELPER
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Số ngày bảo hiểm chuẩn để tính trợ cấp (quy định: 1 tháng = 24 ngày công bảo hiểm).
+     * Không dùng standardWorkDays vì trợ cấp BHXH dựa trên hệ số 24 ngày cố định.
+     */
+    private static final BigDecimal SICK_BENEFIT_DIVISOR = new BigDecimal("24");
+
+    /**
+     * Tính trợ cấp nghỉ ốm / thai sản (insuranceBenefit) do BHXH chi trả.
+     *
+     * Công thức:
+     *   insuranceBenefit = Σ ( insuranceBase / 24 × rate% ) cho từng ngày nghỉ đủ điều kiện
+     *
+     * Lý do dùng insuranceBase/24 (không dùng baseSalary/standardWorkDays):
+     *   - Theo Luật BHXH 2014 Điều 26/28: mức trợ cấp tính theo lương đóng BH chia 24 ngày.
+     *   - standardWorkDays thay đổi theo tháng (22–26 ngày) → gây sai số.
+     *   - insuranceBase bao gồm cả phụ cấp is_bhxh_applied=1 (đúng nền đóng BH thực tế).
+     *
+     * @param insuranceBase           Nền đóng BHXH = baseSalary + phụ cấp/thưởng is_bhxh_applied
+     * @param eligibleLeaveDayTypeMap Map ngày nghỉ → leaveTypeId (từ getUnpaidLeaveDayMapWithShift)
+     * @param rateMap                 leaveTypeId → tỷ lệ % (từ LeaveInsuranceRateDAO.getActiveRateMap)
+     * @return Tổng trợ cấp, scale 2 HALF_UP; trả 0 nếu không đủ điều kiện
+     */
+    private BigDecimal calculateInsuranceBenefit(
+            BigDecimal insuranceBase,
+            Map<LocalDate, Integer> eligibleLeaveDayTypeMap,
+            Map<Integer, BigDecimal> rateMap
+    ) {
+        if (insuranceBase == null
+                || insuranceBase.compareTo(BigDecimal.ZERO) <= 0
+                || eligibleLeaveDayTypeMap == null
+                || eligibleLeaveDayTypeMap.isEmpty()
+                || rateMap == null
+                || rateMap.isEmpty()) {
+            return BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP);
+        }
+
+        // Trợ cấp 1 ngày = insuranceBase / 24
+        // Giữ 8 chữ số thập phân để tránh mất mát làm tròn khi nhân tiếp.
+        BigDecimal dailyBenefit = insuranceBase.divide(
+                SICK_BENEFIT_DIVISOR, 8, java.math.RoundingMode.HALF_UP);
+
+        BigDecimal totalBenefit = BigDecimal.ZERO;
+        for (Map.Entry<LocalDate, Integer> entry : eligibleLeaveDayTypeMap.entrySet()) {
+            BigDecimal ratePercent = rateMap.get(entry.getValue());
+            // leaveTypeId không có trong rateMap (VD: nghỉ không lương thông thường) → bỏ qua
+            if (ratePercent == null || ratePercent.compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+            BigDecimal multiplier = ratePercent.divide(
+                    new BigDecimal("100"), 8, java.math.RoundingMode.HALF_UP);
+            totalBenefit = totalBenefit.add(dailyBenefit.multiply(multiplier));
+        }
+
+        // Làm tròn 1 lần ở cuối (sau khi cộng tất cả ngày — không làm tròn từng ngày)
+        return totalBenefit.setScale(2, java.math.RoundingMode.HALF_UP);
+    }
+
     public PayrollGenerationResult generatePayrollDraft(int month, int year) {
         if (month < 1 || month > 12 || year < 2000) {
             throw new IllegalArgumentException("Tháng hoặc năm không hợp lệ");
@@ -653,6 +714,9 @@ public class PayrollDAO {
         
         LeaveRequestDAOImpl leaveDAO = new LeaveRequestDAOImpl();
         BigDecimal standardWorkDays = new BigDecimal(util.DateUtil.getStandardWorkDays(month, year));
+        // Tải rateMap 1 lần cho toàn bộ batch — tránh query DB lặp lại trong vòng lặp nhân viên
+        LeaveInsuranceRateDAO lirDAO = new LeaveInsuranceRateDAO();
+        Map<Integer, BigDecimal> insuranceRateMap = lirDAO.getActiveRateMap();
         
         for (int userId : userIds) {
             Payroll existing = getPayroll(userId, month, year);
@@ -738,25 +802,7 @@ public class PayrollDAO {
                 baseWorkedSalary = baseSalary.multiply(daysRatio).setScale(2, java.math.RoundingMode.HALF_UP);
             }
             
-            // Calculate Social Insurance Benefit for Unpaid Leave Days using configurable rates from DB
-            BigDecimal insuranceBenefit = BigDecimal.ZERO;
-            if (baseSalary.compareTo(BigDecimal.ZERO) > 0 && standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
-                Map<LocalDate, Integer> unpaidLeaves = leaveDAO.getUnpaidLeaveDayMapWithShift(userId, month, year);
-                if (unpaidLeaves != null && !unpaidLeaves.isEmpty()) {
-                    LeaveInsuranceRateDAO lirDAO = new LeaveInsuranceRateDAO();
-                    Map<Integer, BigDecimal> rateMap = lirDAO.getActiveRateMap();
-                    BigDecimal dailyBaseSalary = baseSalary.divide(standardWorkDays, 4, java.math.RoundingMode.HALF_UP);
-                    for (Map.Entry<LocalDate, Integer> entry : unpaidLeaves.entrySet()) {
-                        int leaveTypeId = entry.getValue();
-                        BigDecimal ratePercent = rateMap.get(leaveTypeId);
-                        if (ratePercent != null && ratePercent.compareTo(BigDecimal.ZERO) > 0) {
-                            BigDecimal multiplier = ratePercent.divide(new BigDecimal("100"), 4, java.math.RoundingMode.HALF_UP);
-                            insuranceBenefit = insuranceBenefit.add(dailyBaseSalary.multiply(multiplier));
-                        }
-                    }
-                }
-            }
-            insuranceBenefit = insuranceBenefit.setScale(2, java.math.RoundingMode.HALF_UP);
+            // insuranceBenefit được tính SAU khi insuranceBase có giá trị (xem bên dưới)
             
             // Tính lương 1 giờ dựa trên số giờ làm việc thực tế của tháng (standardWorkDays * 8h)
             // thay vì chia cứng cho 176 giờ.
@@ -806,6 +852,13 @@ public class PayrollDAO {
                     .add(bonusBhxhAmount);
             BigDecimal insuranceAmount = calculateInsurance(insuranceBase);
 
+            // ── Trợ cấp nghỉ ốm / thai sản (insuranceBenefit) ──
+            // Công thức: insuranceBase / 24 × rate% × số ngày nghỉ đủ điều kiện
+            // Tính SAU insuranceBase để dùng đúng nền bảo hiểm thực tế.
+            Map<LocalDate, Integer> unpaidLeaves =
+                    leaveDAO.getUnpaidLeaveDayMapWithShift(userId, month, year);
+            BigDecimal insuranceBenefit = calculateInsuranceBenefit(insuranceBase, unpaidLeaves, insuranceRateMap);
+
             // ── Gross Salary = tổng đầy đủ thực nhận (hiển thị phiếu lương) ──
             BigDecimal grossSalary = baseWorkedSalary.add(allowanceAmount).add(overtimeAmount).add(bonusAmount);
 
@@ -839,6 +892,7 @@ public class PayrollDAO {
 
             // Total Deductions = Discipline Penalties + Insurance + Tax
             BigDecimal totalDeductions = disciplineDeductionAmount.add(insuranceAmount).add(taxAmount);
+            // NET
             BigDecimal netSalary = grossSalary.subtract(totalDeductions).add(insuranceBenefit);
             if (netSalary.compareTo(BigDecimal.ZERO) < 0) {
                 netSalary = BigDecimal.ZERO;
@@ -969,25 +1023,13 @@ public class PayrollDAO {
         BigDecimal taxAmount = calculateDynamicPIT(taxableIncome);
 
         // --- Tính Social Insurance Benefit cho các ngày nghỉ không lương ---
-        BigDecimal insuranceBenefit = BigDecimal.ZERO;
-        if (baseSalary.compareTo(BigDecimal.ZERO) > 0 && standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
-            LeaveRequestDAOImpl leaveDAO = new LeaveRequestDAOImpl();
-            Map<LocalDate, Integer> unpaidLeaves = leaveDAO.getUnpaidLeaveDayMapWithShift(
-                current.getUserId(), current.getMonth(), current.getYear());
-            if (unpaidLeaves != null && !unpaidLeaves.isEmpty()) {
-                LeaveInsuranceRateDAO lirDAO = new LeaveInsuranceRateDAO();
-                Map<Integer, BigDecimal> rateMap = lirDAO.getActiveRateMap();
-                BigDecimal dailyBaseSalary = baseSalary.divide(standardWorkDays, 4, java.math.RoundingMode.HALF_UP);
-                for (Map.Entry<LocalDate, Integer> entry : unpaidLeaves.entrySet()) {
-                    BigDecimal ratePercent = rateMap.get(entry.getValue());
-                    if (ratePercent != null && ratePercent.compareTo(BigDecimal.ZERO) > 0) {
-                        BigDecimal multiplier = ratePercent.divide(new BigDecimal("100"), 4, java.math.RoundingMode.HALF_UP);
-                        insuranceBenefit = insuranceBenefit.add(dailyBaseSalary.multiply(multiplier));
-                    }
-                }
-            }
-        }
-        insuranceBenefit = insuranceBenefit.setScale(2, java.math.RoundingMode.HALF_UP);
+        // Công thức: insuranceBase / 24 × rate% × số ngày (không dùng baseSalary/standardWorkDays)
+        LeaveRequestDAOImpl leaveDAO = new LeaveRequestDAOImpl();
+        Map<LocalDate, Integer> unpaidLeaves = leaveDAO.getUnpaidLeaveDayMapWithShift(
+            current.getUserId(), current.getMonth(), current.getYear());
+        LeaveInsuranceRateDAO lirDAO = new LeaveInsuranceRateDAO();
+        Map<Integer, BigDecimal> rateMap = lirDAO.getActiveRateMap();
+        BigDecimal insuranceBenefit = calculateInsuranceBenefit(insuranceBase, unpaidLeaves, rateMap);
 
         // --- Tính Net Salary ---
         BigDecimal totalDeductions = deduction.add(insuranceAmount).add(taxAmount);
