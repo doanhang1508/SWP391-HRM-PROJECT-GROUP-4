@@ -363,6 +363,26 @@ public class RewardDisciplineDAO {
 
     
 
+    public void deleteAutomatedAttendanceRecords(int userId, int month, int year) {
+        String sql = "DELETE FROM employee_rewards_disciplines " +
+                     "WHERE user_id = ? " +
+                     "  AND MONTH(applied_date) = ? " +
+                     "  AND YEAR(applied_date) = ? " +
+                     "  AND ( " +
+                     "       (reward_discipline_id = 4 AND (note LIKE 'Late%' OR note LIKE '%muộn%' OR note LIKE '%trễ%')) " +
+                     "    OR (reward_discipline_id = 3 AND (note LIKE 'Perfect%' OR note LIKE '%Chuyên cần%')) " +
+                     "  )";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public int generateAttendanceAutomations(int userId, int month, int year) {
         List<Attendance> attendances = this.getAttendanceByUserIdAndMonth(userId, month, year);
         int lateCount = 0;
@@ -370,30 +390,39 @@ public class RewardDisciplineDAO {
         int insertedCount = 0;
         
         for (Attendance a : attendances) {
-            if ("Present".equalsIgnoreCase(a.getStatus())) {
+            if ("Present".equalsIgnoreCase(a.getStatus()) || "Late".equalsIgnoreCase(a.getStatus())) {
                 ShiftDAO shiftDAO = new ShiftDAOImpl();
                 Shift s = shiftDAO.getShiftById(a.getShiftId());
                 if (s != null && a.getCheckIn() != null) {
                     LocalTime checkIn = a.getCheckIn().toLocalTime();
                     LocalTime shiftStart = s.getStartTime();
                     
-                    // Grace period of 5 minutes
-                    LocalTime allowedTime = shiftStart.plusMinutes(5);
-                    if (checkIn.isAfter(allowedTime)) {
-                        lateCount++;
+                    if (checkIn.isAfter(shiftStart)) {
                         long lateMinutes = ChronoUnit.MINUTES.between(shiftStart, checkIn);
-                        BigDecimal deductionAmount = new BigDecimal(lateMinutes * 5000);
-                        
-                        RewardDiscipline rdLate = this.getRewardDisciplineByName("Đi muộn/Về sớm");
-                        
-                        EmployeeRewardDiscipline erd = new EmployeeRewardDiscipline();
-                        erd.setUserId(userId);
-                        erd.setRewardDisciplineId(rdLate != null ? rdLate.getId() : 4);
-                        erd.setAmount(deductionAmount);
-                        erd.setNote("Late for " + lateMinutes + " minutes");
-                        erd.setAppliedDate(a.getWorkDate());
-                        if (this.insertManualRecord(erd)) {
-                            insertedCount++;
+                        if (lateMinutes > 5) {
+                            lateCount++;
+                            BigDecimal deductionAmount = BigDecimal.ZERO;
+                            if (lateMinutes <= 30) {
+                                deductionAmount = new BigDecimal("50000");
+                            } else if (lateMinutes <= 60) {
+                                deductionAmount = new BigDecimal("100000");
+                            } else {
+                                deductionAmount = new BigDecimal("200000");
+                            }
+                            
+                            RewardDiscipline rdLate = this.getRewardDisciplineByName("Đi muộn/Về sớm");
+                            
+                            EmployeeRewardDiscipline erd = new EmployeeRewardDiscipline();
+                            erd.setUserId(userId);
+                            erd.setRewardDisciplineId(rdLate != null ? rdLate.getId() : 4);
+                            erd.setAmount(deductionAmount);
+                            erd.setNote("Đi muộn " + lateMinutes + " phút");
+                            erd.setAppliedDate(a.getWorkDate());
+                            if (this.insertManualRecord(erd)) {
+                                insertedCount++;
+                            }
+                        } else {
+                            validPresentDays++;
                         }
                     } else {
                         validPresentDays++;
@@ -409,8 +438,8 @@ public class RewardDisciplineDAO {
              EmployeeRewardDiscipline erd = new EmployeeRewardDiscipline();
              erd.setUserId(userId);
              erd.setRewardDisciplineId(rdPenalty != null ? rdPenalty.getId() : 4);
-             erd.setAmount(new BigDecimal(200000));
-             erd.setNote("Late more than 3 times in month");
+             erd.setAmount(new BigDecimal("200000"));
+             erd.setNote("Đi muộn quá 3 lần trong tháng (" + lateCount + " lần)");
              erd.setAppliedDate(Date.valueOf(LocalDate.of(year, month, 28)));
              if (this.insertManualRecord(erd)) {
                  insertedCount++;
@@ -423,8 +452,8 @@ public class RewardDisciplineDAO {
             EmployeeRewardDiscipline erd2 = new EmployeeRewardDiscipline();
             erd2.setUserId(userId);
             erd2.setRewardDisciplineId(rdBonus != null ? rdBonus.getId() : 3);
-            erd2.setAmount(new BigDecimal(500000));
-            erd2.setNote("Perfect attendance for month " + month);
+            erd2.setAmount(new BigDecimal("500000"));
+            erd2.setNote("Thưởng chuyên cần tháng " + month);
             erd2.setAppliedDate(Date.valueOf(LocalDate.of(year, month, 28)));
             if (this.insertManualRecord(erd2)) {
                 insertedCount++;

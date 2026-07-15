@@ -729,6 +729,11 @@ public class PayrollDAO {
                 continue;
             }
             
+            // Tự động quét và sinh dữ liệu phạt đi muộn/thưởng chuyên cần trước khi tính lương
+            RewardDisciplineDAO rewardDisciplineDAO = new RewardDisciplineDAO();
+            rewardDisciplineDAO.deleteAutomatedAttendanceRecords(userId, month, year);
+            rewardDisciplineDAO.generateAttendanceAutomations(userId, month, year);
+            
             EmployeeSalaryInfo salaryInfo = getEmployeeSalaryInfo(userId);
             int roleId = (salaryInfo != null) ? salaryInfo.roleId : -1;
             
