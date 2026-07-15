@@ -509,11 +509,20 @@ public class ShiftDAOImpl implements ShiftDAO {
         if (start == null || end == null) {
             return -1;
         }
-        String expectedName = shiftName;
         boolean expectedIsNight = !shiftName.equals("Ca Hành Chính"); 
         float expectedCoefficient = expectedIsNight ? 1.5f : 1.0f;
+        return findOrCreateCustomShift(start, end, breakStart, breakEnd, shiftName, expectedCoefficient);
+    }
 
-        // 1. Find if an OT shift with these exact times already exists
+    @Override
+    public int findOrCreateCustomShift(LocalTime start, LocalTime end, LocalTime breakStart, LocalTime breakEnd, String shiftName, float expectedCoefficient) {
+        if (start == null || end == null) {
+            return -1;
+        }
+        String expectedName = shiftName;
+        boolean expectedIsNight = !shiftName.equals("Ca Hành Chính"); 
+
+        // 1. Find if an OT shift with these exact times and coefficient already exists
         String sqlFind = "SELECT shift_id, shift_name FROM shifts WHERE start_time = ? AND end_time = ? AND coefficient = ?";
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sqlFind)) {

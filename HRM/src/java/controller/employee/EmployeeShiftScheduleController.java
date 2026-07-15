@@ -55,12 +55,6 @@ public class EmployeeShiftScheduleController extends HttpServlet {
             return;
         }
 
-        // If admin, redirect to admin dashboard
-        if (currentUser.getRoleId() == 1) {
-            response.sendRedirect(request.getContextPath() + "/admin/dashboard");
-            return;
-        }
-
         int userId = currentUser.getUserId();
 
         // ── Determine target week (Monday start) ──

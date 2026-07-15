@@ -715,8 +715,8 @@ INSERT INTO education_levels (education_level_id, level_name) VALUES
 -- ── 10. Shifts ──
 INSERT INTO shifts (shift_id, shift_name, start_time, end_time, break_start, break_end, is_night_shift, coefficient, working_days) VALUES
 (1, 'Ca Hành Chính','07:30:00','17:30:00','11:00:00','13:00:00', 0, 1.00,'2,3,4,5,6,7'),
-(2, 'Ca Đêm 1', '18:00:00','20:00:00', NULL,       NULL,        0, 1.50,'2,3,4,5,6,7'),
-(3, 'Ca Đêm 2', '18:00:00','22:00:00', '20:00:00', '20:30:00', 0, 1.50,'2,3,4,5,6,7');
+(2, 'Ca Đêm 1', '18:00:00','20:00:00', NULL,       NULL,        1, 1.50,'2,3,4,5,6,7'),
+(3, 'Ca Đêm 2', '18:00:00','22:00:00', '20:00:00', '20:30:00', 1, 1.50,'2,3,4,5,6,7');
 
 -- ── 11. Leave Types ──
 INSERT INTO leave_types (leave_type_id, type_name, description, paid_leave, max_days_per_year) VALUES

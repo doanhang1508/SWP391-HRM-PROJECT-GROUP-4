@@ -343,6 +343,38 @@ public class UserDAO {
         return list;
     }
 
+    // ── Lấy danh sách nhân viên theo danh sách role IDs ──
+    public java.util.List<User> getByRoles(int... roleIds) {
+        java.util.List<User> list = new java.util.ArrayList<>();
+        if (roleIds == null || roleIds.length == 0) return list;
+        StringBuilder placeholders = new StringBuilder();
+        for (int i = 0; i < roleIds.length; i++) {
+            if (i > 0) placeholders.append(",");
+            placeholders.append("?");
+        }
+        String sql = "SELECT * FROM users WHERE role_id IN (" + placeholders + ") AND status = 1 ORDER BY full_name";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (int i = 0; i < roleIds.length; i++) {
+                ps.setInt(i + 1, roleIds[i]);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToUser(rs));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi getByRoles: " + e.getMessage());
+        }
+        return list;
+    }
+
+    // ── Lấy tất cả quản lý (Quản đốc + Trưởng phòng) ──
+    public java.util.List<User> getAllManagers() {
+        return getByRoles(3, 6); // Factory Manager (3) + Dept Manager (6)
+    }
+
     // ── Lấy danh sách nhân viên theo phòng ban ──
     public java.util.List<User> getByDepartment(int departmentId) {
         java.util.List<User> list = new java.util.ArrayList<>();
