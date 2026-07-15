@@ -787,10 +787,14 @@ public class AttendanceDAO {
     public Map<LocalDate, Double> getPaidAttendanceDayMap(int userId, int month, int year) {
         // Lấy từng bản ghi riêng lẻ (theo work_date) thay vì SUM tổng, để giữ được
         // thông tin ngày cụ thể dùng cho bước hợp tập với leave.
-        String sql = "SELECT work_date, UPPER(status) AS status " +
-                     "FROM attendance " +
-                     "WHERE user_id=? AND MONTH(work_date)=? AND YEAR(work_date)=? " +
-                     "  AND UPPER(status) IN ('PRESENT','LATE','P','T','HALFDAY')";
+        // Chỉ tính những ngày thuộc lịch làm việc chính thức (shift_assignments)
+        // và phải có đầy đủ check_in / check_out (tránh tính trùng ngày OT chủ nhật/ngày nghỉ).
+        String sql = "SELECT a.work_date, UPPER(a.status) AS status " +
+                     "FROM attendance a " +
+                     "JOIN shift_assignments sa ON sa.user_id = a.user_id AND sa.assigned_date = a.work_date " +
+                     "WHERE a.user_id=? AND MONTH(a.work_date)=? AND YEAR(a.work_date)=? " +
+                     "  AND UPPER(a.status) IN ('PRESENT','LATE','P','T','HALFDAY') " +
+                     "  AND a.check_in IS NOT NULL AND a.check_out IS NOT NULL";
         Map<LocalDate, Double> dayMap = new HashMap<>();
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
