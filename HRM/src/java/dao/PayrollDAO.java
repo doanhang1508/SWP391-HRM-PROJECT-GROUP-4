@@ -918,7 +918,7 @@ public class PayrollDAO {
 
             // Total Deductions = Discipline Penalties + Insurance + Tax
             BigDecimal totalDeductions = disciplineDeductionAmount.add(insuranceAmount).add(taxAmount);
-            // NET
+            // NET = GROSS - TOTAL DEDUCTIONS + INSURANCE BENEFIT
             BigDecimal netSalary = grossSalary.subtract(totalDeductions).add(insuranceBenefit);
             if (netSalary.compareTo(BigDecimal.ZERO) < 0) {
                 netSalary = BigDecimal.ZERO;
