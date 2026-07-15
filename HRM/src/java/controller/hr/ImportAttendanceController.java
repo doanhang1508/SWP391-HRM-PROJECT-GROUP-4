@@ -611,6 +611,13 @@ public class ImportAttendanceController extends HttpServlet {
 
                         a.setOvertimeHrs(0.0);
                         a.setOtReason("");
+                        // [CẢNH BÁO] File Excel "Bảng Công" chỉ có 1 cột OT tổng tháng, không có
+                        // OT theo từng ngày. Logic bên dưới gán toàn bộ số giờ OT vào ngày PRESENT
+                        // ĐẦU TIÊN tìm được. Điều này có thể dẫn đến tính SAI hệ số OT nếu số giờ
+                        // OT thực tế thuộc về ngày Chủ nhật (2x) hoặc ngày lễ (3x) nhưng lại bị
+                        // gán vào một ngày thường (1.5x).
+                        // Để tính đúng hệ số, file import cần có cột OT riêng cho từng ngày,
+                        // hoặc HR phải nhập OT thủ công qua module "Quản lý Tăng Ca".
                         if (!otAssigned && totalOtHrs > 0 && "PRESENT".equals(status)) {
                             a.setOvertimeHrs(totalOtHrs);
                             a.setOtReason("Imported OT");

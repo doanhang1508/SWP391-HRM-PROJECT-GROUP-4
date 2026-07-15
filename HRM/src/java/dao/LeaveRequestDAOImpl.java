@@ -745,6 +745,25 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
             }
         }
 
+        // Tải tập hợp ngày lễ active trong tháng — ngày lễ không nằm trong standardWorkDays
+        // nên nghỉ phép đúng ngày lễ không được tính vào ngày công thường.
+        Set<LocalDate> activeHolidayDates = new HashSet<>();
+        String sqlHoliday = "SELECT holiday_date FROM holidays "
+                          + "WHERE status = 1 AND MONTH(holiday_date) = ? AND YEAR(holiday_date) = ?";
+        try (Connection hConn = DBContext.getConnection();
+             PreparedStatement hPs = hConn.prepareStatement(sqlHoliday)) {
+            hPs.setInt(1, month);
+            hPs.setInt(2, year);
+            try (ResultSet hRs = hPs.executeQuery()) {
+                while (hRs.next()) {
+                    java.sql.Date hDate = hRs.getDate("holiday_date");
+                    if (hDate != null) activeHolidayDates.add(hDate.toLocalDate());
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
         Set<LocalDate> leaveDays = new HashSet<>();
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -760,10 +779,15 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
                     LocalDate effectiveStart = leaveStart.isBefore(firstDayOfMonth) ? firstDayOfMonth : leaveStart;
                     LocalDate effectiveEnd   = leaveEnd.isAfter(lastDayOfMonth)     ? lastDayOfMonth  : leaveEnd;
 
-                    // Chỉ tính ngày nghỉ phép nếu ngày đó có phân ca làm việc
+                    // Chỉ tính ngày nghỉ phép nếu ngày đó:
+                    // - Có phân ca làm việc (assignedDates)
+                    // - Không phải Chủ nhật (SUNDAY không nằm trong standardWorkDays)
+                    // - Không phải ngày lễ active (ngày lễ không nằm trong standardWorkDays)
                     LocalDate current = effectiveStart;
                     while (!current.isAfter(effectiveEnd)) {
-                        if (assignedDates.contains(current)) {
+                        boolean isSunday  = current.getDayOfWeek() == DayOfWeek.SUNDAY;
+                        boolean isHoliday = activeHolidayDates.contains(current);
+                        if (assignedDates.contains(current) && !isSunday && !isHoliday) {
                             leaveDays.add(current);
                         }
                         current = current.plusDays(1);
@@ -800,6 +824,25 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
             }
         }
 
+        // Tải tập hợp ngày lễ active trong tháng
+        // Nghỉ ốm đúng ngày lễ không được tính insuranceBenefit vì ngày lễ không nằm trong standardWorkDays.
+        Set<LocalDate> activeHolidayDates = new HashSet<>();
+        String sqlHoliday = "SELECT holiday_date FROM holidays "
+                          + "WHERE status = 1 AND MONTH(holiday_date) = ? AND YEAR(holiday_date) = ?";
+        try (Connection hConn = DBContext.getConnection();
+             PreparedStatement hPs = hConn.prepareStatement(sqlHoliday)) {
+            hPs.setInt(1, month);
+            hPs.setInt(2, year);
+            try (ResultSet hRs = hPs.executeQuery()) {
+                while (hRs.next()) {
+                    java.sql.Date hDate = hRs.getDate("holiday_date");
+                    if (hDate != null) activeHolidayDates.add(hDate.toLocalDate());
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
         Map<LocalDate, Integer> unpaidLeaveMap = new HashMap<>();
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -818,7 +861,9 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
 
                     LocalDate current = effectiveStart;
                     while (!current.isAfter(effectiveEnd)) {
-                        if (assignedDates.contains(current)) {
+                        boolean isSunday  = current.getDayOfWeek() == DayOfWeek.SUNDAY;
+                        boolean isHoliday = activeHolidayDates.contains(current);
+                        if (assignedDates.contains(current) && !isSunday && !isHoliday) {
                             unpaidLeaveMap.put(current, leaveTypeId);
                         }
                         current = current.plusDays(1);

@@ -293,7 +293,8 @@ public class PayslipController extends HttpServlet {
             StringBuilder json = new StringBuilder();
             json.append("{");
 
-            BigDecimal standardWorkDays = new BigDecimal(util.DateUtil.getStandardWorkDays(month, year));
+            // D\u00f9ng getPayrollStandardWorkDays \u0111\u1ec3 hi\u1ec3n th\u1ecb c\u00f9ng m\u1eabu s\u1ed1 v\u1edbi generatePayrollDraft.
+            BigDecimal standardWorkDays = new BigDecimal(new dao.HolidayDAO().getPayrollStandardWorkDays(month, year));
             BigDecimal baseWorkedSalary = BigDecimal.ZERO;
             if (standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
                 BigDecimal daysRatio = new BigDecimal(p.getWorkingDays()).divide(standardWorkDays, 4, java.math.RoundingMode.HALF_UP);

@@ -392,7 +392,8 @@ public class HrPayrollController extends HttpServlet {
             StringBuilder json = new StringBuilder();
             json.append("{");
 
-            BigDecimal standardWorkDays = new BigDecimal(util.DateUtil.getStandardWorkDays(month, year));
+            // Dùng getPayrollStandardWorkDays để hiển thị cùng mẫu số với generatePayrollDraft.
+            BigDecimal standardWorkDays = new BigDecimal(new dao.HolidayDAO().getPayrollStandardWorkDays(month, year));
             BigDecimal baseWorkedSalary = BigDecimal.ZERO;
             if (standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
                 BigDecimal daysRatio = new BigDecimal(p.getWorkingDays()).divide(standardWorkDays, 4, java.math.RoundingMode.HALF_UP);

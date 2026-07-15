@@ -5,10 +5,15 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import model.Holiday;
 import model.HolidayRule;
 import util.DBContext;
@@ -274,5 +279,64 @@ public class HolidayDAO {
             e.printStackTrace();
         }
         return rules;
+    }
+
+    /**
+     * Tính số ngày công chuẩn cho mục đích tính lương (payroll).
+     * <p>
+     * Công thức: Tổng ngày trong tháng − Chủ nhật − ngày lễ active không trùng Chủ nhật.
+     * </p>
+     * <p>
+     * Khác với {@link util.DateUtil#getStandardWorkDays} (chỉ trừ Chủ nhật),
+     * method này trừ cả ngày lễ đang kích hoạt ({@code status = 1}) trong bảng
+     * {@code holidays}. Điều này đảm bảo nhân viên làm đủ các ngày bình thường
+     * vẫn nhận đủ lương tháng; làm ngày lễ được cộng OT 3x riêng, không bị trùng
+     * vào lương cơ bản.
+     * </p>
+     *
+     * @param month tháng cần tính (1–12)
+     * @param year  năm cần tính
+     * @return số ngày công chuẩn (>= 0)
+     */
+    public int getPayrollStandardWorkDays(int month, int year) {
+        YearMonth yearMonth = YearMonth.of(year, month);
+        int daysInMonth = yearMonth.lengthOfMonth();
+
+        // Tập hợp ngày Chủ nhật trong tháng
+        Set<LocalDate> sundays = new HashSet<>();
+        for (int d = 1; d <= daysInMonth; d++) {
+            LocalDate date = LocalDate.of(year, month, d);
+            if (date.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                sundays.add(date);
+            }
+        }
+
+        // Lấy các ngày lễ active trong tháng từ DB
+        Set<LocalDate> holidayDates = new HashSet<>();
+        String sql = "SELECT holiday_date FROM holidays "
+                   + "WHERE status = 1 AND MONTH(holiday_date) = ? AND YEAR(holiday_date) = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Date hDate = rs.getDate("holiday_date");
+                    if (hDate != null) {
+                        holidayDates.add(hDate.toLocalDate());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Số ngày lễ active KHÔNG trùng Chủ nhật (Chủ nhật đã trừ riêng rồi)
+        long holidayNotSunday = holidayDates.stream()
+                .filter(d -> !sundays.contains(d))
+                .count();
+
+        int result = daysInMonth - sundays.size() - (int) holidayNotSunday;
+        return Math.max(result, 0);
     }
 }

@@ -713,7 +713,11 @@ public class PayrollDAO {
         }
         
         LeaveRequestDAOImpl leaveDAO = new LeaveRequestDAOImpl();
-        BigDecimal standardWorkDays = new BigDecimal(util.DateUtil.getStandardWorkDays(month, year));
+        // Dùng getPayrollStandardWorkDays (trừ cả ngày lễ active) thay vì DateUtil.getStandardWorkDays
+        // (chỉ trừ Chủ nhật) để đảm bảo mẫu số ngày công của payroll khớp với
+        // số ngày làm việc thực tế (không bao gồm ngày lễ).
+        HolidayDAO holidayDAO = new HolidayDAO();
+        BigDecimal standardWorkDays = new BigDecimal(holidayDAO.getPayrollStandardWorkDays(month, year));
         // Tải rateMap 1 lần cho toàn bộ batch — tránh query DB lặp lại trong vòng lặp nhân viên
         LeaveInsuranceRateDAO lirDAO = new LeaveInsuranceRateDAO();
         Map<Integer, BigDecimal> insuranceRateMap = lirDAO.getActiveRateMap();
@@ -957,7 +961,18 @@ public class PayrollDAO {
         BigDecimal deduction  = payroll.getDeductionAmount()  != null ? payroll.getDeductionAmount()  : BigDecimal.ZERO;
 
         // --- Tính lương theo ngày công thực tế ---
-        BigDecimal standardWorkDays = new BigDecimal(util.DateUtil.getStandardWorkDays(current.getMonth(), current.getYear()));
+        // Dùng getPayrollStandardWorkDays để mẫu số trừ cả ngày lễ active như generatePayrollDraft.
+        HolidayDAO holidayDAO = new HolidayDAO();
+        int payrollStdDays = holidayDAO.getPayrollStandardWorkDays(current.getMonth(), current.getYear());
+        BigDecimal standardWorkDays = new BigDecimal(payrollStdDays);
+
+        // Guard: HR không được nhập ngày công vượt quá ngày công chuẩn của kỳ lương.
+        // Lý do: đi làm ngày lễ/Chủ nhật chỉ được tính OT, không tính thêm ngày công.
+        if (payrollStdDays > 0 && payroll.getWorkingDays() > payrollStdDays) {
+            throw new IllegalArgumentException(
+                "Ngày công không được vượt quá ngày công chuẩn của kỳ lương (" + payrollStdDays + " ngày)."
+            );
+        }
         BigDecimal baseWorkedSalary = BigDecimal.ZERO;
         if (standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal daysRatio = new BigDecimal(payroll.getWorkingDays())
@@ -1105,7 +1120,9 @@ public class PayrollDAO {
         BigDecimal insuranceBenefit = current.getInsuranceBenefit() != null ? current.getInsuranceBenefit() : BigDecimal.ZERO;
 
         // Tính baseWorkedSalary đúng: baseSalary * (workingDays / standardWorkDays)
-        BigDecimal standardWorkDays = new BigDecimal(util.DateUtil.getStandardWorkDays(current.getMonth(), current.getYear()));
+        // Dùng getPayrollStandardWorkDays để mẫu số khớp với generatePayrollDraft.
+        HolidayDAO holidayDAO = new HolidayDAO();
+        BigDecimal standardWorkDays = new BigDecimal(holidayDAO.getPayrollStandardWorkDays(current.getMonth(), current.getYear()));
         BigDecimal baseWorkedSalary = BigDecimal.ZERO;
         if (standardWorkDays.compareTo(BigDecimal.ZERO) > 0 && current.getWorkingDays() > 0) {
             BigDecimal daysRatio = new BigDecimal(current.getWorkingDays())

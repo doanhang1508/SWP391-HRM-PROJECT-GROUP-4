@@ -789,12 +789,21 @@ public class AttendanceDAO {
         // thông tin ngày cụ thể dùng cho bước hợp tập với leave.
         // Chỉ tính những ngày thuộc lịch làm việc chính thức (shift_assignments)
         // và phải có đầy đủ check_in / check_out (tránh tính trùng ngày OT chủ nhật/ngày nghỉ).
+        // Loại Chủ nhật (DAYOFWEEK=1) và ngày lễ active khỏi ngày công hưởng lương.
+        // - Chủ nhật: không thuộc lịch làm việc bình thường.
+        // - Ngày lễ: không nằm trong standardWorkDays (đã trừ ở mẫu số).
+        // Cả hai loại ngày này nếu nhân viên có đi làm thì chỉ tính tiền OT riêng.
         String sql = "SELECT a.work_date, UPPER(a.status) AS status " +
                      "FROM attendance a " +
                      "JOIN shift_assignments sa ON sa.user_id = a.user_id AND sa.assigned_date = a.work_date " +
                      "WHERE a.user_id=? AND MONTH(a.work_date)=? AND YEAR(a.work_date)=? " +
                      "  AND UPPER(a.status) IN ('PRESENT','LATE','P','T','HALFDAY') " +
-                     "  AND a.check_in IS NOT NULL AND a.check_out IS NOT NULL";
+                     "  AND a.check_in IS NOT NULL AND a.check_out IS NOT NULL " +
+                     "  AND DAYOFWEEK(a.work_date) <> 1 " +
+                     "  AND NOT EXISTS (" +
+                     "      SELECT 1 FROM holidays h " +
+                     "      WHERE h.holiday_date = a.work_date AND h.status = 1" +
+                     "  )";
         Map<LocalDate, Double> dayMap = new HashMap<>();
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
@@ -1335,7 +1344,7 @@ public class AttendanceDAO {
      * @return "HOLIDAY", "NORMAL", hoặc "WEEKLY_REST"
      */
     private String resolveWorkDayType(Connection conn, int userId, java.sql.Date date) throws SQLException {
-        // 1. Kiểm tra ngày lễ
+        // 1. Kiểm tra ngày lễ active → HOLIDAY (ưu tiên cao nhất)
         String sqlH = "SELECT 1 FROM holidays WHERE holiday_date = ? AND status = 1 LIMIT 1";
         try (PreparedStatement ps = conn.prepareStatement(sqlH)) {
             ps.setDate(1, date);
@@ -1344,7 +1353,15 @@ public class AttendanceDAO {
             }
         }
 
-        // 2. Kiểm tra roster (shift_assignments = nguồn lịch làm việc chính thức)
+        // 2. Kiểm tra Chủ nhật → WEEKLY_REST
+        //    Phải kiểm tra TẠI ĐÂY (trước bước 3) để tránh Chủ nhật có shift_assignment
+        //    bị phân loại nhầm là NORMAL.
+        java.time.LocalDate localDate = date.toLocalDate();
+        if (localDate.getDayOfWeek() == java.time.DayOfWeek.SUNDAY) {
+            return "WEEKLY_REST";
+        }
+
+        // 3. Kiểm tra roster (shift_assignments = nguồn lịch làm việc chính thức)
         String sqlS = "SELECT 1 FROM shift_assignments WHERE user_id = ? AND assigned_date = ? LIMIT 1";
         try (PreparedStatement ps = conn.prepareStatement(sqlS)) {
             ps.setInt(1, userId);
@@ -1354,16 +1371,21 @@ public class AttendanceDAO {
             }
         }
 
-        // 3. Không thuộc cả hai → ngày nghỉ theo tuần
-        return "WEEKLY_REST";
+        // 4. Không xác định được loại ngày → UNKNOWN
+        //    Trường hợp này xảy ra khi dữ liệu thiếu shift_assignment cho một ngày thường.
+        //    Không tự động áp hệ số 200% (WEEKLY_REST) vì có thể dữ liệu sai.
+        System.err.println("[OT-WARN] userId=" + userId + " date=" + date
+                + " → Không tìm thấy shift_assignment và không phải holiday/Sunday."
+                + " Phân loại UNKNOWN — bỏ qua khi tính OT. Kiểm tra lại dữ liệu phân ca.");
+        return "UNKNOWN";
     }
 
     /**
      * Trả về bội số OT dựa trên loại ngày và multiplier cấu hình từ holidays table.
      *
-     * @param workDayType     "HOLIDAY" | "NORMAL" | "WEEKLY_REST"
-     * @param holidayMultiplier  ot_multiplier từ bảng holidays (có thể null nếu không phải holiday)
-     * @return BigDecimal bội số OT
+     * @param workDayType       "HOLIDAY" | "NORMAL" | "WEEKLY_REST" | "UNKNOWN"
+     * @param holidayMultiplier ot_multiplier từ bảng holidays (null nếu không phải holiday)
+     * @return BigDecimal bội số OT; trả về ZERO nếu UNKNOWN (bỏ qua, không tính OT sai)
      */
     private BigDecimal resolveOvertimeMultiplier(String workDayType, BigDecimal holidayMultiplier) {
         return switch (workDayType) {
@@ -1371,7 +1393,8 @@ public class AttendanceDAO {
                                    ? holidayMultiplier
                                    : OT_MULTIPLIER_HOLIDAY_DEFAULT;
             case "WEEKLY_REST" -> OT_MULTIPLIER_WEEKLY_REST;
-            default            -> OT_MULTIPLIER_NORMAL;      // "NORMAL"
+            case "UNKNOWN"     -> BigDecimal.ZERO;  // Dữ liệu thiếu — không tính OT để tránh sai hệ số
+            default            -> OT_MULTIPLIER_NORMAL;  // "NORMAL"
         };
     }
 
