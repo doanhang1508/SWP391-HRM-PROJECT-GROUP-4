@@ -365,37 +365,25 @@
 .btn-sm-ghost:hover{color:var(--accent);border-color:var(--acc-border);}
 
 /* ─────────────────────────────────────────────────────────
-   PAGINATION  (minimal)
+   PAGINATION  — minimal prev/next only
 ───────────────────────────────────────────────────────── */
 .pg-bar{
   display:flex;justify-content:space-between;align-items:center;
-  padding:12px 20px;border-top:1px solid var(--border-xs);
+  padding:14px 20px;border-top:1px solid var(--border-xs);
   flex-wrap:wrap;gap:8px;
 }
-.pg-info{font-size:.78rem;color:var(--txt-3);}
-.pg-info strong{color:var(--txt-1);}
-.pg-nav{display:flex;align-items:center;gap:3px;}
-.pg-btn{
-  min-width:30px;height:30px;padding:0 5px;
+.pg-info{font-size:.8rem;color:var(--txt-3);}
+.pg-nav{display:flex;align-items:center;gap:4px;}
+.pg-arrow{
+  width:30px;height:30px;
   border:1px solid var(--border);border-radius:6px;
-  background:var(--surface);font-size:.78rem;
-  font-weight:500;color:var(--txt-3);cursor:pointer;
+  background:var(--surface);color:var(--txt-3);cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  transition:all .13s;font-family:inherit;
+  font-size:.72rem;
+  transition:all .13s;
 }
-.pg-btn:hover:not(:disabled):not(.pg-on){
-  border-color:var(--accent);color:var(--accent);background:var(--acc-bg);
-}
-.pg-btn.pg-on{
-  background:var(--accent);border-color:var(--accent);
-  color:#fff;cursor:default;
-}
-.pg-btn:disabled{opacity:.35;cursor:not-allowed;}
-.pg-dots{
-  min-width:30px;height:30px;display:flex;
-  align-items:center;justify-content:center;
-  color:var(--txt-4);font-size:.78rem;
-}
+.pg-arrow:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+.pg-arrow:disabled{opacity:.3;cursor:not-allowed;}
 </style>
 
 <!-- ═══ EXPORT FORM (hidden, avoids nested-form bug) ═══ -->
@@ -751,36 +739,28 @@
 
   function info(s,e,n){
     var el=document.getElementById('pgInfo'); if(!el)return;
-    if(!n){el.innerHTML='Không tìm thấy kết quả';return;}
-    if(PS>=9999){el.innerHTML='Hiển thị tất cả <strong>'+n+'</strong> nhân viên';return;}
-    el.innerHTML='Hiển thị <strong>'+(s+1)+'–'+e+'</strong> / <strong>'+n+'</strong> nhân viên';
+    if(!n){el.textContent='Không tìm thấy kết quả';return;}
+    if(PS>=9999){el.textContent='Hiển thị tất cả '+n+' nhân viên.';return;}
+    el.textContent='Hiển thị '+(s+1)+' - '+e+' trong số '+n+' nhân viên.';
   }
 
   function pag(n){
     var nav=document.getElementById('pgNav'); if(!nav)return;
     nav.innerHTML='';
     if(PS>=9999||n===0)return;
-    var tp=Math.ceil(n/PS); if(tp<=1)return;
-    function mk(lbl,pg,cls,dis){
-      var b=document.createElement('button');
-      b.className='pg-btn'+(cls?' '+cls:'');
-      b.innerHTML=lbl;b.disabled=!!dis;
-      if(!dis&&cls!=='pg-on')b.onclick=function(){go(pg);};
-      return b;
-    }
-    nav.appendChild(mk('<i class="fas fa-chevron-left"></i>',cur-1,'',cur===1));
-    pages(cur,tp).forEach(function(p){
-      if(p==='…'){var d=document.createElement('span');d.className='pg-dots';d.textContent='…';nav.appendChild(d);}
-      else nav.appendChild(mk(p,p,p===cur?'pg-on':'',false));
-    });
-    nav.appendChild(mk('<i class="fas fa-chevron-right"></i>',cur+1,'',cur===tp));
-  }
-
-  function pages(c,t){
-    if(t<=7){var r=[];for(var i=1;i<=t;i++)r.push(i);return r;}
-    if(c<=4)return[1,2,3,4,5,'…',t];
-    if(c>=t-3)return[1,'…',t-4,t-3,t-2,t-1,t];
-    return[1,'…',c-1,c,c+1,'…',t];
+    var tp=Math.ceil(n/PS);
+    /* Prev */
+    var prev=document.createElement('button');
+    prev.className='pg-arrow'; prev.disabled=(cur===1);
+    prev.innerHTML='<i class="fas fa-chevron-left"></i>';
+    prev.onclick=function(){if(cur>1)go(cur-1);};
+    nav.appendChild(prev);
+    /* Next */
+    var next=document.createElement('button');
+    next.className='pg-arrow'; next.disabled=(cur===tp||tp<=1);
+    next.innerHTML='<i class="fas fa-chevron-right"></i>';
+    next.onclick=function(){if(cur<tp)go(cur+1);};
+    nav.appendChild(next);
   }
 
   /* Export — sync filter values then submit hidden form */
