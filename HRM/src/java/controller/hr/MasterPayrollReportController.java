@@ -299,13 +299,13 @@ public class MasterPayrollReportController extends HttpServlet {
     }
 
     private Integer parseDeptId(String str) {
-        if (str == null || str.isBlank() || "-1".equals(str)) return null;
+        if (str == null || str.trim().isEmpty() || "-1".equals(str)) return null;
         try { return Integer.parseInt(str); } catch (NumberFormatException e) { return null; }
     }
 
     private int getParamOrDefault(HttpServletRequest request, String name, int def) {
         String val = request.getParameter(name);
-        if (val == null || val.isBlank()) return def;
+        if (val == null || val.trim().isEmpty()) return def;
         try { return Integer.parseInt(val); } catch (NumberFormatException e) { return def; }
     }
 
