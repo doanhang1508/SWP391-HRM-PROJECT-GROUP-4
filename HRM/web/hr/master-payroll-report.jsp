@@ -389,8 +389,16 @@
             </div>
         </div>
 
+        <!-- ═══ EXPORT FORM (tách riêng tránh nested form) ═══════════ -->
+        <form id="exportForm" action="${pageContext.request.contextPath}/hr/master-payroll-report" method="GET" style="display:none;">
+            <input type="hidden" name="action"       value="exportExcel">
+            <input type="hidden" id="ef_month"       name="month"        value="${selectedMonth}">
+            <input type="hidden" id="ef_year"        name="year"         value="${selectedYear}">
+            <input type="hidden" id="ef_dept"        name="departmentId" value="${selectedDepartmentId}">
+        </form>
+
         <!-- ═══ FILTER ════════════════════════════════════════════════ -->
-        <form action="${pageContext.request.contextPath}/hr/master-payroll-report" method="GET" class="mpr-filter">
+        <form id="filterForm" action="${pageContext.request.contextPath}/hr/master-payroll-report" method="GET" class="mpr-filter">
             <div class="fg">
                 <label><i class="fas fa-calendar-alt"></i> Tháng</label>
                 <select name="month">
@@ -418,13 +426,9 @@
             </div>
             <div class="fg" style="margin-left:auto;">
                 <label>&nbsp;</label>
-                <form action="${pageContext.request.contextPath}/hr/master-payroll-report" method="GET" style="display:contents;">
-                    <input type="hidden" name="action"       value="exportExcel">
-                    <input type="hidden" name="month"        value="${selectedMonth}">
-                    <input type="hidden" name="year"         value="${selectedYear}">
-                    <input type="hidden" name="departmentId" value="${selectedDepartmentId}">
-                    <button type="submit" class="btn-xlsx"><i class="fas fa-file-excel"></i> Xuất Excel (.xlsx)</button>
-                </form>
+                <button type="button" class="btn-xlsx" onclick="submitExport()">
+                    <i class="fas fa-file-excel"></i> Xuất Excel (.xlsx)
+                </button>
             </div>
         </form>
 
@@ -756,6 +760,16 @@
         document.addEventListener('DOMContentLoaded',init);
     else init();
 })();
+
+/* ── Export: sync filter values then submit ── */
+function submitExport(){
+    var ff = document.getElementById('filterForm');
+    if(!ff) return;
+    document.getElementById('ef_month').value = ff.querySelector('[name=month]').value;
+    document.getElementById('ef_year').value  = ff.querySelector('[name=year]').value;
+    document.getElementById('ef_dept').value  = ff.querySelector('[name=departmentId]').value;
+    document.getElementById('exportForm').submit();
+}
 </script>
 
 </main>
