@@ -6,363 +6,407 @@
 <jsp:include page="../header.jsp"/>
 
 <style>
-/* ════════════════════════════════════════════════════════
-   LAYOUT BASE
-════════════════════════════════════════════════════════ */
-.dashboard-wrapper { display:flex; min-height:calc(100vh - 64px); }
-.main-content      { flex:1; min-width:0; background:#f0f4f8; }
-.mpr-body          { padding:26px 28px 48px; }
-
-/* ════════════════════════════════════════════════════════
-   HERO HEADER
-════════════════════════════════════════════════════════ */
-.mpr-hero {
-    background: linear-gradient(130deg,#0f172a 0%,#134e48 100%);
-    border-radius: 16px;
-    padding: 24px 28px;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 14px;
-    position: relative;
-    overflow: hidden;
-}
-.mpr-hero::before {
-    content:''; position:absolute; top:-50px; right:-50px;
-    width:220px; height:220px; border-radius:50%;
-    background:rgba(255,255,255,.04); pointer-events:none;
-}
-.hero-left h1 {
-    font-size:1.45rem; font-weight:800; color:#fff;
-    margin:0; display:flex; align-items:center; gap:10px;
-}
-.hero-ico {
-    width:40px; height:40px; border-radius:10px;
-    background:rgba(255,255,255,.12);
-    display:flex; align-items:center; justify-content:center; font-size:1.1rem;
-}
-.hero-sub { font-size:.82rem; color:rgba(255,255,255,.55); margin:5px 0 0; }
-.hero-breadcrumb { font-size:.78rem; color:rgba(255,255,255,.5); display:flex; align-items:center; gap:6px; }
-.hero-breadcrumb a { color:rgba(255,255,255,.75); text-decoration:none; }
-.hero-breadcrumb a:hover { color:#fff; }
-.hero-breadcrumb .sep { color:rgba(255,255,255,.25); }
-
-/* ════════════════════════════════════════════════════════
-   FILTER CARD
-════════════════════════════════════════════════════════ */
-.mpr-filter {
-    background:#fff;
-    border:1px solid #e8edf3;
-    border-radius:14px;
-    padding:16px 22px;
-    box-shadow:0 1px 6px rgba(0,0,0,.05);
-    margin-bottom:18px;
-    display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;
-}
-.fg { display:flex; flex-direction:column; gap:4px; }
-.fg label {
-    font-size:.7rem; font-weight:700; color:#64748b;
-    text-transform:uppercase; letter-spacing:.5px;
-    display:flex; align-items:center; gap:4px;
-}
-.fg select, .fg input {
-    padding:8px 11px;
-    border:1.5px solid #e2e8f0;
-    border-radius:8px;
-    font-size:.86rem; font-family:inherit;
-    background:#f8fafc; color:#1e293b;
-    min-width:130px;
-    transition:border-color .18s, box-shadow .18s;
-}
-.fg select:focus, .fg input:focus {
-    outline:none; border-color:#0d9488;
-    box-shadow:0 0 0 3px rgba(13,148,136,.1);
-    background:#fff;
-}
-.btn-go {
-    height:38px; padding:0 20px;
-    background:linear-gradient(135deg,#0d9488,#0e7490);
-    color:#fff; border:none; border-radius:8px;
-    font-weight:700; font-size:.85rem; cursor:pointer;
-    display:inline-flex; align-items:center; gap:6px;
-    transition:opacity .18s,transform .15s;
-}
-.btn-go:hover { opacity:.88; transform:translateY(-1px); }
-.btn-xlsx {
-    height:38px; padding:0 18px;
-    background:#fff; color:#059669;
-    border:1.5px solid #6ee7b7; border-radius:8px;
-    font-weight:700; font-size:.85rem; cursor:pointer;
-    display:inline-flex; align-items:center; gap:6px;
-    transition:all .18s;
-}
-.btn-xlsx:hover { background:#f0fdf4; border-color:#10b981; box-shadow:0 3px 10px rgba(16,185,129,.15); transform:translateY(-1px); }
-
-/* ════════════════════════════════════════════════════════
-   KPI GRID
-════════════════════════════════════════════════════════ */
-.kpi-grid {
-    display:grid;
-    grid-template-columns:repeat(5,1fr);
-    gap:14px;
-    margin-bottom:20px;
-}
-@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(3,1fr);}}
-@media(max-width:680px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
-.kc {
-    background:#fff; border:1px solid #e8edf3; border-radius:13px;
-    padding:16px 18px;
-    box-shadow:0 1px 5px rgba(0,0,0,.05);
-    transition:transform .2s,box-shadow .2s;
-    position:relative; overflow:hidden;
-}
-.kc:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,.09); }
-.kc-top { position:absolute; top:0; left:0; right:0; height:3px; border-radius:13px 13px 0 0; }
-.kc.c1 .kc-top{background:linear-gradient(90deg,#3b82f6,#6366f1);}
-.kc.c2 .kc-top{background:linear-gradient(90deg,#10b981,#059669);}
-.kc.c3 .kc-top{background:linear-gradient(90deg,#0d9488,#0284c7);}
-.kc.c4 .kc-top{background:linear-gradient(90deg,#f59e0b,#f97316);}
-.kc.c5 .kc-top{background:linear-gradient(90deg,#ef4444,#e11d48);}
-.kc-row { display:flex; align-items:center; gap:11px; margin-top:2px; }
-.kc-ico {
-    width:38px; height:38px; border-radius:10px; flex-shrink:0;
-    display:flex; align-items:center; justify-content:center; font-size:.95rem;
-}
-.c1 .kc-ico{background:#eff6ff;color:#3b82f6;}
-.c2 .kc-ico{background:#f0fdf4;color:#10b981;}
-.c3 .kc-ico{background:#f0fdfa;color:#0d9488;}
-.c4 .kc-ico{background:#fffbeb;color:#d97706;}
-.c5 .kc-ico{background:#fff1f2;color:#e11d48;}
-.kc-lbl { font-size:.68rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px; }
-.kc-val { font-size:1rem; font-weight:800; color:#0f172a; margin-top:1px; line-height:1.25; }
-.kc-sub { font-size:.7rem; color:#94a3b8; margin-top:8px; }
-
-/* ════════════════════════════════════════════════════════
-   TABLE SECTION CARD
-════════════════════════════════════════════════════════ */
-.tbl-card {
-    background:#fff;
-    border:1px solid #e8edf3;
-    border-radius:14px;
-    box-shadow:0 2px 8px rgba(0,0,0,.06);
-    overflow:hidden;
+/* ─────────────────────────────────────────────────────────
+   DESIGN TOKENS  (1 accent = #0891b2 cyan-600)
+───────────────────────────────────────────────────────── */
+:root{
+  --bg:       #f8fafc;
+  --surface:  #ffffff;
+  --border:   #e5e7eb;
+  --border-xs:#f3f4f6;
+  --txt-1:    #111827;
+  --txt-2:    #374151;
+  --txt-3:    #6b7280;
+  --txt-4:    #9ca3af;
+  --accent:   #0891b2;
+  --acc-bg:   #f0f9ff;
+  --acc-border:#bae6fd;
+  --ok:       #059669;
+  --ok-bg:    #f0fdf4;
+  --ok-border:#a7f3d0;
+  --warn:     #d97706;
+  --warn-bg:  #fffbeb;
+  --err:      #b91c1c;
+  --err-bg:   #fef2f2;
+  --err-border:#fecaca;
+  --neutral-bg:#f9fafb;
+  --radius:   12px;
+  --radius-sm: 8px;
+  --shadow-xs: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-sm: 0 2px 6px rgba(0,0,0,.07);
 }
 
-/* ── Card Header ── */
-.tbl-card-hdr {
-    display:flex; justify-content:space-between; align-items:center;
-    padding:16px 22px;
-    border-bottom:1px solid #f1f5f9;
-    flex-wrap:wrap; gap:12px;
-}
-.tbl-hdr-left { display:flex; align-items:center; gap:10px; }
-.tbl-hdr-icon {
-    width:36px; height:36px; border-radius:9px;
-    background:#f0fdfa; color:#0d9488;
-    display:flex; align-items:center; justify-content:center;
-    font-size:.9rem;
-}
-.tbl-hdr-title { font-size:1.05rem; font-weight:700; color:#0f172a; }
-.tbl-hdr-badge {
-    background:#f0fdfa; color:#0d9488; border:1px solid #ccfbf1;
-    border-radius:20px; padding:2px 11px; font-size:.75rem; font-weight:700;
-}
-.tbl-hdr-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-.period-chip {
-    background:#f8fafc; border:1px solid #e2e8f0;
-    border-radius:8px; padding:5px 12px;
-    font-size:.8rem; font-weight:600; color:#475569;
-    display:flex; align-items:center; gap:5px;
-}
-.period-chip i { color:#0d9488; }
-.btn-sm-action {
-    height:34px; padding:0 14px;
-    border:1.5px solid #e2e8f0; border-radius:8px;
-    background:#fff; color:#64748b;
-    font-size:.8rem; font-weight:600; cursor:pointer;
-    display:inline-flex; align-items:center; gap:6px;
-    transition:all .15s;
-}
-.btn-sm-action:hover { border-color:#0d9488; color:#0d9488; background:#f0fdfa; }
+/* ─────────────────────────────────────────────────────────
+   LAYOUT
+───────────────────────────────────────────────────────── */
+.dashboard-wrapper{display:flex;min-height:calc(100vh - 64px);}
+.main-content{flex:1;min-width:0;background:var(--bg);}
+.pr-body{padding:24px 28px 56px;max-width:1600px;}
 
-/* ── Toolbar (search + pagesize) ── */
-.tbl-toolbar {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:12px 22px;
-    background:#fafbfc;
-    border-bottom:1px solid #f1f5f9;
-    flex-wrap:wrap; gap:10px;
+/* ─────────────────────────────────────────────────────────
+   PAGE HEADER  (clean, no gradient)
+───────────────────────────────────────────────────────── */
+.pr-page-hdr{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:24px;flex-wrap:wrap;gap:12px;
 }
-.tbl-toolbar-left { display:flex; align-items:center; gap:8px; }
-.tbl-toolbar-right { display:flex; align-items:center; gap:10px; }
-.tbl-search {
-    height:34px; padding:0 10px 0 32px; width:200px;
-    border:1.5px solid #e2e8f0; border-radius:8px;
-    background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") 9px center/14px no-repeat;
-    font-size:.83rem; color:#1e293b; transition:all .18s;
+.pr-page-hdr-left h1{
+  font-size:1.35rem;font-weight:700;color:var(--txt-1);
+  margin:0;display:flex;align-items:center;gap:8px;
 }
-.tbl-search:focus { outline:none; border-color:#0d9488; width:230px; box-shadow:0 0 0 3px rgba(13,148,136,.08); }
-.pg-size-wrap { display:flex; align-items:center; gap:6px; font-size:.78rem; color:#64748b; }
-.pg-size-wrap select {
-    height:32px; padding:0 8px;
-    border:1.5px solid #e2e8f0; border-radius:7px;
-    background:#fff; font-size:.78rem; cursor:pointer;
+.pr-page-hdr-left h1 i{font-size:1.05rem;color:var(--accent);}
+.pr-page-hdr-left p{font-size:.82rem;color:var(--txt-3);margin:4px 0 0;}
+.breadcrumb-row{
+  display:flex;align-items:center;gap:5px;
+  font-size:.78rem;color:var(--txt-4);
+}
+.breadcrumb-row a{color:var(--txt-3);text-decoration:none;}
+.breadcrumb-row a:hover{color:var(--accent);}
+.breadcrumb-row .sep{color:var(--border);}
+
+/* ─────────────────────────────────────────────────────────
+   FILTER ROW
+───────────────────────────────────────────────────────── */
+.pr-filter{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:14px 20px;
+  box-shadow:var(--shadow-xs);
+  margin-bottom:20px;
+  display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;
+}
+.fg{display:flex;flex-direction:column;gap:4px;}
+.fg label{
+  font-size:.7rem;font-weight:600;color:var(--txt-3);
+  text-transform:uppercase;letter-spacing:.5px;
+}
+.fg select,.fg input[type=number]{
+  height:36px;padding:0 10px;
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface);color:var(--txt-1);
+  font-size:.84rem;font-family:inherit;min-width:120px;
+  transition:border-color .15s,box-shadow .15s;
+}
+.fg select:focus,.fg input[type=number]:focus{
+  outline:none;border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(8,145,178,.1);
+}
+.btn-primary{
+  height:36px;padding:0 16px;
+  background:var(--accent);color:#fff;
+  border:none;border-radius:var(--radius-sm);
+  font-size:.84rem;font-weight:600;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;
+  transition:background .15s,transform .1s;white-space:nowrap;
+}
+.btn-primary:hover{background:#0e7490;transform:translateY(-1px);}
+.btn-outline{
+  height:36px;padding:0 14px;
+  background:var(--surface);color:var(--ok);
+  border:1px solid var(--ok-border);border-radius:var(--radius-sm);
+  font-size:.84rem;font-weight:600;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;
+  transition:all .15s;white-space:nowrap;
+}
+.btn-outline:hover{background:var(--ok-bg);border-color:var(--ok);}
+
+/* ─────────────────────────────────────────────────────────
+   KPI STRIP  (5 cards, minimal)
+───────────────────────────────────────────────────────── */
+.kpi-row{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:12px;margin-bottom:20px;
+}
+@media(max-width:1100px){.kpi-row{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:680px) {.kpi-row{grid-template-columns:repeat(2,1fr);}}
+.kpi{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:16px 18px;
+  box-shadow:var(--shadow-xs);
+  transition:box-shadow .2s;
+}
+.kpi:hover{box-shadow:var(--shadow-sm);}
+.kpi-lbl{
+  font-size:.69rem;font-weight:600;color:var(--txt-3);
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;
+  display:flex;align-items:center;gap:5px;
+}
+.kpi-lbl i{font-size:.75rem;}
+.kpi-val{font-size:1.05rem;font-weight:700;color:var(--txt-1);line-height:1.25;}
+.kpi-sub{font-size:.69rem;color:var(--txt-4);margin-top:4px;}
+.kpi-val.accent{color:var(--accent);}
+.kpi-val.ok    {color:var(--ok);}
+.kpi-val.err   {color:var(--err);}
+
+/* ─────────────────────────────────────────────────────────
+   TABLE CARD
+───────────────────────────────────────────────────────── */
+.tbl-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow-xs);
+  overflow:hidden;
 }
 
-/* ── Scroll wrap ── */
-.tbl-scroll-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-.scroll-hint {
-    font-size:.72rem; color:#94a3b8; padding:4px 22px 0;
-    display:none; background:#fafbfc;
+/* ── Card header ──────────────────────────────────────── */
+.tc-hdr{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 20px;border-bottom:1px solid var(--border-xs);
+  flex-wrap:wrap;gap:10px;
 }
-@media(max-width:900px){.scroll-hint{display:block;}}
+.tc-hdr-left{display:flex;align-items:center;gap:8px;}
+.tc-hdr-icon{
+  width:32px;height:32px;border-radius:8px;
+  background:var(--acc-bg);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.85rem;
+}
+.tc-title{font-size:.95rem;font-weight:700;color:var(--txt-1);}
+.tc-badge{
+  background:var(--neutral-bg);color:var(--txt-3);
+  border:1px solid var(--border);
+  border-radius:20px;padding:2px 10px;
+  font-size:.72rem;font-weight:600;
+}
+.tc-hdr-right{display:flex;align-items:center;gap:8px;}
+.period-tag{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 11px;border:1px solid var(--border);
+  border-radius:var(--radius-sm);background:var(--neutral-bg);
+  font-size:.78rem;font-weight:600;color:var(--txt-2);
+}
+.period-tag i{color:var(--accent);font-size:.75rem;}
+.btn-ghost{
+  height:32px;padding:0 12px;
+  background:transparent;color:var(--txt-3);
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  font-size:.78rem;font-weight:500;cursor:pointer;
+  display:inline-flex;align-items:center;gap:5px;
+  transition:all .15s;
+}
+.btn-ghost:hover{color:var(--accent);border-color:var(--acc-border);background:var(--acc-bg);}
 
-/* ════════════════════════════════════════════════════════
-   PAYROLL TABLE
-════════════════════════════════════════════════════════ */
-.pl-tbl {
-    width:100%; border-collapse:collapse;
-    font-size:.84rem; min-width:1120px;
+/* ── Toolbar ──────────────────────────────────────────── */
+.tc-toolbar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 20px;border-bottom:1px solid var(--border-xs);
+  background:var(--neutral-bg);flex-wrap:wrap;gap:8px;
 }
-/* Sticky header */
-.pl-tbl thead tr th {
-    background:#1e3a5f;
-    color:#e2e8f0;
-    padding:0 14px;
-    height:48px;
-    font-size:.72rem; font-weight:700;
-    text-transform:uppercase; letter-spacing:.45px;
-    white-space:nowrap;
-    position:sticky; top:0; z-index:3;
-    border-bottom:2px solid #0d9488;
+.search-wrap{position:relative;display:inline-flex;align-items:center;}
+.search-wrap i{
+  position:absolute;left:10px;color:var(--txt-4);
+  font-size:.75rem;pointer-events:none;
 }
-.pl-tbl thead tr th:first-child { border-radius:0; }
-.th-c { text-align:center; }
-.th-r { text-align:right; }
+.tbl-search{
+  height:32px;padding:0 10px 0 30px;
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface);color:var(--txt-1);
+  font-size:.82rem;font-family:inherit;width:210px;
+  transition:all .18s;
+}
+.tbl-search:focus{
+  outline:none;border-color:var(--accent);width:240px;
+  box-shadow:0 0 0 3px rgba(8,145,178,.08);
+}
+.pg-size-row{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--txt-3);}
+.pg-size-row select{
+  height:30px;padding:0 8px;
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface);font-size:.78rem;cursor:pointer;
+  color:var(--txt-2);
+}
+
+/* ── Scroll ───────────────────────────────────────────── */
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.scroll-note{
+  display:none;font-size:.7rem;color:var(--txt-4);
+  padding:4px 20px;background:var(--neutral-bg);
+}
+@media(max-width:900px){.scroll-note{display:block;}}
+
+/* ─────────────────────────────────────────────────────────
+   PAYROLL TABLE — MINIMALIST
+───────────────────────────────────────────────────────── */
+.ptbl{width:100%;border-collapse:collapse;font-size:.84rem;min-width:1140px;}
+
+/* Header — light, readable */
+.ptbl thead th{
+  background:var(--neutral-bg);
+  color:var(--txt-3);
+  padding:0 14px;height:44px;
+  font-size:.69rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.5px;
+  white-space:nowrap;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:2;
+}
+.th-c{text-align:center;}
+.th-r{text-align:right;}
+
+/* Separator groups */
+.ptbl thead th.g-deduct{
+  color:#b45309;
+  background:#fefce8;
+  border-bottom:1px solid #fde68a;
+}
+.ptbl thead th.g-net{
+  color:var(--ok);
+  background:var(--ok-bg);
+  border-bottom:1px solid var(--ok-border);
+}
 
 /* Body rows */
-.pl-tbl tbody tr {
-    border-bottom:1px solid #f1f5f9;
-    transition:background .12s;
+.ptbl tbody tr{border-bottom:1px solid var(--border-xs);transition:background .1s;}
+.ptbl tbody tr:hover{background:#fafafa;}
+.ptbl tbody tr.row-hidden{display:none;}
+.ptbl tbody tr:last-child{border-bottom:none;}
+.ptbl td{
+  padding:0 14px;height:54px;
+  vertical-align:middle;color:var(--txt-1);white-space:nowrap;
 }
-.pl-tbl tbody tr:hover { background:#f8fffe; }
-.pl-tbl tbody tr:last-child { border-bottom:none; }
-.pl-tbl tbody tr.row-hidden { display:none; }
-.pl-tbl td {
-    padding:0 14px;
-    height:56px;
-    vertical-align:middle;
-    color:#1e293b;
-    white-space:nowrap;
-}
-.td-c { text-align:center; }
-.td-r { text-align:right; font-variant-numeric:tabular-nums; }
+.td-c{text-align:center;}
+.td-r{text-align:right;font-variant-numeric:tabular-nums;}
 
-/* Cell types */
-.stt-num { font-size:.75rem; font-weight:600; color:#94a3b8; }
-.emp-code {
-    display:inline-flex; align-items:center;
-    padding:3px 9px; border-radius:6px;
-    background:#f0fdfa; color:#0d9488;
-    font-weight:700; font-size:.78rem; letter-spacing:.3px;
+/* Cells */
+.stt{font-size:.75rem;color:var(--txt-4);font-weight:500;}
+.emp-badge{
+  display:inline-flex;align-items:center;
+  padding:3px 9px;border-radius:6px;
+  background:var(--acc-bg);
+  color:var(--accent);
+  font-size:.76rem;font-weight:700;letter-spacing:.2px;
+  border:1px solid var(--acc-border);
 }
-.emp-name { font-weight:600; color:#1e293b; font-size:.88rem; }
-.dept-badge {
-    display:inline-flex; align-items:center; gap:4px;
-    padding:3px 10px; border-radius:20px;
-    background:#ede9fe; color:#7c3aed;
-    font-size:.73rem; font-weight:700;
+.dept-badge{
+  display:inline-flex;align-items:center;
+  padding:3px 9px;border-radius:20px;
+  font-size:.74rem;font-weight:600;
+  background:#f5f3ff;color:#6d28d9;
+  border:1px solid #ede9fe;
 }
-/* Money styling */
-.money-base  { color:#1e293b; font-weight:500; }
-.money-pos   { color:#059669; font-weight:600; } /* bonus, allowance */
-.money-neg   { color:#d97706; font-weight:500; } /* deduction parts */
-.money-total-neg { color:#dc2626; font-weight:700; }
-.money-net   { color:#059669; font-weight:800; font-size:.93rem; }
+.dept-badge.dept-ns {background:#f0fdf4;color:#065f46;border-color:var(--ok-border);}
+.dept-badge.dept-tc {background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe;}
+.dept-badge.dept-sx {background:#fff7ed;color:#c2410c;border-color:#fed7aa;}
+.dept-badge.dept-it {background:#fdf4ff;color:#7c3aed;border-color:#e9d5ff;}
+
+.emp-name{font-weight:600;color:var(--txt-1);font-size:.88rem;}
+.money-base{color:var(--txt-2);}
+.money-pos {color:#047857;} /* bonus/allowance */
+.money-neg {color:#b45309;} /* each deduction part */
+.money-total{color:var(--err);font-weight:700;}
+.money-net {color:var(--ok);font-weight:800;font-size:.9rem;}
 
 /* Status badges */
-.st-badge {
-    display:inline-flex; align-items:center; gap:4px;
-    padding:4px 10px; border-radius:20px;
-    font-size:.73rem; font-weight:700; white-space:nowrap;
+.st{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 10px;border-radius:20px;
+  font-size:.72rem;font-weight:600;white-space:nowrap;
 }
-.st-paid    { background:#d1fae5; color:#065f46; }
-.st-aprvd   { background:#dbeafe; color:#1d4ed8; }
-.st-pending { background:#fef3c7; color:#92400e; }
-.st-draft   { background:#f1f5f9; color:#475569; }
+.st-paid  {background:var(--ok-bg);color:#065f46;border:1px solid var(--ok-border);}
+.st-aprvd {background:var(--acc-bg);color:#0e7490;border:1px solid var(--acc-border);}
+.st-pend  {background:var(--warn-bg);color:#92400e;border:1px solid #fde68a;}
+.st-draft {background:var(--neutral-bg);color:var(--txt-3);border:1px solid var(--border);}
 
-/* Tfoot */
-.pl-tbl tfoot td {
-    background:#1e3a5f; color:#e2e8f0;
-    padding:0 14px; height:48px;
-    font-weight:700; font-size:.85rem;
-    white-space:nowrap;
-    border-top:2px solid #0d9488;
+/* ── Summary row ────────────────────────────────────────── */
+.ptbl tfoot tr{background:var(--neutral-bg);border-top:2px solid var(--border);}
+.ptbl tfoot td{
+  padding:0 14px;height:48px;
+  font-weight:700;font-size:.84rem;
+  color:var(--txt-1);white-space:nowrap;
 }
-.pl-tbl tfoot td.td-r { text-align:right; }
+.ptbl tfoot td.td-r{text-align:right;font-variant-numeric:tabular-nums;}
+.ptbl tfoot td.sum-label{
+  text-align:right;font-size:.72rem;letter-spacing:.5px;
+  text-transform:uppercase;color:var(--txt-3);font-weight:600;
+}
+.tfoot-total-neg{color:var(--err);}
+.tfoot-net     {color:var(--ok);}
 
-/* ════════════════════════════════════════════════════════
-   EMPTY STATE
-════════════════════════════════════════════════════════ */
-.empty-wrap {
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    min-height:290px; padding:40px 24px; text-align:center;
+/* ─────────────────────────────────────────────────────────
+   EMPTY STATE  (compact, minimal)
+───────────────────────────────────────────────────────── */
+.empty-box{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:56px 24px;text-align:center;
+  min-height:280px;
 }
-.empty-circle {
-    width:80px; height:80px; border-radius:50%;
-    background:linear-gradient(135deg,#f0fdfa,#e0f2fe);
-    display:flex; align-items:center; justify-content:center;
-    margin-bottom:20px; font-size:2rem; color:#0d9488;
-    box-shadow:0 4px 16px rgba(13,148,136,.15);
+.empty-icon{
+  width:68px;height:68px;border-radius:50%;
+  background:var(--neutral-bg);border:1.5px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--txt-4);font-size:1.6rem;margin-bottom:16px;
 }
-.empty-title { font-size:1.05rem; font-weight:700; color:#1e293b; margin:0 0 8px; }
-.empty-desc  { font-size:.85rem; color:#64748b; margin:0 0 4px; max-width:380px; line-height:1.55; }
-.empty-hint  { font-size:.8rem; color:#94a3b8; margin:0 0 22px; }
-.empty-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
-.btn-empty-primary {
-    height:38px; padding:0 20px;
-    background:linear-gradient(135deg,#0d9488,#0e7490);
-    color:#fff; border:none; border-radius:8px;
-    font-size:.84rem; font-weight:700; cursor:pointer;
-    display:inline-flex; align-items:center; gap:7px;
-    transition:opacity .18s,transform .15s;
+.empty-title{font-size:.95rem;font-weight:700;color:var(--txt-1);margin:0 0 6px;}
+.empty-desc {font-size:.83rem;color:var(--txt-3);max-width:360px;line-height:1.55;margin:0 0 4px;}
+.empty-hint {font-size:.76rem;color:var(--txt-4);margin:0 0 20px;}
+.empty-btns {display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.btn-sm-pri{
+  height:34px;padding:0 16px;
+  background:var(--accent);color:#fff;
+  border:none;border-radius:var(--radius-sm);
+  font-size:.8rem;font-weight:600;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;
+  transition:background .15s;
 }
-.btn-empty-primary:hover { opacity:.88; transform:translateY(-1px); }
-.btn-empty-sec {
-    height:38px; padding:0 18px;
-    background:#fff; color:#475569;
-    border:1.5px solid #e2e8f0; border-radius:8px;
-    font-size:.84rem; font-weight:600; cursor:pointer;
-    display:inline-flex; align-items:center; gap:7px;
-    transition:all .15s;
+.btn-sm-pri:hover{background:#0e7490;}
+.btn-sm-ghost{
+  height:34px;padding:0 14px;
+  background:var(--surface);color:var(--txt-3);
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  font-size:.8rem;font-weight:500;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;
+  transition:all .15s;
 }
-.btn-empty-sec:hover { border-color:#0d9488; color:#0d9488; background:#f0fdfa; }
+.btn-sm-ghost:hover{color:var(--accent);border-color:var(--acc-border);}
 
-/* ════════════════════════════════════════════════════════
-   PAGINATION
-════════════════════════════════════════════════════════ */
-.pg-wrap {
-    display:flex; justify-content:space-between; align-items:center;
-    padding:14px 22px; border-top:1px solid #f1f5f9;
-    flex-wrap:wrap; gap:10px; background:#fafbfc;
+/* ─────────────────────────────────────────────────────────
+   PAGINATION  (minimal)
+───────────────────────────────────────────────────────── */
+.pg-bar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 20px;border-top:1px solid var(--border-xs);
+  flex-wrap:wrap;gap:8px;
 }
-.pg-info { font-size:.8rem; color:#64748b; }
-.pg-info strong { color:#0f172a; }
-.pg-nav { display:flex; align-items:center; gap:3px; }
-.pg-btn {
-    min-width:34px; height:34px; padding:0 6px; border-radius:8px;
-    border:1.5px solid #e8edf3; background:#fff;
-    font-size:.8rem; font-weight:600; color:#475569;
-    cursor:pointer; display:flex; align-items:center; justify-content:center;
-    transition:all .15s; font-family:inherit;
+.pg-info{font-size:.78rem;color:var(--txt-3);}
+.pg-info strong{color:var(--txt-1);}
+.pg-nav{display:flex;align-items:center;gap:3px;}
+.pg-btn{
+  min-width:30px;height:30px;padding:0 5px;
+  border:1px solid var(--border);border-radius:6px;
+  background:var(--surface);font-size:.78rem;
+  font-weight:500;color:var(--txt-3);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .13s;font-family:inherit;
 }
-.pg-btn:hover:not(:disabled):not(.pg-active) { background:#f0fdfa; border-color:#0d9488; color:#0d9488; }
-.pg-btn.pg-active { background:#0d9488; border-color:#0d9488; color:#fff; cursor:default; }
-.pg-btn:disabled { opacity:.35; cursor:not-allowed; }
-.pg-dots { min-width:34px; height:34px; display:flex; align-items:center; justify-content:center; color:#94a3b8; font-size:.8rem; }
+.pg-btn:hover:not(:disabled):not(.pg-on){
+  border-color:var(--accent);color:var(--accent);background:var(--acc-bg);
+}
+.pg-btn.pg-on{
+  background:var(--accent);border-color:var(--accent);
+  color:#fff;cursor:default;
+}
+.pg-btn:disabled{opacity:.35;cursor:not-allowed;}
+.pg-dots{
+  min-width:30px;height:30px;display:flex;
+  align-items:center;justify-content:center;
+  color:var(--txt-4);font-size:.78rem;
+}
 </style>
+
+<!-- ═══ EXPORT FORM (hidden, avoids nested-form bug) ═══ -->
+<form id="exportForm"
+      action="${pageContext.request.contextPath}/hr/master-payroll-report"
+      method="GET" style="display:none;">
+    <input type="hidden" name="action"       value="exportExcel">
+    <input type="hidden" id="ef_m"  name="month"        value="${selectedMonth}">
+    <input type="hidden" id="ef_y"  name="year"         value="${selectedYear}">
+    <input type="hidden" id="ef_d"  name="departmentId" value="${selectedDepartmentId}">
+</form>
 
 <div class="dashboard-wrapper">
     <jsp:include page="../shared/sidebar.jsp">
@@ -370,406 +414,389 @@
     </jsp:include>
 
     <div class="main-content">
-    <div class="mpr-body">
+    <div class="pr-body">
 
-        <!-- ═══ HERO ═══════════════════════════════════════════════════ -->
-        <div class="mpr-hero">
-            <div class="hero-left">
-                <h1>
-                    <span class="hero-ico"><i class="fas fa-chart-bar"></i></span>
-                    Báo cáo Bảng lương Tổng hợp
-                </h1>
-                <p class="hero-sub">Bảng lương trạng thái Approved / Paid — chỉ đọc, hỗ trợ xuất Excel 2 sheet</p>
-            </div>
-            <div class="hero-breadcrumb">
-                <i class="fas fa-home"></i>
-                <a href="${pageContext.request.contextPath}/dashboard">Bảng điều khiển</a>
-                <span class="sep">/</span>
-                <span>Báo cáo lương</span>
-            </div>
+    <!-- ═══ PAGE HEADER ══════════════════════════════════════════════ -->
+    <div class="pr-page-hdr">
+        <div class="pr-page-hdr-left">
+            <h1><i class="fas fa-file-invoice-dollar"></i> Báo cáo Bảng lương Tổng hợp</h1>
+            <p>Bảng lương Approved / Paid — chỉ đọc · Xuất Excel 2 sheet</p>
         </div>
+        <div class="breadcrumb-row">
+            <a href="${pageContext.request.contextPath}/dashboard">
+                <i class="fas fa-house"></i> Bảng điều khiển
+            </a>
+            <span class="sep">/</span>
+            <span>Báo cáo lương</span>
+        </div>
+    </div>
 
-        <!-- ═══ EXPORT FORM (tách riêng tránh nested form) ═══════════ -->
-        <form id="exportForm" action="${pageContext.request.contextPath}/hr/master-payroll-report" method="GET" style="display:none;">
-            <input type="hidden" name="action"       value="exportExcel">
-            <input type="hidden" id="ef_month"       name="month"        value="${selectedMonth}">
-            <input type="hidden" id="ef_year"        name="year"         value="${selectedYear}">
-            <input type="hidden" id="ef_dept"        name="departmentId" value="${selectedDepartmentId}">
-        </form>
+    <!-- ═══ FILTER ════════════════════════════════════════════════════ -->
+    <form id="filterForm"
+          action="${pageContext.request.contextPath}/hr/master-payroll-report"
+          method="GET" class="pr-filter">
+        <div class="fg">
+            <label>Tháng</label>
+            <select name="month">
+                <c:forEach var="m" begin="1" end="12">
+                    <option value="${m}" ${selectedMonth == m ? 'selected' : ''}>
+                        Tháng ${m}
+                    </option>
+                </c:forEach>
+            </select>
+        </div>
+        <div class="fg">
+            <label>Năm</label>
+            <input type="number" name="year" value="${selectedYear}"
+                   min="2020" max="2035" style="width:76px;">
+        </div>
+        <div class="fg">
+            <label>Phòng ban</label>
+            <select name="departmentId">
+                <option value="-1" ${selectedDepartmentId == -1 ? 'selected' : ''}>
+                    Tất cả phòng ban
+                </option>
+                <c:forEach var="d" items="${departments}">
+                    <option value="${d.departmentId}"
+                            ${selectedDepartmentId == d.departmentId ? 'selected' : ''}>
+                        ${d.departmentName}
+                    </option>
+                </c:forEach>
+            </select>
+        </div>
+        <div class="fg">
+            <label>&nbsp;</label>
+            <button type="submit" class="btn-primary">
+                <i class="fas fa-magnifying-glass"></i> Xem báo cáo
+            </button>
+        </div>
+        <div class="fg" style="margin-left:auto;">
+            <label>&nbsp;</label>
+            <button type="button" class="btn-outline" onclick="doExport()">
+                <i class="fas fa-file-excel"></i> Xuất Excel
+            </button>
+        </div>
+    </form>
 
-        <!-- ═══ FILTER ════════════════════════════════════════════════ -->
-        <form id="filterForm" action="${pageContext.request.contextPath}/hr/master-payroll-report" method="GET" class="mpr-filter">
-            <div class="fg">
-                <label><i class="fas fa-calendar-alt"></i> Tháng</label>
-                <select name="month">
-                    <c:forEach var="m" begin="1" end="12">
-                        <option value="${m}" ${selectedMonth == m ? 'selected' : ''}>Tháng ${m}</option>
-                    </c:forEach>
-                </select>
+    <!-- ═══ KPI STRIP ════════════════════════════════════════════════ -->
+    <div class="kpi-row">
+        <div class="kpi">
+            <div class="kpi-lbl"><i class="fas fa-users"></i> Số nhân viên</div>
+            <div class="kpi-val accent">${reportData.size()} người</div>
+            <div class="kpi-sub">Approved + Paid &nbsp;·&nbsp; Th${selectedMonth}/${selectedYear}</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-lbl"><i class="fas fa-circle-dollar-to-slot"></i> Tổng thực lĩnh</div>
+            <div class="kpi-val ok" style="font-size:.98rem;">
+                <fmt:formatNumber value="${totalNet}" type="number" groupingUsed="true"/> ₫
             </div>
-            <div class="fg">
-                <label><i class="fas fa-calendar"></i> Năm</label>
-                <input type="number" name="year" value="${selectedYear}" min="2020" max="2035" style="width:82px;">
+            <div class="kpi-sub">Tháng ${selectedMonth}/${selectedYear}</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-lbl"><i class="fas fa-wallet"></i> Lương cơ bản</div>
+            <div class="kpi-val" style="font-size:.98rem;">
+                <fmt:formatNumber value="${totalBase}" type="number" groupingUsed="true"/> ₫
             </div>
-            <div class="fg">
-                <label><i class="fas fa-building"></i> Phòng ban</label>
-                <select name="departmentId">
-                    <option value="-1" ${selectedDepartmentId == -1 ? 'selected' : ''}>Tất cả phòng ban</option>
-                    <c:forEach var="d" items="${departments}">
-                        <option value="${d.departmentId}" ${selectedDepartmentId == d.departmentId ? 'selected' : ''}>${d.departmentName}</option>
-                    </c:forEach>
-                </select>
+            <div class="kpi-sub">&nbsp;</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-lbl"><i class="fas fa-gift"></i> Thưởng + Phụ cấp</div>
+            <div class="kpi-val" style="font-size:.98rem;">
+                <fmt:formatNumber value="${totalBonus + totalAllowance}" type="number" groupingUsed="true"/> ₫
             </div>
-            <div class="fg">
-                <label>&nbsp;</label>
-                <button type="submit" class="btn-go"><i class="fas fa-filter"></i> Xem báo cáo</button>
+            <div class="kpi-sub">&nbsp;</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-lbl"><i class="fas fa-circle-minus"></i> Tổng khấu trừ</div>
+            <div class="kpi-val err" style="font-size:.98rem;">
+                <fmt:formatNumber value="${totalDeduction}" type="number" groupingUsed="true"/> ₫
             </div>
-            <div class="fg" style="margin-left:auto;">
-                <label>&nbsp;</label>
-                <button type="button" class="btn-xlsx" onclick="submitExport()">
-                    <i class="fas fa-file-excel"></i> Xuất Excel (.xlsx)
+            <div class="kpi-sub">Phạt · BHXH · Thuế</div>
+        </div>
+    </div>
+
+    <!-- ═══ TABLE CARD ════════════════════════════════════════════════ -->
+    <div class="tbl-card">
+
+        <!-- Card header -->
+        <div class="tc-hdr">
+            <div class="tc-hdr-left">
+                <div class="tc-hdr-icon"><i class="fas fa-table-list"></i></div>
+                <span class="tc-title">Chi tiết bảng lương</span>
+                <span class="tc-badge">${reportData.size()} nhân viên</span>
+            </div>
+            <div class="tc-hdr-right">
+                <span class="period-tag">
+                    <i class="fas fa-calendar-check"></i>
+                    Tháng <fmt:formatNumber value="${selectedMonth}" minIntegerDigits="2" groupingUsed="false"/>/${selectedYear}
+                </span>
+                <button class="btn-ghost"
+                        onclick="location.href='${pageContext.request.contextPath}/hr/master-payroll-report?month=${selectedMonth}&year=${selectedYear}&departmentId=${selectedDepartmentId}'">
+                    <i class="fas fa-rotate-right"></i> Làm mới
                 </button>
             </div>
-        </form>
+        </div>
 
-        <!-- ═══ KPI CARDS ════════════════════════════════════════════ -->
-        <div class="kpi-grid">
-            <div class="kc c1">
-                <div class="kc-top"></div>
-                <div class="kc-row">
-                    <div class="kc-ico"><i class="fas fa-users"></i></div>
-                    <div>
-                        <div class="kc-lbl">Số nhân viên</div>
-                        <div class="kc-val">${reportData.size()} NV</div>
-                    </div>
-                </div>
-                <div class="kc-sub">Approved + Paid &mdash; Th${selectedMonth}/${selectedYear}</div>
+        <!-- ── HAS DATA ── -->
+        <c:if test="${not empty reportData}">
+
+        <!-- Toolbar -->
+        <div class="tc-toolbar">
+            <div class="search-wrap">
+                <i class="fas fa-magnifying-glass"></i>
+                <input type="search" id="tblSearch" class="tbl-search"
+                       placeholder="Tìm tên, mã NV, phòng ban…"
+                       oninput="doFilter(this.value)"
+                       aria-label="Tìm kiếm nhân viên">
             </div>
-            <div class="kc c2">
-                <div class="kc-top"></div>
-                <div class="kc-row">
-                    <div class="kc-ico"><i class="fas fa-money-bill-wave"></i></div>
-                    <div>
-                        <div class="kc-lbl">Tổng thực lĩnh</div>
-                        <div class="kc-val" style="font-size:.92rem;"><fmt:formatNumber value="${totalNet}" type="number" groupingUsed="true"/> ₫</div>
-                    </div>
-                </div>
-                <div class="kc-sub">Tháng ${selectedMonth}/${selectedYear}</div>
-            </div>
-            <div class="kc c3">
-                <div class="kc-top"></div>
-                <div class="kc-row">
-                    <div class="kc-ico"><i class="fas fa-wallet"></i></div>
-                    <div>
-                        <div class="kc-lbl">Lương cơ bản</div>
-                        <div class="kc-val" style="font-size:.92rem;"><fmt:formatNumber value="${totalBase}" type="number" groupingUsed="true"/> ₫</div>
-                    </div>
-                </div>
-                <div class="kc-sub">&nbsp;</div>
-            </div>
-            <div class="kc c4">
-                <div class="kc-top"></div>
-                <div class="kc-row">
-                    <div class="kc-ico"><i class="fas fa-gift"></i></div>
-                    <div>
-                        <div class="kc-lbl">Thưởng + Phụ cấp</div>
-                        <div class="kc-val" style="font-size:.92rem;"><fmt:formatNumber value="${totalBonus + totalAllowance}" type="number" groupingUsed="true"/> ₫</div>
-                    </div>
-                </div>
-                <div class="kc-sub">&nbsp;</div>
-            </div>
-            <div class="kc c5">
-                <div class="kc-top"></div>
-                <div class="kc-row">
-                    <div class="kc-ico"><i class="fas fa-minus-circle"></i></div>
-                    <div>
-                        <div class="kc-lbl">Tổng khấu trừ</div>
-                        <div class="kc-val" style="font-size:.92rem;"><fmt:formatNumber value="${totalDeduction}" type="number" groupingUsed="true"/> ₫</div>
-                    </div>
-                </div>
-                <div class="kc-sub">Phạt + BHXH + Thuế</div>
+            <div class="pg-size-row">
+                <span>Hiển thị</span>
+                <select id="pgSize" onchange="changeSize(this.value)">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="9999">Tất cả</option>
+                </select>
+                <span>dòng / trang</span>
             </div>
         </div>
 
-        <!-- ═══ TABLE CARD ════════════════════════════════════════════ -->
-        <div class="tbl-card">
+        <p class="scroll-note"><i class="fas fa-left-right"></i> Kéo ngang để xem đầy đủ</p>
 
-            <!-- Card Header -->
-            <div class="tbl-card-hdr">
-                <div class="tbl-hdr-left">
-                    <div class="tbl-hdr-icon"><i class="fas fa-table"></i></div>
-                    <span class="tbl-hdr-title">Chi tiết bảng lương</span>
-                    <span class="tbl-hdr-badge">${reportData.size()} nhân viên</span>
-                </div>
-                <div class="tbl-hdr-right">
-                    <span class="period-chip">
-                        <i class="fas fa-calendar-check"></i>
-                        Tháng <fmt:formatNumber value="${selectedMonth}" minIntegerDigits="2" groupingUsed="false"/>/${selectedYear}
-                    </span>
-                    <button type="button" class="btn-sm-action"
-                            onclick="window.location.href='${pageContext.request.contextPath}/hr/master-payroll-report?month=${selectedMonth}&year=${selectedYear}&departmentId=${selectedDepartmentId}'">
-                        <i class="fas fa-sync-alt"></i> Làm mới
-                    </button>
-                </div>
+        <!-- Table -->
+        <div class="tbl-scroll">
+        <table class="ptbl" id="mainTbl">
+            <thead>
+                <tr>
+                    <th class="th-c" style="width:42px;">#</th>
+                    <th class="th-c" style="min-width:88px;">Mã NV</th>
+                    <th style="min-width:160px;">Họ và tên</th>
+                    <th style="min-width:130px;">Phòng ban</th>
+                    <th class="th-r" style="min-width:128px;">Lương cơ bản</th>
+                    <th class="th-r" style="min-width:100px;">Thưởng</th>
+                    <th class="th-r" style="min-width:100px;">Phụ cấp</th>
+                    <th class="th-r g-deduct" style="min-width:118px;"
+                        title="Khoản khấu trừ kỷ luật">Khấu trừ/Phạt</th>
+                    <th class="th-r g-deduct" style="min-width:112px;"
+                        title="Phần bảo hiểm nhân viên đóng">Bảo hiểm NV</th>
+                    <th class="th-r g-deduct" style="min-width:104px;"
+                        title="Thuế thu nhập cá nhân">Thuế TNCN</th>
+                    <th class="th-r g-deduct" style="min-width:120px;">Tổng khoản trừ</th>
+                    <th class="th-r g-net"    style="min-width:128px;">Thực lĩnh</th>
+                    <th class="th-c"          style="min-width:108px;">Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody id="tblBody">
+                <c:set var="stt" value="1"/>
+                <c:forEach var="p" items="${reportData}">
+                <tr data-q="${p.fullName} NV${p.userId} ${p.departmentName}">
+                    <td class="td-c"><span class="stt">${stt}</span></td>
+                    <td class="td-c">
+                        <span class="emp-badge">NV<fmt:formatNumber value="${p.userId}" minIntegerDigits="4" groupingUsed="false"/></span>
+                    </td>
+                    <td><span class="emp-name">${p.fullName}</span></td>
+                    <td>
+                        <c:choose>
+                            <c:when test="${p.departmentName eq 'Nhân sự'}">
+                                <span class="dept-badge dept-ns">${p.departmentName}</span>
+                            </c:when>
+                            <c:when test="${p.departmentName eq 'Tài chính'}">
+                                <span class="dept-badge dept-tc">${p.departmentName}</span>
+                            </c:when>
+                            <c:when test="${p.departmentName eq 'Xưởng sản xuất'}">
+                                <span class="dept-badge dept-sx">${p.departmentName}</span>
+                            </c:when>
+                            <c:when test="${not empty p.departmentName}">
+                                <span class="dept-badge">${p.departmentName}</span>
+                            </c:when>
+                            <c:otherwise>
+                                <span style="color:var(--txt-4);font-size:.8rem;">—</span>
+                            </c:otherwise>
+                        </c:choose>
+                    </td>
+                    <td class="td-r money-base">
+                        <fmt:formatNumber value="${p.baseSalary}" type="number" groupingUsed="true"/> ₫
+                    </td>
+                    <td class="td-r money-pos">
+                        <fmt:formatNumber value="${p.bonusAmount}" type="number" groupingUsed="true"/> ₫
+                    </td>
+                    <td class="td-r money-pos">
+                        <fmt:formatNumber value="${p.allowanceAmount}" type="number" groupingUsed="true"/> ₫
+                    </td>
+                    <td class="td-r money-neg">
+                        <fmt:formatNumber value="${p.deductionAmount}" type="number" groupingUsed="true"/> ₫
+                    </td>
+                    <td class="td-r money-neg">
+                        <fmt:formatNumber value="${p.insuranceAmount}" type="number" groupingUsed="true"/> ₫
+                    </td>
+                    <td class="td-r money-neg">
+                        <fmt:formatNumber value="${p.taxAmount}" type="number" groupingUsed="true"/> ₫
+                    </td>
+                    <td class="td-r money-total">
+                        <fmt:formatNumber value="${p.totalDeductionAll}" type="number" groupingUsed="true"/> ₫
+                    </td>
+                    <td class="td-r money-net">
+                        <fmt:formatNumber value="${p.netSalary}" type="number" groupingUsed="true"/> ₫
+                    </td>
+                    <td class="td-c">
+                        <c:choose>
+                            <c:when test="${p.status eq 'Paid'}">
+                                <span class="st st-paid"><i class="fas fa-circle-check"></i> Đã thanh toán</span>
+                            </c:when>
+                            <c:when test="${p.status eq 'Approved'}">
+                                <span class="st st-aprvd"><i class="fas fa-check"></i> Đã duyệt</span>
+                            </c:when>
+                            <c:when test="${p.status eq 'Pending'}">
+                                <span class="st st-pend"><i class="fas fa-clock"></i> Chờ duyệt</span>
+                            </c:when>
+                            <c:otherwise>
+                                <span class="st st-draft">${p.status}</span>
+                            </c:otherwise>
+                        </c:choose>
+                    </td>
+                </tr>
+                <c:set var="stt" value="${stt + 1}"/>
+                </c:forEach>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="4" class="sum-label">Tổng cộng</td>
+                    <td class="td-r">
+                        <fmt:formatNumber value="${totalBase}" type="number" groupingUsed="true"/> ₫
+                    </td>
+                    <td class="td-r money-pos">
+                        <fmt:formatNumber value="${totalBonus}" type="number" groupingUsed="true"/> ₫
+                    </td>
+                    <td class="td-r money-pos">
+                        <fmt:formatNumber value="${totalAllowance}" type="number" groupingUsed="true"/> ₫
+                    </td>
+                    <td class="td-r" colspan="3" style="color:var(--txt-4);">—</td>
+                    <td class="td-r tfoot-total-neg">
+                        <fmt:formatNumber value="${totalDeduction}" type="number" groupingUsed="true"/> ₫
+                    </td>
+                    <td class="td-r tfoot-net">
+                        <fmt:formatNumber value="${totalNet}" type="number" groupingUsed="true"/> ₫
+                    </td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pg-bar" id="pgBar">
+            <div class="pg-info" id="pgInfo"></div>
+            <div class="pg-nav"  id="pgNav"></div>
+        </div>
+
+        </c:if>
+
+        <!-- ── EMPTY STATE ── -->
+        <c:if test="${empty reportData}">
+        <div class="empty-box">
+            <div class="empty-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+            <p class="empty-title">Chưa có bảng lương đã duyệt</p>
+            <p class="empty-desc">
+                Không tìm thấy bảng lương ở trạng thái <strong>Đã duyệt</strong> hoặc
+                <strong>Đã thanh toán</strong> trong
+                Tháng <fmt:formatNumber value="${selectedMonth}" minIntegerDigits="2" groupingUsed="false"/>/${selectedYear}.
+            </p>
+            <p class="empty-hint">Kiểm tra lại kỳ lương, bộ lọc hoặc quy trình phê duyệt.</p>
+            <div class="empty-btns">
+                <button class="btn-sm-pri"
+                        onclick="document.getElementById('filterForm').scrollIntoView({behavior:'smooth'})">
+                    <i class="fas fa-filter"></i> Kiểm tra bộ lọc
+                </button>
+                <button class="btn-sm-ghost"
+                        onclick="location.href='${pageContext.request.contextPath}/hr/master-payroll-report?month=${selectedMonth}&year=${selectedYear}&departmentId=${selectedDepartmentId}'">
+                    <i class="fas fa-rotate-right"></i> Làm mới
+                </button>
             </div>
+        </div>
+        </c:if>
 
-            <!-- ── HAS DATA: Toolbar + Table + Pagination ── -->
-            <c:if test="${not empty reportData}">
-
-                <!-- Toolbar -->
-                <div class="tbl-toolbar">
-                    <div class="tbl-toolbar-left">
-                        <input type="search" id="tblSearch" class="tbl-search"
-                               placeholder="Tìm tên, mã NV, phòng ban…"
-                               oninput="filterTable(this.value)" aria-label="Tìm kiếm nhân viên">
-                    </div>
-                    <div class="tbl-toolbar-right">
-                        <div class="pg-size-wrap">
-                            <label for="pgSize">Hiển thị</label>
-                            <select id="pgSize" onchange="changePageSize(this.value)">
-                                <option value="10">10</option>
-                                <option value="20">20</option>
-                                <option value="50">50</option>
-                                <option value="9999">Tất cả</option>
-                            </select>
-                            <span>dòng/trang</span>
-                        </div>
-                    </div>
-                </div>
-
-                <p class="scroll-hint"><i class="fas fa-arrows-alt-h me-1"></i> Kéo ngang để xem đầy đủ bảng</p>
-
-                <!-- Table -->
-                <div class="tbl-scroll-wrap">
-                <table class="pl-tbl" id="mainTbl">
-                    <thead>
-                        <tr>
-                            <th class="th-c"  style="width:42px;">#</th>
-                            <th class="th-c"  style="min-width:85px;">Mã NV</th>
-                            <th                style="min-width:170px;">Họ và tên</th>
-                            <th                style="min-width:130px;">Phòng ban</th>
-                            <th class="th-r"   style="min-width:130px;" title="Lương cơ bản">Lương cơ bản</th>
-                            <th class="th-r"   style="min-width:100px;">Thưởng</th>
-                            <th class="th-r"   style="min-width:100px;">Phụ cấp</th>
-                            <th class="th-r"   style="min-width:120px;" title="Khoản khấu trừ kỷ luật">Khấu trừ/Phạt</th>
-                            <th class="th-r"   style="min-width:115px;" title="Bảo hiểm nhân viên đóng">Bảo hiểm NV</th>
-                            <th class="th-r"   style="min-width:110px;" title="Thuế thu nhập cá nhân">Thuế TNCN</th>
-                            <th class="th-r"   style="min-width:130px;" title="Tổng = Phạt + Bảo hiểm + Thuế">
-                                <span style="color:#fca5a5;">Tổng khoản trừ</span>
-                            </th>
-                            <th class="th-r"   style="min-width:130px;">
-                                <span style="color:#6ee7b7;">Thực lĩnh</span>
-                            </th>
-                            <th class="th-c"   style="min-width:110px;">Trạng thái</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tblBody">
-                        <c:set var="stt" value="1"/>
-                        <c:forEach var="p" items="${reportData}">
-                        <tr data-search="${p.fullName} NV${p.userId} ${p.departmentName}">
-                            <td class="td-c"><span class="stt-num">${stt}</span></td>
-                            <td class="td-c"><span class="emp-code">NV<fmt:formatNumber value="${p.userId}" minIntegerDigits="4" groupingUsed="false"/></span></td>
-                            <td><span class="emp-name">${p.fullName}</span></td>
-                            <td>
-                                <span class="dept-badge">
-                                    <c:out value="${not empty p.departmentName ? p.departmentName : '—'}"/>
-                                </span>
-                            </td>
-                            <td class="td-r money-base">
-                                <fmt:formatNumber value="${p.baseSalary}" type="number" groupingUsed="true"/> ₫
-                            </td>
-                            <td class="td-r money-pos">
-                                <fmt:formatNumber value="${p.bonusAmount}" type="number" groupingUsed="true"/> ₫
-                            </td>
-                            <td class="td-r money-pos">
-                                <fmt:formatNumber value="${p.allowanceAmount}" type="number" groupingUsed="true"/> ₫
-                            </td>
-                            <td class="td-r money-neg">
-                                <fmt:formatNumber value="${p.deductionAmount}" type="number" groupingUsed="true"/> ₫
-                            </td>
-                            <td class="td-r money-neg">
-                                <fmt:formatNumber value="${p.insuranceAmount}" type="number" groupingUsed="true"/> ₫
-                            </td>
-                            <td class="td-r money-neg">
-                                <fmt:formatNumber value="${p.taxAmount}" type="number" groupingUsed="true"/> ₫
-                            </td>
-                            <td class="td-r money-total-neg">
-                                <fmt:formatNumber value="${p.totalDeductionAll}" type="number" groupingUsed="true"/> ₫
-                            </td>
-                            <td class="td-r money-net">
-                                <fmt:formatNumber value="${p.netSalary}" type="number" groupingUsed="true"/> ₫
-                            </td>
-                            <td class="td-c">
-                                <c:choose>
-                                    <c:when test="${p.status eq 'Paid'}">
-                                        <span class="st-badge st-paid"><i class="fas fa-check-double"></i> Đã thanh toán</span>
-                                    </c:when>
-                                    <c:when test="${p.status eq 'Approved'}">
-                                        <span class="st-badge st-aprvd"><i class="fas fa-check-circle"></i> Đã duyệt</span>
-                                    </c:when>
-                                    <c:when test="${p.status eq 'Pending'}">
-                                        <span class="st-badge st-pending"><i class="fas fa-clock"></i> Chờ duyệt</span>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <span class="st-badge st-draft"><i class="fas fa-pencil-alt"></i> ${p.status}</span>
-                                    </c:otherwise>
-                                </c:choose>
-                            </td>
-                        </tr>
-                        <c:set var="stt" value="${stt + 1}"/>
-                        </c:forEach>
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="4" style="text-align:right; font-size:.73rem; letter-spacing:.5px; color:#94a3b8;">TỔNG CỘNG</td>
-                            <td class="td-r"><fmt:formatNumber value="${totalBase}"      type="number" groupingUsed="true"/> ₫</td>
-                            <td class="td-r" style="color:#6ee7b7;"><fmt:formatNumber value="${totalBonus}"     type="number" groupingUsed="true"/> ₫</td>
-                            <td class="td-r" style="color:#6ee7b7;"><fmt:formatNumber value="${totalAllowance}" type="number" groupingUsed="true"/> ₫</td>
-                            <td class="td-r" style="color:#fcd34d;" colspan="3">—</td>
-                            <td class="td-r" style="color:#fca5a5;"><fmt:formatNumber value="${totalDeduction}" type="number" groupingUsed="true"/> ₫</td>
-                            <td class="td-r" style="color:#6ee7b7; font-size:.9rem;"><fmt:formatNumber value="${totalNet}" type="number" groupingUsed="true"/> ₫</td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </table>
-                </div>
-
-                <!-- Pagination -->
-                <div class="pg-wrap" id="pgWrap">
-                    <div class="pg-info" id="pgInfo"></div>
-                    <div class="pg-nav"  id="pgNav"></div>
-                </div>
-
-            </c:if>
-
-            <!-- ── EMPTY STATE ── -->
-            <c:if test="${empty reportData}">
-                <div class="empty-wrap">
-                    <div class="empty-circle">
-                        <i class="fas fa-file-invoice-dollar"></i>
-                    </div>
-                    <h4 class="empty-title">Chưa có bảng lương đã duyệt</h4>
-                    <p class="empty-desc">
-                        Không tìm thấy bảng lương ở trạng thái <strong>Đã duyệt</strong> hoặc <strong>Đã thanh toán</strong>
-                        trong Tháng <fmt:formatNumber value="${selectedMonth}" minIntegerDigits="2" groupingUsed="false"/>/${selectedYear}.
-                    </p>
-                    <p class="empty-hint">Hãy kiểm tra lại kỳ lương, bộ lọc hoặc quy trình phê duyệt bảng lương.</p>
-                    <div class="empty-actions">
-                        <button class="btn-empty-primary"
-                                onclick="document.querySelector('.mpr-filter').scrollIntoView({behavior:'smooth'})">
-                            <i class="fas fa-filter"></i> Kiểm tra bộ lọc
-                        </button>
-                        <button class="btn-empty-sec"
-                                onclick="window.location.href='${pageContext.request.contextPath}/hr/master-payroll-report?month=${selectedMonth}&year=${selectedYear}&departmentId=${selectedDepartmentId}'">
-                            <i class="fas fa-sync-alt"></i> Làm mới dữ liệu
-                        </button>
-                    </div>
-                </div>
-            </c:if>
-
-        </div><%-- /tbl-card --%>
-
-    </div><%-- /mpr-body --%>
+    </div><%-- /tbl-card --%>
+    </div><%-- /pr-body --%>
     </div><%-- /main-content --%>
 </div><%-- /dashboard-wrapper --%>
 
 <script>
 (function(){
-    'use strict';
-    var PS = 10, curPage = 1;
-    var allRows = [], filteredRows = [];
+  'use strict';
+  var PS=10, cur=1, all=[], fil=[];
 
-    function init(){
-        var tbody = document.getElementById('tblBody');
-        if(!tbody) return;
-        tbody.querySelectorAll('tr[data-search]').forEach(function(r){ allRows.push(r); });
-        filteredRows = allRows.slice();
-        go(1);
+  function init(){
+    var tb=document.getElementById('tblBody');
+    if(!tb) return;
+    tb.querySelectorAll('tr[data-q]').forEach(function(r){all.push(r);});
+    fil=all.slice();
+    go(1);
+  }
+
+  window.doFilter=function(q){
+    q=q.toLowerCase().trim();
+    fil=q?all.filter(function(r){return r.dataset.q.toLowerCase().indexOf(q)>=0;}):all.slice();
+    go(1);
+  };
+  window.changeSize=function(v){PS=parseInt(v)||10;go(1);};
+
+  function go(page){
+    cur=page;
+    var n=fil.length, s, e;
+    if(PS>=9999){s=0;e=n;}else{s=(page-1)*PS;e=Math.min(s+PS,n);}
+    all.forEach(function(r){r.classList.add('row-hidden');});
+    fil.forEach(function(r,i){if(i>=s&&i<e)r.classList.remove('row-hidden');});
+    info(s,e,n); pag(n);
+  }
+
+  function info(s,e,n){
+    var el=document.getElementById('pgInfo'); if(!el)return;
+    if(!n){el.innerHTML='Không tìm thấy kết quả';return;}
+    if(PS>=9999){el.innerHTML='Hiển thị tất cả <strong>'+n+'</strong> nhân viên';return;}
+    el.innerHTML='Hiển thị <strong>'+(s+1)+'–'+e+'</strong> / <strong>'+n+'</strong> nhân viên';
+  }
+
+  function pag(n){
+    var nav=document.getElementById('pgNav'); if(!nav)return;
+    nav.innerHTML='';
+    if(PS>=9999||n===0)return;
+    var tp=Math.ceil(n/PS); if(tp<=1)return;
+    function mk(lbl,pg,cls,dis){
+      var b=document.createElement('button');
+      b.className='pg-btn'+(cls?' '+cls:'');
+      b.innerHTML=lbl;b.disabled=!!dis;
+      if(!dis&&cls!=='pg-on')b.onclick=function(){go(pg);};
+      return b;
     }
+    nav.appendChild(mk('<i class="fas fa-chevron-left"></i>',cur-1,'',cur===1));
+    pages(cur,tp).forEach(function(p){
+      if(p==='…'){var d=document.createElement('span');d.className='pg-dots';d.textContent='…';nav.appendChild(d);}
+      else nav.appendChild(mk(p,p,p===cur?'pg-on':'',false));
+    });
+    nav.appendChild(mk('<i class="fas fa-chevron-right"></i>',cur+1,'',cur===tp));
+  }
 
-    window.filterTable = function(q){
-        q = q.toLowerCase().trim();
-        filteredRows = q ? allRows.filter(function(r){
-            return r.dataset.search.toLowerCase().indexOf(q) >= 0;
-        }) : allRows.slice();
-        go(1);
-    };
+  function pages(c,t){
+    if(t<=7){var r=[];for(var i=1;i<=t;i++)r.push(i);return r;}
+    if(c<=4)return[1,2,3,4,5,'…',t];
+    if(c>=t-3)return[1,'…',t-4,t-3,t-2,t-1,t];
+    return[1,'…',c-1,c,c+1,'…',t];
+  }
 
-    window.changePageSize = function(v){
-        PS = parseInt(v)||10; go(1);
-    };
-
-    function go(page){
-        curPage = page;
-        var total = filteredRows.length;
-        var start, end;
-        if(PS >= 9999){ start=0; end=total; }
-        else { start=(page-1)*PS; end=Math.min(start+PS,total); }
-
-        allRows.forEach(function(r){ r.classList.add('row-hidden'); });
-        filteredRows.forEach(function(r,i){
-            if(i>=start && i<end) r.classList.remove('row-hidden');
-        });
-        renderInfo(start,end,total);
-        renderPg(total);
-    }
-
-    function renderInfo(s,e,total){
-        var el = document.getElementById('pgInfo');
-        if(!el) return;
-        if(total===0){ el.innerHTML='Không tìm thấy kết quả'; return; }
-        if(PS>=9999){ el.innerHTML='Hiển thị tất cả <strong>'+total+'</strong> nhân viên'; return; }
-        el.innerHTML='Hiển thị <strong>'+(s+1)+'&ndash;'+e+'</strong> trong <strong>'+total+'</strong> nhân viên';
-    }
-
-    function renderPg(total){
-        var nav = document.getElementById('pgNav');
-        if(!nav) return;
-        nav.innerHTML='';
-        if(PS>=9999 || total===0) return;
-        var tp = Math.ceil(total/PS);
-        if(tp<=1) return;
-
-        function btn(label,page,cls,disabled){
-            var b=document.createElement('button');
-            b.className='pg-btn'+(cls?' '+cls:'');
-            b.innerHTML=label; b.disabled=!!disabled;
-            if(!disabled && cls!=='pg-active')
-                b.addEventListener('click',function(){ go(page); });
-            return b;
-        }
-        nav.appendChild(btn('<i class="fas fa-chevron-left"></i>', curPage-1, '', curPage===1));
-        pages(curPage,tp).forEach(function(p){
-            if(p==='...'){
-                var s=document.createElement('span'); s.className='pg-dots'; s.textContent='…'; nav.appendChild(s);
-            } else {
-                nav.appendChild(btn(p, p, p===curPage?'pg-active':'', false));
-            }
-        });
-        nav.appendChild(btn('<i class="fas fa-chevron-right"></i>', curPage+1, '', curPage===tp));
-    }
-
-    function pages(cur,tp){
-        if(tp<=7){ var r=[]; for(var i=1;i<=tp;i++) r.push(i); return r; }
-        if(cur<=4)   return [1,2,3,4,5,'...',tp];
-        if(cur>=tp-3) return [1,'...',tp-4,tp-3,tp-2,tp-1,tp];
-        return [1,'...',cur-1,cur,cur+1,'...',tp];
-    }
-
-    if(document.readyState==='loading')
-        document.addEventListener('DOMContentLoaded',init);
-    else init();
-})();
-
-/* ── Export: sync filter values then submit ── */
-function submitExport(){
-    var ff = document.getElementById('filterForm');
-    if(!ff) return;
-    document.getElementById('ef_month').value = ff.querySelector('[name=month]').value;
-    document.getElementById('ef_year').value  = ff.querySelector('[name=year]').value;
-    document.getElementById('ef_dept').value  = ff.querySelector('[name=departmentId]').value;
+  /* Export — sync filter values then submit hidden form */
+  window.doExport=function(){
+    var ff=document.getElementById('filterForm');
+    if(!ff)return;
+    document.getElementById('ef_m').value=ff.querySelector('[name=month]').value;
+    document.getElementById('ef_y').value=ff.querySelector('[name=year]').value;
+    document.getElementById('ef_d').value=ff.querySelector('[name=departmentId]').value;
     document.getElementById('exportForm').submit();
-}
+  };
+
+  if(document.readyState==='loading')
+    document.addEventListener('DOMContentLoaded',init);
+  else init();
+})();
 </script>
 
 </main>
