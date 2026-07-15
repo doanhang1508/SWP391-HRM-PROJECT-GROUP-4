@@ -483,6 +483,7 @@ document.addEventListener('DOMContentLoaded', function () {
         options: { responsive: true, maintainAspectRatio: false,
             plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: baseFont } } } }
     });
+});
 </script>
 
 <%-- ── Charts chỉ cho Department Manager (roleId == 6) ── --%>

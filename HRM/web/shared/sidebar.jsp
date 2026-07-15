@@ -756,6 +756,18 @@
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/shift-schedule"
+                                                                        class="sidebar-link ${param.activeMenu eq 'hr-shift-schedule' ? 'active' : ''}">
+                                                                        <i class="fas fa-calendar-alt"></i> Xếp lịch ca quản lý
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/resolve-claim"
+                                                                        class="sidebar-link ${param.activeMenu eq 'hr-attendance-claims' ? 'active' : ''}">
+                                                                        <i class="fas fa-balance-scale"></i> Giải quyết khiếu nại công
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/attendance-management?action=summary"
                                                                         class="sidebar-link ${param.activeMenu eq 'attendance-summary' || param.activeMenu eq 'attendance-detail' ? 'active' : ''}">
                                                                         <i class="fas fa-clipboard-check"></i> Quản lý bảng công
@@ -978,6 +990,13 @@
                                                                             </li>
                                                                             <c:if
                                                                                 test="${sessionScope.currentUser.roleId != 7 && sessionScope.currentUser.roleId != 1 && sessionScope.currentUser.roleId != 4}">
+                                                                                <li class="sidebar-item">
+                                                                                    <a href="${pageContext.request.contextPath}/employee/schedule"
+                                                                                        class="sidebar-link ${param.activeMenu eq 'schedule' ? 'active' : ''}">
+                                                                                        <i class="fas fa-calendar-alt"></i>
+                                                                                        Lịch phân ca cá nhân
+                                                                                    </a>
+                                                                                </li>
                                                                                 <li class="sidebar-item">
                                                                                     <a href="${pageContext.request.contextPath}/employee/timesheet"
                                                                                         class="sidebar-link ${param.activeMenu eq 'personal-timesheet' ? 'active' : ''}">

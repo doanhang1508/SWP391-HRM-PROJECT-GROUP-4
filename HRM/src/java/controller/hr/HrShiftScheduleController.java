@@ -1,4 +1,4 @@
-package controller.manager;
+package controller.hr;
 
 import dao.UserDAO;
 import model.Shift;
@@ -25,23 +25,24 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * ShiftScheduleController — Xếp lịch ca và phân tăng ca cho công nhân xưởng.
+ * HrShiftScheduleController — HR Staff xếp lịch ca cho TẤT CẢ quản lý.
  *
- * URL : /manager/shift-schedule
- * Role : 3 (Supervisor / Quản đốc) — AuthFilter đã bảo vệ /manager/*
+ * URL : /hr/shift-schedule
+ * Role : 5 (HR Staff) — AuthFilter đã bảo vệ /hr/*
  *
- * Khác với ShiftController (/admin/shifts) chỉ dành cho HR Manager định nghĩa
- * ca (tạo/sửa/xoá), controller này cho phép Supervisor XẾP CA (gán ca đã có
- * sẵn cho công nhân trong tuần) và phân ca tăng ca (OT).
+ * Khác với ShiftScheduleController (/manager/shift-schedule) chỉ cho Supervisor
+ * (role 3) xếp ca cho công nhân trong phòng mình, controller này cho HR Staff
+ * xếp ca cho TẤT CẢ quản lý (Quản đốc xưởng + Trưởng phòng ban) trên toàn
+ * hệ thống.
  *
- * GET ?action=schedule → hiển thị bảng lịch tuần
- * POST ?action=assign → gán ca cho nhân viên (date range)
+ * GET → hiển thị bảng lịch tuần
+ * POST ?action=assign → gán ca cho quản lý (date range)
  * POST ?action=delete → xoá một lịch ca đã gán
  */
-@WebServlet(name = "ShiftScheduleController", urlPatterns = { "/manager/shift-schedule" })
-public class ShiftScheduleController extends HttpServlet {
+@WebServlet(name = "HrShiftScheduleController", urlPatterns = {"/hr/shift-schedule"})
+public class HrShiftScheduleController extends HttpServlet {
 
-    private static final int ROLE_SUPERVISOR = 3;
+    private static final int ROLE_HR_STAFF = 5;
 
     private ShiftDAO shiftService;
     private ShiftAssignmentDAO assignmentService;
@@ -66,8 +67,7 @@ public class ShiftScheduleController extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/login");
             return;
         }
-        // Chỉ Supervisor (role 3) mới được xếp ca
-        if (user.getRoleId() != ROLE_SUPERVISOR) {
+        if (user.getRoleId() != ROLE_HR_STAFF) {
             resp.sendRedirect(req.getContextPath() + "/dashboard");
             return;
         }
@@ -93,7 +93,7 @@ public class ShiftScheduleController extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/login");
             return;
         }
-        if (user.getRoleId() != ROLE_SUPERVISOR) {
+        if (user.getRoleId() != ROLE_HR_STAFF) {
             resp.sendRedirect(req.getContextPath() + "/dashboard");
             return;
         }
@@ -107,7 +107,7 @@ public class ShiftScheduleController extends HttpServlet {
                 deleteAssignment(req, resp);
                 break;
             default:
-                resp.sendRedirect(req.getContextPath() + "/manager/shift-schedule");
+                resp.sendRedirect(req.getContextPath() + "/hr/shift-schedule");
         }
     }
 
@@ -116,10 +116,9 @@ public class ShiftScheduleController extends HttpServlet {
     // ════════════════════════════════════════════════════════
 
     /**
-     * Hiển thị bảng xếp lịch ca theo tuần.
-     * Supervisor chỉ thấy công nhân thuộc department của mình.
+     * Hiển thị bảng xếp lịch ca theo tuần cho TẤT CẢ quản lý.
      */
-    private void showSchedule(HttpServletRequest req, HttpServletResponse resp, User supervisor)
+    private void showSchedule(HttpServletRequest req, HttpServletResponse resp, User hrStaff)
             throws ServletException, IOException {
 
         // Xác định tuần cần xem
@@ -128,18 +127,15 @@ public class ShiftScheduleController extends HttpServlet {
             targetDate = LocalDate.now();
         LocalDate weekStart = targetDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
 
-        // Ma trận lịch tuần
+        // Ma trận lịch tuần (tất cả nhân viên)
         Map<Integer, Map<Integer, List<ShiftAssignment>>> matrix = assignmentService
                 .buildWeeklyScheduleMatrix(weekStart);
 
-        // Danh sách ca đang hoạt động (để Supervisor chọn khi gán)
+        // Danh sách ca đang hoạt động
         List<Shift> activeShifts = shiftService.getActiveShifts();
 
-        // Danh sách nhân viên: lọc theo department của Supervisor
-        // getByDepartment lọc nhân viên đang active theo department_id của Supervisor
-        List<User> workers = userDAO.getByDepartment(supervisor.getDepartmentId());
-        // Exclude the supervisor themselves from the list
-        workers.removeIf(w -> w.getUserId() == supervisor.getUserId());
+        // Danh sách quản lý: TẤT CẢ Factory Manager (3) + Dept Manager (6)
+        List<User> managers = userDAO.getAllManagers();
 
         // Build mảng ngày trong tuần
         LocalDate[] weekDates = new LocalDate[7];
@@ -150,25 +146,24 @@ public class ShiftScheduleController extends HttpServlet {
         req.setAttribute("weekDates", weekDates);
         req.setAttribute("matrix", matrix);
         req.setAttribute("activeShifts", activeShifts);
-        req.setAttribute("workers", workers);
+        req.setAttribute("workers", managers);
 
-        req.getRequestDispatcher("/manager/shift-schedule.jsp").forward(req, resp);
+        req.getRequestDispatcher("/hr/shift-schedule.jsp").forward(req, resp);
     }
 
     /**
-     * Gán ca cho nhân viên theo khoảng ngày (fromDate → toDate).
-     * Supervisor dùng để phân ca hành chính lẫn tăng ca.
+     * Gán ca cho quản lý theo khoảng ngày (fromDate → toDate).
      */
     private void assignShift(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
-        Integer userId = parseIntParam(req, "userId");
+        String[] userIdsRaw = req.getParameterValues("userId");
         LocalDate from = parseDate(req.getParameter("fromDate"));
         LocalDate to = parseDate(req.getParameter("toDate"));
         String otType = req.getParameter("otType");
 
-        if (userId == null || from == null || to == null || otType == null || otType.isEmpty()) {
-            redirectSchedule(req, resp, "error", "Vui lòng điền đầy đủ thông tin");
+        if (userIdsRaw == null || userIdsRaw.length == 0 || from == null || to == null || otType == null || otType.isEmpty()) {
+            redirectSchedule(req, resp, "error", "Vui lòng chọn ít nhất một quản lý và điền đầy đủ thông tin");
             return;
         }
 
@@ -191,8 +186,6 @@ public class ShiftScheduleController extends HttpServlet {
             return;
         }
 
-        // Create a custom shift for OT so it saves the actual times, but hides from HR
-        // Manager
         int shiftId = shiftService.findOrCreateCustomShift(startTime, endTime, breakStart, breakEnd, shiftName);
 
         if (to.isBefore(from)) {
@@ -200,18 +193,41 @@ public class ShiftScheduleController extends HttpServlet {
             return;
         }
 
-        int inserted = assignmentService.batchAssign(userId, shiftId, from, to);
-        if (inserted > 0) {
-            User manager = getCurrentUser(req);
-            String managerName = manager != null ? manager.getFullName() : "Quản đốc";
-            new dao.notificationDAO().create(userId, "shift",
-                    "Bạn được xếp lịch làm việc mới",
-                    managerName + " đã xếp " + inserted + " ca (" + shiftName + ") cho bạn từ "
-                            + from + " đến " + to + ".",
-                    "/employee/schedule");
-            redirectSchedule(req, resp, "message", "Đã xếp lịch " + inserted + " ngày thành công.");
+        int totalInserted = 0;
+        int successUsersCount = 0;
+        int failedUsersCount = 0;
+
+        User hrStaff = getCurrentUser(req);
+        String hrName = hrStaff != null ? hrStaff.getFullName() : "HR Staff";
+
+        for (String userIdStr : userIdsRaw) {
+            try {
+                int userId = Integer.parseInt(userIdStr.trim());
+                int inserted = assignmentService.batchAssign(userId, shiftId, from, to);
+                if (inserted > 0) {
+                    totalInserted += inserted;
+                    successUsersCount++;
+                    new dao.notificationDAO().create(userId, "shift",
+                            "Bạn được xếp lịch làm việc mới",
+                            hrName + " (HR Staff) đã xếp " + inserted + " ca (" + shiftName + ") cho bạn từ "
+                                    + from + " đến " + to + ".",
+                            "/employee/schedule");
+                } else {
+                    failedUsersCount++;
+                }
+            } catch (NumberFormatException e) {
+                // Ignore invalid ID
+            }
+        }
+
+        if (successUsersCount > 0) {
+            String msg = "Đã xếp lịch thành công cho " + successUsersCount + " quản lý (" + totalInserted + " ca).";
+            if (failedUsersCount > 0) {
+                msg += " Có " + failedUsersCount + " quản lý bị trùng lịch hoặc đã tồn tại.";
+            }
+            redirectSchedule(req, resp, "message", msg);
         } else {
-            redirectSchedule(req, resp, "error", "Lỗi: Ca mới bị trùng giờ với ca cũ hoặc đã tồn tại.");
+            redirectSchedule(req, resp, "error", "Lỗi: Ca mới bị trùng giờ với ca cũ hoặc đã tồn tại cho tất cả quản lý được chọn.");
         }
     }
 
@@ -227,11 +243,11 @@ public class ShiftScheduleController extends HttpServlet {
         Integer assignedUserId = assignmentService.getAssignmentUserId(id);
         boolean ok = assignmentService.deleteAssignment(id);
         if (ok && assignedUserId != null) {
-            User manager = getCurrentUser(req);
-            String managerName = manager != null ? manager.getFullName() : "Quản đốc";
+            User hrStaff = getCurrentUser(req);
+            String hrName = hrStaff != null ? hrStaff.getFullName() : "HR Staff";
             new dao.notificationDAO().create(assignedUserId, "shift",
                     "Lịch làm việc của bạn đã bị xóa",
-                    managerName + " đã xóa một lịch làm việc đã xếp cho bạn.",
+                    hrName + " (HR Staff) đã xóa một lịch làm việc đã xếp cho bạn.",
                     "/employee/schedule");
         }
         redirectSchedule(req, resp, ok ? "message" : "error",
@@ -274,7 +290,7 @@ public class ShiftScheduleController extends HttpServlet {
 
     private void redirectSchedule(HttpServletRequest req, HttpServletResponse resp,
             String key, String msg) throws IOException {
-        resp.sendRedirect(req.getContextPath() + "/manager/shift-schedule?"
+        resp.sendRedirect(req.getContextPath() + "/hr/shift-schedule?"
                 + key + "=" + java.net.URLEncoder.encode(msg, java.nio.charset.StandardCharsets.UTF_8));
     }
 }

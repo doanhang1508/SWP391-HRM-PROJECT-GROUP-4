@@ -272,9 +272,38 @@ public class ShiftAssignmentDAOImpl implements ShiftAssignmentDAO {
             }
             
             if (!overlaps) {
+                int assignedShiftId = shiftId;
+                // Check if currentDate is a holiday
+                model.Holiday holiday = new dao.HolidayDAO().getActiveHolidayByDate(Date.valueOf(currentDate));
+                if (holiday != null) {
+                    String holidayShiftName = newShift.getShiftName() + " (Lễ)";
+                    float holidayCoefficient = holiday.getOtMultiplier() != null ? holiday.getOtMultiplier().floatValue() : 3.0f;
+                    assignedShiftId = shiftDAO.findOrCreateCustomShift(
+                        newShift.getStartTime(),
+                        newShift.getEndTime(),
+                        newShift.getBreakStart(),
+                        newShift.getBreakEnd(),
+                        holidayShiftName,
+                        holidayCoefficient
+                    );
+                } else {
+                    java.time.DayOfWeek day = currentDate.getDayOfWeek();
+                    if (day == java.time.DayOfWeek.SUNDAY) {
+                        String weekendShiftName = newShift.getShiftName() + " (Nghỉ tuần)";
+                        assignedShiftId = shiftDAO.findOrCreateCustomShift(
+                            newShift.getStartTime(),
+                            newShift.getEndTime(),
+                            newShift.getBreakStart(),
+                            newShift.getBreakEnd(),
+                            weekendShiftName,
+                            2.0f
+                        );
+                    }
+                }
+
                 ShiftAssignment a = new ShiftAssignment();
                 a.setUserId(userId);
-                a.setShiftId(shiftId);
+                a.setShiftId(assignedShiftId);
                 a.setAssignedDate(currentDate);
                 if (this.addAssignment(a)) {
                     inserted++;

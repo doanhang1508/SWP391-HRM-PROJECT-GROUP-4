@@ -159,7 +159,7 @@
         <div class="page-header">
             <div>
                 <h1 class="page-title"><i class="fas fa-calendar-alt me-2" style="color:var(--teal)"></i>Lịch Phân Ca Cá Nhân</h1>
-                <p class="breadcrumb-c"><a href="${pageContext.request.contextPath}/employee/dashboard">Trang chủ</a> &gt; Lịch phân ca</p>
+                <p class="breadcrumb-c"><a href="${pageContext.request.contextPath}/dashboard">Trang chủ</a> &gt; Lịch phân ca</p>
             </div>
         </div>
 
