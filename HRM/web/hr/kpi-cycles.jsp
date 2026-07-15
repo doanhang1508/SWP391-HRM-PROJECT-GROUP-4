@@ -126,15 +126,22 @@
                                             </form>
                                         </c:when>
                                         <c:when test="${cycle.status == 'LOCKED'}">
-                                            <form action="${pageContext.request.contextPath}/hr/kpi-cycles" method="POST" class="d-inline" onsubmit="return confirm('Lưu trữ đợt đánh giá này?')">
-                                                <input type="hidden" name="action" value="updateStatus" />
-                                                <input type="hidden" name="id" value="${cycle.cycleId}" />
-                                                <input type="hidden" name="status" value="CLOSED" />
-                                                <button type="submit" class="btn btn-outline-secondary btn-sm px-2.5 py-1.5" style="border-radius: 6px;">
-                                                    <i class="fas fa-archive me-1"></i> Đóng đợt
-                                                </button>
-                                            </form>
-                                        </c:when>
+                                             <form action="${pageContext.request.contextPath}/hr/kpi-cycles" method="POST" class="d-inline" onsubmit="return confirm('Mở lại sổ đợt đánh giá này để tiếp tục chỉnh sửa?')">
+                                                 <input type="hidden" name="action" value="updateStatus" />
+                                                 <input type="hidden" name="id" value="${cycle.cycleId}" />
+                                                 <input type="hidden" name="status" value="ACTIVE" />
+                                                 <button type="submit" class="btn btn-outline-warning btn-sm px-2.5 py-1.5 me-1" style="border-radius: 6px;">
+                                                     <i class="fas fa-unlock me-1"></i> Mở khóa sổ
+                                                 </button>
+                                             </form>
+                                             <form action="${pageContext.request.contextPath}/hr/kpi-cycles" method="POST" class="d-inline" onsubmit="return confirm('Lưu trữ đợt đánh giá này?')">
+                                                 <input type="hidden" name="action" value="updateStatus" />
+                                                 <input type="hidden" name="id" value="${cycle.cycleId}" />
+                                                 <input type="hidden" name="status" value="CLOSED" />
+                                                 <button type="submit" class="btn btn-outline-secondary btn-sm px-2.5 py-1.5" style="border-radius: 6px;">
+                                                     <i class="fas fa-archive me-1"></i> Đóng đợt
+                                                 </button>
+                                             </form></c:when>
                                         <c:otherwise>
                                             <span class="text-muted small">Đã lưu trữ</span>
                                         </c:otherwise>
