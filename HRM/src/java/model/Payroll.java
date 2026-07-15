@@ -38,6 +38,7 @@ public class Payroll {
 
     // Transient: dùng để hiển thị, không lưu DB
     private String fullName;
+    private String departmentName;
 
     public Payroll() {}
 
@@ -164,6 +165,20 @@ public class Payroll {
 
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
+
+    public String getDepartmentName() { return departmentName; }
+    public void setDepartmentName(String departmentName) { this.departmentName = departmentName; }
+
+    /**
+     * Tổng khoản trừ = kỷ luật/trừ khác + bảo hiểm nhân viên đóng + thuế TNCN.
+     * Dùng trong JSP/báo cáo thay vì cộng BigDecimal trực tiếp trong EL.
+     */
+    public java.math.BigDecimal getTotalDeductionAll() {
+        java.math.BigDecimal d = deductionAmount  != null ? deductionAmount  : java.math.BigDecimal.ZERO;
+        java.math.BigDecimal i = insuranceAmount  != null ? insuranceAmount  : java.math.BigDecimal.ZERO;
+        java.math.BigDecimal t = taxAmount        != null ? taxAmount        : java.math.BigDecimal.ZERO;
+        return d.add(i).add(t);
+    }
 
     private String bankAccount;
     private String bankName;

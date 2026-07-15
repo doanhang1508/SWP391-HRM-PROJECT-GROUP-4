@@ -545,6 +545,12 @@
                                                             <i class="fas fa-file-invoice-dollar"></i> Bảng lương
                                                         </a>
                                                     </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/master-payroll-report"
+                                                            class="sidebar-link ${param.activeMenu eq 'master-payroll-report' ? 'active' : ''}">
+                                                            <i class="fas fa-chart-bar"></i> Báo cáo bảng lương
+                                                        </a>
+                                                    </li>
 
                                                 </c:if>
 
@@ -638,6 +644,12 @@
                                                                 <a href="${pageContext.request.contextPath}/director/reports"
                                                                     class="sidebar-link ${param.activeMenu eq 'director-reports' ? 'active' : ''}">
                                                                     <i class="fas fa-chart-line"></i> Báo cáo tổng hợp
+                                                                </a>
+                                                            </li>
+                                                            <li class="sidebar-item">
+                                                                <a href="${pageContext.request.contextPath}/hr/master-payroll-report"
+                                                                    class="sidebar-link ${param.activeMenu eq 'master-payroll-report' ? 'active' : ''}">
+                                                                    <i class="fas fa-chart-bar"></i> Báo cáo bảng lương
                                                                 </a>
                                                             </li>
                                                             <li class="sidebar-item">

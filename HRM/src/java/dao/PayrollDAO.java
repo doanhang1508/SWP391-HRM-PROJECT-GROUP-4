@@ -858,7 +858,6 @@ public class PayrollDAO {
             //   bonusAmount        = tổng thưởng thực nhận (đưa vào gross, hiển thị phiếu lương)
             //   bonusTaxableAmount = phần thưởng chịu thuế TNCN (is_taxable=1)
             //   bonusBhxhAmount    = phần thưởng cộng vào nền BHXH (is_bhxh_applied=1, thường = 0)
-            RewardDisciplineDAO rewardDisciplineDAO = new RewardDisciplineDAO();
             List<EmployeeRewardDiscipline> erdRecords = rewardDisciplineDAO.getRecordsByUserIdAndMonthYear(userId, month, year);
             BigDecimal bonusAmount              = BigDecimal.ZERO;
             BigDecimal bonusTaxableAmount       = BigDecimal.ZERO;
@@ -1511,7 +1510,58 @@ public class PayrollDAO {
         return list;
     }
 
-    // ═════════════════════════════════════════════════════
+    /**
+     * Báo cáo Bảng lương Tổng hợp — dành cho HR Manager / Director / Admin xem.
+     * JOIN users + departments + employee_profiles (bank info).
+     * Mặc định lọc status IN ('Approved','Paid') — dữ liệu đã chốt cuối kỳ.
+     *
+     * @param month        tháng báo cáo
+     * @param year         năm báo cáo
+     * @param departmentId null = tất cả phòng ban; số = lọc phòng ban cụ thể
+     */
+    public List<Payroll> getMasterPayrollReport(int month, int year, Integer departmentId) {
+        List<Payroll> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            "SELECT p.*, u.full_name, u.department_id, d.department_name, " +
+            "       ep.bank_account, ep.bank_name " +
+            "FROM payroll p " +
+            "LEFT JOIN users u ON p.user_id = u.user_id " +
+            "LEFT JOIN departments d ON u.department_id = d.department_id " +
+            "LEFT JOIN employee_profiles ep ON p.user_id = ep.user_id " +
+            "WHERE p.month = ? AND p.year = ? " +
+            "  AND p.status IN ('Approved', 'Paid')"
+        );
+        if (departmentId != null) {
+            sql.append(" AND u.department_id = ?");
+        }
+        sql.append(" ORDER BY d.department_name, u.full_name");
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            ps.setInt(1, month);
+            ps.setInt(2, year);
+            if (departmentId != null) {
+                ps.setInt(3, departmentId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Payroll p = mapRow(rs);
+                    p.setFullName(rs.getString("full_name"));
+                    p.setBankAccount(rs.getString("bank_account"));
+                    p.setBankName(rs.getString("bank_name"));
+                    try {
+                        p.setDepartmentName(rs.getString("department_name"));
+                    } catch (SQLException ignored) {}
+                    list.add(p);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+
     // TAX & INSURANCE ENGINE (TASK 35 & 36)
     // ═════════════════════════════════════════════════════
 
