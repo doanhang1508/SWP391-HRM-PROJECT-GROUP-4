@@ -754,9 +754,16 @@ public class PayrollDAO {
             
             // Get working days
             double totalDays;
+            // Ngày nghỉ không lương (ốm, thai sản) — dùng chung cho cả Director và nhân viên.
+            // Khai báo trước if/else để insuranceBenefit tính bên dưới có thể truy cập.
+            Map<LocalDate, Integer> unpaidLeaveDaysForExclusion =
+                    leaveDAO.getUnpaidLeaveDayMapWithShift(userId, month, year);
+
             if (roleId == 4) { // 4 = Director
                 // Giám đốc miễn chấm công, auto full công chuẩn
-                totalDays = standardWorkDays.doubleValue();
+                // Trừ đi ngày nghỉ ốm/thai sản nếu có (Director cũng có thể nghỉ ốm)
+                int sickDays = (unpaidLeaveDaysForExclusion != null) ? unpaidLeaveDaysForExclusion.size() : 0;
+                totalDays = standardWorkDays.doubleValue() - sickDays;
             } else {
                 // -------------------------------------------------------------------
                 // Tính ngày công thực tế theo tập hợp ngày duy nhất (union-based).
@@ -773,6 +780,13 @@ public class PayrollDAO {
                 Set<LocalDate> leaveDaySet =
                         ((LeaveRequestDAOImpl) leaveDAO).getPaidLeaveDaySet(userId, month, year);
 
+                // Bước 2b: Lấy Map ngày nghỉ không lương (nghỉ ốm, thai sản) đã duyệt.
+                // Những ngày này KHÔNG được tính vào ngày công hưởng lương thông thường,
+                // mà chỉ nhận khoản insuranceBenefit riêng do BHXH chi trả.
+                // Phải loại bỏ khỏi unionDayMap trước khi tính totalDays để tránh tính trùng:
+                //   VD: import 27 ngày công + 2 ngày nghỉ ốm → totalDays = 25, insuranceBenefit cho 2 ngày.
+                // unpaidLeaveDaysForExclusion đã được lấy trước if/else block (Bước 2b)
+
                 // Bước 3: Hợp (union) 2 tập ngày.
                 // - Ưu tiên attendance nếu ngày xuất hiện ở cả 2 (số liệu chấm công thực tế hơn).
                 // - Ngày chỉ có trong leave (không có bản ghi attendance) được tính 1.0.
@@ -780,6 +794,15 @@ public class PayrollDAO {
                 for (LocalDate leaveDate : leaveDaySet) {
                     // putIfAbsent: nếu ngày đó đã có trong attendance thì bỏ qua (không đếm trùng)
                     unionDayMap.putIfAbsent(leaveDate, 1.0);
+                }
+
+                // Bước 3b: Loại bỏ ngày nghỉ không lương (ốm, thai sản) khỏi tập ngày công.
+                // Ngày nghỉ ốm/thai sản chỉ được trả qua insuranceBenefit, không phải lương thường.
+                // Nếu data chấm công gốc vẫn ghi nhận ngày ốm là "Present" thì phải trừ ra.
+                if (unpaidLeaveDaysForExclusion != null && !unpaidLeaveDaysForExclusion.isEmpty()) {
+                    for (LocalDate sickDay : unpaidLeaveDaysForExclusion.keySet()) {
+                        unionDayMap.remove(sickDay);
+                    }
                 }
 
                 // Bước 4: Cộng giá trị của từng ngày trong tập hợp
@@ -859,9 +882,8 @@ public class PayrollDAO {
             // ── Trợ cấp nghỉ ốm / thai sản (insuranceBenefit) ──
             // Công thức: insuranceBase / 24 × rate% × số ngày nghỉ đủ điều kiện
             // Tính SAU insuranceBase để dùng đúng nền bảo hiểm thực tế.
-            Map<LocalDate, Integer> unpaidLeaves =
-                    leaveDAO.getUnpaidLeaveDayMapWithShift(userId, month, year);
-            BigDecimal insuranceBenefit = calculateInsuranceBenefit(insuranceBase, unpaidLeaves, insuranceRateMap);
+            // Dùng lại unpaidLeaveDaysForExclusion (đã lấy ở Bước 2b) để tránh query DB trùng.
+            BigDecimal insuranceBenefit = calculateInsuranceBenefit(insuranceBase, unpaidLeaveDaysForExclusion, insuranceRateMap);
 
             // ── Gross Salary = tổng đầy đủ thực nhận (hiển thị phiếu lương) ──
             BigDecimal grossSalary = baseWorkedSalary.add(allowanceAmount).add(overtimeAmount).add(bonusAmount);
