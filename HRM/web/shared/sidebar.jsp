@@ -455,6 +455,12 @@
                                                             <i class="fas fa-clipboard-check"></i> Quản lý bảng công
                                                         </a>
                                                     </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/time-leave-report"
+                                                            class="sidebar-link ${param.activeMenu eq 'time-leave-report' ? 'active' : ''}">
+                                                            <i class="fas fa-file-excel"></i> Báo cáo Công &amp; Phép
+                                                        </a>
+                                                    </li>
 
                                                     <%-- ── Nhân sự & Điều chuyển ── --%>
                                                     <li class="sidebar-menu-category">Nhân sự &amp; Điều chuyển</li>
@@ -801,6 +807,12 @@
                                                                     <a href="${pageContext.request.contextPath}/hr/attendance-management?action=summary"
                                                                         class="sidebar-link ${param.activeMenu eq 'attendance-summary' || param.activeMenu eq 'attendance-detail' ? 'active' : ''}">
                                                                         <i class="fas fa-clipboard-check"></i> Quản lý bảng công
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/time-leave-report"
+                                                                        class="sidebar-link ${param.activeMenu eq 'time-leave-report' ? 'active' : ''}">
+                                                                        <i class="fas fa-file-excel"></i> Báo cáo Công &amp; Phép
                                                                     </a>
                                                                 </li>
 
