@@ -717,6 +717,7 @@
                                     <span class="text-muted" id="modalOvertimeLabel">Tiền tăng ca:</span>
                                     <span class="fw-semibold text-dark text-success" id="modalOvertime">+ 0 ₫</span>
                                 </div>
+                                <div id="modalOvertimeDetails" style="padding-left: 15px; font-size: 0.8rem; display: none;"></div>
                                 <div class="d-flex justify-content-between">
                                     <span class="text-muted">Phụ cấp:</span>
                                     <span class="fw-semibold text-dark text-success" id="modalAllowance">+ 0 ₫</span>
@@ -965,6 +966,8 @@ document.addEventListener("DOMContentLoaded", function() {
             
             document.getElementById('modalAllowanceDetails').innerHTML = '<div class="text-muted fst-italic">Đang tải...</div>';
             document.getElementById('modalAllowanceDetails').style.display = 'block';
+            document.getElementById('modalOvertimeDetails').innerHTML = '<div class="text-muted fst-italic">Đang tải...</div>';
+            document.getElementById('modalOvertimeDetails').style.display = 'block';
             document.getElementById('modalBonusDetails').innerHTML = '<div class="text-muted fst-italic">Đang tải...</div>';
             document.getElementById('modalBonusDetails').style.display = 'block';
             document.getElementById('modalInsuranceDetails').innerHTML = '<div class="text-muted fst-italic">Đang tải...</div>';
@@ -992,6 +995,28 @@ document.addEventListener("DOMContentLoaded", function() {
                             otLabel.innerHTML = `Tiền tăng ca <span style="font-size: 0.8rem;">(${data.overtimeHours} giờ)</span>:`;
                         }
                     }
+                    let otHtml = '';
+                    if (data.overtimeDetails && data.overtimeDetails.length > 0) {
+                        data.overtimeDetails.forEach(ot => {
+                            let typeLabel = '';
+                            if (ot.type === 'NORMAL') {
+                                typeLabel = 'Ngày thường';
+                            } else if (ot.type === 'WEEKLY_REST') {
+                                typeLabel = 'Ngày nghỉ tuần';
+                            } else if (ot.type === 'HOLIDAY') {
+                                typeLabel = 'Ngày lễ';
+                            }
+                            otHtml += '<div class="d-flex justify-content-between text-muted">' +
+                                '<span>- ' + typeLabel + ' (' + ot.multiplier + 'x) - ' + ot.hours + 'h:</span>' +
+                                '<span>+ ' + new Intl.NumberFormat('vi-VN').format(Math.round(ot.amount)) + ' ₫</span>' +
+                            '</div>';
+                        });
+                        document.getElementById('modalOvertimeDetails').style.display = 'block';
+                    } else {
+                        document.getElementById('modalOvertimeDetails').style.display = 'none';
+                    }
+                    document.getElementById('modalOvertimeDetails').innerHTML = otHtml;
+
                     const baseWorkedEl = document.getElementById('modalBaseWorkedSalary');
                     if (baseWorkedEl && data.baseWorkedSalary !== undefined) {
                         baseWorkedEl.textContent = new Intl.NumberFormat('vi-VN').format(Math.round(data.baseWorkedSalary)) + ' ₫';

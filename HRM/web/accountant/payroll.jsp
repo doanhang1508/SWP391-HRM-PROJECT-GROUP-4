@@ -486,6 +486,7 @@
                                     <span class="text-muted" id="modalOvertimeLabel">Tiền tăng ca:</span>
                                     <span class="fw-semibold text-dark text-success" id="modalOvertime">+ 0 ₫</span>
                                 </div>
+                                <div id="modalOvertimeDetails" style="padding-left: 15px; font-size: 0.8rem; display: none;"></div>
                                 <div class="d-flex justify-content-between">
                                     <span class="text-muted">Phụ cấp:</span>
                                     <span class="fw-semibold text-dark text-success" id="modalAllowance">+ 0 ₫</span>
@@ -702,6 +703,11 @@ document.addEventListener("DOMContentLoaded", function() {
                 allowanceDetailsEl.innerHTML = '<div class="text-muted fst-italic">Đang tải...</div>';
                 allowanceDetailsEl.style.display = 'block';
             }
+            let overtimeDetailsEl = document.getElementById('modalOvertimeDetails');
+            if (overtimeDetailsEl) {
+                overtimeDetailsEl.innerHTML = '<div class="text-muted fst-italic">Đang tải...</div>';
+                overtimeDetailsEl.style.display = 'block';
+            }
             let bonusDetailsEl = document.getElementById('modalBonusDetails');
             if (bonusDetailsEl) {
                 bonusDetailsEl.innerHTML = '<div class="text-muted fst-italic">Đang tải...</div>';
@@ -730,6 +736,36 @@ document.addEventListener("DOMContentLoaded", function() {
                     if (data.error) {
                         console.error("Lỗi:", data.error);
                         return;
+                    }
+
+                    if (data.overtimeHours !== undefined) {
+                        const otLabel = document.getElementById('modalOvertimeLabel');
+                        if (otLabel) {
+                            otLabel.innerHTML = `Tiền tăng ca <span style="font-size: 0.8rem;">(${data.overtimeHours} giờ)</span>:`;
+                        }
+                    }
+                    if (overtimeDetailsEl) {
+                        let otHtml = '';
+                        if (data.overtimeDetails && data.overtimeDetails.length > 0) {
+                            data.overtimeDetails.forEach(ot => {
+                                let typeLabel = '';
+                                if (ot.type === 'NORMAL') {
+                                    typeLabel = 'Ngày thường';
+                                } else if (ot.type === 'WEEKLY_REST') {
+                                    typeLabel = 'Ngày nghỉ tuần';
+                                } else if (ot.type === 'HOLIDAY') {
+                                    typeLabel = 'Ngày lễ';
+                                }
+                                otHtml += '<div class="d-flex justify-content-between text-muted">' +
+                                    '<span>- ' + typeLabel + ' (' + ot.multiplier + 'x) - ' + ot.hours + 'h:</span>' +
+                                    '<span>+ ' + new Intl.NumberFormat('vi-VN').format(Math.round(ot.amount)) + ' ₫</span>' +
+                                '</div>';
+                            });
+                            overtimeDetailsEl.style.display = 'block';
+                        } else {
+                            overtimeDetailsEl.style.display = 'none';
+                        }
+                        overtimeDetailsEl.innerHTML = otHtml;
                     }
 
                     if (baseWorkedEl && data.baseWorkedSalary !== undefined) {

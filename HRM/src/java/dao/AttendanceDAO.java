@@ -1447,4 +1447,104 @@ public class AttendanceDAO {
 
         return totalAmount.setScale(2, java.math.RoundingMode.HALF_UP);
     }
+
+    public static class OvertimeBreakdownItem {
+        private String type;
+        private double hours;
+        private BigDecimal multiplier;
+        private BigDecimal amount;
+
+        public OvertimeBreakdownItem(String type, double hours, BigDecimal multiplier, BigDecimal amount) {
+            this.type = type;
+            this.hours = hours;
+            this.multiplier = multiplier;
+            this.amount = amount;
+        }
+
+        public String getType() { return type; }
+        public double getHours() { return hours; }
+        public BigDecimal getMultiplier() { return multiplier; }
+        public BigDecimal getAmount() { return amount; }
+    }
+
+    /**
+     * Lấy chi tiết tăng ca chia theo 3 loại ngày (ngày thường, ngày nghỉ tuần, ngày lễ).
+     */
+    public List<OvertimeBreakdownItem> getOvertimeBreakdown(int userId, int month, int year, BigDecimal hourlyRate) {
+        List<OvertimeBreakdownItem> list = new ArrayList<>();
+        if (hourlyRate == null || hourlyRate.compareTo(BigDecimal.ZERO) <= 0) {
+            return list;
+        }
+
+        String sql = "SELECT a.work_date, a.overtime_hrs, h.ot_multiplier "
+                   + "FROM attendance a "
+                   + "LEFT JOIN holidays h ON h.holiday_date = a.work_date AND h.status = 1 "
+                   + "WHERE a.user_id = ? AND MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? "
+                   + "AND a.overtime_hrs > 0";
+
+        double normalHrs = 0;
+        BigDecimal normalAmt = BigDecimal.ZERO;
+
+        double weeklyRestHrs = 0;
+        BigDecimal weeklyRestAmt = BigDecimal.ZERO;
+
+        double holidayHrs = 0;
+        BigDecimal holidayAmt = BigDecimal.ZERO;
+        BigDecimal holidayMultiplier = new BigDecimal("3.0"); // mặc định 3.0
+
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+            ps.setInt(2, month);
+            ps.setInt(3, year);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    BigDecimal overtimeHrs = rs.getBigDecimal("overtime_hrs");
+                    if (overtimeHrs == null || overtimeHrs.compareTo(BigDecimal.ZERO) <= 0) continue;
+
+                    java.sql.Date workDate   = rs.getDate("work_date");
+                    BigDecimal holidayMulti  = rs.getBigDecimal("ot_multiplier");
+
+                    String dayType;
+                    if (holidayMulti != null) {
+                        dayType = "HOLIDAY";
+                    } else {
+                        dayType = resolveWorkDayType(conn, userId, workDate);
+                    }
+
+                    BigDecimal multiplier = resolveOvertimeMultiplier(dayType, holidayMulti);
+                    BigDecimal dailyOt    = overtimeHrs.multiply(hourlyRate).multiply(multiplier);
+
+                    if ("HOLIDAY".equals(dayType)) {
+                        holidayHrs += overtimeHrs.doubleValue();
+                        holidayAmt = holidayAmt.add(dailyOt);
+                        if (holidayMulti != null) holidayMultiplier = holidayMulti;
+                    } else if ("WEEKLY_REST".equals(dayType)) {
+                        weeklyRestHrs += overtimeHrs.doubleValue();
+                        weeklyRestAmt = weeklyRestAmt.add(dailyOt);
+                    } else {
+                        normalHrs += overtimeHrs.doubleValue();
+                        normalAmt = normalAmt.add(dailyOt);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        if (normalHrs > 0) {
+            list.add(new OvertimeBreakdownItem("NORMAL", normalHrs, new BigDecimal("1.5"), normalAmt.setScale(2, java.math.RoundingMode.HALF_UP)));
+        }
+        if (weeklyRestHrs > 0) {
+            list.add(new OvertimeBreakdownItem("WEEKLY_REST", weeklyRestHrs, new BigDecimal("2.0"), weeklyRestAmt.setScale(2, java.math.RoundingMode.HALF_UP)));
+        }
+        if (holidayHrs > 0) {
+            list.add(new OvertimeBreakdownItem("HOLIDAY", holidayHrs, holidayMultiplier, holidayAmt.setScale(2, java.math.RoundingMode.HALF_UP)));
+        }
+
+        return list;
+    }
 }

@@ -312,6 +312,27 @@ public class PayslipController extends HttpServlet {
             BigDecimal overtimeHours = attDao.getTotalOvertimeHoursFromAttendance(requestedUserId, month, year);
             json.append("\"overtimeHours\":").append(overtimeHours).append(",");
 
+            // Tính hourlyRate để phục vụ việc chia nhỏ OT
+            BigDecimal hourlyRate = BigDecimal.ZERO;
+            if (p.getBaseSalary().compareTo(BigDecimal.ZERO) > 0 && standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal monthlyWorkingHours = standardWorkDays.multiply(new BigDecimal("8"));
+                hourlyRate = p.getBaseSalary().divide(monthlyWorkingHours, 4, java.math.RoundingMode.HALF_UP);
+            }
+            List<dao.AttendanceDAO.OvertimeBreakdownItem> otBreakdown = attDao.getOvertimeBreakdown(requestedUserId, month, year, hourlyRate);
+            json.append("\"overtimeDetails\":[");
+            boolean firstOt = true;
+            for (dao.AttendanceDAO.OvertimeBreakdownItem otItem : otBreakdown) {
+                if (!firstOt) json.append(",");
+                json.append("{");
+                json.append("\"type\":\"").append(otItem.getType()).append("\",");
+                json.append("\"hours\":").append(otItem.getHours()).append(",");
+                json.append("\"multiplier\":").append(otItem.getMultiplier()).append(",");
+                json.append("\"amount\":").append(otItem.getAmount());
+                json.append("}");
+                firstOt = false;
+            }
+            json.append("],");
+
             EmployeeContractDAO ecDAO = new EmployeeContractDAO();
             EmployeeContract activeContract = ecDAO.getActiveContract(requestedUserId);
             int activeContractId = (activeContract != null) ? activeContract.getContractId() : 0;
