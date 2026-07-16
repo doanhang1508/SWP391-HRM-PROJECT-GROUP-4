@@ -41,9 +41,9 @@ public class HrReportController extends HttpServlet {
         String toDateStr = request.getParameter("toDate");
         String deptIdStr = request.getParameter("departmentId");
 
-        // Mặc định: lọc hợp đồng hết hạn từ hôm nay đến 30 ngày nữa
-        Date fromDate = (fromDateStr != null && !fromDateStr.isEmpty()) ? Date.valueOf(fromDateStr) : Date.valueOf(LocalDate.now());
-        Date toDate = (toDateStr != null && !toDateStr.isEmpty()) ? Date.valueOf(toDateStr) : Date.valueOf(LocalDate.now().plusDays(30));
+        // Mặc định: không lọc theo ngày (hiển thị tất cả) để các thống kê (Quá hạn, An toàn) tính chính xác
+        Date fromDate = (fromDateStr != null && !fromDateStr.isEmpty()) ? Date.valueOf(fromDateStr) : null;
+        Date toDate = (toDateStr != null && !toDateStr.isEmpty()) ? Date.valueOf(toDateStr) : null;
         Integer departmentId = (deptIdStr != null && !deptIdStr.isEmpty() && !"-1".equals(deptIdStr)) ? Integer.parseInt(deptIdStr) : null;
 
         // Load data for dropdown
@@ -56,8 +56,8 @@ public class HrReportController extends HttpServlet {
         List<Map<String, Object>> reportData = ecDAO.getExpiringContracts(fromDate, toDate, departmentId);
         
         request.setAttribute("reportData", reportData);
-        request.setAttribute("fromDate", fromDate.toString());
-        request.setAttribute("toDate", toDate.toString());
+        request.setAttribute("fromDate", fromDate != null ? fromDate.toString() : "");
+        request.setAttribute("toDate", toDate != null ? toDate.toString() : "");
         request.setAttribute("departmentId", departmentId != null ? departmentId : -1);
 
         request.getRequestDispatcher("/hr/hr-report.jsp").forward(request, response);
@@ -75,8 +75,8 @@ public class HrReportController extends HttpServlet {
             String toDateStr = request.getParameter("toDate");
             String deptIdStr = request.getParameter("departmentId");
 
-            Date fromDate = (fromDateStr != null && !fromDateStr.isEmpty()) ? Date.valueOf(fromDateStr) : Date.valueOf(LocalDate.now());
-            Date toDate = (toDateStr != null && !toDateStr.isEmpty()) ? Date.valueOf(toDateStr) : Date.valueOf(LocalDate.now().plusDays(30));
+            Date fromDate = (fromDateStr != null && !fromDateStr.isEmpty()) ? Date.valueOf(fromDateStr) : null;
+            Date toDate = (toDateStr != null && !toDateStr.isEmpty()) ? Date.valueOf(toDateStr) : null;
             Integer departmentId = (deptIdStr != null && !deptIdStr.isEmpty() && !"-1".equals(deptIdStr)) ? Integer.parseInt(deptIdStr) : null;
 
             EmployeeContractDAO ecDAO = new EmployeeContractDAO();
