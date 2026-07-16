@@ -86,79 +86,6 @@
         color: var(--th-muted);
     }
 
-    /* Notification Settings */
-    .notif-option {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 16px 0;
-        border-bottom: 1px solid var(--th-border);
-    }
-
-    .notif-option:last-child {
-        border-bottom: none;
-    }
-
-    .notif-option-info h6 {
-        margin: 0;
-        font-size: 0.9rem;
-        font-weight: 700;
-        color: var(--th-text);
-    }
-
-    .notif-option-info p {
-        margin: 2px 0 0;
-        font-size: 0.8rem;
-        color: var(--th-muted);
-    }
-
-    /* Toggle Switch */
-    .toggle-switch {
-        position: relative;
-        width: 44px;
-        height: 24px;
-        flex-shrink: 0;
-    }
-
-    .toggle-switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
-
-    .toggle-slider {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: var(--th-muted);
-        border-radius: 24px;
-        cursor: pointer;
-        transition: background 0.3s;
-    }
-
-    .toggle-slider::before {
-        content: '';
-        position: absolute;
-        width: 18px;
-        height: 18px;
-        left: 3px;
-        bottom: 3px;
-        background: var(--th-surface);
-        border-radius: 50%;
-        transition: transform 0.3s;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-    }
-
-    .toggle-switch input:checked + .toggle-slider {
-        background: #4361ee;
-    }
-
-    .toggle-switch input:checked + .toggle-slider::before {
-        transform: translateX(20px);
-    }
-
     /* Security Info */
     .security-info {
         display: flex;
@@ -260,87 +187,6 @@
             </a>
         </div>
 
-        <!-- Appearance Settings Card -->
-        <div class="settings-card">
-            <div class="settings-card-header">
-                <div class="icon-box" style="background: rgba(128, 90, 213, 0.1); color: #805ad5;">
-                    <i class="fas fa-paint-brush"></i>
-                </div>
-                <div>
-                    <h3>Giao diện</h3>
-                    <p>Tùy chỉnh giao diện hệ thống theo sở thích</p>
-                </div>
-            </div>
-
-            <div class="notif-option">
-                <div class="notif-option-info">
-                    <h6><i class="fas fa-moon me-2 text-primary"></i>Chế độ nền tối (Dark Mode)</h6>
-                    <p>Giảm chói mắt khi làm việc ban đêm, tiết kiệm pin cho thiết bị</p>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="themeToggleSwitch">
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-        </div>
-
-        <!-- 2. Notification Settings Card -->
-        <div class="settings-card">
-            <div class="settings-card-header">
-                <div class="icon-box" style="background: rgba(49, 130, 206, 0.1); color: #3182ce;">
-                    <i class="fas fa-bell"></i>
-                </div>
-                <div>
-                    <h3>Cài đặt thông báo</h3>
-                    <p>Quản lý cách bạn nhận thông báo từ hệ thống</p>
-                </div>
-            </div>
-
-            <div class="notif-option">
-                <div class="notif-option-info">
-                    <h6><i class="fas fa-envelope me-2 text-primary"></i>Thông báo qua Email</h6>
-                    <p>Nhận email khi có đơn nghỉ phép được duyệt, bảng lương mới, v.v.</p>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" checked>
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-
-            <div class="notif-option">
-                <div class="notif-option-info">
-                    <h6><i class="fas fa-desktop me-2 text-success"></i>Thông báo trên Hệ thống</h6>
-                    <p>Hiển thị thông báo trong chuông thông báo khi đăng nhập</p>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" checked>
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-
-            <div class="notif-option">
-                <div class="notif-option-info">
-                    <h6><i class="fas fa-bullhorn me-2 text-warning"></i>Thông báo nội bộ</h6>
-                    <p>Nhận thông báo về tin tức, sự kiện công ty</p>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" checked>
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-
-            <div class="notif-option">
-                <div class="notif-option-info">
-                    <h6><i class="fas fa-calendar-check me-2 text-info"></i>Nhắc nhở chấm công</h6>
-                    <p>Nhận nhắc nhở khi quên chấm công vào/ra</p>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox">
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-        </div>
-
         <!-- 3. Session Info Card -->
         <div class="settings-card">
             <div class="settings-card-header">
@@ -375,21 +221,5 @@
     </div><!-- end .settings-content -->
 </div>
 <!-- end .settings-layout -->
-
-
-<script>
-    (function () {
-        var toggle = document.getElementById('themeToggleSwitch');
-        if (!toggle) return;
-        var current = document.documentElement.getAttribute('data-theme') || 'light';
-        toggle.checked = (current === 'dark');
-
-        toggle.addEventListener('change', function () {
-            var next = this.checked ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', next);
-            localStorage.setItem('hrm-theme', next);
-        });
-    })();
-</script>
 
 <jsp:include page="footer.jsp"/>

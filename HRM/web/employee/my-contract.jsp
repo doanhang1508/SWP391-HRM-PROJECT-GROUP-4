@@ -83,6 +83,11 @@
         .main-content { width: 100%; padding: 0; margin: 0; }
         .contract-detail-box { box-shadow: none; border: none; padding: 0; margin-top: 20px; }
         .addendum-banner, .toast-msg { display: none !important; }
+        
+        body.printing-modal .dashboard-wrapper { display: none !important; }
+        body.printing-modal .modal-overlay { position: static !important; background: transparent !important; }
+        body.printing-modal .modal-box { box-shadow: none !important; border: none !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+        body.printing-modal .modal-box button { display: none !important; }
     }
 
     /* Banner & Modal styles */
@@ -388,7 +393,8 @@
             <div style="color:#6b7280;">Người đại diện (Cty)</div> <div>Giám đốc nhân sự</div>
             <div style="color:#6b7280;">Ngày ký</div> <div id="mcdSigned" style="font-weight:600;"></div>
         </div>
-        <div style="padding:12px 24px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; background:#f9fafb; border-radius:0 0 10px 10px;">
+        <div style="padding:12px 24px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:10px; background:#f9fafb; border-radius:0 0 10px 10px;">
+            <button type="button" onclick="printModal()" class="btn-outline"><i class="fas fa-file-pdf"></i> Tải PDF</button>
             <button type="button" onclick="closeMyContractDetailModal()" class="btn-outline">&#272;&#243;ng</button>
         </div>
     </div>
@@ -425,6 +431,11 @@
     }
     function closeMyContractDetailModal() {
         document.getElementById('myContractDetailModal').style.display = 'none';
+    }
+    function printModal() {
+        document.body.classList.add('printing-modal');
+        window.print();
+        document.body.classList.remove('printing-modal');
     }
     document.getElementById('myContractDetailModal').addEventListener('click', function(e) {
         if (e.target === this) closeMyContractDetailModal();

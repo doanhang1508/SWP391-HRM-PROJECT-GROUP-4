@@ -858,6 +858,7 @@ public class PayrollDAO {
             //   bonusAmount        = tổng thưởng thực nhận (đưa vào gross, hiển thị phiếu lương)
             //   bonusTaxableAmount = phần thưởng chịu thuế TNCN (is_taxable=1)
             //   bonusBhxhAmount    = phần thưởng cộng vào nền BHXH (is_bhxh_applied=1, thường = 0)
+
             List<EmployeeRewardDiscipline> erdRecords = rewardDisciplineDAO.getRecordsByUserIdAndMonthYear(userId, month, year);
             BigDecimal bonusAmount              = BigDecimal.ZERO;
             BigDecimal bonusTaxableAmount       = BigDecimal.ZERO;

@@ -432,6 +432,7 @@
                                                         </a>
                                                     </li>
 
+
                                                     <%-- ── KPI ── --%>
                                                     <li class="sidebar-menu-category">KPI</li>
                                                     <li class="sidebar-item">
@@ -707,6 +708,7 @@
                                                                         <i class="fas fa-file-signature"></i> Quản lý Hợp đồng
                                                                     </a>
                                                                 </li>
+
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/report"
                                                                         class="sidebar-link ${param.activeMenu eq 'hr-report' ? 'active' : ''}">
