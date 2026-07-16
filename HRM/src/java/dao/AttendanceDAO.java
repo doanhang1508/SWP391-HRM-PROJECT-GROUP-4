@@ -1278,26 +1278,44 @@ public class AttendanceDAO {
 
     public List<model.AttendanceSummary> getAttendanceSummaryAllUsersPaginated(int month, int year, int offset, int limit) {
         List<model.AttendanceSummary> list = new ArrayList<>();
+        // sick_day_cnt: SUM(total_days) của đơn nghỉ ốm (leave_type_id=2) đã Approved.
+        // Dùng SUM(total_days) thay COUNT(*) vì 1 đơn có thể nhiều ngày (ví dụ 08/06-09/06 = 2 ngày).
+        // Điều kiện overlap: đơn có start_date <= cuối tháng AND end_date >= đầu tháng
+        // → bắt đúng cả đơn bắt đầu tháng trước, kết thúc trong tháng này.
         String sql = "SELECT u.user_id, u.full_name AS user_name, d.department_name, " +
                      "SUM(CASE WHEN UPPER(a.status) IN ('PRESENT', 'P', 'LEAVE') THEN 1 ELSE 0 END) AS present_cnt, " +
                      "SUM(CASE WHEN UPPER(a.status) IN ('LATE', 'T') THEN 1 ELSE 0 END) AS late_cnt, " +
                      "SUM(CASE WHEN UPPER(a.status) IN ('ABSENT', 'A') THEN 1 ELSE 0 END) AS absent_cnt, " +
                      "SUM(CASE WHEN a.overtime_hrs > 0 THEN 1 ELSE 0 END) AS ot_cnt, " +
-                     "SUM(IFNULL(a.overtime_hrs, 0)) AS total_ot_hrs " +
+                     "SUM(IFNULL(a.overtime_hrs, 0)) AS total_ot_hrs, " +
+                     "IFNULL(sk.sick_day_cnt, 0) AS sick_day_cnt " +
                      "FROM users u " +
                      "LEFT JOIN employee_profiles ep ON u.user_id = ep.user_id " +
                      "LEFT JOIN departments d ON ep.department_id = d.department_id " +
                      "JOIN attendance a ON u.user_id = a.user_id AND MONTH(a.work_date)=? AND YEAR(a.work_date)=? " +
+                     "LEFT JOIN ( " +
+                     "  SELECT user_id, CAST(SUM(total_days) AS SIGNED) AS sick_day_cnt " +
+                     "  FROM leave_requests " +
+                     "  WHERE leave_type_id = 2 AND status = 'Approved' " +
+                     "    AND start_date <= LAST_DAY(CONCAT(?, '-', LPAD(?, 2, '0'), '-01')) " +
+                     "    AND end_date   >= CONCAT(?, '-', LPAD(?, 2, '0'), '-01') " +
+                     "  GROUP BY user_id " +
+                     ") sk ON sk.user_id = u.user_id " +
                      "WHERE u.role_id NOT IN (1, 4) " +
-                     "GROUP BY u.user_id, u.full_name, d.department_name " +
+                     "GROUP BY u.user_id, u.full_name, d.department_name, sk.sick_day_cnt " +
                      "ORDER BY u.full_name LIMIT ? OFFSET ?";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, month);
             ps.setInt(2, year);
-            ps.setInt(3, limit);
-            ps.setInt(4, offset);
+            // params cho LAST_DAY và ngày đầu tháng trong subquery
+            ps.setInt(3, year);
+            ps.setInt(4, month);
+            ps.setInt(5, year);
+            ps.setInt(6, month);
+            ps.setInt(7, limit);
+            ps.setInt(8, offset);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     model.AttendanceSummary s = new model.AttendanceSummary();
@@ -1309,6 +1327,7 @@ public class AttendanceDAO {
                     s.setAbsentCount(rs.getInt("absent_cnt"));
                     s.setOvertimeCount(rs.getInt("ot_cnt"));
                     s.setTotalOvertimeHrs(rs.getDouble("total_ot_hrs"));
+                    s.setSickDayCount(rs.getInt("sick_day_cnt"));
                     list.add(s);
                 }
             }
