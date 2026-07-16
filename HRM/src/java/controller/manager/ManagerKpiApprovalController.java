@@ -199,8 +199,17 @@ public class ManagerKpiApprovalController extends HttpServlet {
                                 if (cycle != null && cycle.getEndDate() != null) {
                                     Calendar cal = Calendar.getInstance();
                                     cal.setTime(cycle.getEndDate());
-                                    month = cal.get(Calendar.MONTH) + 1;
-                                    year = cal.get(Calendar.YEAR);
+                                    int endMonth = cal.get(Calendar.MONTH) + 1;
+                                    int endYear = cal.get(Calendar.YEAR);
+                                    
+                                    // Shift to the next month for payroll integration
+                                    if (endMonth == 12) {
+                                        month = 1;
+                                        year = endYear + 1;
+                                    } else {
+                                        month = endMonth + 1;
+                                        year = endYear;
+                                    }
                                 }
                                 
                                 if (month > 0 && year > 0) {

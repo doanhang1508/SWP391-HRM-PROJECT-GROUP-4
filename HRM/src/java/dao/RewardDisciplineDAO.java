@@ -462,14 +462,41 @@ public class RewardDisciplineDAO {
         return insertedCount;
     }
 
+    private void deleteKpiBonus(int userId, int rewardDisciplineId, int month, int year) {
+        String sql = "DELETE FROM employee_rewards_disciplines "
+                   + "WHERE user_id = ? AND reward_discipline_id = ? "
+                   + "AND MONTH(applied_date) = ? AND YEAR(applied_date) = ?";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, rewardDisciplineId);
+            ps.setInt(3, month);
+            ps.setInt(4, year);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void calculateKPIBonus(int userId, int month, int year, BigDecimal baseSalary, double kpiScore) {
-        BigDecimal maxBonus = baseSalary.multiply(new BigDecimal("0.30"));
-        BigDecimal actualBonus = maxBonus.multiply(new BigDecimal(kpiScore));
+        double weightedScore = kpiScore * 10.0;
+        BigDecimal actualBonus;
+        if (weightedScore < 6.0) {
+            actualBonus = BigDecimal.ZERO;
+        } else {
+            BigDecimal maxBonus = baseSalary.multiply(new BigDecimal("0.30"));
+            actualBonus = maxBonus.multiply(new BigDecimal(kpiScore));
+        }
         
         RewardDiscipline rdKpi = this.getRewardDisciplineByName("Thưởng KPI Tháng");
+        int rewardId = rdKpi != null ? rdKpi.getId() : 1;
+        
+        // Prevent duplicate entries by deleting existing KPI bonus for this employee in this month/year
+        this.deleteKpiBonus(userId, rewardId, month, year);
+        
         EmployeeRewardDiscipline erd = new EmployeeRewardDiscipline();
         erd.setUserId(userId);
-        erd.setRewardDisciplineId(rdKpi != null ? rdKpi.getId() : 1);
+        erd.setRewardDisciplineId(rewardId);
         erd.setAmount(actualBonus);
         
         double pct = kpiScore * 100;
@@ -482,7 +509,11 @@ public class RewardDisciplineDAO {
                 formattedPct = formattedPct.substring(0, formattedPct.length() - 2);
             }
         }
-        erd.setNote("KPI Score: " + formattedPct + "%");
+        if (weightedScore < 6.0) {
+            erd.setNote("KPI Score: " + formattedPct + "% (Không đạt thưởng < 6.0)");
+        } else {
+            erd.setNote("KPI Score: " + formattedPct + "%");
+        }
         
         erd.setAppliedDate(Date.valueOf(LocalDate.of(year, month, 28)));
         this.insertManualRecord(erd);

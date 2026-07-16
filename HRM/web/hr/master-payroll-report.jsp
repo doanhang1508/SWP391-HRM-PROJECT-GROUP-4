@@ -408,7 +408,6 @@
     <div class="pr-page-hdr">
         <div class="pr-page-hdr-left">
             <h1><i class="fas fa-file-invoice-dollar"></i> Báo cáo Bảng lương Tổng hợp</h1>
-            <p>Bảng lương Approved / Paid — chỉ đọc · Xuất Excel 2 sheet</p>
         </div>
         <div class="breadcrumb-row">
             <a href="${pageContext.request.contextPath}/dashboard">

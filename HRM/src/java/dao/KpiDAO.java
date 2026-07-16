@@ -1240,4 +1240,58 @@ public class KpiDAO {
         }
         return list;
     }
+
+    /**
+     * KPI Performance Report — returns APPROVED/SUBMITTED evaluations
+     * with optional filters: cycleId, departmentId, manager-department restriction.
+     *
+     * @param cycleId       null = all cycles
+     * @param departmentId  null = all departments
+     * @param managerDeptId non-null = restrict to employees in this department (for non-HR managers)
+     */
+    public List<KpiEvaluation> getKpiPerformanceReport(Integer cycleId, Integer departmentId, Integer managerDeptId) {
+        List<KpiEvaluation> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+            "SELECT e.*, u.full_name AS employee_name, u.username AS employee_code, " +
+            "m.full_name AS manager_name, c.name AS cycle_name, c.status AS cycle_status, d.department_name " +
+            "FROM kpi_evaluations e " +
+            "JOIN users u ON e.employee_id = u.user_id " +
+            "LEFT JOIN users m ON e.manager_id = m.user_id " +
+            "JOIN kpi_cycles c ON e.cycle_id = c.cycle_id " +
+            "LEFT JOIN departments d ON u.department_id = d.department_id " +
+            "WHERE e.status IN ('SUBMITTED', 'APPROVED') "
+        );
+
+        List<Object> params = new ArrayList<>();
+
+        if (cycleId != null && cycleId > 0) {
+            sql.append("AND e.cycle_id = ? ");
+            params.add(cycleId);
+        }
+        if (departmentId != null && departmentId > 0) {
+            sql.append("AND u.department_id = ? ");
+            params.add(departmentId);
+        }
+        if (managerDeptId != null && managerDeptId > 0) {
+            sql.append("AND u.department_id = ? ");
+            params.add(managerDeptId);
+        }
+
+        sql.append("ORDER BY d.department_name ASC, e.weighted_score DESC, u.full_name ASC");
+
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapEvaluationWithHelpers(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }

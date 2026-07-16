@@ -461,6 +461,12 @@
                                                             <i class="fas fa-clipboard-check"></i> Quản lý bảng công
                                                         </a>
                                                     </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/time-leave-report"
+                                                            class="sidebar-link ${param.activeMenu eq 'time-leave-report' ? 'active' : ''}">
+                                                            <i class="fas fa-file-excel"></i> Báo cáo Công &amp; Phép
+                                                        </a>
+                                                    </li>
 
                                                     <%-- ── Nhân sự & Điều chuyển ── --%>
                                                     <li class="sidebar-menu-category">Nhân sự &amp; Điều chuyển</li>
@@ -557,6 +563,12 @@
                                                             <i class="fas fa-chart-bar"></i> Báo cáo bảng lương
                                                         </a>
                                                     </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/kpi-performance-report"
+                                                            class="sidebar-link ${param.activeMenu eq 'kpi-performance-report' ? 'active' : ''}">
+                                                            <i class="fas fa-chart-line"></i> Báo cáo đánh giá KPI
+                                                        </a>
+                                                    </li>
 
                                                 </c:if>
 
@@ -589,6 +601,12 @@
                                                             <a href="${pageContext.request.contextPath}/manager/kpi-history"
                                                                 class="sidebar-link ${param.activeMenu eq 'kpi-history' ? 'active' : ''}">
                                                                 <i class="fas fa-history"></i> Lịch sử đánh giá KPI
+                                                            </a>
+                                                        </li>
+                                                        <li class="sidebar-item">
+                                                            <a href="${pageContext.request.contextPath}/hr/kpi-performance-report"
+                                                                class="sidebar-link ${param.activeMenu eq 'kpi-performance-report' ? 'active' : ''}">
+                                                                <i class="fas fa-chart-bar"></i> Báo cáo đánh giá KPI
                                                             </a>
                                                         </li>
                                                         <li class="sidebar-item">
@@ -656,6 +674,12 @@
                                                                 <a href="${pageContext.request.contextPath}/hr/master-payroll-report"
                                                                     class="sidebar-link ${param.activeMenu eq 'master-payroll-report' ? 'active' : ''}">
                                                                     <i class="fas fa-chart-bar"></i> Báo cáo bảng lương
+                                                                </a>
+                                                            </li>
+                                                            <li class="sidebar-item">
+                                                                <a href="${pageContext.request.contextPath}/hr/kpi-performance-report"
+                                                                    class="sidebar-link ${param.activeMenu eq 'kpi-performance-report' ? 'active' : ''}">
+                                                                    <i class="fas fa-chart-line"></i> Báo cáo đánh giá KPI
                                                                 </a>
                                                             </li>
                                                             <li class="sidebar-item">
@@ -797,6 +821,12 @@
                                                                         <i class="fas fa-clipboard-check"></i> Quản lý bảng công
                                                                     </a>
                                                                 </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/time-leave-report"
+                                                                        class="sidebar-link ${param.activeMenu eq 'time-leave-report' ? 'active' : ''}">
+                                                                        <i class="fas fa-file-excel"></i> Báo cáo Công &amp; Phép
+                                                                    </a>
+                                                                </li>
 
                                                                 <li class="sidebar-menu-category">Lương &amp; Phúc lợi</li>
                                                                 <li class="sidebar-item">
@@ -869,6 +899,12 @@
                                                                         <a href="${pageContext.request.contextPath}/manager/kpi-history"
                                                                             class="sidebar-link ${param.activeMenu eq 'kpi-history' ? 'active' : ''}">
                                                                             <i class="fas fa-history"></i> Lịch sử đánh giá KPI
+                                                                        </a>
+                                                                    </li>
+                                                                    <li class="sidebar-item">
+                                                                        <a href="${pageContext.request.contextPath}/hr/kpi-performance-report"
+                                                                            class="sidebar-link ${param.activeMenu eq 'kpi-performance-report' ? 'active' : ''}">
+                                                                            <i class="fas fa-chart-bar"></i> Báo cáo đánh giá KPI
                                                                         </a>
                                                                     </li>
                                                                     <li class="sidebar-item">

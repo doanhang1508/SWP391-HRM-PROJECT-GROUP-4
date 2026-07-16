@@ -124,6 +124,11 @@ public class AuthFilter implements Filter {
                     redirectToAppropriate(req, resp, roleId);
                     return;
                 }
+            } else if (path.equals("/hr/kpi-performance-report")) {
+                if (roleId != ROLE_ADMIN && roleId != ROLE_HR_MANAGER && roleId != ROLE_FACTORY_MGR && roleId != ROLE_DIRECTOR && roleId != ROLE_DEPT_MGR) {
+                    redirectToAppropriate(req, resp, roleId);
+                    return;
+                }
 
             } else if (path.equals("/hr/resolve-claim")) {
                 if (roleId != ROLE_HR_MANAGER && roleId != ROLE_HR_STAFF && roleId != ROLE_ACCOUNTANT) {
