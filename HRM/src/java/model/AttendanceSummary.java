@@ -10,6 +10,7 @@ public class AttendanceSummary {
     private int overtimeCount;
     private double totalOvertimeHrs;
     private double scheduledOvertimeHrs;
+    private int sickDayCount;
 
     public AttendanceSummary() {
     }
@@ -84,6 +85,14 @@ public class AttendanceSummary {
 
     public void setScheduledOvertimeHrs(double scheduledOvertimeHrs) {
         this.scheduledOvertimeHrs = scheduledOvertimeHrs;
+    }
+
+    public int getSickDayCount() {
+        return sickDayCount;
+    }
+
+    public void setSickDayCount(int sickDayCount) {
+        this.sickDayCount = sickDayCount;
     }
 }
 

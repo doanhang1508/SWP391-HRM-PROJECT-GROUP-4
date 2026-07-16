@@ -734,7 +734,7 @@
                                     <span id="modalGross">0 ₫</span>
                                 </div>
                                 <div class="d-flex justify-content-between mt-2" style="font-size: 0.88rem;">
-                                    <span class="text-muted">Trợ cấp bảo hiểm (ốm/thai sản):</span>
+                                    <span class="text-muted">Trợ cấp bảo hiểm :</span>
                                     <span class="fw-semibold text-success" id="modalInsuranceBenefit">+ 0 ₫</span>
                                 </div>
                             </div>
@@ -1028,14 +1028,30 @@ document.addEventListener("DOMContentLoaded", function() {
                         document.getElementById('modalTaxableBase').textContent = new Intl.NumberFormat('vi-VN').format(Math.round(data.taxableIncomeBase)) + ' ₫';
                     }
 
+                    // ── Helper: tạo badge BH + Thuế theo đúng logic nghiệp vụ ──
+                    function makeBadges(isBhxh, isTaxable) {
+                        const S = 'font-size:0.72em;padding:1px 6px;border-radius:4px;margin-left:4px;white-space:nowrap;';
+                        const GREEN  = S + 'background:#d1fae5;color:#065f46;';
+                        const RED    = S + 'background:#fee2e2;color:#b91c1c;';
+                        const AMBER  = S + 'background:#fef3c7;color:#92400e;';
+                        const PURPLE = S + 'background:#ede9fe;color:#6d28d9;';
+                        if (!isBhxh && !isTaxable)
+                            return '<span style="' + GREEN  + '">(miễn BH + Thuế)</span>';
+                        if (isBhxh && isTaxable)
+                            return '<span style="' + RED + '">(chịu BH + Thuế)</span>';
+                        if (!isBhxh && isTaxable)
+                            return '<span style="' + GREEN + '">(miễn BH)</span>' +
+                                   '<span style="' + AMBER + '">(chịu Thuế)</span>';
+                        return '<span style="' + RED   + '">(chịu BH)</span>' +
+                               '<span style="' + GREEN + '">(miễn Thuế)</span>';
+                    }
+
                     let allowHtml = '';
                     if (data.allowances && data.allowances.length > 0) {
                         data.allowances.forEach(a => {
-                            const badge = a.isBhxh
-                                ? '<span style="font-size:0.72em;background:#fee2e2;color:#b91c1c;padding:1px 5px;border-radius:4px;margin-left:4px;">(chịu BH)</span>'
-                                : '<span style="font-size:0.72em;background:#d1fae5;color:#065f46;padding:1px 5px;border-radius:4px;margin-left:4px;">(miễn BH)</span>';
+                            const badges = makeBadges(a.isBhxh, a.isTaxable);
                             allowHtml += '<div class="d-flex justify-content-between text-muted" style="align-items:center;">' +
-                                '<span>- ' + a.name + ':' + badge + '</span>' +
+                                '<span>- ' + a.name + ':' + badges + '</span>' +
                                 '<span>+ ' + new Intl.NumberFormat('vi-VN').format(Math.round(a.amount)) + ' ₫</span>' +
                             '</div>';
                         });
@@ -1047,17 +1063,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     let bonusHtml = '';
                     if (data.bonuses && data.bonuses.length > 0) {
                         data.bonuses.forEach(b => {
-                            let badges = '';
-                            if (b.isBhxh === false) {
-                                badges += '<span style="font-size:0.72em;background:#d1fae5;color:#065f46;padding:1px 5px;border-radius:4px;margin-left:4px;">(miễn BH)</span>';
-                            } else {
-                                badges += '<span style="font-size:0.72em;background:#fee2e2;color:#b91c1c;padding:1px 5px;border-radius:4px;margin-left:4px;">(chịu BH)</span>';
-                            }
-                            if (b.isTaxable === false) {
-                                badges += '<span style="font-size:0.72em;background:#d1fae5;color:#065f46;padding:1px 5px;border-radius:4px;margin-left:3px;">(miễn Thuế)</span>';
-                            } else {
-                                badges += '<span style="font-size:0.72em;background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:4px;margin-left:3px;">(chịu Thuế)</span>';
-                            }
+                            const badges = makeBadges(b.isBhxh, b.isTaxable);
                             bonusHtml += '<div class="d-flex justify-content-between text-muted" style="align-items:center;">' +
                                 '<span>- ' + b.name + ':' + badges + '</span>' +
                                 '<span>+ ' + new Intl.NumberFormat('vi-VN').format(Math.round(b.amount)) + ' ₫</span>' +

@@ -125,6 +125,7 @@
                             <th class="text-center">Số công (Hiện diện/Trễ)</th>
                             <th class="text-center">Đi trễ (Lần)</th>
                             <th class="text-center">Vắng (Lần)</th>
+                            <th class="text-center">Nghỉ ốm (Ngày)</th>
                             <th class="text-center">Tăng ca (Giờ)</th>
                         </tr>
                     </thead>
@@ -132,7 +133,7 @@
                         <c:choose>
                             <c:when test="${empty summaryList}">
                                 <tr>
-                                    <td colspan="7" class="text-center py-4 text-muted">
+                                    <td colspan="8" class="text-center py-4 text-muted">
                                         Không có dữ liệu chấm công cho tháng ${selectedMonth}/${selectedYear}
                                     </td>
                                 </tr>
@@ -148,6 +149,16 @@
                                         <td class="text-center"><span class="badge bg-primary rounded-pill">${s.presentCount + s.lateCount}</span></td>
                                         <td class="text-center"><span class="badge bg-warning text-dark rounded-pill">${s.lateCount}</span></td>
                                         <td class="text-center"><span class="badge bg-danger rounded-pill">${s.absentCount}</span></td>
+                                        <td class="text-center">
+                                            <c:choose>
+                                                <c:when test="${s.sickDayCount > 0}">
+                                                    <span class="badge rounded-pill" style="background:#ede9fe;color:#6d28d9;">${s.sickDayCount}</span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="badge bg-secondary rounded-pill" style="opacity:.45;">0</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
                                         <td class="text-center"><span class="badge bg-success rounded-pill">${s.totalOvertimeHrs}</span></td>
                                     </tr>
                                 </c:forEach>
