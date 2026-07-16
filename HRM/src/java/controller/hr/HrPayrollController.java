@@ -438,7 +438,7 @@ public class HrPayrollController extends HttpServlet {
             int activeContractId = (activeContract != null) ? activeContract.getContractId() : 0;
             
             json.append("\"allowances\":[");
-            String sqlAllowance = "SELECT a.allowance_name, a.amount, a.calculation_type, a.is_bhxh_applied " +
+            String sqlAllowance = "SELECT a.allowance_name, a.amount, a.calculation_type, a.is_bhxh_applied, a.is_taxable " +
                                   "FROM position_allowances pa " +
                                   "JOIN allowances a ON pa.allowance_id = a.allowance_id " +
                                   "WHERE pa.position_id = ? AND a.status = 1";
@@ -466,7 +466,8 @@ public class HrPayrollController extends HttpServlet {
                             }
                             
                             json.append("\"amount\":").append(earned).append(",");
-                            json.append("\"isBhxh\":").append(rs.getInt("is_bhxh_applied") == 1);
+                            json.append("\"isBhxh\":").append(rs.getInt("is_bhxh_applied") == 1).append(",");
+                            json.append("\"isTaxable\":").append(rs.getInt("is_taxable") == 1);
                             json.append("}");
                             firstAllow = false;
                         }
@@ -483,7 +484,8 @@ public class HrPayrollController extends HttpServlet {
                 json.append("{");
                 json.append("\"name\":\"").append(escapeHtml("Ph\u1ee5 c\u1ea5p th\u00e2m ni\u00ean")).append("\",");
                 json.append("\"amount\":").append(seniorityAmount).append(",");
-                json.append("\"isBhxh\":true");
+                json.append("\"isBhxh\":true,");
+                json.append("\"isTaxable\":true");
                 json.append("}");
             }
             
