@@ -425,6 +425,12 @@
                                                             <i class="fas fa-file-signature"></i> Quản lý Hợp đồng
                                                         </a>
                                                     </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/report"
+                                                            class="sidebar-link ${param.activeMenu eq 'hr-report' ? 'active' : ''}">
+                                                            <i class="fas fa-chart-bar"></i> Báo cáo Hợp đồng
+                                                        </a>
+                                                    </li>
 
                                                     <%-- ── KPI ── --%>
                                                     <li class="sidebar-menu-category">KPI</li>
@@ -699,6 +705,12 @@
                                                                     <a href="${pageContext.request.contextPath}/hr/contracts"
                                                                         class="sidebar-link ${param.activeMenu eq 'contract-management' ? 'active' : ''}">
                                                                         <i class="fas fa-file-signature"></i> Quản lý Hợp đồng
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/report"
+                                                                        class="sidebar-link ${param.activeMenu eq 'hr-report' ? 'active' : ''}">
+                                                                        <i class="fas fa-chart-bar"></i> Báo cáo Hợp đồng
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">

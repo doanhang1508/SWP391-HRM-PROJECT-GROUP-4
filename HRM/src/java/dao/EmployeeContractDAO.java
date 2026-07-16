@@ -681,14 +681,16 @@ public class EmployeeContractDAO {
     public java.util.List<java.util.Map<String, Object>> getExpiringContracts(java.sql.Date fromDate, java.sql.Date toDate, Integer departmentId) {
         java.util.List<java.util.Map<String, Object>> list = new java.util.ArrayList<>();
         StringBuilder sql = new StringBuilder(
-            "SELECT u.user_id, u.full_name, d.department_name, ct.type_name, ec.end_date, DATEDIFF(ec.end_date, CURDATE()) as days_left " +
+            "SELECT u.user_id, u.full_name, d.department_name, ct.type_name, ec.end_date, COALESCE(DATEDIFF(ec.end_date, CURDATE()), 99999) as days_left " +
             "FROM employee_contracts ec " +
             "JOIN users u ON ec.user_id = u.user_id " +
             "LEFT JOIN departments d ON u.department_id = d.department_id " +
             "LEFT JOIN contract_types ct ON ec.contract_type_id = ct.contract_type_id " +
-            "WHERE ec.status = 'Active' AND ec.end_date IS NOT NULL " +
-            "AND ec.end_date BETWEEN ? AND ? "
+            "WHERE ec.status = 'Active' "
         );
+        if (fromDate != null && toDate != null) {
+            sql.append(" AND ec.end_date IS NOT NULL AND ec.end_date BETWEEN ? AND ? ");
+        }
         if (departmentId != null && departmentId > 0) {
             sql.append(" AND u.department_id = ? ");
         }
@@ -697,10 +699,13 @@ public class EmployeeContractDAO {
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql.toString())) {
             
-            ps.setDate(1, fromDate);
-            ps.setDate(2, toDate);
+            int paramIndex = 1;
+            if (fromDate != null && toDate != null) {
+                ps.setDate(paramIndex++, fromDate);
+                ps.setDate(paramIndex++, toDate);
+            }
             if (departmentId != null && departmentId > 0) {
-                ps.setInt(3, departmentId);
+                ps.setInt(paramIndex++, departmentId);
             }
             
             try (ResultSet rs = ps.executeQuery()) {
