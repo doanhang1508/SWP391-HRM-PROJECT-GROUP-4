@@ -186,6 +186,28 @@ public class UserDAO {
         return list;
     }
 
+    /**
+     * Lấy TẤT CẢ users kể cả đã nghỉ việc / inactive / bị xóa mềm.
+     * Dùng riêng cho luồng Import Excel chấm công để không bỏ sót nhân viên
+     * đã nghỉ nhưng vẫn có dữ liệu chấm công trong tháng cũ.
+     */
+    public java.util.List<User> getAllUsersForImport() {
+        java.util.List<User> list = new java.util.ArrayList<>();
+        // Không WHERE status — lấy tất cả không phân biệt trạng thái
+        String sql = "SELECT * FROM users ORDER BY user_id";
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapResultSetToUser(rs));
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi getAllUsersForImport: " + e.getMessage());
+        }
+        return list;
+    }
+
     // ── Lấy user theo ID ──
     public User getUserById(int userId) {
         String sql = "SELECT * FROM users WHERE user_id = ?";

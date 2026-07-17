@@ -28,3 +28,10 @@ replay_pid*
 /HRM/build/
 /HRM/dist/
 /HRM_AutomationTest/target/
+outputs/
+tools/
+*.xlsx
+*.drawio
+ReadExcelHeaders.java
+TestDynamicParsing.java
+GenerateMockExcel.java

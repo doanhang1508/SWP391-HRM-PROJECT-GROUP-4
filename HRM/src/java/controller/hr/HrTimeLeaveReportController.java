@@ -1,9 +1,10 @@
 package controller.hr;
 
+import dao.AttendanceDAO;
 import dao.DepartmentDAO;
-import dao.TimeLeaveReportDAO;
+import dao.HolidayDAO;
+import model.AttendanceSummary;
 import model.Department;
-import model.TimeLeaveReport;
 import model.User;
 
 import org.apache.poi.ss.usermodel.*;
@@ -23,13 +24,15 @@ import java.util.List;
 @WebServlet(name = "HrTimeLeaveReportController", urlPatterns = {"/hr/time-leave-report"})
 public class HrTimeLeaveReportController extends HttpServlet {
 
-    private TimeLeaveReportDAO timeLeaveReportDAO;
+    private AttendanceDAO attendanceDAO;
     private DepartmentDAO departmentDAO;
+    private HolidayDAO holidayDAO;
 
     @Override
     public void init() throws ServletException {
-        timeLeaveReportDAO = new TimeLeaveReportDAO();
+        attendanceDAO = new AttendanceDAO();
         departmentDAO = new DepartmentDAO();
+        holidayDAO = new HolidayDAO();
     }
 
     @Override
@@ -64,20 +67,25 @@ public class HrTimeLeaveReportController extends HttpServlet {
             try { page = Integer.parseInt(pageStr); } catch (Exception e) {}
         }
         
-        int totalRecords = timeLeaveReportDAO.countReport(month, year, departmentId);
+        int totalRecords = attendanceDAO.countAdvancedAttendanceSummary(month, year, departmentId);
         int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
         if (page > totalPages && totalPages > 0) page = totalPages;
         int offset = (page - 1) * pageSize;
         if (offset < 0) offset = 0;
 
-        List<TimeLeaveReport> reportList = timeLeaveReportDAO.getReport(month, year, departmentId, offset, pageSize);
+        List<AttendanceSummary> reportList = attendanceDAO.getAdvancedAttendanceSummary(month, year, departmentId, offset, pageSize);
+        int standardWorkDays = holidayDAO.getPayrollStandardWorkDays(month, year);
+        for (AttendanceSummary s : reportList) {
+            s.setStandardWorkDays(standardWorkDays);
+        }
+
         List<Department> departments = departmentDAO.getAll();
         
         request.setAttribute("reportList", reportList);
         request.setAttribute("departments", departments);
         request.setAttribute("selectedMonth", month);
         request.setAttribute("selectedYear", year);
-        request.setAttribute("selectedDepartment", departmentId);
+        request.setAttribute("selectedDepartmentId", departmentId);
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
         request.setAttribute("totalRecords", totalRecords);
@@ -120,9 +128,13 @@ public class HrTimeLeaveReportController extends HttpServlet {
         Integer departmentId = (deptStr != null && !deptStr.isEmpty()) ? Integer.parseInt(deptStr) : null;
         
         // Lấy toàn bộ dữ liệu không phân trang
-        List<TimeLeaveReport> list = timeLeaveReportDAO.getReport(month, year, departmentId, 0, 0);
+        List<AttendanceSummary> list = attendanceDAO.getAdvancedAttendanceSummary(month, year, departmentId, 0, Integer.MAX_VALUE);
+        int standardWorkDays = holidayDAO.getPayrollStandardWorkDays(month, year);
+        for (AttendanceSummary s : list) {
+            s.setStandardWorkDays(standardWorkDays);
+        }
         
-        String fileName = "BaoCaoCongPhep_Thang" + month + "_" + year + ".xlsx";
+        String fileName = "Bao_Cao_Tong_Hop_Cong_Phep_M" + month + "_Y" + year + ".xlsx";
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
         
@@ -138,48 +150,96 @@ public class HrTimeLeaveReportController extends HttpServlet {
             headerFont.setBold(true);
             headerStyle.setFont(headerFont);
             
+            // Warning Style (Red text for Late >= 3)
+            CellStyle warningStyle = workbook.createCellStyle();
+            Font warningFont = workbook.createFont();
+            warningFont.setColor(IndexedColors.RED.getIndex());
+            warningFont.setBold(true);
+            warningStyle.setFont(warningFont);
+
+            // Number Warning Style
+            CellStyle numberWarningStyle = workbook.createCellStyle();
+            numberWarningStyle.setFont(warningFont);
+            DataFormat format = workbook.createDataFormat();
+            numberWarningStyle.setDataFormat(format.getFormat("#,##0.0"));
+            
             // Number Style (Format #,##0.0)
             CellStyle numberStyle = workbook.createCellStyle();
-            DataFormat format = workbook.createDataFormat();
             numberStyle.setDataFormat(format.getFormat("#,##0.0"));
             
             Row headerRow = sheet.createRow(0);
-            String[] columns = {"STT", "Mã NV", "Họ và tên", "Phòng ban", "Tổng ngày công", "Số lần đi trễ", "Số giờ OT", "Phép năm đã dùng", "Phép năm còn lại"};
+            String[] columns = {
+                "Mã NV", "Họ Tên", "Phòng Ban", "Công chuẩn", "Công thực tế", 
+                "OT thường (h)", "OT CN (h)", "OT Lễ (h)", "Đi trễ (lần)", 
+                "Nghỉ phép năm (ngày)", "Nghỉ ốm (ngày)", "Nghỉ thai sản (ngày)", "Phép năm còn lại (ngày)"
+            };
             
             for (int i = 0; i < columns.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(columns[i]);
                 cell.setCellStyle(headerStyle);
-                sheet.setColumnWidth(i, 5000);
+                sheet.setColumnWidth(i, 4500);
             }
             
             int rowNum = 1;
-            int stt = 1;
             
-            for (TimeLeaveReport r : list) {
+            for (AttendanceSummary r : list) {
                 Row row = sheet.createRow(rowNum++);
+                boolean isLate = r.getLateCount() >= 3;
+                CellStyle currentStyle = isLate ? warningStyle : null;
+                CellStyle currentNumStyle = isLate ? numberWarningStyle : numberStyle;
                 
-                row.createCell(0).setCellValue(stt++);
-                row.createCell(1).setCellValue(r.getUserId());
-                row.createCell(2).setCellValue(r.getFullName() != null ? r.getFullName() : "");
-                row.createCell(3).setCellValue(r.getDepartmentName() != null ? r.getDepartmentName() : "—");
+                Cell c0 = row.createCell(0);
+                c0.setCellValue("NV" + r.getUserId());
+                if(currentStyle != null) c0.setCellStyle(currentStyle);
+
+                Cell c1 = row.createCell(1);
+                c1.setCellValue(r.getUserName() != null ? r.getUserName() : "");
+                if(currentStyle != null) c1.setCellStyle(currentStyle);
                 
-                // Set total work days and late count as numbers
-                row.createCell(4).setCellValue(r.getTotalWorkDays());
-                row.createCell(5).setCellValue(r.getLateCount());
+                Cell c2 = row.createCell(2);
+                c2.setCellValue(r.getDepartment() != null ? r.getDepartment() : "—");
+                if(currentStyle != null) c2.setCellStyle(currentStyle);
                 
-                // Set formatted numbers for OT and Leave
-                Cell otCell = row.createCell(6);
-                otCell.setCellValue(r.getOtHours());
-                otCell.setCellStyle(numberStyle);
-                
-                Cell usedLeaveCell = row.createCell(7);
-                usedLeaveCell.setCellValue(r.getAnnualLeaveUsed());
-                usedLeaveCell.setCellStyle(numberStyle);
-                
-                Cell remainLeaveCell = row.createCell(8);
-                remainLeaveCell.setCellValue(r.getAnnualLeaveRemaining());
-                remainLeaveCell.setCellStyle(numberStyle);
+                Cell c3 = row.createCell(3);
+                c3.setCellValue(r.getStandardWorkDays());
+                if(currentStyle != null) c3.setCellStyle(currentStyle);
+
+                Cell c4 = row.createCell(4);
+                c4.setCellValue(r.getActualWorkDays());
+                c4.setCellStyle(currentNumStyle);
+
+                Cell c5 = row.createCell(5);
+                c5.setCellValue(r.getRegularOtHrs());
+                c5.setCellStyle(currentNumStyle);
+
+                Cell c6 = row.createCell(6);
+                c6.setCellValue(r.getSundayOtHrs());
+                c6.setCellStyle(currentNumStyle);
+
+                Cell c7 = row.createCell(7);
+                c7.setCellValue(r.getHolidayOtHrs());
+                c7.setCellStyle(currentNumStyle);
+
+                Cell c8 = row.createCell(8);
+                c8.setCellValue(r.getLateCount());
+                if(currentStyle != null) c8.setCellStyle(currentStyle);
+
+                Cell c9 = row.createCell(9);
+                c9.setCellValue(r.getAnnualLeaveDays());
+                c9.setCellStyle(currentNumStyle);
+
+                Cell c10 = row.createCell(10);
+                c10.setCellValue(r.getSickLeaveDays());
+                c10.setCellStyle(currentNumStyle);
+
+                Cell c11 = row.createCell(11);
+                c11.setCellValue(r.getMaternityLeaveDays());
+                c11.setCellStyle(currentNumStyle);
+
+                Cell c12 = row.createCell(12);
+                c12.setCellValue(r.getRemainingAnnualLeave());
+                c12.setCellStyle(currentNumStyle);
             }
             
             try (OutputStream out = response.getOutputStream()) {

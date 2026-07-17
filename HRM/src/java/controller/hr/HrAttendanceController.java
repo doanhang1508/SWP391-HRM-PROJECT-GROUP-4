@@ -1,9 +1,12 @@
 package controller.hr;
 
 import dao.AttendanceDAO;
+import dao.DepartmentDAO;
+import dao.HolidayDAO;
 import dao.UserDAO;
 import model.Attendance;
 import model.AttendanceSummary;
+import model.Department;
 import model.User;
 
 import java.io.IOException;
@@ -22,11 +25,15 @@ public class HrAttendanceController extends HttpServlet {
 
     private AttendanceDAO attendanceDAO;
     private UserDAO userDAO;
+    private DepartmentDAO departmentDAO;
+    private HolidayDAO holidayDAO;
 
     @Override
     public void init() throws ServletException {
         attendanceDAO = new AttendanceDAO();
         userDAO = new UserDAO();
+        departmentDAO = new DepartmentDAO();
+        holidayDAO = new HolidayDAO();
     }
 
     @Override
@@ -83,13 +90,28 @@ public class HrAttendanceController extends HttpServlet {
             try { page = Integer.parseInt(pageStr); } catch (Exception e) {}
         }
         
-        int totalRecords = attendanceDAO.countAttendanceSummaryAllUsers(month, year);
+        String deptIdStr = request.getParameter("departmentId");
+        Integer departmentId = null;
+        if (deptIdStr != null && !deptIdStr.trim().isEmpty()) {
+            try { departmentId = Integer.parseInt(deptIdStr); } catch (Exception e) {}
+        }
+        request.setAttribute("selectedDepartmentId", departmentId);
+        
+        List<Department> departments = departmentDAO.getAll();
+        request.setAttribute("departments", departments);
+        
+        int totalRecords = attendanceDAO.countAdvancedAttendanceSummary(month, year, departmentId);
         int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
         if (page > totalPages && totalPages > 0) page = totalPages;
         int offset = (page - 1) * pageSize;
         if (offset < 0) offset = 0;
 
-        List<AttendanceSummary> summaryList = attendanceDAO.getAttendanceSummaryAllUsersPaginated(month, year, offset, pageSize);
+        List<AttendanceSummary> summaryList = attendanceDAO.getAdvancedAttendanceSummary(month, year, departmentId, offset, pageSize);
+        
+        int standardWorkDays = holidayDAO.getPayrollStandardWorkDays(month, year);
+        for (AttendanceSummary s : summaryList) {
+            s.setStandardWorkDays(standardWorkDays);
+        }
         
         request.setAttribute("summaryList", summaryList);
         request.setAttribute("currentPage", page);
@@ -167,6 +189,12 @@ public class HrAttendanceController extends HttpServlet {
                 String checkInStr = request.getParameter("checkIn");
                 String checkOutStr = request.getParameter("checkOut");
                 String status = request.getParameter("status");
+                String overtimeStr = request.getParameter("overtimeHrs");
+                double overtimeHrs = overtimeStr == null || overtimeStr.trim().isEmpty()
+                        ? 0D : Double.parseDouble(overtimeStr.trim());
+                if (overtimeHrs < 0 || overtimeHrs > 24) {
+                    throw new IllegalArgumentException("So gio OT phai tu 0 den 24.");
+                }
 
                 // Check if attendance is locked
                 if (attendanceDAO.isAttendanceLocked(attendanceId)) {
@@ -175,7 +203,7 @@ public class HrAttendanceController extends HttpServlet {
                     Time checkIn = (checkInStr != null && !checkInStr.trim().isEmpty()) ? Time.valueOf(checkInStr.length() == 5 ? checkInStr + ":00" : checkInStr) : null;
                     Time checkOut = (checkOutStr != null && !checkOutStr.trim().isEmpty()) ? Time.valueOf(checkOutStr.length() == 5 ? checkOutStr + ":00" : checkOutStr) : null;
 
-                    boolean success = attendanceDAO.updateAttendanceHR(attendanceId, checkIn, checkOut, status);
+                    boolean success = attendanceDAO.updateAttendanceHR(attendanceId, checkIn, checkOut, status, overtimeHrs);
                     if (success) {
                         session.setAttribute("successMsg", "Cập nhật chấm công thành công.");
                     } else {
