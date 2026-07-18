@@ -116,15 +116,21 @@
         }
     </style>
 
-    <c:if test="${param.success == 'submitted'}">
+    <c:if test="${param.success == 'sent'}">
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle me-2"></i> Báo cáo KPI đã được nộp phê duyệt thành công!
+            <i class="fas fa-check-circle me-2"></i> Đã gửi bản đánh giá KPI (bản nháp) cho nhân viên xem!
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     </c:if>
-    <c:if test="${param.success == 'bulk_submitted'}">
+    <c:if test="${param.success == 'bulk_sent'}">
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle me-2"></i> Đã nộp thành công ${param.count} bản đánh giá KPI cho phòng ban!
+            <i class="fas fa-check-circle me-2"></i> Đã gửi ${param.count} bản đánh giá KPI cho nhân viên xem!
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </c:if>
+    <c:if test="${param.success == 'finalized'}">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i> Đã chốt KPI thành công! Trạng thái chuyển sang Phê duyệt.
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     </c:if>
@@ -157,16 +163,16 @@
                 <c:if test="${not empty evaluations}">
                     <c:set var="hasDraft" value="false" />
                     <c:forEach var="e" items="${evaluations}">
-                        <c:if test="${e.status == 'DRAFT' || e.status == 'REJECTED'}">
+                        <c:if test="${e.status == 'DRAFT'}">
                             <c:set var="hasDraft" value="true" />
                         </c:if>
                     </c:forEach>
                     <c:if test="${hasDraft && selectedCycle.status != 'LOCKED' && selectedCycle.status != 'CLOSED'}">
-                        <form action="${pageContext.request.contextPath}/manager/employee-kpi" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn nộp tất cả bản đánh giá KPI dạng Nháp/Từ chối của đợt này? Sau khi nộp sẽ không thể chỉnh sửa.')">
-                            <input type="hidden" name="action" value="bulk-submit" />
+                        <form action="${pageContext.request.contextPath}/manager/employee-kpi" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn gửi tất cả bản đánh giá KPI (bản nháp) của đợt này cho nhân viên xem?')">
+                            <input type="hidden" name="action" value="bulk-send" />
                             <input type="hidden" name="cycleId" value="${selectedCycleId}" />
-                            <button type="submit" class="btn btn-primary d-flex align-items-center gap-2 px-3 py-2 fw-semibold" style="border-radius: 8px;">
-                                <i class="fas fa-paper-plane"></i> Nộp tất cả bản đánh giá
+                            <button type="submit" class="btn btn-outline-primary d-flex align-items-center gap-2 px-3 py-2 fw-semibold" style="border-radius: 8px;">
+                                <i class="fas fa-paper-plane"></i> Gửi tất cả cho nhân viên xem
                             </button>
                         </form>
                     </c:if>
@@ -200,7 +206,7 @@
                             <tbody>
                                 <c:forEach var="eval" items="${evaluations}" varStatus="rowStatus">
                                     <tr id="row-${eval.evaluationId}" 
-                                        class="evaluation-row ${eval.status == 'SUBMITTED' || eval.status == 'APPROVED' ? 'row-locked' : ''}" 
+                                        class="evaluation-row ${eval.status == 'APPROVED' ? 'row-locked' : ''}"
                                         data-eval-id="${eval.evaluationId}" 
                                         data-row-idx="${rowStatus.index}"
                                         data-status="${eval.status}">
@@ -223,8 +229,8 @@
                                             
                                             <td class="text-center p-1">
                                                 <c:choose>
-                                                    <c:when test="${(eval.status == 'DRAFT' || eval.status == 'REJECTED') && selectedCycle.status != 'LOCKED' && selectedCycle.status != 'CLOSED'}">
-                                                        <input type="number" 
+                                                    <c:when test="${eval.status == 'DRAFT' && selectedCycle.status != 'LOCKED' && selectedCycle.status != 'CLOSED'}">
+                                                        <input type="number"
                                                                name="score_${eval.evaluationId}_${crit.itemId}"
                                                                class="form-control text-center grid-score-input fw-semibold p-1 mb-1" 
                                                                style="width: 70px; margin: 0 auto; border-radius: 6px;"
@@ -258,8 +264,8 @@
                                         <!-- General Comment Column -->
                                         <td class="p-1">
                                             <c:choose>
-                                                <c:when test="${(eval.status == 'DRAFT' || eval.status == 'REJECTED') && selectedCycle.status != 'LOCKED' && selectedCycle.status != 'CLOSED'}">
-                                                    <input type="text" 
+                                                <c:when test="${eval.status == 'DRAFT' && selectedCycle.status != 'LOCKED' && selectedCycle.status != 'CLOSED'}">
+                                                    <input type="text"
                                                            name="comment_${eval.evaluationId}"
                                                            class="form-control grid-comment-input small p-1" 
                                                            style="min-width: 150px; border-radius: 6px;"
@@ -280,17 +286,14 @@
                                         <!-- Status badge -->
                                         <td class="text-center" id="status-badge-${eval.evaluationId}">
                                             <c:choose>
-                                                <c:when test="${eval.status == 'DRAFT'}">
-                                                    <span class="badge bg-warning-subtle text-warning px-2.5 py-1.5" style="border-radius: 6px;">Nháp</span>
-                                                </c:when>
-                                                <c:when test="${eval.status == 'SUBMITTED'}">
-                                                    <span class="badge bg-primary-subtle text-primary px-2.5 py-1.5" style="border-radius: 6px;">Chờ duyệt</span>
-                                                </c:when>
                                                 <c:when test="${eval.status == 'APPROVED'}">
-                                                    <span class="badge bg-success-subtle text-success px-2.5 py-1.5" style="border-radius: 6px;">Đã duyệt</span>
+                                                    <span class="badge bg-success-subtle text-success px-2.5 py-1.5" style="border-radius: 6px;">Đã phê duyệt</span>
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <span class="badge bg-danger-subtle text-danger px-2.5 py-1.5" style="border-radius: 6px;">Bị từ chối</span>
+                                                    <span class="badge bg-warning-subtle text-warning px-2.5 py-1.5" style="border-radius: 6px;">Nháp</span>
+                                                    <c:if test="${eval.submittedAt != null}">
+                                                        <div class="small text-muted mt-1" style="font-size: 0.7rem;"><i class="fas fa-eye me-1"></i>Đã gửi NV xem</div>
+                                                    </c:if>
                                                 </c:otherwise>
                                             </c:choose>
                                         </td>
@@ -299,13 +302,21 @@
                                         <td class="text-center">
                                             <div class="d-flex justify-content-center gap-1">
                                                 <c:choose>
-                                                    <c:when test="${(eval.status == 'DRAFT' || eval.status == 'REJECTED') && selectedCycle.status != 'LOCKED' && selectedCycle.status != 'CLOSED'}">
-                                                        <form action="${pageContext.request.contextPath}/manager/employee-kpi" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn nộp bản đánh giá KPI của nhân viên này? Sau khi nộp sẽ không thể chỉnh sửa.')">
-                                                            <input type="hidden" name="action" value="submit" />
+                                                    <c:when test="${eval.status == 'DRAFT' && selectedCycle.status != 'LOCKED' && selectedCycle.status != 'CLOSED'}">
+                                                        <form action="${pageContext.request.contextPath}/manager/employee-kpi" method="POST" class="d-inline" onsubmit="return confirm('Gửi bản đánh giá KPI (bản nháp) của nhân viên này cho họ xem?')">
+                                                            <input type="hidden" name="action" value="send" />
                                                             <input type="hidden" name="evaluationId" value="${eval.evaluationId}" />
-                                                            <input type="hidden" name="note" value="Nộp báo cáo đánh giá KPI" />
-                                                            <button type="submit" class="btn btn-primary btn-sm px-2 py-1" style="border-radius: 5px;" title="Nộp báo cáo">
+                                                            <input type="hidden" name="note" value="Gửi bản đánh giá KPI cho nhân viên xem" />
+                                                            <button type="submit" class="btn btn-outline-primary btn-sm px-2 py-1" style="border-radius: 5px;" title="Gửi cho nhân viên xem">
                                                                 <i class="fas fa-paper-plane"></i>
+                                                            </button>
+                                                        </form>
+                                                        <form action="${pageContext.request.contextPath}/manager/employee-kpi" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn CHỐT KPI của nhân viên này? Sau khi chốt (phê duyệt) sẽ không thể chỉnh sửa.')">
+                                                            <input type="hidden" name="action" value="finalize" />
+                                                            <input type="hidden" name="evaluationId" value="${eval.evaluationId}" />
+                                                            <input type="hidden" name="note" value="Chốt KPI" />
+                                                            <button type="submit" class="btn btn-success btn-sm px-2 py-1" style="border-radius: 5px;" title="Chốt KPI">
+                                                                <i class="fas fa-lock"></i>
                                                             </button>
                                                         </form>
                                                     </c:when>
@@ -553,12 +564,21 @@
                             <i class="fas fa-save me-1"></i> Lưu tạm
                         </button>
                         
-                        <form action="${pageContext.request.contextPath}/manager/employee-kpi" method="POST" class="d-inline" id="submitKpiForm">
-                            <input type="hidden" name="action" value="submit" />
+                        <form action="${pageContext.request.contextPath}/manager/employee-kpi" method="POST" class="d-inline" id="sendKpiForm">
+                            <input type="hidden" name="action" value="send" />
                             <input type="hidden" name="evaluationId" value="${detailEval.evaluationId}" />
-                            <input type="hidden" name="note" value="Nộp báo cáo đánh giá KPI" />
-                            <button type="button" id="btnSubmitKpi" class="btn btn-primary px-4 py-2" style="border-radius: 8px;">
-                                <i class="fas fa-paper-plane me-1"></i> Nộp báo cáo
+                            <input type="hidden" name="note" value="Gửi bản đánh giá KPI cho nhân viên xem" />
+                            <button type="button" id="btnSendKpi" class="btn btn-outline-primary px-4 py-2" style="border-radius: 8px;">
+                                <i class="fas fa-paper-plane me-1"></i> Gửi cho nhân viên xem
+                            </button>
+                        </form>
+
+                        <form action="${pageContext.request.contextPath}/manager/employee-kpi" method="POST" class="d-inline" id="finalizeKpiForm">
+                            <input type="hidden" name="action" value="finalize" />
+                            <input type="hidden" name="evaluationId" value="${detailEval.evaluationId}" />
+                            <input type="hidden" name="note" value="Chốt KPI" />
+                            <button type="button" id="btnFinalizeKpi" class="btn btn-success px-4 py-2" style="border-radius: 8px;">
+                                <i class="fas fa-lock me-1"></i> Chốt KPI
                             </button>
                         </form>
                     </c:if>
@@ -672,46 +692,62 @@
                     });
                 });
 
-                // Submit confirmation
-                var btnSubmit = document.getElementById('btnSubmitKpi');
-                btnSubmit.addEventListener('click', function() {
-                    if (confirm('Bạn có chắc chắn muốn nộp báo cáo KPI này không? Sau khi nộp sẽ không thể chỉnh sửa điểm.')) {
-                        // First autosave, then submit
-                        var saveStatus = document.getElementById('saveStatus');
-                        saveStatus.innerHTML = 'Đang lưu trước khi nộp...';
-                        
-                        var formData = new URLSearchParams();
-                        formData.append('action', 'autosave');
-                        formData.append('evaluationId', document.getElementById('evaluationId').value);
-                        formData.append('comment', document.getElementById('generalComment').value);
+                // Lưu tạm (autosave) trước rồi submit form đích
+                function autosaveThenSubmit(formId, savingText) {
+                    var saveStatus = document.getElementById('saveStatus');
+                    saveStatus.innerHTML = savingText;
 
-                        var rows = document.querySelectorAll('.criterion-row');
-                        rows.forEach(function(row) {
-                            formData.append('templateItemId', row.querySelector('input[name="templateItemId"]').value);
-                            formData.append('score', row.querySelector('.item-score').value);
-                            formData.append('itemComment', row.querySelector('input[name="itemComment"]').value);
-                        });
+                    var formData = new URLSearchParams();
+                    formData.append('action', 'autosave');
+                    formData.append('evaluationId', document.getElementById('evaluationId').value);
+                    formData.append('comment', document.getElementById('generalComment').value);
 
-                        fetch('${pageContext.request.contextPath}/manager/employee-kpi', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-                            },
-                            body: formData.toString()
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                document.getElementById('submitKpiForm').submit();
-                            } else {
-                                alert('Lỗi: ' + data.message);
-                            }
-                        })
-                        .catch(error => {
-                            alert('Không thể kết nối lưu trữ.');
-                        });
-                    }
-                });
+                    var rows = document.querySelectorAll('.criterion-row');
+                    rows.forEach(function(row) {
+                        formData.append('templateItemId', row.querySelector('input[name="templateItemId"]').value);
+                        formData.append('score', row.querySelector('.item-score').value);
+                        formData.append('itemComment', row.querySelector('input[name="itemComment"]').value);
+                    });
+
+                    fetch('${pageContext.request.contextPath}/manager/employee-kpi', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+                        },
+                        body: formData.toString()
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            document.getElementById(formId).submit();
+                        } else {
+                            alert('Lỗi: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        alert('Không thể kết nối lưu trữ.');
+                    });
+                }
+
+                // Gửi cho nhân viên xem (giữ trạng thái Nháp)
+                var btnSend = document.getElementById('btnSendKpi');
+                if (btnSend) {
+                    btnSend.addEventListener('click', function() {
+                        if (confirm('Gửi bản đánh giá KPI (bản nháp) này cho nhân viên xem?')) {
+                            autosaveThenSubmit('sendKpiForm', 'Đang lưu trước khi gửi...');
+                        }
+                    });
+                }
+
+                // Chốt KPI (chuyển sang Phê duyệt)
+                var btnFinalize = document.getElementById('btnFinalizeKpi');
+                if (btnFinalize) {
+                    btnFinalize.addEventListener('click', function() {
+                        if (confirm('Bạn có chắc chắn muốn CHỐT KPI này không? Sau khi chốt (phê duyệt) sẽ không thể chỉnh sửa điểm.')) {
+                            autosaveThenSubmit('finalizeKpiForm', 'Đang lưu trước khi chốt...');
+                        }
+                    });
+                }
             }
 
             // Initial calculation
@@ -948,7 +984,7 @@
         // 6. Highlight missing rows
         function highlightMissing(row) {
             const status = row.getAttribute('data-status');
-            if (status !== 'DRAFT' && status !== 'REJECTED') {
+            if (status !== 'DRAFT') {
                 row.classList.remove('row-missing-eval');
                 return;
             }
@@ -1073,8 +1109,8 @@
 
                     const evalId = targetRow.getAttribute('data-eval-id');
                     const status = targetRow.getAttribute('data-status');
-                    
-                    if (status !== 'DRAFT' && status !== 'REJECTED') return;
+
+                    if (status !== 'DRAFT') return;
 
                     rowCells.forEach((cellVal, cOffset) => {
                         const targetColIdx = startColIdx + cOffset;

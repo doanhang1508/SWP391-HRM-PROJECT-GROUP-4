@@ -170,16 +170,10 @@
                                         <td class="text-center">
                                             <c:choose>
                                                 <c:when test="${eval.status == 'APPROVED'}">
-                                                    <span class="badge-status bg-success-subtle text-success">Đã duyệt</span>
-                                                </c:when>
-                                                <c:when test="${eval.status == 'SUBMITTED'}">
-                                                    <span class="badge-status bg-warning-subtle text-warning">Chờ duyệt</span>
-                                                </c:when>
-                                                <c:when test="${eval.status == 'REJECTED'}">
-                                                    <span class="badge-status bg-danger-subtle text-danger">Bị từ chối</span>
+                                                    <span class="badge-status bg-success-subtle text-success">Đã phê duyệt</span>
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <span class="badge-status bg-secondary-subtle text-secondary">Lưu nháp</span>
+                                                    <span class="badge-status bg-warning-subtle text-warning">Nháp</span>
                                                 </c:otherwise>
                                             </c:choose>
                                         </td>

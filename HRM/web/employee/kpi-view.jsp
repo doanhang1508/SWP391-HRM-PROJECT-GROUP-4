@@ -42,14 +42,11 @@
                                         <div class="d-flex justify-content-between align-items-center">
                                             <span class="fw-bold text-dark text-truncate" style="max-width: 70%;">${eval.cycleName}</span>
                                             <c:choose>
-                                                <c:when test="${eval.status == 'SUBMITTED'}">
-                                                    <span class="badge bg-warning-subtle text-warning px-2.5 py-1.5" style="font-size: 0.72rem; border-radius: 6px;">Chờ duyệt</span>
-                                                </c:when>
                                                 <c:when test="${eval.status == 'APPROVED'}">
-                                                    <span class="badge bg-success-subtle text-success px-2.5 py-1.5" style="font-size: 0.72rem; border-radius: 6px;">Đã duyệt</span>
+                                                    <span class="badge bg-success-subtle text-success px-2.5 py-1.5" style="font-size: 0.72rem; border-radius: 6px;">Đã phê duyệt</span>
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <span class="badge bg-danger-subtle text-danger px-2.5 py-1.5" style="font-size: 0.72rem; border-radius: 6px;">Bị từ chối</span>
+                                                    <span class="badge bg-warning-subtle text-warning px-2.5 py-1.5" style="font-size: 0.72rem; border-radius: 6px;">Bản nháp (xem trước)</span>
                                                 </c:otherwise>
                                             </c:choose>
                                         </div>

@@ -415,7 +415,7 @@ public class KpiDAO {
                      "LEFT JOIN users m ON e.manager_id = m.user_id " +
                      "JOIN kpi_cycles c ON e.cycle_id = c.cycle_id " +
                      "LEFT JOIN departments d ON u.department_id = d.department_id " +
-                     "WHERE e.employee_id = ? AND e.status IN ('SUBMITTED', 'APPROVED') " +
+                     "WHERE e.employee_id = ? AND (e.status = 'APPROVED' OR (e.status = 'DRAFT' AND e.submitted_at IS NOT NULL)) " +
                      "ORDER BY c.end_date DESC";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -502,6 +502,33 @@ public class KpiDAO {
             if (success) {
                 // Record status history
                 KpiStatusHistory history = new KpiStatusHistory(0, evaluationId, oldStatus, status, userId, null, note);
+                insertStatusHistory(history);
+            }
+            return success;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Gửi bản đánh giá cho nhân viên xem mà KHÔNG đổi trạng thái (giữ nguyên DRAFT).
+     * Đánh dấu bằng submitted_at để nhân viên có thể thấy bản nháp này.
+     */
+    public boolean markEvaluationSentToEmployee(int evaluationId, int userId, String note) {
+        if (isCycleLockedByEvaluationId(evaluationId)) {
+            return false;
+        }
+        String sql = "UPDATE kpi_evaluations SET submitted_at = NOW(), updated_by = ? WHERE evaluation_id = ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, evaluationId);
+            boolean success = ps.executeUpdate() > 0;
+
+            if (success) {
+                // Record status history (trạng thái không đổi, ghi lại hành động gửi)
+                KpiStatusHistory history = new KpiStatusHistory(0, evaluationId, "DRAFT", "DRAFT", userId, null, note);
                 insertStatusHistory(history);
             }
             return success;
@@ -974,9 +1001,9 @@ public class KpiDAO {
         List<User> employees = new ArrayList<>();
         String empSql;
         if (templateDeptId != null) {
-            empSql = "SELECT user_id, department_id, role_id FROM users WHERE status = 1 AND role_id != 1 AND department_id = ?";
+            empSql = "SELECT user_id, department_id, role_id FROM users WHERE status = 1 AND role_id != 1 AND role_id != 4 AND department_id = ?";
         } else {
-            empSql = "SELECT user_id, department_id, role_id FROM users WHERE status = 1 AND role_id != 1";
+            empSql = "SELECT user_id, department_id, role_id FROM users WHERE status = 1 AND role_id != 1 AND role_id != 4";
         }
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(empSql)) {
@@ -1033,12 +1060,12 @@ public class KpiDAO {
 
             // Determine manager for this employee
             int managerId = 0;
-            if (emp.getRoleId() == 3 || emp.getRoleId() == 6) {
-                // Managers and Factory Managers are managed by the Director
+            if (emp.getRoleId() == 2 || emp.getRoleId() == 3 || emp.getRoleId() == 6) {
+                // HR Managers, Factory Managers, and Department Managers are managed by the Director
                 managerId = directorId;
             } else {
-                // Find a Manager or Department Manager in the same department
-                String mgrSql = "SELECT user_id FROM users WHERE department_id = ? AND role_id IN (3, 6) AND status = 1 LIMIT 1";
+                // Find a Manager, Department Manager, or HR Manager in the same department
+                String mgrSql = "SELECT user_id FROM users WHERE department_id = ? AND role_id IN (2, 3, 6) AND status = 1 LIMIT 1";
                 try (Connection conn = DBContext.getConnection();
                      PreparedStatement ps = conn.prepareStatement(mgrSql)) {
                     ps.setInt(1, emp.getDepartmentId());
@@ -1052,12 +1079,14 @@ public class KpiDAO {
                 }
                 // Fallback: if no manager found in dept, assign to HR Manager (role 2) or HR Staff (role 5)
                 if (managerId == 0) {
-                    String fallbackSql = "SELECT user_id FROM users WHERE role_id IN (2, 5) AND status = 1 LIMIT 1";
+                    String fallbackSql = "SELECT user_id FROM users WHERE role_id IN (2, 5) AND user_id != ? AND status = 1 ORDER BY role_id ASC LIMIT 1";
                     try (Connection conn = DBContext.getConnection();
-                         PreparedStatement ps = conn.prepareStatement(fallbackSql);
-                         ResultSet rs = ps.executeQuery()) {
-                        if (rs.next()) {
-                            managerId = rs.getInt("user_id");
+                         PreparedStatement ps = conn.prepareStatement(fallbackSql)) {
+                        ps.setInt(1, emp.getUserId());
+                        try (ResultSet rs = ps.executeQuery()) {
+                            if (rs.next()) {
+                                managerId = rs.getInt("user_id");
+                            }
                         }
                     } catch (SQLException e) {
                         e.printStackTrace();
@@ -1123,7 +1152,7 @@ public class KpiDAO {
             "LEFT JOIN users m ON e.manager_id = m.user_id " +
             "JOIN kpi_cycles c ON e.cycle_id = c.cycle_id " +
             "LEFT JOIN departments d ON u.department_id = d.department_id " +
-            "WHERE e.status IN ('SUBMITTED', 'APPROVED') "
+            "WHERE e.status = 'APPROVED' "
         );
 
         List<Object> params = new ArrayList<>();
@@ -1242,7 +1271,7 @@ public class KpiDAO {
     }
 
     /**
-     * KPI Performance Report — returns APPROVED/SUBMITTED evaluations
+     * KPI Performance Report — returns APPROVED (đã chốt) evaluations
      * with optional filters: cycleId, departmentId, manager-department restriction.
      *
      * @param cycleId       null = all cycles
@@ -1259,7 +1288,7 @@ public class KpiDAO {
             "LEFT JOIN users m ON e.manager_id = m.user_id " +
             "JOIN kpi_cycles c ON e.cycle_id = c.cycle_id " +
             "LEFT JOIN departments d ON u.department_id = d.department_id " +
-            "WHERE e.status IN ('SUBMITTED', 'APPROVED') "
+            "WHERE e.status = 'APPROVED' "
         );
 
         List<Object> params = new ArrayList<>();

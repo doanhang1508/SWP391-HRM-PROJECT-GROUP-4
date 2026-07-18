@@ -31,6 +31,10 @@ public class EmployeeKpiController extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("currentUser");
+        if (user.getRoleId() == 4) {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
+            return;
+        }
 
         // Fetch evaluations for the logged-in employee
         List<KpiEvaluation> evaluations = kpiDAO.getEvaluationsByEmployee(user.getUserId());
@@ -68,6 +72,10 @@ public class EmployeeKpiController extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("currentUser");
+        if (user.getRoleId() == 4) {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
+            return;
+        }
         String action = request.getParameter("action");
 
         if ("addComment".equals(action)) {
@@ -106,7 +114,7 @@ public class EmployeeKpiController extends HttpServlet {
                         if (eval.getManagerId() > 0) {
                             new notificationDAO().create(eval.getManagerId(), "kpi", "Nhân viên vừa bình luận KPI",
                                 user.getFullName() + " đã thêm bình luận vào bản đánh giá KPI #" + evaluationId + ".",
-                                "/manager/kpi-approvals?evaluationId=" + evaluationId);
+                                "/manager/employee-kpi?viewId=" + evaluationId);
                         }
                         response.sendRedirect(request.getContextPath() + "/employee/kpi-view?id=" + evaluationId + "&success=comment_added");
                         return;

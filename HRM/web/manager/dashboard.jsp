@@ -272,7 +272,7 @@ body { background: #f0f4f8 !important; font-family: 'Inter', sans-serif !importa
                                     <c:otherwise><i class="fas fa-user-clock"></i> Nhân viên chưa được đánh giá</c:otherwise>
                                 </c:choose>
                             </div>
-                            <a href="${pageContext.request.contextPath}/manager/kpi-approvals" class="sc-link"><i class="fas fa-arrow-right"></i> Đánh giá KPI</a>
+                            <a href="${pageContext.request.contextPath}/manager/employee-kpi" class="sc-link"><i class="fas fa-arrow-right"></i> Đánh giá KPI</a>
                         </c:when>
                         <c:otherwise>
                             <div class="sc-val" style="font-size:1.1rem; margin-top:4px;">—</div>
@@ -381,7 +381,7 @@ body { background: #f0f4f8 !important; font-family: 'Inter', sans-serif !importa
                 <div class="card-head">
                     <h3 class="card-title"><span class="ct-dot d-orange"></span>Nhân Viên Cần Đánh Giá KPI</h3>
                     <c:if test="${activeKpiCycle != null}">
-                        <a href="${pageContext.request.contextPath}/manager/kpi-approvals?cycleId=${activeKpiCycle.cycleId}" class="btn btn-ghost">Xem tất cả</a>
+                        <a href="${pageContext.request.contextPath}/manager/employee-kpi?cycleId=${activeKpiCycle.cycleId}" class="btn btn-ghost">Xem tất cả</a>
                     </c:if>
                 </div>
                 <div class="dt-wrap">
@@ -410,7 +410,7 @@ body { background: #f0f4f8 !important; font-family: 'Inter', sans-serif !importa
                                             <td style="color:#64748b;">${ev.cycleName}</td>
                                             <td><span class="badge b-draft"><i class="fas fa-edit"></i> Chưa đánh giá</span></td>
                                             <td>
-                                                <a href="${pageContext.request.contextPath}/manager/kpi-approvals?cycleId=${ev.cycleId}&viewId=${ev.evaluationId}" class="btn btn-primary">Đánh giá</a>
+                                                <a href="${pageContext.request.contextPath}/manager/employee-kpi?cycleId=${ev.cycleId}&viewId=${ev.evaluationId}" class="btn btn-primary">Đánh giá</a>
                                             </td>
                                         </tr>
                                     </c:forEach>

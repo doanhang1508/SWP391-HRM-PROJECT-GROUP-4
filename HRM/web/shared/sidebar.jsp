@@ -431,6 +431,12 @@
                                                     <%-- ── KPI ── --%>
                                                     <li class="sidebar-menu-category">KPI</li>
                                                     <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/manager/employee-kpi"
+                                                            class="sidebar-link ${param.activeMenu eq 'employee-kpi' ? 'active' : ''}">
+                                                            <i class="fas fa-star"></i> Đánh giá KPI
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
                                                         <a href="${pageContext.request.contextPath}/manager/kpi-history"
                                                             class="sidebar-link ${param.activeMenu eq 'kpi-history' ? 'active' : ''}">
                                                             <i class="fas fa-history"></i> Lịch sử đánh giá KPI
@@ -596,12 +602,6 @@
                                                             </a>
                                                         </li>
                                                         <li class="sidebar-item">
-                                                            <a href="${pageContext.request.contextPath}/manager/kpi-approvals"
-                                                                class="sidebar-link ${param.activeMenu eq 'kpi-approvals' ? 'active' : ''}">
-                                                                <i class="fas fa-check-circle"></i> Phê duyệt KPI
-                                                            </a>
-                                                        </li>
-                                                        <li class="sidebar-item">
                                                             <a href="${pageContext.request.contextPath}/manager/kpi-history"
                                                                 class="sidebar-link ${param.activeMenu eq 'kpi-history' ? 'active' : ''}">
                                                                 <i class="fas fa-history"></i> Lịch sử đánh giá KPI
@@ -684,6 +684,12 @@
                                                                 <a href="${pageContext.request.contextPath}/hr/kpi-performance-report"
                                                                     class="sidebar-link ${param.activeMenu eq 'kpi-performance-report' ? 'active' : ''}">
                                                                     <i class="fas fa-chart-line"></i> Báo cáo đánh giá KPI
+                                                                </a>
+                                                            </li>
+                                                            <li class="sidebar-item">
+                                                                <a href="${pageContext.request.contextPath}/manager/employee-kpi"
+                                                                    class="sidebar-link ${param.activeMenu eq 'employee-kpi' ? 'active' : ''}">
+                                                                    <i class="fas fa-star"></i> Đánh giá KPI
                                                                 </a>
                                                             </li>
                                                             <li class="sidebar-item">
@@ -897,13 +903,6 @@
                                                                         </a>
                                                                     </li>
                                                                     <li class="sidebar-item">
-                                                                        <a href="${pageContext.request.contextPath}/manager/kpi-approvals"
-                                                                            class="sidebar-link ${param.activeMenu eq 'kpi-approvals' ? 'active' : ''}">
-                                                                            <i class="fas fa-check-circle"></i> Phê
-                                                                            duyệt KPI
-                                                                        </a>
-                                                                    </li>
-                                                                    <li class="sidebar-item">
                                                                         <a href="${pageContext.request.contextPath}/manager/kpi-history"
                                                                             class="sidebar-link ${param.activeMenu eq 'kpi-history' ? 'active' : ''}">
                                                                             <i class="fas fa-history"></i> Lịch sử đánh giá KPI
@@ -1083,6 +1082,15 @@
                                                                             <%-- Phiếu lương cá nhân: hiển thị cho mọi
                                                                                 role có lương (trừ Admin và Employee -
                                                                                 Employee đã có ở section riêng) --%>
+                                                                                <c:if
+                                                                                    test="${sessionScope.currentUser.roleId != 1 && sessionScope.currentUser.roleId != 7 && sessionScope.currentUser.roleId != 4}">
+                                                                                    <li class="sidebar-item">
+                                                                                        <a href="${pageContext.request.contextPath}/employee/kpi-view"
+                                                                                            class="sidebar-link ${param.activeMenu eq 'employee-kpi-view' ? 'active' : ''}">
+                                                                                            <i class="fas fa-star"></i> Đánh giá KPI cá nhân
+                                                                                        </a>
+                                                                                    </li>
+                                                                                </c:if>
                                                                                 <c:if
                                                                                     test="${sessionScope.currentUser.roleId != 1 && sessionScope.currentUser.roleId != 7}">
                                                                                     <li class="sidebar-item">

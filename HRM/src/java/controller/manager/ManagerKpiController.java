@@ -1,11 +1,14 @@
 package controller.manager;
 
 import dao.KpiDAO;
+import dao.EmployeeContractDAO;
+import dao.RewardDisciplineDAO;
 import model.KpiCycle;
 import model.KpiEvaluation;
 import model.KpiEvaluationItem;
 import model.KpiComment;
 import model.User;
+import model.EmployeeContract;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -16,6 +19,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Calendar;
 
 @WebServlet(name = "ManagerKpiController", urlPatterns = {"/manager/employee-kpi"})
 public class ManagerKpiController extends HttpServlet {
@@ -103,7 +107,7 @@ public class ManagerKpiController extends HttpServlet {
                 request.setAttribute("statusHistory", kpiDAO.getStatusHistory(editId));
                 request.setAttribute("comments", kpiDAO.getComments(editId));
                 boolean isLocked = kpiDAO.isCycleLockedByEvaluationId(editId);
-                request.setAttribute("isEditMode", !isLocked);
+                request.setAttribute("isEditMode", !isLocked && "DRAFT".equals(detailEval.getStatus()));
             }
         }
 
@@ -182,9 +186,9 @@ public class ManagerKpiController extends HttpServlet {
                 return;
             }
 
-            // Verify status: Only draft or rejected evaluations can be edited
-            if (!"DRAFT".equals(eval.getStatus()) && !"REJECTED".equals(eval.getStatus())) {
-                response.getWriter().write("{\"status\":\"error\", \"message\":\"Bản đánh giá đã nộp hoặc được duyệt, không thể chỉnh sửa\"}");
+            // Verify status: Only draft evaluations can be edited
+            if (!"DRAFT".equals(eval.getStatus())) {
+                response.getWriter().write("{\"status\":\"error\", \"message\":\"Bản đánh giá đã được chốt (phê duyệt), không thể chỉnh sửa\"}");
                 return;
             }
 
@@ -281,14 +285,14 @@ public class ManagerKpiController extends HttpServlet {
             }
             response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?error=comment_failed");
             return;
-        } else if ("submit".equals(action)) {
+        } else if ("send".equals(action)) {
+            // Gửi bản đánh giá (Nháp) cho nhân viên xem — không đổi trạng thái
             String evaluationIdStr = request.getParameter("evaluationId");
             String note = request.getParameter("note");
 
             if (evaluationIdStr != null && !evaluationIdStr.isEmpty()) {
                 int evaluationId = Integer.parseInt(evaluationIdStr);
 
-                // Authorization check: verify this manager is authorized for this evaluation
                 if (!kpiDAO.isManagerAuthorizedForEvaluation(user.getUserId(), user.getRoleId(), evaluationId)) {
                     response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?error=unauthorized");
                     return;
@@ -301,18 +305,21 @@ public class ManagerKpiController extends HttpServlet {
 
                 KpiEvaluation eval = kpiDAO.getEvaluationById(evaluationId);
 
-                if (eval != null) {
-                    if ("DRAFT".equals(eval.getStatus()) || "REJECTED".equals(eval.getStatus())) {
-                        boolean updated = kpiDAO.updateEvaluationStatus(evaluationId, "SUBMITTED", user.getUserId(), note);
-                        if (updated) {
-                            response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?cycleId=" + eval.getCycleId() + "&success=submitted");
-                            return;
-                        }
+                if (eval != null && "DRAFT".equals(eval.getStatus())) {
+                    boolean sent = kpiDAO.markEvaluationSentToEmployee(evaluationId, user.getUserId(),
+                            note != null ? note : "Gửi bản đánh giá KPI cho nhân viên xem");
+                    if (sent) {
+                        new dao.notificationDAO().create(eval.getEmployeeId(), "kpi",
+                                "Đánh giá KPI đã được gửi để bạn xem",
+                                "Quản lý " + user.getFullName() + " đã gửi bản đánh giá KPI (bản nháp) để bạn xem trước.",
+                                "/employee/kpi-view?id=" + evaluationId);
+                        response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?cycleId=" + eval.getCycleId() + "&success=sent");
+                        return;
                     }
                 }
             }
-            response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?error=submit_failed");
-        } else if ("bulk-submit".equals(action)) {
+            response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?error=send_failed");
+        } else if ("bulk-send".equals(action)) {
             String cycleIdStr = request.getParameter("cycleId");
             String note = request.getParameter("note");
             if (cycleIdStr != null && !cycleIdStr.isEmpty()) {
@@ -325,17 +332,97 @@ public class ManagerKpiController extends HttpServlet {
                 List<KpiEvaluation> evals = kpiDAO.getEvaluationsByCycleAndManager(cycleId, user.getUserId());
                 int successCount = 0;
                 for (KpiEvaluation eval : evals) {
-                    if ("DRAFT".equals(eval.getStatus()) || "REJECTED".equals(eval.getStatus())) {
-                        boolean updated = kpiDAO.updateEvaluationStatus(eval.getEvaluationId(), "SUBMITTED", user.getUserId(), note != null ? note : "Nộp hàng loạt báo cáo KPI");
-                        if (updated) {
+                    if ("DRAFT".equals(eval.getStatus())) {
+                        boolean sent = kpiDAO.markEvaluationSentToEmployee(eval.getEvaluationId(), user.getUserId(),
+                                note != null ? note : "Gửi hàng loạt bản đánh giá KPI cho nhân viên xem");
+                        if (sent) {
+                            new dao.notificationDAO().create(eval.getEmployeeId(), "kpi",
+                                    "Đánh giá KPI đã được gửi để bạn xem",
+                                    "Quản lý " + user.getFullName() + " đã gửi bản đánh giá KPI (bản nháp) để bạn xem trước.",
+                                    "/employee/kpi-view?id=" + eval.getEvaluationId());
                             successCount++;
                         }
                     }
                 }
-                response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?cycleId=" + cycleId + "&success=bulk_submitted&count=" + successCount);
+                response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?cycleId=" + cycleId + "&success=bulk_sent&count=" + successCount);
                 return;
             }
-            response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?error=submit_failed");
+            response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?error=send_failed");
+        } else if ("finalize".equals(action)) {
+            // Chốt KPI — chuyển trạng thái sang APPROVED (Phê duyệt)
+            String evaluationIdStr = request.getParameter("evaluationId");
+            String note = request.getParameter("note");
+
+            if (evaluationIdStr != null && !evaluationIdStr.isEmpty()) {
+                int evaluationId = Integer.parseInt(evaluationIdStr);
+
+                if (!kpiDAO.isManagerAuthorizedForEvaluation(user.getUserId(), user.getRoleId(), evaluationId)) {
+                    response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?error=unauthorized");
+                    return;
+                }
+
+                if (kpiDAO.isCycleLockedByEvaluationId(evaluationId)) {
+                    response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?error=cycle_locked");
+                    return;
+                }
+
+                KpiEvaluation eval = kpiDAO.getEvaluationById(evaluationId);
+
+                if (eval != null && "DRAFT".equals(eval.getStatus())) {
+                    boolean updated = kpiDAO.updateEvaluationStatus(evaluationId, "APPROVED", user.getUserId(),
+                            note != null ? note : "Chốt KPI");
+                    if (updated) {
+                        new dao.notificationDAO().create(eval.getEmployeeId(), "kpi",
+                                "Đánh giá KPI đã được chốt",
+                                "Quản lý " + user.getFullName() + " đã chốt (phê duyệt) đánh giá KPI của bạn.",
+                                "/employee/kpi-view?id=" + evaluationId);
+                        createKpiRewardIfEligible(eval);
+                        response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?cycleId=" + eval.getCycleId() + "&success=finalized");
+                        return;
+                    }
+                }
+            }
+            response.sendRedirect(request.getContextPath() + "/manager/employee-kpi?error=finalize_failed");
+        }
+    }
+
+    /**
+     * Tích hợp bảng lương: khi chốt KPI, tự tính và tạo đề xuất thưởng KPI cho nhân viên.
+     * Port từ luồng phê duyệt cũ.
+     */
+    private void createKpiRewardIfEligible(KpiEvaluation eval) {
+        try {
+            EmployeeContractDAO contractDAO = new EmployeeContractDAO();
+            EmployeeContract contract = contractDAO.getActiveContract(eval.getEmployeeId());
+            if (contract != null && contract.getBaseSalary() != null) {
+                KpiCycle cycle = kpiDAO.getCycleById(eval.getCycleId());
+                int month = 0;
+                int year = 0;
+                if (cycle != null && cycle.getEndDate() != null) {
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(cycle.getEndDate());
+                    int endMonth = cal.get(Calendar.MONTH) + 1;
+                    int endYear = cal.get(Calendar.YEAR);
+
+                    // Shift to the next month for payroll integration
+                    if (endMonth == 12) {
+                        month = 1;
+                        year = endYear + 1;
+                    } else {
+                        month = endMonth + 1;
+                        year = endYear;
+                    }
+                }
+
+                if (month > 0 && year > 0) {
+                    RewardDisciplineDAO rdDAO = new RewardDisciplineDAO();
+                    // Pass kpiScore as a ratio (e.g. 8.5/10 = 0.85)
+                    rdDAO.calculateKPIBonus(eval.getEmployeeId(), month, year, contract.getBaseSalary(), eval.getWeightedScore() / 10.0);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Không chặn việc chốt KPI nếu tạo thưởng thất bại
         }
     }
 }
