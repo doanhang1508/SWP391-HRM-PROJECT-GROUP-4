@@ -174,20 +174,19 @@ public class ImportAttendanceController extends HttpServlet {
                 return;
             }
 
-            if (records.isEmpty()) {
-                long monthMismatchCount = parseErrors.stream()
-                        .filter(e -> e.contains("không thuộc Tháng"))
-                        .count();
+            // ── ALL OR NOTHING VALIDATION ──
+            // Chỉ cần có 1 dòng lỗi (parseErrors không rỗng), từ chối lưu toàn bộ file để tránh rác dữ liệu.
+            if (!parseErrors.isEmpty() || records.isEmpty()) {
                 String errorMessage;
-                if (monthMismatchCount > 0 && monthMismatchCount == parseErrors.size()) {
-                    errorMessage = "File bạn chọn không khớp với Tháng " + month + "/" + year
-                            + " đã chọn. Vui lòng kiểm tra lại file hoặc chọn đúng tháng/năm tương ứng.";
+                if (records.isEmpty() && parseErrors.isEmpty()) {
+                    errorMessage = "Không có dữ liệu để import (file rỗng hoặc chỉ chứa header).";
                 } else {
-                    errorMessage = "Không có dữ liệu hợp lệ để import. "
-                            + (parseErrors.isEmpty() ? ""
-                                    : "Lỗi: "
-                                            + String.join("; ",
-                                                    parseErrors.subList(0, Math.min(3, parseErrors.size()))));
+                    long monthMismatchCount = parseErrors.stream().filter(e -> e.contains("không thuộc Tháng")).count();
+                    if (monthMismatchCount > 0 && monthMismatchCount == parseErrors.size()) {
+                        errorMessage = "File bạn chọn không khớp với Tháng " + month + "/" + year + " đã chọn. Vui lòng kiểm tra lại file hoặc chọn đúng tháng/năm.";
+                    } else {
+                        errorMessage = "Phát hiện " + parseErrors.size() + " lỗi trong file. Để đảm bảo tính toàn vẹn dữ liệu (All-or-Nothing), hệ thống từ chối lưu. Vui lòng sửa lỗi và import lại từ đầu.";
+                    }
                 }
                 session.setAttribute("errorMessage", errorMessage);
                 session.setAttribute("fullParseErrors", parseErrors);

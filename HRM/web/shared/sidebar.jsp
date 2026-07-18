@@ -425,12 +425,7 @@
                                                             <i class="fas fa-file-signature"></i> Quản lý Hợp đồng
                                                         </a>
                                                     </li>
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/report"
-                                                            class="sidebar-link ${param.activeMenu eq 'hr-report' ? 'active' : ''}">
-                                                            <i class="fas fa-chart-bar"></i> Báo cáo Hợp đồng
-                                                        </a>
-                                                    </li>
+
 
 
                                                     <%-- ── KPI ── --%>
@@ -462,12 +457,7 @@
                                                             <i class="fas fa-clipboard-check"></i> Quản lý bảng công
                                                         </a>
                                                     </li>
-                                                    <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/time-leave-report"
-                                                            class="sidebar-link ${param.activeMenu eq 'time-leave-report' ? 'active' : ''}">
-                                                            <i class="fas fa-file-excel"></i> Báo cáo Công &amp; Phép
-                                                        </a>
-                                                    </li>
+
 
                                                     <%-- ── Nhân sự & Điều chuyển ── --%>
                                                     <li class="sidebar-menu-category">Nhân sự &amp; Điều chuyển</li>
@@ -556,6 +546,19 @@
                                                         <a href="${pageContext.request.contextPath}/hr/payroll"
                                                             class="sidebar-link ${param.activeMenu eq 'payroll' ? 'active' : ''}">
                                                             <i class="fas fa-file-invoice-dollar"></i> Bảng lương
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-menu-category">Báo cáo</li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/report"
+                                                            class="sidebar-link ${param.activeMenu eq 'hr-report' ? 'active' : ''}">
+                                                            <i class="fas fa-chart-bar"></i> Báo cáo Hợp đồng
+                                                        </a>
+                                                    </li>
+                                                    <li class="sidebar-item">
+                                                        <a href="${pageContext.request.contextPath}/hr/time-leave-report"
+                                                            class="sidebar-link ${param.activeMenu eq 'time-leave-report' ? 'active' : ''}">
+                                                            <i class="fas fa-file-excel"></i> Báo cáo Công &amp; Phép
                                                         </a>
                                                     </li>
                                                     <li class="sidebar-item">
@@ -709,12 +712,7 @@
                                                                     </a>
                                                                 </li>
 
-                                                                <li class="sidebar-item">
-                                                                    <a href="${pageContext.request.contextPath}/hr/report"
-                                                                        class="sidebar-link ${param.activeMenu eq 'hr-report' ? 'active' : ''}">
-                                                                        <i class="fas fa-chart-bar"></i> Báo cáo Hợp đồng
-                                                                    </a>
-                                                                </li>
+
                                                                 <li class="sidebar-item">
                                                                     <a href="${pageContext.request.contextPath}/hr/department"
                                                                         class="sidebar-link ${param.activeMenu eq 'department' ? 'active' : ''}">
@@ -823,12 +821,7 @@
                                                                         <i class="fas fa-clipboard-check"></i> Quản lý bảng công
                                                                     </a>
                                                                 </li>
-                                                                <li class="sidebar-item">
-                                                                    <a href="${pageContext.request.contextPath}/hr/time-leave-report"
-                                                                        class="sidebar-link ${param.activeMenu eq 'time-leave-report' ? 'active' : ''}">
-                                                                        <i class="fas fa-file-excel"></i> Báo cáo Công &amp; Phép
-                                                                    </a>
-                                                                </li>
+
 
                                                                 <li class="sidebar-menu-category">Lương &amp; Phúc lợi</li>
                                                                 <li class="sidebar-item">
@@ -865,6 +858,19 @@
                                                                     <a href="${pageContext.request.contextPath}/hr/manual-reward-discipline"
                                                                         class="sidebar-link ${param.activeMenu eq 'manual-reward' ? 'active' : ''}">
                                                                         <i class="fas fa-award"></i> Khen thưởng/Kỷ luật
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-menu-category">Báo cáo</li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/report"
+                                                                        class="sidebar-link ${param.activeMenu eq 'hr-report' ? 'active' : ''}">
+                                                                        <i class="fas fa-chart-bar"></i> Báo cáo Hợp đồng
+                                                                    </a>
+                                                                </li>
+                                                                <li class="sidebar-item">
+                                                                    <a href="${pageContext.request.contextPath}/hr/time-leave-report"
+                                                                        class="sidebar-link ${param.activeMenu eq 'time-leave-report' ? 'active' : ''}">
+                                                                        <i class="fas fa-file-excel"></i> Báo cáo Công &amp; Phép
                                                                     </a>
                                                                 </li>
                                                             </c:if>
