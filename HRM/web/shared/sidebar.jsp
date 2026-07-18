@@ -466,7 +466,7 @@
                                                         </a>
                                                     </li>
                                                     <li class="sidebar-item">
-                                                        <a href="${pageContext.request.contextPath}/hr/attendance-management?action=summary"
+                                                        <a href="${pageContext.request.contextPath}/hr/attendance-management?action=detail"
                                                             class="sidebar-link ${param.activeMenu eq 'attendance-summary' || param.activeMenu eq 'attendance-detail' ? 'active' : ''}">
                                                             <i class="fas fa-clipboard-check"></i> Quản lý bảng công
                                                         </a>
@@ -830,7 +830,7 @@
                                                                     </a>
                                                                 </li>
                                                                 <li class="sidebar-item">
-                                                                    <a href="${pageContext.request.contextPath}/hr/attendance-management?action=summary"
+                                                                    <a href="${pageContext.request.contextPath}/hr/attendance-management?action=detail"
                                                                         class="sidebar-link ${param.activeMenu eq 'attendance-summary' || param.activeMenu eq 'attendance-detail' ? 'active' : ''}">
                                                                         <i class="fas fa-clipboard-check"></i> Quản lý bảng công
                                                                     </a>

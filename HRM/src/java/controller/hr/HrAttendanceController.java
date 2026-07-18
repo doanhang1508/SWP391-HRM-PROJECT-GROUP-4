@@ -52,9 +52,13 @@ public class HrAttendanceController extends HttpServlet {
             return;
         }
 
+        // "Quản lý bảng công" giờ chỉ hiển thị Chi Tiết Chấm Công; phần Tổng Hợp
+        // đã chuyển sang trang "Báo cáo Công & Phép" (/hr/time-leave-report), nhưng
+        // action=summary vẫn được giữ nguyên bên dưới để trang báo cáo đó có thể
+        // liên kết tới mà không phải viết lại toàn bộ logic tổng hợp.
         String action = request.getParameter("action");
         if (action == null) {
-            action = "summary";
+            action = "detail";
         }
 
         // Get month and year parameter or default to current
@@ -76,7 +80,7 @@ public class HrAttendanceController extends HttpServlet {
                 viewDetail(request, response, month, year);
                 break;
             default:
-                response.sendRedirect(request.getContextPath() + "/hr/attendance-management?action=summary");
+                response.sendRedirect(request.getContextPath() + "/hr/attendance-management?action=detail");
                 break;
         }
     }
@@ -225,7 +229,7 @@ public class HrAttendanceController extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + "/hr/attendance-management?action=detail");
             }
         } else {
-            response.sendRedirect(request.getContextPath() + "/hr/attendance-management?action=summary");
+            response.sendRedirect(request.getContextPath() + "/hr/attendance-management?action=detail");
         }
     }
 }

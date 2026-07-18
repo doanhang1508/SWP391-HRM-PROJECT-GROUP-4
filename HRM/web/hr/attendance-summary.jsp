@@ -74,7 +74,7 @@
 
 <div class="dashboard-wrapper">
     <jsp:include page="../shared/sidebar.jsp">
-        <jsp:param name="activeMenu" value="attendance-summary" />
+        <jsp:param name="activeMenu" value="time-leave-report" />
     </jsp:include>
 
     <div class="main-content">
@@ -85,8 +85,8 @@
                     Tổng Hợp Chấm Công
                 </h2>
                 <div>
-                    <a href="${pageContext.request.contextPath}/hr/attendance-management?action=detail&month=${selectedMonth}&year=${selectedYear}" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-list"></i> Chi tiết chấm công
+                    <a href="${pageContext.request.contextPath}/hr/time-leave-report" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-arrow-left"></i> Báo cáo Công &amp; Phép
                     </a>
                 </div>
             </div>

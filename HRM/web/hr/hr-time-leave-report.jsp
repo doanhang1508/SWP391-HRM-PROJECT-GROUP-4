@@ -94,6 +94,9 @@
                     Báo cáo Tổng hợp Công & Phép
                 </h2>
                 <div>
+                    <a href="${pageContext.request.contextPath}/hr/attendance-management?action=summary&month=${selectedMonth}&year=${selectedYear}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-clipboard-list"></i> Tổng hợp chấm công
+                    </a>
                     <!-- Form xuất excel -->
                     <form action="${pageContext.request.contextPath}/hr/time-leave-report" method="post" style="display:inline;">
                         <input type="hidden" name="action" value="exportExcel">

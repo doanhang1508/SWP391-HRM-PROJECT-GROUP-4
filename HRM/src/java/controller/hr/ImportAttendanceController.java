@@ -492,7 +492,87 @@ public class ImportAttendanceController extends HttpServlet {
                 }
 
                 if (daysRow == null) {
-                    throw new Exception("Không tìm thấy dòng ngày (chứa các số từ 1-31) ở Sheet Bảng Công.");
+                    // ── Fallback chế độ 1-SHEET ──
+                    // Không tìm thấy dòng ngày 1-31 nghĩa là workbook không có sheet
+                    // "Bảng Công" riêng (chỉ có mỗi sheet quẹt thẻ "Chi Tiết Chấm Công").
+                    // Nếu file thật sự có nhiều sheet nhưng sheet Bảng Công bị sai định
+                    // dạng, đây vẫn là lỗi dữ liệu thật → tiếp tục báo lỗi như cũ.
+                    if (wb.getNumberOfSheets() > 1 && sheet0 != sheet) {
+                        throw new Exception("Không tìm thấy dòng ngày (chứa các số từ 1-31) ở Sheet Bảng Công.");
+                    }
+
+                    // Workbook chỉ có 1 sheet: tạo bản ghi Attendance trực tiếp từ
+                    // swipeMap đã đọc ở bước 1. Không có cột "Ca làm việc" tường minh
+                    // nên Ca làm việc được suy luận là ca có giờ bắt đầu gần nhất với
+                    // giờ quẹt vào thực tế của từng ngày. Chế độ này KHÔNG phân biệt
+                    // được Nghỉ phép/Nghỉ ốm/Thai sản — mọi ngày có quẹt thẻ được ghi
+                    // PRESENT, hoặc LATE nếu quẹt vào trễ hơn 15 phút so với giờ bắt
+                    // đầu ca suy luận được.
+                    if (allShifts.isEmpty()) {
+                        throw new Exception("Không có Ca làm việc nào được cấu hình trong hệ thống để gán tự động.");
+                    }
+
+                    for (java.util.Map.Entry<String, java.util.Map<LocalDate, List<Time>>> empEntry : swipeMap
+                            .entrySet()) {
+                        String empCode = empEntry.getKey();
+
+                        User user = null;
+                        if (empCode.startsWith("NV")) {
+                            try {
+                                int userId = Integer.parseInt(empCode.substring(2));
+                                user = userMap.get(userId);
+                                if (user == null) {
+                                    user = userDAO.getUserById(userId);
+                                    if (user != null) {
+                                        userMap.put(userId, user);
+                                    }
+                                }
+                            } catch (NumberFormatException ignored) {
+                            }
+                        }
+                        if (user == null) {
+                            user = usernameMap.get(empCode);
+                        }
+                        if (user == null) {
+                            errors.add("[Chi Tiết Chấm Công] Không tìm thấy nhân viên: " + empCode
+                                    + " (Mã NV này không tồn tại trong hệ thống, vui lòng kiểm tra lại file Excel)");
+                            continue;
+                        }
+
+                        for (java.util.Map.Entry<LocalDate, List<Time>> dayEntry : empEntry.getValue().entrySet()) {
+                            LocalDate workLocalDate = dayEntry.getKey();
+                            List<Time> swipes = dayEntry.getValue();
+                            if (swipes == null || swipes.isEmpty()) {
+                                continue;
+                            }
+                            java.util.Collections.sort(swipes);
+                            Time checkIn = swipes.get(0);
+                            Time checkOut = swipes.size() > 1 ? swipes.get(swipes.size() - 1) : null;
+
+                            Shift nearestShift = findNearestShift(allShifts, checkIn);
+
+                            Attendance a = new Attendance();
+                            a.setUserId(user.getUserId());
+                            a.setShiftId(nearestShift.getShiftId());
+                            a.setWorkDate(Date.valueOf(workLocalDate));
+                            a.setCheckIn(checkIn);
+                            a.setCheckOut(checkOut);
+
+                            String status = "PRESENT";
+                            if (nearestShift.getStartTime() != null) {
+                                java.time.LocalTime shiftStart = nearestShift.getStartTime();
+                                java.time.LocalTime actualIn = checkIn.toLocalTime();
+                                if (actualIn.isAfter(shiftStart.plusMinutes(15))) {
+                                    status = "LATE";
+                                }
+                            }
+                            a.setStatus(status);
+                            a.setOvertimeHrs(0.0);
+                            a.setOtReason("");
+                            records.add(a);
+                        }
+                    }
+                    return;
                 }
 
                 java.util.Map<Integer, Integer> colToDayMap = new java.util.HashMap<>();
@@ -770,6 +850,34 @@ public class ImportAttendanceController extends HttpServlet {
         } catch (RuntimeException ignored) {
             return null;
         }
+    }
+
+    /**
+     * Chọn Ca làm việc có giờ bắt đầu (start_time) gần nhất với giờ quẹt vào
+     * thực tế. Dùng cho chế độ import 1-sheet, khi file không có cột "Ca làm
+     * việc" tường minh để tra cứu trực tiếp như chế độ 2-sheet (Bảng Công).
+     */
+    private Shift findNearestShift(List<Shift> allShifts, Time checkIn) {
+        if (allShifts == null || allShifts.isEmpty()) {
+            return null;
+        }
+        if (checkIn == null) {
+            return allShifts.get(0);
+        }
+        java.time.LocalTime actualIn = checkIn.toLocalTime();
+        Shift best = null;
+        long bestDiff = Long.MAX_VALUE;
+        for (Shift s : allShifts) {
+            if (s.getStartTime() == null) {
+                continue;
+            }
+            long diff = Math.abs(java.time.Duration.between(s.getStartTime(), actualIn).toMinutes());
+            if (diff < bestDiff) {
+                bestDiff = diff;
+                best = s;
+            }
+        }
+        return best != null ? best : allShifts.get(0);
     }
 
     private boolean isRowEmpty(Row row) {
