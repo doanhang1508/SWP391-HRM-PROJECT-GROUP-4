@@ -38,10 +38,10 @@ public class EmailUtil {
             }
         });
 
-        Message message = new MimeMessage(session);
+        MimeMessage message = new MimeMessage(session);
         message.setFrom(new InternetAddress(FROM_EMAIL));
         message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
-        message.setSubject(subject);
+        message.setSubject(subject, "UTF-8");
         message.setContent(htmlContent, "text/html; charset=UTF-8");
 
         Transport.send(message);
