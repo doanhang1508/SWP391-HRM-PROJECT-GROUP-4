@@ -92,7 +92,7 @@
                         <input type="hidden" name="action" value="exportExcel">
                         <input type="hidden" name="month" value="${selectedMonth}">
                         <input type="hidden" name="year" value="${selectedYear}">
-                        <input type="hidden" name="departmentId" value="${selectedDepartment}">
+                        <input type="hidden" name="departmentId" value="${selectedDepartmentId}">
                         <button type="submit" class="btn btn-success btn-sm">
                             <i class="fas fa-file-excel"></i> Xuất báo cáo chuyên cần tháng (Excel)
                         </button>
@@ -123,7 +123,7 @@
                     <select name="departmentId" class="form-select">
                         <option value="">Tất cả phòng ban</option>
                         <c:forEach var="d" items="${departments}">
-                            <option value="${d.departmentId}" ${selectedDepartment == d.departmentId ? 'selected' : ''}>${d.departmentName}</option>
+                            <option value="${d.departmentId}" ${selectedDepartmentId == d.departmentId ? 'selected' : ''}>${d.departmentName}</option>
                         </c:forEach>
                     </select>
                 </div>
@@ -138,11 +138,15 @@
                         <tr>
                             <th>Mã NV</th>
                             <th>Họ Tên</th>
-                            <th>Phòng Ban</th>
-                            <th class="text-center">Tổng ngày công</th>
-                            <th class="text-center">Số lần đi trễ</th>
-                            <th class="text-center">Số giờ OT</th>
-                            <th class="text-center">Phép năm đã dùng</th>
+                            <th class="text-center">Công chuẩn</th>
+                            <th class="text-center">Công thực tế</th>
+                            <th class="text-center">OT thường (h)</th>
+                            <th class="text-center">OT CN (h)</th>
+                            <th class="text-center">OT Lễ (h)</th>
+                            <th class="text-center">Đi trễ (lần)</th>
+                            <th class="text-center">Phép năm (ngày)</th>
+                            <th class="text-center">Nghỉ ốm (ngày)</th>
+                            <th class="text-center">Nghỉ thai sản (ngày)</th>
                             <th class="text-center">Phép năm còn lại</th>
                         </tr>
                     </thead>
@@ -157,21 +161,33 @@
                             </c:when>
                             <c:otherwise>
                                 <c:forEach var="r" items="${reportList}">
-                                    <tr>
-                                        <td><strong>NV${r.userId}</strong></td>
-                                        <td>
-                                            <div style="font-weight: 600;">${r.fullName}</div>
+                                    <tr style="${r.lateCount >= 3 ? 'background-color: #fee2e2;' : ''}">
+                                        <td style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}"><strong>NV${r.userId}</strong></td>
+                                        <td style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">
+                                            <div style="font-weight: 600;">${r.userName}</div>
                                         </td>
-                                        <td>${r.departmentName != null ? r.departmentName : '-'}</td>
-                                        <td class="text-center"><span class="badge bg-primary rounded-pill">${r.totalWorkDays}</span></td>
-                                        <td class="text-center">
-                                            <span class="badge ${r.lateCount > 3 ? 'bg-danger' : (r.lateCount > 0 ? 'bg-warning text-dark' : 'bg-success')} rounded-pill">
-                                                ${r.lateCount}
-                                            </span>
+                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">${r.standardWorkDays}</td>
+                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}"><span class="badge bg-primary rounded-pill"><fmt:formatNumber value="${r.actualWorkDays}" maxFractionDigits="1"/></span></td>
+                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">
+                                            <c:choose><c:when test="${r.regularOtHrs > 0}"><span class="badge bg-info text-dark rounded-pill"><fmt:formatNumber value="${r.regularOtHrs}" pattern="#,##0.#"/></span></c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose>
                                         </td>
-                                        <td class="text-center"><span class="badge bg-info text-dark rounded-pill"><fmt:formatNumber value="${r.otHours}" pattern="#,##0.0"/></span></td>
-                                        <td class="text-center"><span class="badge bg-secondary rounded-pill"><fmt:formatNumber value="${r.annualLeaveUsed}" pattern="#,##0.0"/></span></td>
-                                        <td class="text-center"><span class="badge bg-success rounded-pill"><fmt:formatNumber value="${r.annualLeaveRemaining}" pattern="#,##0.0"/></span></td>
+                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">
+                                            <c:choose><c:when test="${r.sundayOtHrs > 0}"><span class="badge bg-warning text-dark rounded-pill"><fmt:formatNumber value="${r.sundayOtHrs}" pattern="#,##0.#"/></span></c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose>
+                                        </td>
+                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">
+                                            <c:choose><c:when test="${r.holidayOtHrs > 0}"><span class="badge bg-danger rounded-pill"><fmt:formatNumber value="${r.holidayOtHrs}" pattern="#,##0.#"/></span></c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose>
+                                        </td>
+                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}"><span class="badge ${r.lateCount >= 3 ? 'bg-danger' : 'bg-warning text-dark'} rounded-pill">${r.lateCount}</span></td>
+                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">
+                                            <c:choose><c:when test="${r.annualLeaveDays > 0}"><fmt:formatNumber value="${r.annualLeaveDays}" pattern="#,##0.#"/></c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose>
+                                        </td>
+                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">
+                                            <c:choose><c:when test="${r.sickLeaveDays > 0}"><fmt:formatNumber value="${r.sickLeaveDays}" pattern="#,##0.#"/></c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose>
+                                        </td>
+                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">
+                                            <c:choose><c:when test="${r.maternityLeaveDays > 0}"><fmt:formatNumber value="${r.maternityLeaveDays}" pattern="#,##0.#"/></c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose>
+                                        </td>
+                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}"><span class="badge bg-success rounded-pill"><fmt:formatNumber value="${r.remainingAnnualLeave}" pattern="#,##0.#"/></span></td>
                                     </tr>
                                 </c:forEach>
                             </c:otherwise>
@@ -193,12 +209,12 @@
                     </c:choose>
                 </div>
                 <div class="pagination-buttons">
-                    <a href="?month=${selectedMonth}&year=${selectedYear}&departmentId=${selectedDepartment}&page=${currentPage - 1}" 
+                    <a href="?month=${selectedMonth}&year=${selectedYear}&departmentId=${selectedDepartmentId}&page=${currentPage - 1}" 
                        class="btn-pag ${currentPage == 1 ? 'disabled' : ''}" 
                        title="Trang trước">
                         <i class="fas fa-chevron-left"></i>
                     </a>
-                    <a href="?month=${selectedMonth}&year=${selectedYear}&departmentId=${selectedDepartment}&page=${currentPage + 1}" 
+                    <a href="?month=${selectedMonth}&year=${selectedYear}&departmentId=${selectedDepartmentId}&page=${currentPage + 1}" 
                        class="btn-pag ${currentPage == totalPages || totalPages == 0 ? 'disabled' : ''}" 
                        title="Trang sau">
                         <i class="fas fa-chevron-right"></i>

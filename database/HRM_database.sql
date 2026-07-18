@@ -874,6 +874,13 @@ INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,depar
 INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,department_id,position_id) VALUES
 (33, 'ke_toan_01', '$2a$12$6P4evU5n2Vb5yujdiEVTo.X9yVsr4m0wVGnzr..W2DCY4j1WposdW', 'Nguyễn Thị Kế Toán', 'ketoan01@hrm.com', '0901000033', 8, 3, 7);
 
+-- Bổ sung hai nhân viên được tham chiếu bằng mã NV0021 và NV0027 trong bảng công.
+-- ImportAttendanceController diễn giải phần số trong mã NVxxxx là users.user_id.
+INSERT INTO users (user_id, username, password, full_name, email, phone, role_id, status)
+VALUES
+    (21, 'NV0021', '$2a$12$9rsQL.viVSSU3uxAqO4aI.LVVYSyc6i1BaZSvrF5SPnAKijaaMmFK', 'Ngô Văn Ốm', 'nv0021@test.com', '0123456021', 7, 1),
+    (27, 'NV0027', '$2a$12$9rsQL.viVSSU3uxAqO4aI.LVVYSyc6i1BaZSvrF5SPnAKijaaMmFK', 'Vũ Thị Thai Sản', 'nv0027@test.com', '0123456027', 7, 1);
+
 -- ── Profiles quản lý ──
 -- Format: (uid, dept_id, id_card, dob, gender, address, hire_date, tax_code, social_insurance_no, bank_account, bank_name, ct, sg, es, el)
 INSERT INTO employee_profiles (user_id,department_id,id_card,dob,gender,address,hire_date,tax_code,social_insurance_no,bank_account,bank_name,contract_type_id,salary_grade_id,employment_status_id,education_level_id) VALUES

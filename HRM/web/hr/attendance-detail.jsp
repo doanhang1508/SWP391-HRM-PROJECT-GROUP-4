@@ -172,18 +172,20 @@
                                         <td><fmt:formatDate value="${a.workDate}" pattern="dd/MM/yyyy"/></td>
                                         <td><strong>${a.userName}</strong></td>
                                         <td>${a.shiftName}</td>
-                                        <td>${a.checkIn != null ? a.checkIn : '-'}</td>
-                                        <td>${a.checkOut != null ? a.checkOut : '-'}</td>
+                                        <td><c:choose><c:when test="${not empty a.checkIn}">${a.checkIn}</c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose></td>
+                                        <td><c:choose><c:when test="${not empty a.checkOut}">${a.checkOut}</c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose></td>
                                         <td>
                                             <span class="badge-soft ${a.status}">
                                                 ${a.status}
                                             </span>
                                         </td>
                                         <td>
-                                            <c:if test="${a.overtimeHrs > 0}">
-                                                <span class="badge bg-success">${a.overtimeHrs}</span>
-                                            </c:if>
-                                            <c:if test="${a.overtimeHrs <= 0}">-</c:if>
+                                            <c:choose>
+                                                <c:when test="${a.overtimeHrs > 0}">
+                                                    <span class="badge bg-success"><fmt:formatNumber value="${a.overtimeHrs}" pattern="#,##0.##"/></span>
+                                                </c:when>
+                                                <c:otherwise><span class="text-muted">-</span></c:otherwise>
+                                            </c:choose>
                                         </td>
                                         <td>
                                             <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editModal${a.attendanceId}">
@@ -227,7 +229,15 @@
                                                                         <option value="ABSENT" ${a.status == 'ABSENT' ? 'selected' : ''}>ABSENT</option>
                                                                         <option value="MISSING" ${a.status == 'MISSING' ? 'selected' : ''}>MISSING</option>
                                                                         <option value="HALFDAY" ${a.status == 'HALFDAY' ? 'selected' : ''}>HALFDAY</option>
+                                                                        <option value="LEAVE" ${a.status == 'LEAVE' ? 'selected' : ''}>LEAVE</option>
+                                                                        <option value="SICK_LEAVE" ${a.status == 'SICK_LEAVE' ? 'selected' : ''}>SICK_LEAVE</option>
+                                                                        <option value="MATERNITY_LEAVE" ${a.status == 'MATERNITY_LEAVE' ? 'selected' : ''}>MATERNITY_LEAVE</option>
                                                                     </select>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Giờ OT</label>
+                                                                    <input type="number" class="form-control" name="overtimeHrs"
+                                                                           value="${a.overtimeHrs}" min="0" max="24" step="0.25">
                                                                 </div>
                                                             </div>
                                                             <div class="modal-footer">

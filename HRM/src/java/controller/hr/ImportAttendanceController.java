@@ -332,13 +332,18 @@ public class ImportAttendanceController extends HttpServlet {
         UserDAO userDAO = new UserDAO();
         ShiftDAOImpl shiftDAO = new ShiftDAOImpl();
         List<Shift> allShifts = shiftDAO.getAllShifts();
-        List<User> allUsers = userDAO.getAllUsers();
+        // Dùng getAllUsersForImport() để bao gồm cả NV đã nghỉ việc / inactive
+        List<User> allUsers = userDAO.getAllUsersForImport();
         java.util.Map<Integer, User> userMap = new java.util.HashMap<>();
         java.util.Map<String, User> usernameMap = new java.util.HashMap<>();
         for (User u : allUsers) {
             userMap.put(u.getUserId(), u);
             if (u.getUsername() != null) {
                 usernameMap.put(u.getUsername().toUpperCase(), u);
+            }
+            // Cũng map theo full_name để fallback tìm kiếm linh hoạt hơn
+            if (u.getFullName() != null) {
+                usernameMap.putIfAbsent(u.getFullName().trim().toUpperCase(), u);
             }
         }
 
@@ -348,7 +353,7 @@ public class ImportAttendanceController extends HttpServlet {
                 // Thử tìm sheet có chứa chữ CHAM_CONG hoặc lấy sheet ĐẦU TIÊN
                 for (int i = 0; i < wb.getNumberOfSheets(); i++) {
                     String sName = removeAccents(wb.getSheetName(i));
-                    if (sName != null && sName.contains("CHAM_CONG")) {
+                    if (sName != null && sName.contains("CHI_TIET") && sName.contains("CHAM_CONG")) {
                         sheet = wb.getSheetAt(i);
                         break;
                     }
@@ -441,27 +446,58 @@ public class ImportAttendanceController extends HttpServlet {
                             + " bạn đã chọn để import. Vui lòng chọn đúng Tháng/Năm hoặc tải đúng file.");
                 }
 
-                Row row4 = sheet0.getRow(4); // Day numbers
-                if (row4 == null) {
-                    throw new Exception("Không tìm thấy dòng ngày (dòng 5) ở Sheet Bảng Công.");
-                }
-
-                int otColIdx = -1;
-                Row headerRow = sheet0.getRow(3);
-                if (headerRow != null) {
-                    for (int c = 0; c < headerRow.getLastCellNum(); c++) {
-                        String h = getStringCell(headerRow, c);
-                        if (h != null && (h.toUpperCase().contains("OT") || h.toUpperCase().contains("TĂNG CA")
-                                || h.toUpperCase().contains("TANG CA"))) {
-                            otColIdx = c;
-                            break;
+                // ── Tìm động dòng tiêu đề và dòng ngày ──
+                Row headerRow = null;
+                Row daysRow = null;
+                int maNvCol = 1;
+                int caLamCol = 5;
+                
+                for (int r = 3; r <= 7; r++) {
+                    Row temp = sheet0.getRow(r);
+                    if (temp == null) continue;
+                    
+                    // Tìm dòng ngày (phải có >= 28 cột chứa số từ 1 đến 31)
+                    int numericCount = 0;
+                    for (int c = 0; c < temp.getLastCellNum(); c++) {
+                        Cell cell = temp.getCell(c);
+                        if (cell != null) {
+                            try {
+                                double val = -1;
+                                if (cell.getCellType() == CellType.NUMERIC) {
+                                    val = cell.getNumericCellValue();
+                                } else {
+                                    val = Double.parseDouble(cell.toString().trim());
+                                }
+                                if (val >= 1 && val <= 31) numericCount++;
+                            } catch (Exception e) {}
+                        }
+                    }
+                    if (numericCount >= 28) {
+                        daysRow = temp;
+                    }
+                    
+                    // Tìm cột Mã NV và Ca Làm
+                    for (int c = 0; c < temp.getLastCellNum(); c++) {
+                        String h = getStringCell(temp, c);
+                        if (h != null) {
+                            h = removeAccents(h.toUpperCase().trim());
+                            if (h.contains("MA_NV") || h.contains("MA_NHAN_VIEN")) {
+                                headerRow = temp;
+                                maNvCol = c;
+                            } else if (h.contains("CA_LAM") || h.contains("CA_LAM_VIEC")) {
+                                caLamCol = c;
+                            }
                         }
                     }
                 }
 
+                if (daysRow == null) {
+                    throw new Exception("Không tìm thấy dòng ngày (chứa các số từ 1-31) ở Sheet Bảng Công.");
+                }
+
                 java.util.Map<Integer, Integer> colToDayMap = new java.util.HashMap<>();
-                for (int c = 6; c < row4.getLastCellNum(); c++) {
-                    Cell cell = row4.getCell(c);
+                for (int c = 0; c < daysRow.getLastCellNum(); c++) {
+                    Cell cell = daysRow.getCell(c);
                     if (cell != null) {
                         try {
                             double val = 0;
@@ -470,7 +506,7 @@ public class ImportAttendanceController extends HttpServlet {
                             } else {
                                 val = Double.parseDouble(cell.toString().trim());
                             }
-                            if (val > 0) {
+                            if (val >= 1 && val <= 31) {
                                 colToDayMap.put(c, (int) val);
                             }
                         } catch (Exception ignored) {
@@ -478,21 +514,43 @@ public class ImportAttendanceController extends HttpServlet {
                     }
                 }
 
-                for (int r = 5; r <= sheet0.getLastRowNum(); r++) {
+                // Read the "GIỜ OT THEO NGÀY" grid when it exists.  OT must stay on its
+                // real date so the report can split regular, Sunday and holiday hours.
+                java.util.Map<String, java.util.Map<Integer, Double>> dailyOvertime =
+                        extractDailyOvertime(sheet0);
+
+                int startDataRow = daysRow.getRowNum() + 1;
+                for (int r = startDataRow; r <= sheet0.getLastRowNum(); r++) {
                     Row row = sheet0.getRow(r);
                     if (row == null || isRowEmpty(row))
                         continue;
 
-                    String empCode = getStringCell(row, 1); // Column 1: Mã NV
+                    String empCode = getStringCell(row, maNvCol); // Column Mã NV
                     if (empCode == null || empCode.trim().isEmpty())
                         continue;
                     empCode = empCode.trim().toUpperCase();
+                    
+                    // Nếu gặp lại header "MÃ NV" hoặc dòng Tổng, nghĩa là đã sang bảng OT ở dưới
+                    if (empCode.contains("MA_NV") || empCode.contains("MÃ NV") || empCode.contains("MA NV")
+                            || empCode.contains("TONG") || empCode.contains("TỔNG")
+                            || empCode.contains("GIO OT") || empCode.contains("GIỜ OT")) {
+                        break;
+                    }
 
                     User user = null;
                     if (empCode.startsWith("NV")) {
                         try {
                             int userId = Integer.parseInt(empCode.substring(2));
                             user = userMap.get(userId);
+                            // Fallback: query thẳng DB nếu không có trong map
+                            // (trường hợp NV bị xóa cứng khỏi cache hoặc chưa sync)
+                            if (user == null) {
+                                user = userDAO.getUserById(userId);
+                                if (user != null) {
+                                    // Cache lại để các lần sau nhanh hơn
+                                    userMap.put(userId, user);
+                                }
+                            }
                         } catch (NumberFormatException ignored) {
                         }
                     }
@@ -500,13 +558,14 @@ public class ImportAttendanceController extends HttpServlet {
                         user = usernameMap.get(empCode);
                     }
                     if (user == null) {
-                        errors.add("Dòng " + (r + 1) + " (Sheet Bảng Công): Không tìm thấy nhân viên: " + empCode);
+                        errors.add("[V2] Dòng " + (r + 1) + " (Sheet Bảng Công): Không tìm thấy nhân viên: " + empCode
+                                + " (Mã NV này không tồn tại trong hệ thống, vui lòng kiểm tra lại file Excel)");
                         continue;
                     }
 
-                    String shiftName = getStringCell(row, 5); // Column 5: Ca làm
+                    String shiftName = getStringCell(row, caLamCol); // Column Ca làm
                     if (shiftName == null || shiftName.trim().isEmpty()) {
-                        errors.add("Dòng " + (r + 1) + " (Sheet Bảng Công): Thiếu Ca làm việc cho NV " + empCode);
+                        errors.add("[V2] Dòng " + (r + 1) + " (Sheet Bảng Công): Thiếu Ca làm việc cho NV " + empCode);
                         continue;
                     }
                     shiftName = shiftName.trim();
@@ -521,26 +580,9 @@ public class ImportAttendanceController extends HttpServlet {
                         }
                     }
                     if (shiftId == -1) {
-                        errors.add("Dòng " + (r + 1) + " (Sheet Bảng Công): Không tìm thấy Ca làm việc: " + shiftName);
+                        errors.add("[V2] Dòng " + (r + 1) + " (Sheet Bảng Công): Không tìm thấy Ca làm việc: " + shiftName);
                         continue;
                     }
-
-                    double totalOtHrs = 0.0;
-                    if (otColIdx != -1) {
-                        Cell otCell = row.getCell(otColIdx);
-                        if (otCell != null) {
-                            try {
-                                if (otCell.getCellType() == CellType.NUMERIC) {
-                                    totalOtHrs = otCell.getNumericCellValue();
-                                } else {
-                                    totalOtHrs = Double.parseDouble(otCell.toString().trim());
-                                }
-                            } catch (Exception ignored) {
-                            }
-                        }
-                    }
-                    boolean otAssigned = false;
-                    Attendance lastA = null;
 
                     for (java.util.Map.Entry<Integer, Integer> entry : colToDayMap.entrySet()) {
                         int colIdx = entry.getKey();
@@ -572,16 +614,26 @@ public class ImportAttendanceController extends HttpServlet {
                             case "A":
                                 status = "ABSENT";
                                 break;
-                            case "L":
                             case "T":
                                 status = "LATE";
                                 break;
-                            case "H":
-                                status = "HALFDAY";
+                            case "L":
+                                status = "LEAVE";
                                 break;
                             case "NGHI PHEP":
                             case "NP":
                                 status = "LEAVE";
+                                break;
+                            case "S":
+                                status = "SICK_LEAVE";
+                                break;
+                            case "M":
+                                status = "MATERNITY_LEAVE";
+                                break;
+                            case "HALF":
+                            case "HALFDAY":
+                            case "H":
+                                status = "HALFDAY";
                                 break;
                             default:
                                 status = "PRESENT";
@@ -608,27 +660,12 @@ public class ImportAttendanceController extends HttpServlet {
                             a.setCheckOut(null);
                         }
 
-                        a.setOvertimeHrs(0.0);
-                        a.setOtReason("");
-                        // [CẢNH BÁO] File Excel "Bảng Công" chỉ có 1 cột OT tổng tháng, không có
-                        // OT theo từng ngày. Logic bên dưới gán toàn bộ số giờ OT vào ngày PRESENT
-                        // ĐẦU TIÊN tìm được. Điều này có thể dẫn đến tính SAI hệ số OT nếu số giờ
-                        // OT thực tế thuộc về ngày Chủ nhật (2x) hoặc ngày lễ (3x) nhưng lại bị
-                        // gán vào một ngày thường (1.5x).
-                        // Để tính đúng hệ số, file import cần có cột OT riêng cho từng ngày,
-                        // hoặc HR phải nhập OT thủ công qua module "Quản lý Tăng Ca".
-                        if (!otAssigned && totalOtHrs > 0 && "PRESENT".equals(status)) {
-                            a.setOvertimeHrs(totalOtHrs);
-                            a.setOtReason("Imported OT");
-                            otAssigned = true;
-                        }
-
-                        lastA = a;
+                        double dailyOtHrs = dailyOvertime
+                                .getOrDefault(empCode, java.util.Collections.emptyMap())
+                                .getOrDefault(day, 0.0);
+                        a.setOvertimeHrs(dailyOtHrs);
+                        a.setOtReason(dailyOtHrs > 0 ? "Imported daily OT" : "");
                         records.add(a);
-                    }
-                    if (!otAssigned && totalOtHrs > 0 && lastA != null) {
-                        lastA.setOvertimeHrs(totalOtHrs);
-                        lastA.setOtReason("Imported OT");
                     }
                 }
             } else {
@@ -639,7 +676,7 @@ public class ImportAttendanceController extends HttpServlet {
                     if (isRowEmpty(row))
                         continue;
                     try {
-                        Attendance a = rowToAttendance(row, userMap, usernameMap, allShifts, month, year);
+                        Attendance a = rowToAttendance(row, userMap, usernameMap, allShifts, month, year, userDAO);
                         if (a != null) {
                             records.add(a);
                         } else {
@@ -650,6 +687,88 @@ public class ImportAttendanceController extends HttpServlet {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Reads an optional per-day OT table placed below the attendance grid.
+     * Expected structure: a title containing "GIO OT", then a row with employee
+     * codes and day numbers, followed by one row per employee.
+     */
+    private java.util.Map<String, java.util.Map<Integer, Double>> extractDailyOvertime(Sheet sheet) {
+        java.util.Map<String, java.util.Map<Integer, Double>> result = new java.util.HashMap<>();
+        int titleRowIndex = -1;
+        for (int r = 0; r <= sheet.getLastRowNum(); r++) {
+            Row row = sheet.getRow(r);
+            if (row == null) {
+                continue;
+            }
+            String firstCell = getStringCell(row, 0);
+            if (firstCell != null && removeAccents(firstCell).toUpperCase().contains("GIO_OT")) {
+                titleRowIndex = r;
+                break;
+            }
+        }
+        if (titleRowIndex < 0 || titleRowIndex + 1 > sheet.getLastRowNum()) {
+            return result;
+        }
+
+        Row header = sheet.getRow(titleRowIndex + 1);
+        java.util.Map<Integer, Integer> dayByColumn = new java.util.HashMap<>();
+        for (int c = 0; c < header.getLastCellNum(); c++) {
+            Double day = getNumericCell(header, c);
+            if (day != null && day >= 1 && day <= 31 && day == Math.floor(day)) {
+                dayByColumn.put(c, day.intValue());
+            }
+        }
+
+        for (int r = titleRowIndex + 2; r <= sheet.getLastRowNum(); r++) {
+            Row row = sheet.getRow(r);
+            if (row == null || isRowEmpty(row)) {
+                continue;
+            }
+            String employeeCode = getStringCell(row, 1);
+            if (employeeCode == null || employeeCode.trim().isEmpty()) {
+                continue;
+            }
+            employeeCode = employeeCode.trim().toUpperCase();
+            String normalized = removeAccents(employeeCode);
+            if (normalized.contains("TONG") || normalized.contains("MA NV") || normalized.contains("MA_NV")) {
+                break;
+            }
+
+            java.util.Map<Integer, Double> hoursByDay = new java.util.HashMap<>();
+            for (java.util.Map.Entry<Integer, Integer> entry : dayByColumn.entrySet()) {
+                Double value = getNumericCell(row, entry.getKey());
+                if (value != null && value > 0) {
+                    hoursByDay.put(entry.getValue(), value);
+                }
+            }
+            result.put(employeeCode, hoursByDay);
+        }
+        return result;
+    }
+
+    private Double getNumericCell(Row row, int columnIndex) {
+        if (row == null) {
+            return null;
+        }
+        Cell cell = row.getCell(columnIndex);
+        if (cell == null) {
+            return null;
+        }
+        try {
+            if (cell.getCellType() == CellType.NUMERIC) {
+                return cell.getNumericCellValue();
+            }
+            if (cell.getCellType() == CellType.FORMULA
+                    && cell.getCachedFormulaResultType() == CellType.NUMERIC) {
+                return cell.getNumericCellValue();
+            }
+            String value = getStringCell(row, columnIndex);
+            return value == null || value.trim().isEmpty() ? null : Double.parseDouble(value.trim());
+        } catch (RuntimeException ignored) {
+            return null;
         }
     }
 
@@ -664,7 +783,7 @@ public class ImportAttendanceController extends HttpServlet {
         return true;
     }
 
-    private Attendance rowToAttendance(Row row, java.util.Map<Integer, User> userMap, java.util.Map<String, User> usernameMap, List<Shift> allShifts, int selectedMonth, int selectedYear) throws Exception {
+    private Attendance rowToAttendance(Row row, java.util.Map<Integer, User> userMap, java.util.Map<String, User> usernameMap, List<Shift> allShifts, int selectedMonth, int selectedYear, UserDAO userDAO) throws Exception {
         Attendance a = new Attendance();
 
         // ── Scan 6 cột đầu vì dòng "Cộng:" có thể nằm ở cột bất kỳ do merged cell ──
@@ -701,6 +820,13 @@ public class ImportAttendanceController extends HttpServlet {
             try {
                 int userId = Integer.parseInt(employeeCode.substring(2));
                 user = userMap.get(userId);
+                // Fallback: query thẳng DB (bao gồm NV inactive / đã nghỉ)
+                if (user == null && userDAO != null) {
+                    user = userDAO.getUserById(userId);
+                    if (user != null) {
+                        userMap.put(userId, user); // cache lại
+                    }
+                }
             } catch (NumberFormatException e) {
                 // Ignore parsing error, try username lookup next
             }
@@ -710,7 +836,8 @@ public class ImportAttendanceController extends HttpServlet {
         }
 
         if (user == null) {
-            throw new Exception("Kh\u00f4ng t\u00ecm th\u1ea5y nh\u00e2n vi\u00ean: " + employeeCode);
+            throw new Exception("Kh\u00f4ng t\u00ecm th\u1ea5y nh\u00e2n vi\u00ean: " + employeeCode
+                    + " (M\u00e3 NV n\u00e0y kh\u00f4ng t\u1ed3n t\u1ea1i trong h\u1ec7 th\u1ed1ng)");
         }
         a.setUserId(user.getUserId());
 

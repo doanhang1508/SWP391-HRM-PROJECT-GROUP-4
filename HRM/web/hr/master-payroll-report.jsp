@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
 <c:set var="pageTitle" value="Báo cáo Bảng lương Tổng hợp" scope="request"/>
 <jsp:include page="../header.jsp"/>
@@ -384,6 +385,62 @@
 }
 .pg-arrow:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
 .pg-arrow:disabled{opacity:.3;cursor:not-allowed;}
+
+/* ─────────────────────────────────────────────────────────
+   CHART CARD
+───────────────────────────────────────────────────────── */
+.chart-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow-xs);
+  margin-bottom:20px;
+  overflow:hidden;
+}
+.chart-hdr{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 20px;border-bottom:1px solid var(--border-xs);
+  flex-wrap:wrap;gap:10px;
+}
+.chart-hdr-left{display:flex;align-items:center;gap:8px;}
+.chart-hdr-icon{
+  width:32px;height:32px;border-radius:8px;
+  background:var(--acc-bg);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.85rem;
+}
+.chart-title{font-size:.95rem;font-weight:500;color:var(--txt-1);}
+.chart-hdr-right{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.chart-type-btn{
+  height:28px;padding:0 12px;
+  background:var(--neutral-bg);color:var(--txt-3);
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  font-size:.76rem;cursor:pointer;
+  display:inline-flex;align-items:center;gap:4px;
+  transition:all .15s;
+}
+.chart-type-btn.active,
+.chart-type-btn:hover{
+  background:var(--acc-bg);color:var(--accent);
+  border-color:var(--acc-border);
+}
+.chart-body{padding:20px 24px 24px;}
+.chart-canvas-wrap{position:relative;height:340px;}
+.chart-legend{
+  display:flex;flex-wrap:wrap;gap:12px;justify-content:center;
+  margin-top:16px;
+}
+.chart-legend-item{
+  display:flex;align-items:center;gap:6px;
+  font-size:.76rem;color:var(--txt-2);
+}
+.chart-legend-dot{
+  width:10px;height:10px;border-radius:2px;flex-shrink:0;
+}
+.chart-note{
+  font-size:.72rem;color:var(--txt-4);text-align:center;
+  margin-top:8px;
+}
 </style>
 
 <!-- ═══ EXPORT FORM (hidden, avoids nested-form bug) ═══ -->
@@ -501,6 +558,93 @@
             <div class="kpi-sub">Phạt · BHXH · Thuế</div>
         </div>
     </div>
+
+    <!-- ═══ CHART CARD: Cấu hình mức lương theo phòng ban ════════════ -->
+    <c:if test="${not empty reportData}">
+    <div class="chart-card">
+        <div class="chart-hdr">
+            <div class="chart-hdr-left">
+                <div class="chart-hdr-icon"><i class="fas fa-chart-column"></i></div>
+                <span class="chart-title">Cấu hình mức lương theo phòng ban</span>
+                <span class="tc-badge">Tháng <fmt:formatNumber value="${selectedMonth}" minIntegerDigits="2" groupingUsed="false"/>/${selectedYear}</span>
+            </div>
+            <div class="chart-hdr-right">
+                <button class="chart-type-btn active" id="btnGrouped" onclick="switchChart('grouped')">
+                    <i class="fas fa-chart-bar"></i> Nhóm cột
+                </button>
+                <button class="chart-type-btn" id="btnStacked" onclick="switchChart('stacked')">
+                    <i class="fas fa-layer-group"></i> Cột chồng
+                </button>
+                <button class="chart-type-btn" id="btnHBar" onclick="switchChart('hbar')">
+                    <i class="fas fa-chart-simple"></i> Ngang
+                </button>
+            </div>
+        </div>
+        <div class="chart-body">
+            <div class="chart-canvas-wrap">
+                <canvas id="deptSalaryChart"></canvas>
+            </div>
+            <div class="chart-legend" id="chartLegend"></div>
+            <p class="chart-note">
+                <i class="fas fa-circle-info"></i>
+                Dữ liệu tổng hợp từ bảng lương Tháng ${selectedMonth}/${selectedYear}.
+                Đơn vị: VNĐ (triệu). Chỉ hiển thị phòng ban có bảng lương đã duyệt/thanh toán.
+            </p>
+        </div>
+    </div>
+    </c:if>
+
+    <!-- Pre-aggregate salary data by dept server-side (Java) → no client aggregation needed -->
+    <%
+      /* ── Server-side aggregation by department ── */
+      java.util.List<?> _rd = (java.util.List<?>) request.getAttribute("reportData");
+      java.util.LinkedHashMap<String, double[]> _deptMap = new java.util.LinkedHashMap<>();
+      // keys: dept name. values: [base, bonus, allow, deduct, net]
+      if (_rd != null) {
+        for (Object _o : _rd) {
+          model.Payroll _pr = (model.Payroll) _o;
+          String _dn = _pr.getDepartmentName();
+          boolean _isDirector = (_dn == null || _dn.trim().isEmpty());
+          String _key = _isDirector ? "__GD__" : _dn.trim();
+          if (!_deptMap.containsKey(_key)) _deptMap.put(_key, new double[5]);
+          double[] _acc = _deptMap.get(_key);
+          _acc[0] += _pr.getBaseSalary()       != null ? _pr.getBaseSalary().doubleValue()       : 0;
+          _acc[1] += _pr.getBonusAmount()       != null ? _pr.getBonusAmount().doubleValue()      : 0;
+          _acc[2] += _pr.getAllowanceAmount()   != null ? _pr.getAllowanceAmount().doubleValue()   : 0;
+          _acc[3] += _pr.getTotalDeductionAll() != null ? _pr.getTotalDeductionAll().doubleValue(): 0;
+          _acc[4] += _pr.getNetSalary()         != null ? _pr.getNetSalary().doubleValue()        : 0;
+        }
+      }
+      /* sort: normal depts alphabetically, "__GD__" always last */
+      java.util.List<String> _sortedKeys = new java.util.ArrayList<>(_deptMap.keySet());
+      _sortedKeys.sort((a, b) -> {
+          if ("__GD__".equals(a)) return 1;
+          if ("__GD__".equals(b)) return -1;
+          return a.compareTo(b);
+      });
+    %>
+    <c:if test="${not empty reportData}">
+    <script>
+    /* window._deptChart — pre-aggregated server-side, ready for Chart.js */
+    window._deptChart = {
+      labels: [<%
+        boolean _first = true;
+        for (String _k : _sortedKeys) {
+          String _lbl = "__GD__".equals(_k) ? "Giám đốc" : _k;
+          // escape for JS string
+          _lbl = _lbl.replace("\\", "\\\\").replace("'", "\\'");
+          if (!_first) out.print(","); _first = false;
+          out.print("'" + _lbl + "'");
+        }
+      %>],
+      base:   [<% _first=true; for(String _k:_sortedKeys){if(!_first)out.print(",");_first=false;out.print(String.format(java.util.Locale.US,"%.2f",_deptMap.get(_k)[0]/1e6));} %>],
+      bonus:  [<% _first=true; for(String _k:_sortedKeys){if(!_first)out.print(",");_first=false;out.print(String.format(java.util.Locale.US,"%.2f",_deptMap.get(_k)[1]/1e6));} %>],
+      allow:  [<% _first=true; for(String _k:_sortedKeys){if(!_first)out.print(",");_first=false;out.print(String.format(java.util.Locale.US,"%.2f",_deptMap.get(_k)[2]/1e6));} %>],
+      deduct: [<% _first=true; for(String _k:_sortedKeys){if(!_first)out.print(",");_first=false;out.print(String.format(java.util.Locale.US,"%.2f",_deptMap.get(_k)[3]/1e6));} %>],
+      net:    [<% _first=true; for(String _k:_sortedKeys){if(!_first)out.print(",");_first=false;out.print(String.format(java.util.Locale.US,"%.2f",_deptMap.get(_k)[4]/1e6));} %>]
+    };
+    </script>
+    </c:if>
 
     <!-- ═══ TABLE CARD ════════════════════════════════════════════════ -->
     <div class="tbl-card">
@@ -774,6 +918,159 @@
 
   if(document.readyState==='loading')
     document.addEventListener('DOMContentLoaded',init);
+  else init();
+})();
+</script>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+<script>
+(function(){
+  'use strict';
+
+  var COLORS = {
+    base:   { bg: 'rgba(8,145,178,0.75)',   border: '#0891b2' },
+    bonus:  { bg: 'rgba(5,150,105,0.70)',   border: '#059669' },
+    allow:  { bg: 'rgba(16,185,129,0.55)',  border: '#10b981' },
+    deduct: { bg: 'rgba(185,28,28,0.65)',   border: '#b91c1c' },
+    net:    { bg: 'rgba(6,182,212,0.80)',   border: '#06b6d4' }
+  };
+
+  var LABELS_DS = ['Lương cơ bản', 'Thưởng', 'Phụ cấp', 'Tổng khấu trừ', 'Thực lĩnh'];
+  var COLOR_KEYS = ['base', 'bonus', 'allow', 'deduct', 'net'];
+
+  var chartInst = null;
+  var currentMode = 'grouped';
+
+  /* ── Read pre-aggregated data output by JSP server-side ── */
+  function getChartData(){
+    if (!window._deptChart) return null;
+    var d = window._deptChart;
+    if (!d.labels || !d.labels.length) return null;
+    return d;
+  }
+
+  function buildDatasets(d){
+    return COLOR_KEYS.map(function(key, ki){
+      var col = COLORS[key];
+      return {
+        label: LABELS_DS[ki],
+        data: d[key],          /* already in triệu ₫, computed server-side */
+        backgroundColor: col.bg,
+        borderColor: col.border,
+        borderWidth: 1.5,
+        borderRadius: 3,
+        borderSkipped: false
+      };
+    });
+  }
+
+  function buildConfig(mode, depts, datasets){
+    var isHBar = (mode === 'hbar');
+    var isStacked = (mode === 'stacked');
+    var cfg = {
+      type: isHBar ? 'bar' : 'bar',
+      data: {
+        labels: depts,
+        datasets: datasets
+      },
+      options: {
+        indexAxis: isHBar ? 'y' : 'x',
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 380, easing: 'easeOutQuart' },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(17,24,39,0.92)',
+            titleColor: '#f9fafb',
+            bodyColor: '#d1d5db',
+            padding: 12,
+            cornerRadius: 8,
+            borderColor: 'rgba(255,255,255,0.08)',
+            borderWidth: 1,
+            callbacks: {
+              label: function(ctx){
+                return ' ' + ctx.dataset.label + ': ' + ctx.parsed[isHBar?'x':'y'].toLocaleString('vi-VN') + ' triệu ₫';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            stacked: isStacked,
+            grid: { color: 'rgba(229,231,235,0.6)', lineWidth: 1 },
+            ticks: {
+              color: '#6b7280', font: { size: 11 },
+              callback: isHBar ? function(v){ return v + ' tr'; } : undefined,
+              maxRotation: 30
+            }
+          },
+          y: {
+            stacked: isStacked,
+            grid: { color: 'rgba(229,231,235,0.6)', lineWidth: 1 },
+            ticks: {
+              color: '#6b7280', font: { size: 11 },
+              callback: isHBar ? undefined : function(v){ return v + ' tr'; }
+            }
+          }
+        }
+      }
+    };
+    return cfg;
+  }
+
+  function buildLegend(){
+    var leg = document.getElementById('chartLegend');
+    if(!leg) return;
+    leg.innerHTML = '';
+    COLOR_KEYS.forEach(function(key, ki){
+      var item = document.createElement('div');
+      item.className = 'chart-legend-item';
+      var dot = document.createElement('div');
+      dot.className = 'chart-legend-dot';
+      dot.style.background = COLORS[key].border;
+      item.appendChild(dot);
+      var lbl = document.createElement('span');
+      lbl.textContent = LABELS_DS[ki];
+      item.appendChild(lbl);
+      leg.appendChild(item);
+    });
+  }
+
+  function render(mode){
+    var canvas = document.getElementById('deptSalaryChart');
+    if(!canvas) return;
+
+    var d = getChartData();
+    if(!d) return;
+
+    var datasets = buildDatasets(d);
+    var cfg = buildConfig(mode, d.labels, datasets);
+
+    if(chartInst){ chartInst.destroy(); chartInst = null; }
+    chartInst = new Chart(canvas, cfg);
+    buildLegend();
+  }
+
+  window.switchChart = function(mode){
+    currentMode = mode;
+    ['grouped','stacked','hbar'].forEach(function(m){
+      var btn = document.getElementById('btn' + m.charAt(0).toUpperCase() + m.slice(1));
+      if(btn) btn.classList.toggle('active', m === mode);
+    });
+    render(mode);
+  };
+
+  function init(){
+    if(!document.getElementById('deptSalaryChart')) return;
+    render(currentMode);
+  }
+
+  if(document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', init);
   else init();
 })();
 </script>

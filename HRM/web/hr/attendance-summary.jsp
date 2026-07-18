@@ -110,6 +110,15 @@
                         </c:forEach>
                     </select>
                 </div>
+                <div class="col-md-3">
+                    <label class="form-label" style="font-size: 0.85rem; font-weight: 600; color: #475569;">Phòng ban</label>
+                    <select name="departmentId" class="form-select">
+                        <option value="">-- Tất cả --</option>
+                        <c:forEach var="d" items="${departments}">
+                            <option value="${d.departmentId}" ${selectedDepartmentId == d.departmentId ? 'selected' : ''}>${d.departmentName}</option>
+                        </c:forEach>
+                    </select>
+                </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary w-100" style="height: 38px;">Lọc</button>
                 </div>
@@ -121,12 +130,12 @@
                         <tr>
                             <th>Mã NV</th>
                             <th>Họ Tên</th>
-                            <th>Phòng Ban</th>
-                            <th class="text-center">Số công (Hiện diện/Trễ)</th>
-                            <th class="text-center">Đi trễ (Lần)</th>
-                            <th class="text-center">Vắng (Lần)</th>
-                            <th class="text-center">Nghỉ ốm (Ngày)</th>
-                            <th class="text-center">Tăng ca (Giờ)</th>
+                            <th class="text-center">Công chuẩn</th>
+                            <th class="text-center">Công thực tế</th>
+                            <th class="text-center">OT thường (h)</th>
+                            <th class="text-center">OT CN (h)</th>
+                            <th class="text-center">OT Lễ (h)</th>
+                            <th class="text-center">Đi trễ (lần)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -145,21 +154,18 @@
                                         <td>
                                             <div style="font-weight: 600;">${s.userName}</div>
                                         </td>
-                                        <td>${s.department != null ? s.department : '-'}</td>
-                                        <td class="text-center"><span class="badge bg-primary rounded-pill">${s.presentCount + s.lateCount}</span></td>
-                                        <td class="text-center"><span class="badge bg-warning text-dark rounded-pill">${s.lateCount}</span></td>
-                                        <td class="text-center"><span class="badge bg-danger rounded-pill">${s.absentCount}</span></td>
+                                        <td class="text-center">${s.standardWorkDays}</td>
+                                        <td class="text-center"><span class="badge bg-primary rounded-pill"><fmt:formatNumber value="${s.actualWorkDays}" maxFractionDigits="1" /></span></td>
                                         <td class="text-center">
-                                            <c:choose>
-                                                <c:when test="${s.sickDayCount > 0}">
-                                                    <span class="badge rounded-pill" style="background:#ede9fe;color:#6d28d9;">${s.sickDayCount}</span>
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <span class="badge bg-secondary rounded-pill" style="opacity:.45;">0</span>
-                                                </c:otherwise>
-                                            </c:choose>
+                                            <c:choose><c:when test="${s.regularOtHrs > 0}"><span class="badge bg-info text-dark rounded-pill"><fmt:formatNumber value="${s.regularOtHrs}" pattern="#,##0.#"/></span></c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose>
                                         </td>
-                                        <td class="text-center"><span class="badge bg-success rounded-pill">${s.totalOvertimeHrs}</span></td>
+                                        <td class="text-center">
+                                            <c:choose><c:when test="${s.sundayOtHrs > 0}"><span class="badge bg-warning text-dark rounded-pill"><fmt:formatNumber value="${s.sundayOtHrs}" pattern="#,##0.#"/></span></c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose>
+                                        </td>
+                                        <td class="text-center">
+                                            <c:choose><c:when test="${s.holidayOtHrs > 0}"><span class="badge bg-danger rounded-pill"><fmt:formatNumber value="${s.holidayOtHrs}" pattern="#,##0.#"/></span></c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose>
+                                        </td>
+                                        <td class="text-center"><span class="badge ${s.lateCount >= 3 ? 'bg-danger' : 'bg-warning text-dark'} rounded-pill">${s.lateCount}</span></td>
                                     </tr>
                                 </c:forEach>
                             </c:otherwise>
@@ -181,12 +187,12 @@
                     </c:choose>
                 </div>
                 <div class="pagination-buttons">
-                    <a href="?action=summary&month=${selectedMonth}&year=${selectedYear}&page=${currentPage - 1}" 
+                    <a href="?action=summary&month=${selectedMonth}&year=${selectedYear}&departmentId=${selectedDepartmentId}&page=${currentPage - 1}" 
                        class="btn-pag ${currentPage == 1 ? 'disabled' : ''}" 
                        title="Trang trước">
                         <i class="fas fa-chevron-left"></i>
                     </a>
-                    <a href="?action=summary&month=${selectedMonth}&year=${selectedYear}&page=${currentPage + 1}" 
+                    <a href="?action=summary&month=${selectedMonth}&year=${selectedYear}&departmentId=${selectedDepartmentId}&page=${currentPage + 1}" 
                        class="btn-pag ${currentPage == totalPages || totalPages == 0 ? 'disabled' : ''}" 
                        title="Trang sau">
                         <i class="fas fa-chevron-right"></i>

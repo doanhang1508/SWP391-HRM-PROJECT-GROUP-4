@@ -1130,7 +1130,7 @@ public class AttendanceDAO {
             "SELECT COUNT(*) FROM attendance a " +
             "JOIN users u ON a.user_id = u.user_id " +
             "WHERE MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? " +
-            "AND u.role_id NOT IN (1, 4) AND u.department_id IS NOT NULL "
+            "AND u.role_id NOT IN (1, 4) "
         );
         
         if (userName != null && !userName.trim().isEmpty()) {
@@ -1172,7 +1172,7 @@ public class AttendanceDAO {
             "JOIN users u ON a.user_id = u.user_id " +
             "JOIN shifts s ON a.shift_id = s.shift_id " +
             "WHERE MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? " +
-            "AND u.role_id NOT IN (1, 4) AND u.department_id IS NOT NULL "
+            "AND u.role_id NOT IN (1, 4) "
         );
         
         if (userName != null && !userName.trim().isEmpty()) {
@@ -1241,15 +1241,16 @@ public class AttendanceDAO {
     /**
      * HR cập nhật trực tiếp bản ghi chấm công
      */
-    public boolean updateAttendanceHR(int attendanceId, Time checkIn, Time checkOut, String status) {
-        String sql = "UPDATE attendance SET check_in = ?, check_out = ?, status = ? WHERE attendance_id = ?";
+    public boolean updateAttendanceHR(int attendanceId, Time checkIn, Time checkOut, String status, double overtimeHrs) {
+        String sql = "UPDATE attendance SET check_in = ?, check_out = ?, status = ?, overtime_hrs = ? WHERE attendance_id = ?";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setTime(1, checkIn);
             ps.setTime(2, checkOut);
             ps.setString(3, status);
-            ps.setInt(4, attendanceId);
+            ps.setDouble(4, overtimeHrs);
+            ps.setInt(5, attendanceId);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -1591,6 +1592,141 @@ public class AttendanceDAO {
             list.add(new OvertimeBreakdownItem("HOLIDAY", holidayHrs, holidayMultiplier, holidayAmt.setScale(2, java.math.RoundingMode.HALF_UP)));
         }
 
+        return list;
+    }
+
+    public int countAdvancedAttendanceSummary(int month, int year, Integer departmentId) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM users u " +
+                     "LEFT JOIN employee_profiles ep ON u.user_id = ep.user_id " +
+                     "WHERE u.role_id NOT IN (1, 4)");
+        
+        if (departmentId != null) {
+            sql.append(" AND COALESCE(ep.department_id, u.department_id) = ?");
+        }
+
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            if (departmentId != null) {
+                ps.setInt(1, departmentId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public List<model.AttendanceSummary> getAdvancedAttendanceSummary(int month, int year, Integer departmentId, int offset, int limit) {
+        List<model.AttendanceSummary> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT u.user_id, u.full_name AS user_name, d.department_name, ");
+        // Actual Work Days
+        sql.append("SUM(CASE WHEN UPPER(a.status) IN ('P', 'PRESENT', 'L', 'LATE', 'T') ")
+           .append("AND DAYOFWEEK(a.work_date) != 1 AND h.holiday_date IS NULL THEN 1 ELSE 0 END) AS actual_work_days, ");
+        // Late Count
+        sql.append("SUM(CASE WHEN UPPER(a.status) IN ('L', 'LATE', 'T') THEN 1 ELSE 0 END) AS late_cnt, ");
+        // Regular OT
+        sql.append("SUM(CASE WHEN DAYOFWEEK(a.work_date) != 1 AND h.holiday_date IS NULL THEN IFNULL(a.overtime_hrs, 0) ELSE 0 END) AS regular_ot_hrs, ");
+        // Sunday OT
+        sql.append("SUM(CASE WHEN DAYOFWEEK(a.work_date) = 1 AND h.holiday_date IS NULL THEN IFNULL(a.overtime_hrs, 0) ELSE 0 END) AS sunday_ot_hrs, ");
+        // Holiday OT
+        sql.append("SUM(CASE WHEN h.holiday_date IS NOT NULL THEN IFNULL(a.overtime_hrs, 0) ELSE 0 END) AS holiday_ot_hrs, ");
+        // Leaves
+        // Excel imports carry leave codes on each attendance day.  Prefer this
+        // month-specific data when it is present, otherwise retain approved leave requests.
+        sql.append("GREATEST(IFNULL(lv.annual_leave_days, 0), SUM(CASE WHEN UPPER(a.status) IN ('LEAVE', 'ANNUAL_LEAVE') THEN 1 ELSE 0 END)) AS annual_leave_days, ");
+        sql.append("GREATEST(IFNULL(lv.sick_leave_days, 0), SUM(CASE WHEN UPPER(a.status) = 'SICK_LEAVE' THEN 1 ELSE 0 END)) AS sick_leave_days, ");
+        sql.append("GREATEST(IFNULL(lv.maternity_leave_days, 0), SUM(CASE WHEN UPPER(a.status) = 'MATERNITY_LEAVE' THEN 1 ELSE 0 END)) AS maternity_leave_days, ");
+        // Remaining Annual Leave
+        sql.append("IFNULL(MAX_LV.max_days, 12) - GREATEST(IFNULL(ytd_lv.used_annual_leave_days, 0), IFNULL(att_ytd_lv.used_annual_leave_days, 0)) AS remaining_annual_leave ");
+        
+        sql.append("FROM users u ");
+        sql.append("LEFT JOIN employee_profiles ep ON u.user_id = ep.user_id ");
+        sql.append("LEFT JOIN departments d ON d.department_id = COALESCE(ep.department_id, u.department_id) ");
+        sql.append("LEFT JOIN attendance a ON u.user_id = a.user_id AND MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? ");
+        sql.append("LEFT JOIN holidays h ON a.work_date = h.holiday_date AND h.status = 1 ");
+        
+        sql.append("LEFT JOIN ( ")
+           .append("  SELECT user_id, ")
+           .append("         SUM(CASE WHEN leave_type_id = 1 THEN total_days ELSE 0 END) AS annual_leave_days, ")
+           .append("         SUM(CASE WHEN leave_type_id = 2 THEN total_days ELSE 0 END) AS sick_leave_days, ")
+           .append("         SUM(CASE WHEN leave_type_id IN (3, 6) THEN total_days ELSE 0 END) AS maternity_leave_days ")
+           .append("  FROM leave_requests ")
+           .append("  WHERE status IN ('Approved', 'Pending') ")
+           .append("    AND MONTH(start_date) = ? AND YEAR(start_date) = ? ")
+           .append("  GROUP BY user_id ")
+           .append(") lv ON u.user_id = lv.user_id ");
+           
+        sql.append("LEFT JOIN ( ")
+           .append("  SELECT user_id, SUM(total_days) AS used_annual_leave_days ")
+           .append("  FROM leave_requests ")
+           .append("  WHERE leave_type_id = 1 AND status IN ('Approved', 'Pending') ")
+           .append("    AND YEAR(start_date) = ? ")
+           .append("  GROUP BY user_id ")
+           .append(") ytd_lv ON u.user_id = ytd_lv.user_id ");
+
+        sql.append("LEFT JOIN ( ")
+           .append("  SELECT user_id, COUNT(*) AS used_annual_leave_days ")
+           .append("  FROM attendance ")
+           .append("  WHERE UPPER(status) IN ('LEAVE', 'ANNUAL_LEAVE') AND YEAR(work_date) = ? ")
+           .append("  GROUP BY user_id ")
+           .append(") att_ytd_lv ON u.user_id = att_ytd_lv.user_id ");
+           
+        sql.append("CROSS JOIN (SELECT IFNULL((SELECT max_days_per_year FROM leave_types WHERE leave_type_id = 1), 12) AS max_days) AS MAX_LV ");
+
+        sql.append("WHERE u.role_id NOT IN (1, 4) ");
+        if (departmentId != null) {
+            sql.append(" AND COALESCE(ep.department_id, u.department_id) = ? ");
+        }
+        
+        sql.append("GROUP BY u.user_id, u.full_name, d.department_name, lv.annual_leave_days, lv.sick_leave_days, lv.maternity_leave_days, ytd_lv.used_annual_leave_days, att_ytd_lv.used_annual_leave_days, MAX_LV.max_days ");
+        sql.append("ORDER BY u.full_name LIMIT ? OFFSET ?");
+
+        DBContext dbContext = new DBContext();
+        try (Connection conn = dbContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            
+            int paramIndex = 1;
+            ps.setInt(paramIndex++, month);
+            ps.setInt(paramIndex++, year);
+            ps.setInt(paramIndex++, month);
+            ps.setInt(paramIndex++, year);
+            ps.setInt(paramIndex++, year); // for YTD leave
+            ps.setInt(paramIndex++, year); // for imported attendance leave
+
+            if (departmentId != null) {
+                ps.setInt(paramIndex++, departmentId);
+            }
+            
+            ps.setInt(paramIndex++, limit);
+            ps.setInt(paramIndex++, offset);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    model.AttendanceSummary s = new model.AttendanceSummary();
+                    s.setUserId(rs.getInt("user_id"));
+                    s.setUserName(rs.getString("user_name"));
+                    s.setDepartment(rs.getString("department_name"));
+                    
+                    s.setActualWorkDays(rs.getDouble("actual_work_days"));
+                    s.setLateCount(rs.getInt("late_cnt"));
+                    s.setRegularOtHrs(rs.getDouble("regular_ot_hrs"));
+                    s.setSundayOtHrs(rs.getDouble("sunday_ot_hrs"));
+                    s.setHolidayOtHrs(rs.getDouble("holiday_ot_hrs"));
+                    s.setAnnualLeaveDays(rs.getDouble("annual_leave_days"));
+                    s.setSickLeaveDays(rs.getDouble("sick_leave_days"));
+                    s.setMaternityLeaveDays(rs.getDouble("maternity_leave_days"));
+                    s.setRemainingAnnualLeave(rs.getDouble("remaining_annual_leave"));
+                    
+                    list.add(s);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return list;
     }
 }
