@@ -1705,5 +1705,4 @@ ON DUPLICATE KEY UPDATE
     calendar_type = VALUES(calendar_type),
     ot_multiplier = VALUES(ot_multiplier),
     status = VALUES(status);
-
-SET FOREIGN_KEY_CHECKS = 1;
+SET FOREIGN_KEY_CHECKS = 1;
