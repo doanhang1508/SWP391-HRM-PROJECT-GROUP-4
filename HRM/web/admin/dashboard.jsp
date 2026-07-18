@@ -198,6 +198,28 @@ body {
     transition: all 0.2s; display: inline-block;
 }
 .btn-act:hover { background: #4f7ef8; color: #fff; }
+
+/* ── Welcome Banner ── */
+.welcome-banner {
+    background: linear-gradient(135deg, #0a2540 0%, #1a3a6b 100%);
+    color: white;
+    border-radius: 14px;
+    padding: 24px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.welcome-banner::after {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 220px; height: 220px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.welcome-banner h2 { font-size: 1.4rem; font-weight: 700; margin: 0 0 6px; }
+.welcome-banner p  { margin: 0; opacity: 0.72; font-size: 0.9rem; }
 </style>
 
 <div class="db-wrap">
@@ -206,6 +228,12 @@ body {
     </jsp:include>
 
     <div class="db-main">
+
+        <!-- Welcome Banner -->
+        <div class="welcome-banner">
+            <h2 id="greetingText">Chào bạn, ${sessionScope.currentUser != null ? sessionScope.currentUser.fullName : 'Quản Trị Viên'}!</h2>
+            <p>Chúc bạn một ngày làm việc hiệu quả. Dưới đây là tình trạng hoạt động của toàn hệ thống.</p>
+        </div>
 
         <%-- Header --%>
         <div class="db-header">
@@ -379,6 +407,20 @@ body {
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // Lời chào tự động theo thời gian
+    const hour = new Date().getHours();
+    let greeting = 'Chào buổi sáng';
+    if (hour >= 12 && hour < 18) {
+        greeting = 'Chào buổi chiều';
+    } else if (hour >= 18) {
+        greeting = 'Chào buổi tối';
+    }
+    const greetingEl = document.getElementById('greetingText');
+    if (greetingEl) {
+        const name = '${sessionScope.currentUser != null ? sessionScope.currentUser.fullName : "Quản Trị Viên"}';
+        greetingEl.innerText = greeting + ', ' + name + '!';
+    }
+
     Chart.defaults.font.family = "'Inter', sans-serif";
     Chart.defaults.color = '#6b7280';
 
