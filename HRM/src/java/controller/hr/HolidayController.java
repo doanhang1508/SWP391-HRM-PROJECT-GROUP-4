@@ -29,9 +29,16 @@ public class HolidayController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        if (!isAuthorized(request, response)) {
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute(ATTR_CURRENT_USER) == null) {
+            redirect(response, request.getContextPath() + LOGIN_URL);
             return;
         }
+        // Xem lịch nghỉ lễ: mở cho toàn bộ nhân viên đã đăng nhập.
+        // Quyền thêm/sửa/xóa/sinh lịch vẫn chỉ dành riêng cho HR (kiểm tra trong doPost).
+        User viewer = (User) session.getAttribute(ATTR_CURRENT_USER);
+        boolean isHr = (viewer.getRoleId() == 2 || viewer.getRoleId() == 5);
+        request.setAttribute("isHrViewer", isHr);
 
         String yearStr = request.getParameter("year");
         int year;

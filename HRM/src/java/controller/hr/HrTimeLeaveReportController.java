@@ -79,9 +79,17 @@ public class HrTimeLeaveReportController extends HttpServlet {
             s.setStandardWorkDays(standardWorkDays);
         }
 
+        // Dữ liệu đầy đủ (không phân trang) dành riêng cho biểu đồ, để biểu đồ phản ánh
+        // toàn bộ nhân viên theo tháng/phòng ban đang lọc, không bị giới hạn bởi pageSize.
+        List<AttendanceSummary> chartDataList = attendanceDAO.getAdvancedAttendanceSummary(month, year, departmentId, 0, Integer.MAX_VALUE);
+        for (AttendanceSummary s : chartDataList) {
+            s.setStandardWorkDays(standardWorkDays);
+        }
+
         List<Department> departments = departmentDAO.getAll();
         
         request.setAttribute("reportList", reportList);
+        request.setAttribute("chartDataList", chartDataList);
         request.setAttribute("departments", departments);
         request.setAttribute("selectedMonth", month);
         request.setAttribute("selectedYear", year);

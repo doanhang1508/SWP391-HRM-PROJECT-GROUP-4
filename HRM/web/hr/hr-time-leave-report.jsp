@@ -1,6 +1,7 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <c:set var="pageTitle" value="Báo cáo Công & Phép" scope="request" />
 <jsp:include page="../header.jsp" />
@@ -72,6 +73,12 @@
     }
     
     @media(max-width:768px){.main-content{width:100%!important;padding:20px 16px!important;}}
+
+    .chart-card { background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:20px 24px; height:100%; }
+    .chart-card h6 { font-weight:700; color:#0f172a; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+    .chart-scroll-wrapper { overflow-x: auto; padding-bottom: 4px; }
+    .chart-scroll-inner { height: 260px; }
+    .chart-scroll-hint { font-size: 0.72rem; color: #94a3b8; margin-top: 6px; }
 </style>
 
 <div class="dashboard-wrapper">
@@ -131,6 +138,46 @@
                     <button type="submit" class="btn btn-primary w-100" style="height: 38px;">Lọc</button>
                 </div>
             </form>
+
+            <!-- Biểu đồ tổng hợp: dùng chartDataList (toàn bộ nhân viên theo bộ lọc), không phụ thuộc phân trang -->
+            <c:if test="${not empty chartDataList}">
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-7">
+                        <div class="chart-card">
+                            <h6>
+                                <i class="fas fa-chart-bar" style="color:#3b82f6;"></i> Công chuẩn &amp; Công thực tế theo nhân viên
+                            </h6>
+                            <div class="chart-scroll-wrapper">
+                                <div class="chart-scroll-inner" id="scrollWrapWorkDays">
+                                    <canvas id="chartWorkDays"></canvas>
+                                </div>
+                            </div>
+                            <div class="chart-scroll-hint"><i class="fas fa-arrows-alt-h"></i> Kéo ngang để xem thêm nhân viên (tổng: ${fn:length(chartDataList)} người)</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="chart-card">
+                            <h6>
+                                <i class="fas fa-chart-pie" style="color:#7c3aed;"></i> Cơ cấu ngày nghỉ (Phép/Ốm/Thai sản)
+                            </h6>
+                            <canvas id="chartLeaveBreakdown" height="220"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-lg-12">
+                        <div class="chart-card">
+                            <h6>
+                                <i class="fas fa-business-time" style="color:#ea580c;"></i> Giờ tăng ca (OT) theo nhân viên
+                            </h6>
+                            <div class="chart-scroll-wrapper">
+                                <div class="chart-scroll-inner" id="scrollWrapOt">
+                                    <canvas id="chartOtHours"></canvas>
+                                </div>
+                            </div>
+                            <div class="chart-scroll-hint"><i class="fas fa-arrows-alt-h"></i> Kéo ngang để xem thêm nhân viên (tổng: ${fn:length(chartDataList)} người)</div>
+                        </div>
+                    </div>
+                </div>
+            </c:if>
 
             <div class="table-responsive">
                 <table class="table-custom">
@@ -225,5 +272,96 @@
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<c:if test="${not empty chartDataList}">
+<script>
+    // Dữ liệu biểu đồ lấy từ chartDataList: TOÀN BỘ nhân viên theo tháng/năm/phòng ban đang lọc,
+    // không phụ thuộc phân trang của bảng (reportList) bên dưới.
+    const empNames = [
+        <c:forEach var="r" items="${chartDataList}">'${fn:escapeXml(r.userName)}',</c:forEach>
+    ];
+    const standardDays = [<c:forEach var="r" items="${chartDataList}">${r.standardWorkDays},</c:forEach>];
+    const actualDays   = [<c:forEach var="r" items="${chartDataList}">${r.actualWorkDays},</c:forEach>];
+    const regularOt = [<c:forEach var="r" items="${chartDataList}">${r.regularOtHrs},</c:forEach>];
+    const sundayOt   = [<c:forEach var="r" items="${chartDataList}">${r.sundayOtHrs},</c:forEach>];
+    const holidayOt  = [<c:forEach var="r" items="${chartDataList}">${r.holidayOtHrs},</c:forEach>];
+
+    let totalAnnual = 0, totalSick = 0, totalMaternity = 0;
+    <c:forEach var="r" items="${chartDataList}">
+        totalAnnual += ${r.annualLeaveDays};
+        totalSick += ${r.sickLeaveDays};
+        totalMaternity += ${r.maternityLeaveDays};
+    </c:forEach>
+
+    // Với số lượng nhân viên lớn, cột sẽ quá chật nếu ép vừa khung cố định.
+    // Thay vào đó: cho canvas rộng theo tỉ lệ số nhân viên và cuộn ngang trong khung chứa.
+    const PX_PER_EMPLOYEE = 55;
+    function sizeScrollableChart(wrapperId, canvasId, count) {
+        const wrapper = document.getElementById(wrapperId);
+        const canvas = document.getElementById(canvasId);
+        const containerWidth = wrapper.parentElement.clientWidth;
+        const neededWidth = count * PX_PER_EMPLOYEE;
+        const finalWidth = Math.max(containerWidth, neededWidth);
+        wrapper.style.width = finalWidth + 'px';
+        canvas.style.width = finalWidth + 'px';
+        canvas.style.height = '100%';
+    }
+    sizeScrollableChart('scrollWrapWorkDays', 'chartWorkDays', empNames.length);
+    sizeScrollableChart('scrollWrapOt', 'chartOtHours', empNames.length);
+
+    // 1) Công chuẩn vs Công thực tế
+    new Chart(document.getElementById('chartWorkDays'), {
+        type: 'bar',
+        data: {
+            labels: empNames,
+            datasets: [
+                { label: 'Công chuẩn', data: standardDays, backgroundColor: '#cbd5e1', borderRadius: 4 },
+                { label: 'Công thực tế', data: actualDays, backgroundColor: '#3b82f6', borderRadius: 4 }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    // 2) Cơ cấu ngày nghỉ (tổng hợp toàn bộ, không phụ thuộc số lượng nhân viên)
+    new Chart(document.getElementById('chartLeaveBreakdown'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Phép năm', 'Nghỉ ốm', 'Thai sản'],
+            datasets: [{
+                data: [totalAnnual, totalSick, totalMaternity],
+                backgroundColor: ['#22c55e', '#f59e0b', '#ec4899']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+
+    // 3) Giờ OT theo nhân viên (stacked)
+    new Chart(document.getElementById('chartOtHours'), {
+        type: 'bar',
+        data: {
+            labels: empNames,
+            datasets: [
+                { label: 'OT thường', data: regularOt, backgroundColor: '#38bdf8', stack: 'ot' },
+                { label: 'OT Chủ nhật', data: sundayOt, backgroundColor: '#facc15', stack: 'ot' },
+                { label: 'OT Lễ', data: holidayOt, backgroundColor: '#ef4444', stack: 'ot' }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
+        }
+    });
+</script>
+</c:if>
 </body>
 </html>

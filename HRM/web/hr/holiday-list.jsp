@@ -108,6 +108,30 @@
     .ic-1{background:#eff6ff;color:#2b6cb0;} .ic-2{background:#faf5ff;color:#7c3aed;} .ic-3{background:#f0fdf4;color:#16a34a;} .ic-4{background:#fff7ed;color:#ea580c;} .ic-5{background:#fdf2f8;color:#db2777;}
     @media (max-width:900px) { .page-main { padding: 20px 16px; } .summary-grid { grid-template-columns: 1fr 1fr; } }
     @media (max-width:600px) { .summary-grid { grid-template-columns: 1fr; } .modal-box { width: 95%; margin: 5% auto; padding: 20px; } }
+
+    /* VIEW TOGGLE (Danh sách / Lịch năm) */
+    .view-toggle { display:flex; gap:8px; margin-bottom:20px; }
+    .toggle-btn { background:var(--surface); border:1px solid var(--border); padding:9px 18px; border-radius:8px; font-size:.85rem; font-weight:600; color:var(--muted); cursor:pointer; display:flex; align-items:center; gap:7px; transition:all .2s; font-family:'Inter',sans-serif; }
+    .toggle-btn:hover { border-color:var(--blue); color:var(--blue); }
+    .toggle-btn.active { background:var(--blue); border-color:var(--blue); color:#fff; }
+
+    /* YEAR CALENDAR VIEW */
+    .year-calendar-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+    .month-block { border:1px solid var(--border); border-radius:12px; padding:14px 16px; background:#fbfbfa; min-height:130px; }
+    .month-block-header { font-family:'Be Vietnam Pro',sans-serif; font-weight:800; color:var(--navy); font-size:.85rem; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+    .month-block-count { font-size:.68rem; font-weight:700; color:var(--muted); background:#f1f5f9; padding:1px 8px; border-radius:10px; }
+    .month-holiday-item { display:flex; align-items:center; gap:6px; font-size:.78rem; padding:5px 0; color:var(--text); border-bottom:1px dashed #f1f5f9; }
+    .month-holiday-item:last-child { border-bottom:none; }
+    .month-holiday-item.mh-inactive { opacity:.45; text-decoration:line-through; }
+    .mh-date { font-weight:700; color:var(--blue); flex-shrink:0; min-width:34px; }
+    .mh-name { flex:1; line-height:1.3; }
+    .mh-badge { font-size:.6rem; font-weight:700; padding:1px 6px; border-radius:10px; flex-shrink:0; }
+    .mh-badge.mh-solar { background:#fff7ed; color:#ea580c; }
+    .mh-badge.mh-lunar { background:#faf5ff; color:#7c3aed; }
+    .month-empty { font-size:.75rem; color:var(--muted); font-style:italic; }
+    @media (max-width:1100px) { .year-calendar-grid { grid-template-columns:repeat(3,1fr); } }
+    @media (max-width:760px) { .year-calendar-grid { grid-template-columns:repeat(2,1fr); } }
+    @media (max-width:480px) { .year-calendar-grid { grid-template-columns:1fr; } }
 </style>
 
 <div class="page-wrapper">
@@ -135,18 +159,26 @@
                         </c:forEach>
                     </select>
                 </form>
-                <form action="${pageContext.request.contextPath}/hr/holiday" method="POST" style="margin:0;" onsubmit="return confirm('Hệ thống sẽ tự động sinh và bổ sung các ngày lễ còn thiếu cho năm ${selectedYear}. Bạn có chắc chắn không?');">
-                    <input type="hidden" name="action" value="generate">
-                    <input type="hidden" name="year" value="${selectedYear}">
-                    <button type="submit" class="btn-primary" style="background:#16a34a;">
-                        <i class="fas fa-magic"></i> Sinh lịch nghỉ năm ${selectedYear}
+                <c:if test="${isHrViewer}">
+                    <form action="${pageContext.request.contextPath}/hr/holiday" method="POST" style="margin:0;" onsubmit="return confirm('Hệ thống sẽ tự động sinh và bổ sung các ngày lễ còn thiếu cho năm ${selectedYear}. Bạn có chắc chắn không?');">
+                        <input type="hidden" name="action" value="generate">
+                        <input type="hidden" name="year" value="${selectedYear}">
+                        <button type="submit" class="btn-primary" style="background:#16a34a;">
+                            <i class="fas fa-magic"></i> Sinh lịch nghỉ năm ${selectedYear}
+                        </button>
+                    </form>
+                    <button class="btn-primary" onclick="openAddModal()">
+                        <i class="fas fa-plus"></i> Thêm ngày lễ
                     </button>
-                </form>
-                <button class="btn-primary" onclick="openAddModal()">
-                    <i class="fas fa-plus"></i> Thêm ngày lễ
-                </button>
+                </c:if>
             </div>
         </div>
+
+        <c:if test="${not isHrViewer}">
+            <div style="background:#eff6ff; color:#1e40af; padding:12px 16px; border-radius:8px; margin-bottom:24px; font-size:0.85rem; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-info-circle"></i> Đây là lịch nghỉ lễ chung của toàn công ty (chỉ xem).
+            </div>
+        </c:if>
 
         <!-- JSTL Tính toán Summary Cards -->
         <c:set var="totalSolar" value="0"/>
@@ -195,7 +227,16 @@
             </div>
         </div>
 
-        <div class="panel">
+        <div class="view-toggle">
+            <button type="button" class="toggle-btn" id="btnViewList" onclick="switchHolidayView('list')">
+                <i class="fas fa-list"></i> Danh sách
+            </button>
+            <button type="button" class="toggle-btn" id="btnViewCalendar" onclick="switchHolidayView('calendar')">
+                <i class="fas fa-calendar-alt"></i> Lịch năm
+            </button>
+        </div>
+
+        <div class="panel" id="listViewPanel">
             <div class="panel-header">
                 <h3 class="panel-title"><span class="dot"></span> Danh Sách Ngày Nghỉ Lễ</h3>
                 <div class="filter-actions">
@@ -221,7 +262,9 @@
                             <th style="text-align:center;">Hệ số OT</th>
                             <th style="text-align:center;">Nguồn</th>
                             <th style="text-align:center;">Trạng thái</th>
-                            <th style="text-align:center;">Hành động</th>
+                            <c:if test="${isHrViewer}">
+                                <th style="text-align:center;">Hành động</th>
+                            </c:if>
                         </tr>
                     </thead>
                     <tbody>
@@ -289,6 +332,7 @@
                                                 </c:otherwise>
                                             </c:choose>
                                         </td>
+                                        <c:if test="${isHrViewer}">
                                         <td style="text-align:center; white-space: nowrap;">
                                             <button class="action-btn btn-edit" title="Chỉnh sửa" 
                                                     onclick="openEditModal('${h.holidayId}','${fn:escapeXml(h.holidayName)}','${h.holidayDate}','${h.calendarType}','${h.otMultiplier}','${fn:escapeXml(h.description)}')">
@@ -322,6 +366,7 @@
                                                 </c:otherwise>
                                             </c:choose>
                                         </td>
+                                        </c:if>
                                     </tr>
                                 </c:forEach>
                             </c:otherwise>
@@ -340,6 +385,52 @@
                     <div id="pageNumbers" style="display: flex; gap: 4px;"></div>
                     <button class="btn-page" id="btnNextPage" onclick="nextPage()"><i class="fas fa-chevron-right"></i></button>
                 </div>
+            </div>
+        </div>
+
+        <div class="panel" id="calendarViewPanel" style="display:none;">
+            <div class="panel-header">
+                <h3 class="panel-title"><span class="dot"></span> Lịch Nghỉ Lễ Năm ${selectedYear}</h3>
+            </div>
+            <div class="year-calendar-grid">
+                <c:forEach var="m" begin="1" end="12">
+                    <c:set var="monthCount" value="0"/>
+                    <div class="month-block">
+                        <div class="month-block-header">
+                            <span>Tháng ${m}</span>
+                            <c:forEach var="h" items="${holidayList}">
+                                <fmt:formatDate value="${h.holidayDate}" pattern="M" var="hMonthChk"/>
+                                <c:if test="${hMonthChk == m && h.status}"><c:set var="monthCount" value="${monthCount + 1}"/></c:if>
+                            </c:forEach>
+                            <span class="month-block-count">${monthCount}</span>
+                        </div>
+                        <div class="month-block-body">
+                            <c:set var="hasHoliday" value="false"/>
+                            <c:forEach var="h" items="${holidayList}">
+                                <fmt:formatDate value="${h.holidayDate}" pattern="M" var="hMonth"/>
+                                <c:if test="${hMonth == m}">
+                                    <c:set var="hasHoliday" value="true"/>
+                                    <fmt:formatDate value="${h.holidayDate}" pattern="dd/MM" var="hShortDate"/>
+                                    <div class="month-holiday-item ${h.status ? '' : 'mh-inactive'}" title="${fn:escapeXml(h.description)}">
+                                        <span class="mh-date">${hShortDate}</span>
+                                        <span class="mh-name">${h.holidayName}</span>
+                                        <c:choose>
+                                            <c:when test="${h.calendarType eq 'LUNAR'}">
+                                                <span class="mh-badge mh-lunar">Âm</span>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span class="mh-badge mh-solar">Dương</span>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </div>
+                                </c:if>
+                            </c:forEach>
+                            <c:if test="${!hasHoliday}">
+                                <div class="month-empty">Không có ngày lễ</div>
+                            </c:if>
+                        </div>
+                    </div>
+                </c:forEach>
             </div>
         </div>
     </div>
@@ -545,6 +636,33 @@
             updateTable();
         }
     }
+
+    /* VIEW TOGGLE: Danh sách <-> Lịch năm */
+    function switchHolidayView(view) {
+        const listPanel = document.getElementById('listViewPanel');
+        const calendarPanel = document.getElementById('calendarViewPanel');
+        const btnList = document.getElementById('btnViewList');
+        const btnCalendar = document.getElementById('btnViewCalendar');
+
+        if (view === 'calendar') {
+            listPanel.style.display = 'none';
+            calendarPanel.style.display = '';
+            btnCalendar.classList.add('active');
+            btnList.classList.remove('active');
+        } else {
+            listPanel.style.display = '';
+            calendarPanel.style.display = 'none';
+            btnList.classList.add('active');
+            btnCalendar.classList.remove('active');
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        // Nhân viên thường (không phải HR) mặc định xem Lịch năm cho trực quan;
+        // HR vẫn mặc định xem Danh sách để giữ thói quen quản lý như cũ.
+        const isHrViewer = ${isHrViewer eq true ? 'true' : 'false'};
+        switchHolidayView(isHrViewer ? 'list' : 'calendar');
+    });
 </script>
 
 <jsp:include page="../footer.jsp" />

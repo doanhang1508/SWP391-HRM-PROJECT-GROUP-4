@@ -369,6 +369,14 @@
                                             </li>
                                         </c:if>
 
+                                        <%-- ══════ Lịch nghỉ lễ: hiển thị cho TOÀN BỘ nhân viên công ty ══════ --%>
+                                        <li class="sidebar-item">
+                                            <a href="${pageContext.request.contextPath}/hr/holiday"
+                                                class="sidebar-link ${param.activeMenu eq 'holiday' ? 'active' : ''}">
+                                                <i class="fas fa-calendar-day"></i> Lịch nghỉ lễ công ty
+                                            </a>
+                                        </li>
+
                                         <%-- ══════ ADMIN (roleId=1): CHỈ quản trị hệ thống ══════ --%>
                                             <c:if test="${sessionScope.currentUser.roleId == 1}">
                                                 <li class="sidebar-menu-category">Quản trị Hệ thống</li>

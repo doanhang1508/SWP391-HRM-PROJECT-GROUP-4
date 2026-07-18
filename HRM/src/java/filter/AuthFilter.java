@@ -16,6 +16,8 @@ import java.io.IOException;
  * /admin/users            → role 1 (Admin only) — quản lý tài khoản
  * /admin/* (còn lại)      → role 1, 2 (Admin + HR Manager)
  * /hr/*                   → role 2, 5 (HR Manager + HR Staff)
+ *   ngoại lệ: /hr/holiday (xem lịch nghỉ lễ) → GET mở cho mọi role đã đăng nhập;
+ *             POST (thêm/sửa/xóa/sinh lịch) vẫn chỉ HR Manager/HR Staff
  * /accountant/*           → role 8 (Accountant only)
  * /employee/*             → mọi role đã đăng nhập
  * /editRolePermission     → role 1 (Admin only)
@@ -135,6 +137,16 @@ public class AuthFilter implements Filter {
                     redirectToAppropriate(req, resp, roleId);
                     return;
                 }
+            } else if (path.equals("/hr/holiday")) {
+                // Xem Lịch nghỉ lễ (GET): mở cho TOÀN BỘ nhân viên đã đăng nhập, mọi role.
+                // Thao tác ghi (POST: thêm/sửa/xóa/sinh lịch) vẫn chỉ dành riêng cho HR.
+                if ("POST".equalsIgnoreCase(req.getMethod())) {
+                    if (roleId != ROLE_HR_MANAGER && roleId != ROLE_HR_STAFF) {
+                        redirectToAppropriate(req, resp, roleId);
+                        return;
+                    }
+                }
+                // GET: không chặn, cho qua với mọi role đã đăng nhập.
             } else if (path.startsWith("/hr/department") || path.startsWith("/hr/position") || 
                        path.startsWith("/hr/contract-type") || path.startsWith("/hr/shifts") || 
                        path.startsWith("/hr/allowance")) {
