@@ -79,10 +79,10 @@
                             style="font-size:.75rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:20px">
                             Phân hệ</h6>
                         <ul style="list-style:none;padding:0;margin:0">
-                            <li style="margin-bottom:14px"><a href="#" class="footer-link">Hồ sơ nhân sự</a></li>
-                            <li style="margin-bottom:14px"><a href="#" class="footer-link">Chấm công ca kíp</a></li>
-                            <li style="margin-bottom:14px"><a href="#" class="footer-link">Bảng lương & C&B</a></li>
-                            <li style="margin-bottom:14px"><a href="#" class="footer-link">Báo cáo & KPI</a></li>
+                            <li style="margin-bottom:14px"><a href="${pageContext.request.contextPath}/hr/employees" class="footer-link">Hồ sơ nhân sự</a></li>
+                            <li style="margin-bottom:14px"><a href="${pageContext.request.contextPath}/hr/attendance-management" class="footer-link">Chấm công ca kíp</a></li>
+                            <li style="margin-bottom:14px"><a href="${pageContext.request.contextPath}/hr/payroll" class="footer-link">Bảng lương &amp; C&amp;B</a></li>
+                            <li style="margin-bottom:14px"><a href="${pageContext.request.contextPath}/hr/kpi-performance-report" class="footer-link">Báo cáo &amp; KPI</a></li>
                         </ul>
                     </div>
 
@@ -92,10 +92,10 @@
                             style="font-size:.75rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:20px">
                             Nhân viên</h6>
                         <ul style="list-style:none;padding:0;margin:0">
-                            <li style="margin-bottom:14px"><a href="#" class="footer-link">Sổ tay nhân viên</a></li>
-                            <li style="margin-bottom:14px"><a href="#" class="footer-link">Quy định công ty</a></li>
-                            <li style="margin-bottom:14px"><a href="#" class="footer-link">Biểu mẫu xin nghỉ</a></li>
-                            <li style="margin-bottom:14px"><a href="#" class="footer-link">Cổng Helpdesk IT</a></li>
+                            <li style="margin-bottom:14px"><a href="${pageContext.request.contextPath}/employee/timesheet" class="footer-link">Sổ tay nhân viên</a></li>
+                            <li style="margin-bottom:14px"><a href="${pageContext.request.contextPath}/company-rules.jsp" class="footer-link">Quy định công ty</a></li>
+                            <li style="margin-bottom:14px"><a href="${pageContext.request.contextPath}/employee/leave" class="footer-link">Biểu mẫu xin nghỉ</a></li>
+                            <li style="margin-bottom:14px"><a href="${pageContext.request.contextPath}/employee/schedule" class="footer-link">Lịch làm việc</a></li>
                         </ul>
                     </div>
 
