@@ -797,8 +797,10 @@ public class AttendanceDAO {
                      "FROM attendance a " +
                      "JOIN shift_assignments sa ON sa.user_id = a.user_id AND sa.assigned_date = a.work_date " +
                      "WHERE a.user_id=? AND MONTH(a.work_date)=? AND YEAR(a.work_date)=? " +
-                     "  AND UPPER(a.status) IN ('PRESENT','LATE','P','T','HALFDAY') " +
-                     "  AND a.check_in IS NOT NULL AND a.check_out IS NOT NULL " +
+                     "  AND ( " +
+                     "    (UPPER(a.status) IN ('PRESENT','LATE','P','T','HALFDAY') AND a.check_in IS NOT NULL AND a.check_out IS NOT NULL) " +
+                     "    OR (UPPER(a.status) = 'LEAVE') " +
+                     "  ) " +
                      "  AND DAYOFWEEK(a.work_date) <> 1 " +
                      "  AND NOT EXISTS (" +
                      "      SELECT 1 FROM holidays h " +
@@ -1624,7 +1626,7 @@ public class AttendanceDAO {
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT u.user_id, u.full_name AS user_name, d.department_name, ");
         // Actual Work Days
-        sql.append("SUM(CASE WHEN UPPER(a.status) IN ('P', 'PRESENT', 'L', 'LATE', 'T') ")
+        sql.append("SUM(CASE WHEN UPPER(a.status) IN ('P', 'PRESENT', 'L', 'LATE', 'T', 'LEAVE') ")
            .append("AND DAYOFWEEK(a.work_date) != 1 AND h.holiday_date IS NULL THEN 1 ELSE 0 END) AS actual_work_days, ");
         // Late Count
         sql.append("SUM(CASE WHEN UPPER(a.status) IN ('L', 'LATE', 'T') THEN 1 ELSE 0 END) AS late_cnt, ");
