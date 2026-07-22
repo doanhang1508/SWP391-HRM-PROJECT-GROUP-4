@@ -955,7 +955,11 @@ INSERT INTO leave_requests (user_id, leave_type_id, start_date, end_date, total_
 (3,  2, '2026-06-01', '2026-06-02', 2.0, 'Ốm sốt siêu vi', 'Approved', 2),
 (5,  2, '2026-06-08', '2026-06-09', 2.0, 'Cảm cúm', 'Approved', 3),
 (10, 2, '2026-06-03', '2026-06-04', 2.0, 'Sốt cao, có giấy nghỉ của bác sĩ',        'Approved', 3),
-(33, 2, '2026-06-18', '2026-06-19', 2.0, 'Điều trị dạ dày', 'Approved', 14);
+(33, 2, '2026-06-18', '2026-06-19', 2.0, 'Điều trị dạ dày', 'Approved', 14),
+-- Nghỉ thai sản (leave_type_id = 3) — user 27 nghỉ thai sản cả tháng 7/2026
+-- Tháng 7/2026 có 26 ngày làm việc (27 ngày T2-T7 trừ 1 ngày lễ test 15/7)
+-- Hưởng BHXH 100%: insuranceBenefit = baseSalary / 24 * 100% * 26 ngày
+(27, 3, '2026-07-01', '2026-07-31', 27.0, 'Nghỉ thai sản theo quy định', 'Approved', 3);
 
 -- Seed data for position_allowances
 -- Giám đốc (1): Ăn trưa, Đi lại, Điện thoại, Trách nhiệm GĐ
@@ -1698,6 +1702,9 @@ INSERT INTO holidays (holiday_name, holiday_date, holiday_year, rule_code, sourc
 ('Giỗ Tổ Hùng Vương (nghỉ bù)', '2026-04-27', 2026, 'GIO_TO', 'AUTO', 'LUNAR', 3.00, 1),
 ('Ngày Giải phóng miền Nam', '2026-04-30', 2026, 'GIAI_PHONG', 'AUTO', 'SOLAR', 3.00, 1),
 ('Ngày Quốc tế Lao động', '2026-05-01', 2026, 'QUOC_TE_LAO_DONG', 'AUTO', 'SOLAR', 3.00, 1),
+-- Ngày lễ test tính năng holiday trong hệ thống tính lương (15/7/2026 - Thứ Tư)
+-- Mục đích: kiểm tra ngày lễ giữa tháng bị loại khỏi standardWorkDays và insuranceBenefit
+('Ngày lễ test hệ thống', '2026-07-15', 2026, 'TEST_HOLIDAY_0715', 'MANUAL', 'SOLAR', 3.00, 1),
 ('Quốc khánh (liền kề)', '2026-09-01', 2026, 'QUOC_KHANH_1', 'AUTO', 'SOLAR', 3.00, 1),
 ('Quốc khánh', '2026-09-02', 2026, 'QUOC_KHANH_2', 'AUTO', 'SOLAR', 3.00, 1)
 ON DUPLICATE KEY UPDATE 

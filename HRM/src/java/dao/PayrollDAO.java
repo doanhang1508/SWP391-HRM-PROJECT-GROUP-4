@@ -884,11 +884,28 @@ public class PayrollDAO {
                     .add(bonusBhxhAmount);
             BigDecimal insuranceAmount = calculateInsurance(insuranceBase);
 
+            // ── Miễn đóng BHXH khi nghỉ thai sản toàn tháng (Điều 85 Luật BHXH 2014) ──
+            // Khi NLĐ nghỉ thai sản (nữ: type_id=3, nam: type_id=6) toàn bộ tháng:
+            //   - totalDays = 0 (không có ngày công)
+            //   - Tất cả ngày trong unpaidLeaveDaysForExclusion đều là loại thai sản
+            // → cả NLĐ và NSDLĐ đều KHÔNG đóng BHXH tháng đó.
+            // Giữ nguyên insuranceBase để tính insuranceBenefit đúng mức lương đóng BH.
+            if (totalDays == 0.0 && unpaidLeaveDaysForExclusion != null && !unpaidLeaveDaysForExclusion.isEmpty()) {
+                boolean allMaternity = unpaidLeaveDaysForExclusion.values().stream()
+                        .allMatch(ltId -> ltId == 3 || ltId == 6);
+                if (allMaternity) {
+                    insuranceAmount = BigDecimal.ZERO;
+                    System.out.println("[PAYROLL INFO] userId=" + userId + " tháng=" + month + "/" + year
+                            + ": miễn đóng BHXH do nghỉ thai sản toàn tháng (Điều 85 Luật BHXH 2014).");
+                }
+            }
+
             // ── Trợ cấp nghỉ ốm / thai sản (insuranceBenefit) ──
             // Công thức: insuranceBase / 24 × rate% × số ngày nghỉ đủ điều kiện
             // Tính SAU insuranceBase để dùng đúng nền bảo hiểm thực tế.
             // Dùng lại unpaidLeaveDaysForExclusion (đã lấy ở Bước 2b) để tránh query DB trùng.
             BigDecimal insuranceBenefit = calculateInsuranceBenefit(insuranceBase, unpaidLeaveDaysForExclusion, insuranceRateMap);
+
 
             // ── Gross Salary = tổng đầy đủ thực nhận (hiển thị phiếu lương) ──
             BigDecimal grossSalary = baseWorkedSalary.add(allowanceAmount).add(overtimeAmount).add(bonusAmount);

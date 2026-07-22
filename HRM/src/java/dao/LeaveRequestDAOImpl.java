@@ -843,6 +843,17 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
             e.printStackTrace();
         }
 
+        // Fallback flag: nếu không có shift assignment nào được xếp cho nhân viên
+        // trong tháng, dùng tất cả ngày làm việc bình thường (T2-T7, không CN, không lễ).
+        boolean noShiftAssigned = assignedDates.isEmpty();
+
+        // Hằng số nhận diện loại nghỉ thai sản (nữ: 3, nam: 6).
+        // Nghỉ thai sản là nghỉ dài hạn theo quyết định cố định → BHXH tính trợ cấp
+        // cho TẤT CẢ ngày làm việc trong kỳ nghỉ, không phụ thuộc vào shift assignment.
+        // (Khác với nghỉ ốm: nhân viên nghỉ ốm đột xuất nên chỉ tính ngày được phân ca.)
+        final java.util.Set<Integer> MATERNITY_LEAVE_TYPE_IDS = new java.util.HashSet<>(
+                java.util.Arrays.asList(3, 6));
+
         Map<LocalDate, Integer> unpaidLeaveMap = new HashMap<>();
         try (Connection c = DBContext.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -859,11 +870,25 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
                     LocalDate effectiveStart = leaveStart.isBefore(firstDayOfMonth) ? firstDayOfMonth : leaveStart;
                     LocalDate effectiveEnd   = leaveEnd.isAfter(lastDayOfMonth)     ? lastDayOfMonth  : leaveEnd;
 
+                    // Nghỉ thai sản: không cần shift assignment — BHXH trả đủ cho mọi
+                    // ngày làm việc trong kỳ nghỉ (Điều 34 Luật BHXH 2014).
+                    // Nghỉ ốm và loại khác: giữ yêu cầu shift assignment (+ fallback khi rỗng).
+                    boolean isMaternity = MATERNITY_LEAVE_TYPE_IDS.contains(leaveTypeId);
+
                     LocalDate current = effectiveStart;
                     while (!current.isAfter(effectiveEnd)) {
                         boolean isSunday  = current.getDayOfWeek() == DayOfWeek.SUNDAY;
                         boolean isHoliday = activeHolidayDates.contains(current);
-                        if (assignedDates.contains(current) && !isSunday && !isHoliday) {
+                        boolean isWorkDay;
+                        if (isMaternity) {
+                            // Thai sản: tính tất cả ngày làm việc, bỏ qua shift assignment
+                            isWorkDay = !isSunday && !isHoliday;
+                        } else {
+                            // Nghỉ ốm / loại khác: cần có shift assignment (hoặc fallback)
+                            isWorkDay = (noShiftAssigned || assignedDates.contains(current))
+                                    && !isSunday && !isHoliday;
+                        }
+                        if (isWorkDay) {
                             unpaidLeaveMap.put(current, leaveTypeId);
                         }
                         current = current.plusDays(1);
