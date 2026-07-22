@@ -278,32 +278,6 @@ public class TimesheetConfirmationController extends HttpServlet {
                 }
             }
         } 
-        else if ("departmentReject".equals(action)) {
-            String reason = request.getParameter("reason");
-            if (reason == null || reason.trim().isEmpty()) {
-                session.setAttribute("errorMessage", "Vui lòng nhập lý do từ chối.");
-            } else if (roleId != 1 && roleId != 6 && roleId != 3 && roleId != 2) {
-                session.setAttribute("errorMessage", "Bạn không có quyền thực hiện hành động này.");
-            } else if ((roleId == 6 || roleId == 3 || roleId == 2) && currentUser.getDepartmentId() != tc.getDepartmentId()) {
-                session.setAttribute("errorMessage", "Bạn chỉ được phản hồi bảng công của phòng ban mình.");
-            } else if (!"SENT_TO_DEPARTMENT".equals(tc.getStatus())) {
-                session.setAttribute("errorMessage", "Trạng thái hiện tại không hợp lệ để từ chối.");
-            } else {
-                if (tcDAO.updateStatus(id, "DEPARTMENT_REJECTED", currentUser.getUserId(), reason.trim())) {
-                    tcDAO.resetConfirmationsForDept(tc.getMonth(), tc.getYear(), tc.getDepartmentId());
-                    session.setAttribute("successMessage", "Đã gửi phản hồi sai lệch cho HR.");
-                    notificationDAO notif = new notificationDAO();
-                    notif.createForRoles(new int[]{2, 5}, "attendance", "Bảng công phòng ban bị từ chối",
-                        "Bảng công phòng ban " + tc.getDepartmentName() + " Tháng " + tc.getMonth() + "/" + tc.getYear() + " đã bị Trưởng phòng từ chối. Lý do: " + reason,
-                        "/manager/timesheet-confirm?month=" + tc.getMonth() + "&year=" + tc.getYear());
-                    notif.createForDepartmentEmployees(tc.getDepartmentId(), "attendance", "Bảng công bị từ chối duyệt",
-                        "Bảng công phòng ban Tháng " + tc.getMonth() + "/" + tc.getYear() + " đã bị Trưởng phòng từ chối. Vui lòng kiểm tra lại sau khi HR cập nhật.",
-                        "/employee/timesheet?month=" + tc.getMonth() + "&year=" + tc.getYear());
-                } else {
-                    session.setAttribute("errorMessage", "Phản hồi thất bại.");
-                }
-            }
-        } 
         else if ("sendToHRManager".equals(action)) {
             if (roleId != 1 && roleId != 5) {
                 session.setAttribute("errorMessage", "Bạn không có quyền thực hiện hành động này.");
@@ -337,33 +311,6 @@ public class TimesheetConfirmationController extends HttpServlet {
                         "/manager/timesheet-confirm?month=" + tc.getMonth() + "&year=" + tc.getYear());
                 } else {
                     session.setAttribute("errorMessage", "Duyệt thất bại.");
-                }
-            }
-        } 
-        else if ("hrManagerReject".equals(action)) {
-            String reason = request.getParameter("reason");
-            if (reason == null || reason.trim().isEmpty()) {
-                session.setAttribute("errorMessage", "Vui lòng nhập lý do từ chối.");
-            } else if (roleId != 1 && roleId != 2) {
-                session.setAttribute("errorMessage", "Chỉ Trưởng phòng Nhân sự (HR Manager) mới có quyền từ chối.");
-            } else if (!"SENT_TO_HR_MANAGER".equals(tc.getStatus())) {
-                session.setAttribute("errorMessage", "Bảng công chưa được gửi lên HR Manager.");
-            } else {
-                if (tcDAO.updateStatus(id, "HR_MANAGER_REJECTED", currentUser.getUserId(), reason.trim())) {
-                    tcDAO.resetConfirmationsForDept(tc.getMonth(), tc.getYear(), tc.getDepartmentId());
-                    session.setAttribute("successMessage", "Đã từ chối duyệt bảng công.");
-                    notificationDAO notif = new notificationDAO();
-                    notif.createForRoles(new int[]{5}, "attendance", "Bảng công bị từ chối duyệt",
-                        "Bảng công phòng ban " + tc.getDepartmentName() + " Tháng " + tc.getMonth() + "/" + tc.getYear() + " bị Trưởng phòng Nhân sự từ chối. Lý do: " + reason,
-                        "/manager/timesheet-confirm?month=" + tc.getMonth() + "&year=" + tc.getYear());
-                    notif.createForDepartmentHead(tc.getDepartmentId(), "attendance", "Bảng công bị từ chối duyệt",
-                        "Bảng công phòng ban Tháng " + tc.getMonth() + "/" + tc.getYear() + " bị từ chối bởi Trưởng phòng Nhân sự. Lý do: " + reason,
-                        "/manager/timesheet-confirm?month=" + tc.getMonth() + "&year=" + tc.getYear());
-                    notif.createForDepartmentEmployees(tc.getDepartmentId(), "attendance", "Bảng công bị từ chối duyệt",
-                        "Bảng công phòng ban Tháng " + tc.getMonth() + "/" + tc.getYear() + " bị từ chối bởi Trưởng phòng Nhân sự. Vui lòng kiểm tra lại sau khi cập nhật.",
-                        "/employee/timesheet?month=" + tc.getMonth() + "&year=" + tc.getYear());
-                } else {
-                    session.setAttribute("errorMessage", "Từ chối thất bại.");
                 }
             }
         }

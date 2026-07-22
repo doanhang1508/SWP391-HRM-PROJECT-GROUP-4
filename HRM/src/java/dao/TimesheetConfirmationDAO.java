@@ -520,17 +520,4 @@ public class TimesheetConfirmationDAO {
         return false;
     }
 
-    public boolean resetConfirmationsForDept(int month, int year, int deptId) {
-        String sql = "DELETE FROM timesheet_employee_confirmations WHERE month = ? AND year = ? AND department_id = ?";
-        try (Connection conn = DBContext.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, month);
-            ps.setInt(2, year);
-            ps.setInt(3, deptId);
-            return ps.executeUpdate() >= 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
 }
