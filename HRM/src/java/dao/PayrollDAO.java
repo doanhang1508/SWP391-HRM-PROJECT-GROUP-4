@@ -621,64 +621,165 @@ public class PayrollDAO {
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // INSURANCE BENEFIT HELPER
+    // INSURANCE BENEFIT HELPERS
     // ═══════════════════════════════════════════════════════════════
 
+    /** leaveTypeId = 2: Nghỉ ốm hưởng BHXH */
+    private static final int SICK_LEAVE_TYPE_ID = 2;
+
     /**
-     * Số ngày bảo hiểm chuẩn để tính trợ cấp (quy định: 1 tháng = 24 ngày công bảo hiểm).
-     * Không dùng standardWorkDays vì trợ cấp BHXH dựa trên hệ số 24 ngày cố định.
+     * leaveTypeId = 3: Nghỉ thai sản nữ.
+     * Thai sản nam (type_id = 6) đã bị loại bỏ khỏi hệ thống.
+     */
+    private static final int FEMALE_MATERNITY_LEAVE_TYPE_ID = 3;
+
+    /**
+     * Số ngày bảo hiểm chuẩn để tính trợ cấp nghỉ ốm (quy định: 1 tháng = 24 ngày công BH).
+     * Không áp dụng cho thai sản nữ — xem {@link #calculateFemaleMaternityBenefit}.
      */
     private static final BigDecimal SICK_BENEFIT_DIVISOR = new BigDecimal("24");
 
     /**
-     * Tính trợ cấp nghỉ ốm / thai sản (insuranceBenefit) do BHXH chi trả.
+     * Kiểm tra xem nhân viên có đơn nghỉ thai sản nữ (type_id = 3) đã duyệt
+     * giao với tháng payroll không.
      *
-     * Công thức:
-     *   insuranceBenefit = Σ ( insuranceBase / 24 × rate% ) cho từng ngày nghỉ đủ điều kiện
+     * <p>Không phụ thuộc vào ShiftAssignment — query thẳng leave_requests.
+     * Điều kiện: khoảng nghỉ giao với [firstDayOfMonth, lastDayOfMonth].
      *
-     * Lý do dùng insuranceBase/24 (không dùng baseSalary/standardWorkDays):
-     *   - Theo Luật BHXH 2014 Điều 26/28: mức trợ cấp tính theo lương đóng BH chia 24 ngày.
-     *   - standardWorkDays thay đổi theo tháng (22–26 ngày) → gây sai số.
-     *   - insuranceBase bao gồm cả phụ cấp is_bhxh_applied=1 (đúng nền đóng BH thực tế).
+     * @return true nếu có ít nhất 1 ngày thai sản trong tháng payroll
+     */
+    public boolean hasApprovedFemaleMaternityLeaveInMonth(int userId, int month, int year) {
+        java.time.LocalDate first = java.time.LocalDate.of(year, month, 1);
+        java.time.LocalDate last  = first.with(java.time.temporal.TemporalAdjusters.lastDayOfMonth());
+        String sql = "SELECT COUNT(*) FROM leave_requests "
+                   + "WHERE user_id = ? AND leave_type_id = ? AND status = 'Approved' "
+                   + "AND start_date <= ? AND end_date >= ?";
+        try (java.sql.Connection c = util.DBContext.getConnection();
+             java.sql.PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, FEMALE_MATERNITY_LEAVE_TYPE_ID);
+            ps.setDate(3, java.sql.Date.valueOf(last));
+            ps.setDate(4, java.sql.Date.valueOf(first));
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Tính trợ cấp nghỉ ốm (leaveTypeId = 2).
      *
-     * @param insuranceBase           Nền đóng BHXH = baseSalary + phụ cấp/thưởng is_bhxh_applied
+     * <p>Công thức theo Luật BHXH 2014 Điều 26:
+     * <pre>
+     *   sickBenefit = insuranceBase / 24 × sickRate% × số ngày nghỉ ốm đủ điều kiện
+     * </pre>
+     *
+     * @param insuranceBase  Nền đóng BHXH = baseSalary + phụ cấp/thưởng is_bhxh_applied
+     * @param sickDayTypeMap Map ngày nghỉ → leaveTypeId, chỉ lấy ngày có type = SICK_LEAVE_TYPE_ID
+     * @param rateMap        leaveTypeId → tỷ lệ % (từ LeaveInsuranceRateDAO.getActiveRateMap)
+     * @return Trợ cấp nghỉ ốm, scale 2 HALF_UP
+     */
+    private BigDecimal calculateSickBenefit(
+            BigDecimal insuranceBase,
+            Map<LocalDate, Integer> sickDayTypeMap,
+            Map<Integer, BigDecimal> rateMap
+    ) {
+        if (insuranceBase == null || insuranceBase.compareTo(BigDecimal.ZERO) <= 0
+                || sickDayTypeMap == null || sickDayTypeMap.isEmpty()
+                || rateMap == null || rateMap.isEmpty()) {
+            return BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP);
+        }
+        // Trợ cấp 1 ngày nghỉ ốm = insuranceBase / 24 (giữ 8 chữ số để tránh mất mát làm tròn)
+        BigDecimal dailyBenefit = insuranceBase.divide(SICK_BENEFIT_DIVISOR, 8, java.math.RoundingMode.HALF_UP);
+        BigDecimal sickBenefit  = BigDecimal.ZERO;
+        for (Map.Entry<LocalDate, Integer> entry : sickDayTypeMap.entrySet()) {
+            if (entry.getValue() == null || entry.getValue() != SICK_LEAVE_TYPE_ID) continue; // Chỉ tính ngày nghỉ ốm
+            BigDecimal ratePercent = rateMap.get(SICK_LEAVE_TYPE_ID);
+            if (ratePercent == null || ratePercent.compareTo(BigDecimal.ZERO) <= 0) continue;
+            BigDecimal multiplier = ratePercent.divide(new BigDecimal("100"), 8, java.math.RoundingMode.HALF_UP);
+            sickBenefit = sickBenefit.add(dailyBenefit.multiply(multiplier));
+        }
+        return sickBenefit.setScale(2, java.math.RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Tính trợ cấp nghỉ thai sản nữ (leaveTypeId = 3).
+     *
+     * <p><b>Business rule tạm thời của project:</b><br>
+     * Nếu tháng payroll có đơn nghỉ thai sản nữ đã duyệt giao với tháng đó,
+     * {@code maternityBenefit = insuranceBase} (không chia 24, không nhân số ngày).
+     *
+     * <pre>
+     * // TODO: Thay insuranceBase hiện tại bằng mức bình quân tiền lương
+     * // đóng BHXH của 6 tháng trước khi nghỉ thai sản.
+     * </pre>
+     *
+     * @param insuranceBase                    Nền đóng BHXH kỳ payroll hiện tại
+     * @param hasMaternityLeaveInMonth         true nếu có đơn thai sản giao với tháng này
+     * @return insuranceBase nếu có thai sản, BigDecimal.ZERO nếu không
+     */
+    private BigDecimal calculateFemaleMaternityBenefit(
+            BigDecimal insuranceBase,
+            boolean hasMaternityLeaveInMonth
+    ) {
+        if (!hasMaternityLeaveInMonth || insuranceBase == null
+                || insuranceBase.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP);
+        }
+        // Business rule tạm thời: maternityBenefit = insuranceBase của kỳ payroll.
+        // TODO: Thay insuranceBase hiện tại bằng mức bình quân tiền lương
+        //       đóng BHXH của 6 tháng trước khi nghỉ thai sản.
+        return insuranceBase.setScale(2, java.math.RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Tính tổng trợ cấp BHXH = sickBenefit + maternityBenefit.
+     *
+     * <p>Phân loại:
+     * <ul>
+     *   <li>Nghỉ ốm (type_id = 2): {@code insuranceBase / 24 × rate% × số ngày}</li>
+     *   <li>Thai sản nữ (type_id = 3): {@code insuranceBase} (không chia 24, không nhân ngày)</li>
+     * </ul>
+     *
+     * <p>Thai sản nam (type_id = 6) đã bị loại bỏ — không được xử lý ở đây.
+     *
+     * @param insuranceBase           Nền đóng BHXH
      * @param eligibleLeaveDayTypeMap Map ngày nghỉ → leaveTypeId (từ getUnpaidLeaveDayMapWithShift)
      * @param rateMap                 leaveTypeId → tỷ lệ % (từ LeaveInsuranceRateDAO.getActiveRateMap)
-     * @return Tổng trợ cấp, scale 2 HALF_UP; trả 0 nếu không đủ điều kiện
+     * @param hasMaternityLeaveInMonth true nếu có đơn thai sản nữ giao với tháng payroll
+     * @return Tổng trợ cấp BHXH, scale 2 HALF_UP
      */
+    private BigDecimal calculateInsuranceBenefit(
+            BigDecimal insuranceBase,
+            Map<LocalDate, Integer> eligibleLeaveDayTypeMap,
+            Map<Integer, BigDecimal> rateMap,
+            boolean hasMaternityLeaveInMonth
+    ) {
+        // Nghỉ ốm: công thức insuranceBase / 24 × rate × ngày
+        BigDecimal sickBenefit = calculateSickBenefit(insuranceBase, eligibleLeaveDayTypeMap, rateMap);
+
+        // Thai sản nữ: bằng nguyên insuranceBase (business rule tạm thời)
+        BigDecimal maternityBenefit = calculateFemaleMaternityBenefit(insuranceBase, hasMaternityLeaveInMonth);
+
+        return sickBenefit.add(maternityBenefit).setScale(2, java.math.RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Overload tương thích ngược — dùng khi KHÔNG có đơn thai sản.
+     * Chỉ tính sickBenefit theo công thức ngày.
+     *
+     * @deprecated Dùng overload 4 tham số để bảo đảm thai sản được tính đúng.
+     */
+    @Deprecated
     private BigDecimal calculateInsuranceBenefit(
             BigDecimal insuranceBase,
             Map<LocalDate, Integer> eligibleLeaveDayTypeMap,
             Map<Integer, BigDecimal> rateMap
     ) {
-        if (insuranceBase == null
-                || insuranceBase.compareTo(BigDecimal.ZERO) <= 0
-                || eligibleLeaveDayTypeMap == null
-                || eligibleLeaveDayTypeMap.isEmpty()
-                || rateMap == null
-                || rateMap.isEmpty()) {
-            return BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP);
-        }
-
-        // Trợ cấp 1 ngày = insuranceBase / 24
-        // Giữ 8 chữ số thập phân để tránh mất mát làm tròn khi nhân tiếp.
-        BigDecimal dailyBenefit = insuranceBase.divide(
-                SICK_BENEFIT_DIVISOR, 8, java.math.RoundingMode.HALF_UP);
-
-        BigDecimal totalBenefit = BigDecimal.ZERO;
-        for (Map.Entry<LocalDate, Integer> entry : eligibleLeaveDayTypeMap.entrySet()) {
-            BigDecimal ratePercent = rateMap.get(entry.getValue());
-            // leaveTypeId không có trong rateMap (VD: nghỉ không lương thông thường) → bỏ qua
-            if (ratePercent == null || ratePercent.compareTo(BigDecimal.ZERO) <= 0) {
-                continue;
-            }
-            BigDecimal multiplier = ratePercent.divide(
-                    new BigDecimal("100"), 8, java.math.RoundingMode.HALF_UP);
-            totalBenefit = totalBenefit.add(dailyBenefit.multiply(multiplier));
-        }
-
-        // Làm tròn 1 lần ở cuối (sau khi cộng tất cả ngày — không làm tròn từng ngày)
-        return totalBenefit.setScale(2, java.math.RoundingMode.HALF_UP);
+        return calculateInsuranceBenefit(insuranceBase, eligibleLeaveDayTypeMap, rateMap, false);
     }
 
     public PayrollGenerationResult generatePayrollDraft(int month, int year) {
@@ -847,10 +948,20 @@ public class PayrollDAO {
             BigDecimal overtimeHours = attendanceDAO.getTotalOvertimeHoursFromAttendance(userId, month, year);
             BigDecimal overtimeAmount = attendanceDAO.getOvertimeAmountWithHolidayRate(userId, month, year, hourlyRate, new BigDecimal("1.5"));
 
+            // ── Kiểm tra đơn nghỉ thai sản nữ đã duyệt trong tháng ──
+            boolean hasMaternity = hasApprovedFemaleMaternityLeaveInMonth(userId, month, year);
+
             // Tính phụ cấp: chỉ lấy khoản thuộc hợp đồng đang hiệu lực HOẶC phụ cấp vận hành (contract_id IS NULL)
             int activeContractId = (activeContract != null) ? activeContract.getContractId() : 0;
             AllowanceResult allowanceResult = calculateAllowances(
                 userId, activeContractId, totalDays, standardWorkDays.doubleValue(), month, year);
+
+            // Business rule dự án: Trong tháng có đơn nghỉ thai sản nữ đã duyệt,
+            // toàn bộ phụ cấp được trả bằng 0 (payableAllowanceTotal = 0, payrollBhxhAllowanceTotal = 0).
+            // Dữ liệu hợp đồng vẫn được giữ nguyên.
+            if (hasMaternity) {
+                allowanceResult = new AllowanceResult(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
+            }
             BigDecimal allowanceAmount = allowanceResult.totalAmount;
 
             // ── Thưởng / Kỷ luật ──
@@ -884,27 +995,27 @@ public class PayrollDAO {
                     .add(bonusBhxhAmount);
             BigDecimal insuranceAmount = calculateInsurance(insuranceBase);
 
-            // ── Miễn đóng BHXH khi nghỉ thai sản toàn tháng (Điều 85 Luật BHXH 2014) ──
-            // Khi NLĐ nghỉ thai sản (nữ: type_id=3, nam: type_id=6) toàn bộ tháng:
-            //   - totalDays = 0 (không có ngày công)
-            //   - Tất cả ngày trong unpaidLeaveDaysForExclusion đều là loại thai sản
-            // → cả NLĐ và NSDLĐ đều KHÔNG đóng BHXH tháng đó.
-            // Giữ nguyên insuranceBase để tính insuranceBenefit đúng mức lương đóng BH.
+            // ── Miễn đóng BHXH khi nghỉ thai sản nữ toàn tháng (Điều 85 Luật BHXH 2014) ──
+            // Điều kiện: totalDays = 0 (không có ngày công thường) VÀ tất cả ngày nghỉ không lương
+            // đều là thai sản nữ (FEMALE_MATERNITY_LEAVE_TYPE_ID = 3).
+            // Thai sản nam (type_id = 6) đã bị loại bỏ khỏi hệ thống.
+            // Giữ nguyên insuranceBase để tính maternityBenefit đúng.
             if (totalDays == 0.0 && unpaidLeaveDaysForExclusion != null && !unpaidLeaveDaysForExclusion.isEmpty()) {
-                boolean allMaternity = unpaidLeaveDaysForExclusion.values().stream()
-                        .allMatch(ltId -> ltId == 3 || ltId == 6);
-                if (allMaternity) {
+                boolean allFemaleMaternity = unpaidLeaveDaysForExclusion.values().stream()
+                        .allMatch(ltId -> ltId == FEMALE_MATERNITY_LEAVE_TYPE_ID);
+                if (allFemaleMaternity) {
                     insuranceAmount = BigDecimal.ZERO;
                     System.out.println("[PAYROLL INFO] userId=" + userId + " tháng=" + month + "/" + year
-                            + ": miễn đóng BHXH do nghỉ thai sản toàn tháng (Điều 85 Luật BHXH 2014).");
+                            + ": miễn đóng BHXH do nghỉ thai sản nữ toàn tháng (Điều 85 Luật BHXH 2014).");
                 }
             }
 
-            // ── Trợ cấp nghỉ ốm / thai sản (insuranceBenefit) ──
-            // Công thức: insuranceBase / 24 × rate% × số ngày nghỉ đủ điều kiện
-            // Tính SAU insuranceBase để dùng đúng nền bảo hiểm thực tế.
-            // Dùng lại unpaidLeaveDaysForExclusion (đã lấy ở Bước 2b) để tránh query DB trùng.
-            BigDecimal insuranceBenefit = calculateInsuranceBenefit(insuranceBase, unpaidLeaveDaysForExclusion, insuranceRateMap);
+            // ── Trợ cấp BHXH (insuranceBenefit) ──
+            // - Nghỉ ốm (type 2): insuranceBase / 24 × rate% × số ngày nghỉ ốm
+            // - Thai sản nữ (type 3): bằng nguyên insuranceBase (business rule tạm thời — không chia 24)
+            // Phát hiện thai sản qua query DB trực tiếp, không phụ thuộc ShiftAssignment.
+            BigDecimal insuranceBenefit = calculateInsuranceBenefit(
+                    insuranceBase, unpaidLeaveDaysForExclusion, insuranceRateMap, hasMaternity);
 
 
             // ── Gross Salary = tổng đầy đủ thực nhận (hiển thị phiếu lương) ──
@@ -997,12 +1108,21 @@ public class PayrollDAO {
             return false;
         }
 
+        boolean hasMaternity = hasApprovedFemaleMaternityLeaveInMonth(
+                current.getUserId(), current.getMonth(), current.getYear());
+
         // --- Lấy giá trị HR nhập (hoặc giữ nguyên từ bản ghi hiện tại) ---
         BigDecimal baseSalary = current.getBaseSalary() != null ? current.getBaseSalary() : BigDecimal.ZERO;
         BigDecimal overtime   = payroll.getOvertimeAmount()   != null ? payroll.getOvertimeAmount()   : BigDecimal.ZERO;
         BigDecimal allowance  = payroll.getAllowanceAmount()  != null ? payroll.getAllowanceAmount()  : BigDecimal.ZERO;
         BigDecimal bonus      = payroll.getBonusAmount()      != null ? payroll.getBonusAmount()      : BigDecimal.ZERO;
         BigDecimal deduction  = payroll.getDeductionAmount()  != null ? payroll.getDeductionAmount()  : BigDecimal.ZERO;
+
+        // Nếu có đơn nghỉ thai sản nữ đã duyệt, phụ cấp bằng 0
+        if (hasMaternity) {
+            allowance = BigDecimal.ZERO;
+            payroll.setAllowanceAmount(BigDecimal.ZERO);
+        }
 
         // --- Tính lương theo ngày công thực tế ---
         // Dùng getPayrollStandardWorkDays để mẫu số trừ cả ngày lễ active như generatePayrollDraft.
@@ -1041,6 +1161,9 @@ public class PayrollDAO {
             current.getUserId(), activeContractId,
             payroll.getWorkingDays(), standardWorkDays.doubleValue(),
             current.getMonth(), current.getYear());
+        if (hasMaternity) {
+            allowanceResult = new AllowanceResult(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
+        }
 
         RewardDisciplineDAO rewardDisciplineDAO = new RewardDisciplineDAO();
         List<EmployeeRewardDiscipline> erdRecords = rewardDisciplineDAO
@@ -1081,14 +1204,27 @@ public class PayrollDAO {
         }
         BigDecimal taxAmount = calculateDynamicPIT(taxableIncome);
 
-        // --- Tính Social Insurance Benefit cho các ngày nghỉ không lương ---
-        // Công thức: insuranceBase / 24 × rate% × số ngày (không dùng baseSalary/standardWorkDays)
+        // ─── Tính trợ cấp BHXH cho các ngày nghỉ không lương ───
+        // - Nghỉ ốm (type 2): insuranceBase / 24 × rate% × số ngày
+        // - Thai sản nữ (type 3): bằng nguyên insuranceBase (business rule tạm thời)
+        // Không phụ thuộc ShiftAssignment — dùng hasApprovedFemaleMaternityLeaveInMonth.
         LeaveRequestDAOImpl leaveDAO = new LeaveRequestDAOImpl();
         Map<LocalDate, Integer> unpaidLeaves = leaveDAO.getUnpaidLeaveDayMapWithShift(
             current.getUserId(), current.getMonth(), current.getYear());
         LeaveInsuranceRateDAO lirDAO = new LeaveInsuranceRateDAO();
         Map<Integer, BigDecimal> rateMap = lirDAO.getActiveRateMap();
-        BigDecimal insuranceBenefit = calculateInsuranceBenefit(insuranceBase, unpaidLeaves, rateMap);
+
+        // Miễn đóng BHXH khi nghỉ thai sản nữ toàn kỳ (Điều 85 Luật BHXH 2014)
+        if (payroll.getWorkingDays() == 0.0 && unpaidLeaves != null && !unpaidLeaves.isEmpty()) {
+            boolean allFemaleMaternity = unpaidLeaves.values().stream()
+                    .allMatch(ltId -> ltId == FEMALE_MATERNITY_LEAVE_TYPE_ID);
+            if (allFemaleMaternity) {
+                insuranceAmount = BigDecimal.ZERO;
+            }
+        }
+
+        BigDecimal insuranceBenefit = calculateInsuranceBenefit(
+                insuranceBase, unpaidLeaves, rateMap, hasMaternity);
 
         // --- Tính Net Salary ---
         BigDecimal totalDeductions = deduction.add(insuranceAmount).add(taxAmount);
@@ -1134,7 +1270,7 @@ public class PayrollDAO {
             ps.setBigDecimal(9, netSalary);
             ps.setBigDecimal(10, insuranceBenefit);
             ps.setBigDecimal(11, insuranceBase);
-            ps.setBigDecimal(12, taxableIncomeBeforeDeduction.subtract(insuranceAmount).max(BigDecimal.ZERO));
+            ps.setBigDecimal(12, payroll.getTaxableIncomeBase());
             ps.setInt(13, payroll.getPayrollId());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -1156,9 +1292,12 @@ public class PayrollDAO {
         Payroll current = getById(payrollId);
         if (current == null) return null;
 
+        boolean hasMaternity = hasApprovedFemaleMaternityLeaveInMonth(
+                current.getUserId(), current.getMonth(), current.getYear());
+
         BigDecimal baseSalary     = current.getBaseSalary()      != null ? current.getBaseSalary()      : BigDecimal.ZERO;
         BigDecimal overtime       = overtimeAmount               != null ? overtimeAmount               : BigDecimal.ZERO;
-        BigDecimal allowance      = allowanceAmount              != null ? allowanceAmount              : BigDecimal.ZERO;
+        BigDecimal allowance      = hasMaternity ? BigDecimal.ZERO : (allowanceAmount != null ? allowanceAmount : BigDecimal.ZERO);
         BigDecimal bonus          = bonusAmount                  != null ? bonusAmount                  : BigDecimal.ZERO;
         BigDecimal deduction      = deductionAmount              != null ? deductionAmount              : BigDecimal.ZERO;
         BigDecimal insuranceBenefit = current.getInsuranceBenefit() != null ? current.getInsuranceBenefit() : BigDecimal.ZERO;
@@ -1189,6 +1328,9 @@ public class PayrollDAO {
             current.getUserId(), activeContractId,
             current.getWorkingDays(), standardWorkDays.doubleValue(),
             current.getMonth(), current.getYear());
+        if (hasMaternity) {
+            allowanceResult = new AllowanceResult(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
+        }
 
         RewardDisciplineDAO rewardDisciplineDAO = new RewardDisciplineDAO();
         List<EmployeeRewardDiscipline> erdRecords = rewardDisciplineDAO
@@ -1208,6 +1350,16 @@ public class PayrollDAO {
                 .add(allowanceResult.bhxhBase)
                 .add(bonusBhxhAmount);
         BigDecimal insuranceAmount = calculateInsurance(insuranceBase);
+
+        // ── Miễn đóng BHXH khi nghỉ thai sản nữ toàn kỳ (Điều 85 Luật BHXH 2014) ──
+        // Đồng bộ với generatePayrollDraft và updatePayrollDraft.
+        if (current.getWorkingDays() == 0) {
+            boolean hasMaternityThisMonth = hasApprovedFemaleMaternityLeaveInMonth(
+                    current.getUserId(), current.getMonth(), current.getYear());
+            if (hasMaternityThisMonth) {
+                insuranceAmount = BigDecimal.ZERO;
+            }
+        }
 
         // Gross = tổng đầy đủ (số HR nhập)
         BigDecimal grossSalary = baseWorkedSalary.add(overtime).add(allowance).add(bonus);

@@ -453,6 +453,7 @@
                     <script>
                         // Auto-calculate total days when dates change
                         (function () {
+                            const leaveTypeSelect = document.getElementById('leaveTypeId');
                             const startDate = document.getElementById('startDate');
                             const endDate = document.getElementById('endDate');
                             const totalDays = document.getElementById('totalDays');
@@ -462,18 +463,24 @@
                             if (startDate) startDate.setAttribute('min', today);
                             if (endDate) endDate.setAttribute('min', today);
 
+                            // leaveTypeId = 3: Nghỉ thai sản nữ
+                            const FEMALE_MATERNITY_TYPE = 3;
+
                             function calcDays() {
                                 if (startDate && endDate && startDate.value && endDate.value) {
                                     const startVal = startDate.value;
                                     const endVal = endDate.value;
-                                    
+                                    const leaveTypeId = leaveTypeSelect ? leaveTypeSelect.value : '';
+
+                                    // endDate min: luôn là startDate (không lock 6 tháng)
                                     if (endDate) endDate.setAttribute('min', startVal);
-                                    
+
                                     const s = new Date(startVal);
                                     const e = new Date(endVal);
                                     if (e >= s) {
-                                        if (totalDays) totalDays.value = ""; // loading or clear
-                                        fetch("${pageContext.request.contextPath}/employee/leave?action=calculateDays&startDate=" + startVal + "&endDate=" + endVal)
+                                        if (totalDays) totalDays.value = ""; // clear while loading
+                                        // Gửi leaveTypeId để server tính đúng (thai sản = ngày lịch)
+                                        fetch("${pageContext.request.contextPath}/employee/leave?action=calculateDays&startDate=" + startVal + "&endDate=" + endVal + (leaveTypeId ? "&leaveTypeId=" + leaveTypeId : ""))
                                             .then(response => response.json())
                                             .then(data => {
                                                 if (data && typeof data.days === 'number') {
@@ -489,6 +496,8 @@
 
                             if (startDate) startDate.addEventListener('change', calcDays);
                             if (endDate) endDate.addEventListener('change', calcDays);
+                            // Khi đổi loại nghỉ, tính lại số ngày
+                            if (leaveTypeSelect) leaveTypeSelect.addEventListener('change', calcDays);
 
     // Leave Balances Map from backend
     <%
@@ -513,16 +522,20 @@
         </c:forEach>
     };
 
-                        const leaveTypeSelect = document.getElementById('leaveTypeId');
+                        const leaveTypeSelectBadge = document.getElementById('leaveTypeId');
                         const dynamicBalanceText = document.getElementById('dynamicBalanceText');
                         const annualLeaveBadge = document.getElementById('annualLeaveBadge');
 
                         function toggleBadge() {
-                            if (leaveTypeSelect && dynamicBalanceText) {
-                                const typeId = leaveTypeSelect.value;
-                                if (typeId) {
+                            if (leaveTypeSelectBadge && dynamicBalanceText) {
+                                const typeId = parseInt(leaveTypeSelectBadge.value) || 0;
+                                // Thai sản nữ: không hiển thị số dư phép (không giới hạn ngày)
+                                if (typeId === 3) {
+                                    dynamicBalanceText.innerText = "Hưởng chế độ BHXH (không giới hạn số ngày)";
+                                    annualLeaveBadge.style.display = 'flex';
+                                } else if (typeId) {
                                     const bal = leaveBalances[typeId];
-                                    if (bal !== undefined && bal < 900) { // Assuming 999 is unbounded
+                                    if (bal !== undefined && bal < 900) {
                                         dynamicBalanceText.innerText = bal + " ngày";
                                         annualLeaveBadge.style.display = 'flex';
                                     } else {
@@ -535,8 +548,8 @@
                             }
                         }
 
-                        if (leaveTypeSelect) {
-                            leaveTypeSelect.addEventListener('change', toggleBadge);
+                        if (leaveTypeSelectBadge) {
+                            leaveTypeSelectBadge.addEventListener('change', toggleBadge);
                             toggleBadge();
                         }
 }) ();

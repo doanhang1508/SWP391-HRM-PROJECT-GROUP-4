@@ -1655,7 +1655,7 @@ public class AttendanceDAO {
            .append("  SELECT user_id, ")
            .append("         SUM(CASE WHEN leave_type_id = 1 THEN total_days ELSE 0 END) AS annual_leave_days, ")
            .append("         SUM(CASE WHEN leave_type_id = 2 THEN total_days ELSE 0 END) AS sick_leave_days, ")
-           .append("         SUM(CASE WHEN leave_type_id IN (3, 6) THEN total_days ELSE 0 END) AS maternity_leave_days ")
+           .append("         SUM(CASE WHEN leave_type_id = 3 THEN total_days ELSE 0 END) AS maternity_leave_days ") // Thai sản nữ (type_id=3); type_id=6 đã bị loại bỏ
            .append("  FROM leave_requests ")
            .append("  WHERE status IN ('Approved', 'Pending') ")
            .append("    AND MONTH(start_date) = ? AND YEAR(start_date) = ? ")

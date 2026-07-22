@@ -338,6 +338,8 @@ public class PayslipController extends HttpServlet {
             EmployeeContract activeContract = ecDAO.getActiveContract(requestedUserId);
             int activeContractId = (activeContract != null) ? activeContract.getContractId() : 0;
             
+            boolean hasMaternityDetails = payrollDAO.hasApprovedFemaleMaternityLeaveInMonth(requestedUserId, month, year);
+
             json.append("\"allowances\":[");
             String sqlAllowance = "SELECT a.allowance_name, a.amount, a.calculation_type, a.is_bhxh_applied " +
                                   "FROM position_allowances pa " +
@@ -360,8 +362,8 @@ public class PayslipController extends HttpServlet {
                             
                             BigDecimal amount = rs.getBigDecimal("amount");
                             String calcType = rs.getString("calculation_type");
-                            BigDecimal earned = amount;
-                            if ("PER_DAY".equals(calcType) && standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
+                            BigDecimal earned = hasMaternityDetails ? BigDecimal.ZERO : amount;
+                            if (!hasMaternityDetails && "PER_DAY".equals(calcType) && standardWorkDays.compareTo(BigDecimal.ZERO) > 0) {
                                 BigDecimal dailyRate = amount.divide(standardWorkDays, 4, java.math.RoundingMode.HALF_UP);
                                 earned = dailyRate.multiply(new BigDecimal(p.getWorkingDays())).setScale(2, java.math.RoundingMode.HALF_UP);
                             }
@@ -378,7 +380,7 @@ public class PayslipController extends HttpServlet {
             // Tinh tham nien — luon chiu BHXH va thue TNCN
             dao.AllowanceDAO alwDao = new dao.AllowanceDAO();
             int tenureMonths = alwDao.getTenureMonths(requestedUserId);
-            BigDecimal seniorityAmount = alwDao.getSeniorityAmount(tenureMonths);
+            BigDecimal seniorityAmount = hasMaternityDetails ? BigDecimal.ZERO : alwDao.getSeniorityAmount(tenureMonths);
             if (seniorityAmount.compareTo(BigDecimal.ZERO) > 0) {
                 if (!firstAllow) json.append(",");
                 json.append("{");

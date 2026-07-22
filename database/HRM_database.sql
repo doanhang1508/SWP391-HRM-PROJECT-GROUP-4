@@ -722,17 +722,22 @@ INSERT INTO shifts (shift_id, shift_name, start_time, end_time, break_start, bre
 INSERT INTO leave_types (leave_type_id, type_name, description, paid_leave, max_days_per_year) VALUES
 (1, 'Nghỉ phép năm',           'Nghỉ phép theo quy định',                 1, 12),
 (2, 'Nghỉ ốm (Hưởng BHXH)',    'Nghỉ ốm hưởng chế độ BHXH',               0, NULL),
-(3, 'Nghỉ thai sản',           'Chế độ thai sản theo quy định',           0, NULL),
+(3, 'Nghỉ thai sản',           'Chế độ thai sản nữ theo quy định',       0, NULL),
 (4, 'Nghỉ việc riêng có lương','Nghỉ việc riêng vẫn tính lương',          1, NULL),
-(5, 'Nghỉ không lương',        'Nghỉ không hưởng lương',                  0, NULL),
-(6, 'Nghỉ thai sản nam',       'Nghỉ phép cho lao động nam khi vợ sinh con. Thời gian: 5-14 ngày làm việc tùy trường hợp sinh. Hưởng BHXH 100%.', 0, 14);
+(5, 'Nghỉ không lương',        'Nghỉ không hưởng lương',                  0, NULL);
+-- Note: Thai sản nam (leave_type_id = 6) đã bị loại bỏ khỏi hệ thống (migration 2026-07-23).
 
 -- ── 11b. Leave Insurance Rates (Tỷ lệ BHXH cho nghỉ phép) ──
--- Luật BHXH 2024 (hiệu lực 2025): Nghỉ ốm 75%, Thai sản nữ/nam 100%
+-- Luật BHXH 2014/2024: Nghỉ ốm 75%, Thai sản nữ 100%
+-- Business rule tạm thời của project:
+--   Nghỉ ốm (type 2): sickBenefit = insuranceBase / 24 × 75% × số ngày nghỉ ốm
+--   Thai sản nữ (type 3): maternityBenefit = insuranceBase (không chia 24, không nhân ngày)
+--   TODO: Thay thế bằng mức bình quân lương đóng BHXH 6 tháng trước khi nghỉ.
+-- Rate của type 3 hiện không được dùng trong tính toán (maternityBenefit = insuranceBase trực tiếp).
+-- Giữ lại trong DB để phục vụ báo cáo và audit.
 INSERT INTO leave_insurance_rates (leave_type_id, insurance_rate_percent, description, effective_from) VALUES
-(2, 75.00,  'Nghỉ ốm: Hưởng 75% mức tiền lương đóng BHXH',                          '2026-01-01'),
-(3, 100.00, 'Nghỉ thai sản nữ: Hưởng 100% mức bình quân tiền lương đóng BHXH 6 tháng', '2026-01-01'),
-(6, 100.00, 'Nghỉ thai sản nam: Hưởng 100% mức bình quân tiền lương đóng BHXH 6 tháng', '2026-01-01');
+(2, 75.00,  'Nghỉ ốm: Hưởng 75% mức tiền lương đóng BHXH',   '2026-01-01'),
+(3, 100.00, 'Nghỉ thai sản nữ: Rate lưu trữ (business rule: maternityBenefit = insuranceBase)', '2026-01-01');
 
 -- ── 12. Reward Disciplines ──
 -- is_bhxh_applied: 1=cộng vào nền BHXH, 0=không (thưởng KPI/năng suất luôn = 0)
@@ -956,10 +961,11 @@ INSERT INTO leave_requests (user_id, leave_type_id, start_date, end_date, total_
 (5,  2, '2026-06-08', '2026-06-09', 2.0, 'Cảm cúm', 'Approved', 3),
 (10, 2, '2026-06-03', '2026-06-04', 2.0, 'Sốt cao, có giấy nghỉ của bác sĩ',        'Approved', 3),
 (33, 2, '2026-06-18', '2026-06-19', 2.0, 'Điều trị dạ dày', 'Approved', 14),
--- Nghỉ thai sản (leave_type_id = 3) — user 27 nghỉ thai sản cả tháng 7/2026
--- Tháng 7/2026 có 26 ngày làm việc (27 ngày T2-T7 trừ 1 ngày lễ test 15/7)
--- Hưởng BHXH 100%: insuranceBenefit = baseSalary / 24 * 100% * 26 ngày
-(27, 3, '2026-07-01', '2026-07-31', 27.0, 'Nghỉ thai sản theo quy định', 'Approved', 3);
+-- Nghỉ thai sản nữ (leave_type_id = 3) — user 27 nghỉ thai sản cả tháng 7/2026
+-- Số ngày lịch: 31 (ngày lịch, bao gồm cả CN/T7)
+-- Business rule tạm thời: maternityBenefit = insuranceBase của kỳ payroll (không chia 24, không nhân ngày)
+-- Tháng 7/2026: 26 ngày làm việc (27 ngày T2-T7 trừ 1 ngày lễ test 15/7)
+(27, 3, '2026-07-01', '2026-07-31', 31.0, 'Nghỉ thai sản theo quy định', 'Approved', 3);
 
 -- Seed data for position_allowances
 -- Giám đốc (1): Ăn trưa, Đi lại, Điện thoại, Trách nhiệm GĐ
