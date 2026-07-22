@@ -182,4 +182,17 @@ public class notificationDAO {
             }
         } catch (SQLException e) { e.printStackTrace(); }
     }
+
+    public void createForDepartmentEmployees(int departmentId, String type, String title, String body, String link) {
+        String sql = "SELECT user_id FROM users WHERE department_id = ? AND status = 1 AND role_id NOT IN (1, 4)";
+        try (Connection c = DBContext.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, departmentId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    create(rs.getInt("user_id"), type, title, body, link);
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
 }

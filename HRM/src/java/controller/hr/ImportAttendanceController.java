@@ -3,6 +3,7 @@ package controller.hr;
 import dao.AttendanceDAO;
 import dao.UserDAO;
 import dao.ShiftDAOImpl;
+import dao.TimesheetConfirmationDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
@@ -197,6 +198,12 @@ public class ImportAttendanceController extends HttpServlet {
             int[] importResult;
             try {
                 importResult = attendanceDAO.bulkImportAttendance(records);
+                int inserted = importResult[0];
+                int updated = importResult[1];
+                int unchanged = importResult.length > 2 ? importResult[2] : 0;
+                if (inserted > 0 || updated > 0 || unchanged > 0) {
+                    new TimesheetConfirmationDAO().resetConfirmationsForPeriod(month, year);
+                }
             } catch (Exception dbEx) {
                 // Trước đây lỗi CSDL bị nuốt âm thầm và vẫn hiện "Import thành công: 0/0",
                 // khiến HR tưởng đã xong trong khi thực chất KHÔNG có gì được ghi vào DB.
