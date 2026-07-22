@@ -188,7 +188,7 @@ public class AttendanceDAO {
                      "JOIN users u ON a.user_id = u.user_id " +
                      "JOIN shifts s ON a.shift_id = s.shift_id " +
                      "WHERE a.user_id = ? AND MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? " +
-                     "ORDER BY a.work_date DESC";
+                     "ORDER BY a.work_date ASC";
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -1099,7 +1099,7 @@ public class AttendanceDAO {
             sql.append(" AND a.work_date = ? ");
         }
         
-        sql.append("ORDER BY a.work_date DESC, u.full_name");
+        sql.append("ORDER BY a.work_date ASC, u.full_name");
         
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
@@ -1184,7 +1184,7 @@ public class AttendanceDAO {
             sql.append(" AND a.work_date = ? ");
         }
         
-        sql.append("ORDER BY a.work_date DESC, u.full_name LIMIT ? OFFSET ?");
+        sql.append("ORDER BY a.work_date ASC, u.full_name LIMIT ? OFFSET ?");
         
         DBContext dbContext = new DBContext();
         try (Connection conn = dbContext.getConnection();
@@ -1223,7 +1223,7 @@ public class AttendanceDAO {
                      "JOIN users u ON a.user_id = u.user_id " +
                      "JOIN shifts s ON a.shift_id = s.shift_id " +
                      "WHERE MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? AND u.department_id = ? " +
-                     "ORDER BY a.work_date DESC, u.full_name";
+                     "ORDER BY a.work_date ASC, u.full_name";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, month);
