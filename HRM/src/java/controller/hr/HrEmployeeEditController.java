@@ -166,7 +166,15 @@ public class HrEmployeeEditController extends HttpServlet {
             // Ngày sinh
             String dobStr = request.getParameter("dob");
             if (dobStr != null && !dobStr.isEmpty()) {
-                ep.setDob(Date.valueOf(dobStr));
+                Date dob = Date.valueOf(dobStr);
+                // Kiểm tra tuổi (phải từ 16 tuổi trở lên)
+                java.time.LocalDate birth = dob.toLocalDate();
+                java.time.LocalDate now = java.time.LocalDate.now();
+                if (java.time.Period.between(birth, now).getYears() < 16) {
+                    response.sendRedirect(request.getContextPath() + "/hr/employee-edit?userId=" + userId + "&error=under_age");
+                    return;
+                }
+                ep.setDob(dob);
             }
 
             // Ngày vào làm

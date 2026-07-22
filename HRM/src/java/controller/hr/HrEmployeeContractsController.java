@@ -242,6 +242,20 @@ public class HrEmployeeContractsController extends HttpServlet {
 
                 int contractTypeId = Integer.parseInt(request.getParameter("contractTypeId"));
                 java.sql.Date startDate = java.sql.Date.valueOf(request.getParameter("startDate"));
+                
+                // Kiểm tra tuổi nhân viên tại thời điểm bắt đầu hợp đồng (phải từ 16 tuổi trở lên)
+                dao.EmployeeProfileDAO epDAO = new dao.EmployeeProfileDAO();
+                model.EmployeeProfile ep = epDAO.getByUserId(userId);
+                if (ep != null && ep.getDob() != null) {
+                    java.time.LocalDate birth = ep.getDob().toLocalDate();
+                    java.time.LocalDate contractStart = startDate.toLocalDate();
+                    if (java.time.Period.between(birth, contractStart).getYears() < 16) {
+                        session.setAttribute("errorMsg", "Lỗi: Nhân viên chưa đủ 16 tuổi tại thời điểm bắt đầu hợp đồng!");
+                        response.sendRedirect(request.getContextPath() + "/hr/employee-contracts?userId=" + userId);
+                        return;
+                    }
+                }
+                
                 String endStr = request.getParameter("endDate");
                 java.sql.Date endDate = (endStr != null && !endStr.trim().isEmpty()) ? java.sql.Date.valueOf(endStr) : null;
                 
@@ -276,8 +290,6 @@ public class HrEmployeeContractsController extends HttpServlet {
                 
                 // Đồng thời cập nhật contract_type_id vào bảng employee_profiles
                 // để tương thích ngược với các module khác chưa chuyển đổi sang dùng bảng mới
-                dao.EmployeeProfileDAO epDAO = new dao.EmployeeProfileDAO();
-                model.EmployeeProfile ep = epDAO.getByUserId(userId);
                 if(ep != null) {
                     ep.setContractTypeId(contractTypeId);
                     ep.setSalaryGradeId(salaryGradeId);
@@ -322,6 +334,19 @@ public class HrEmployeeContractsController extends HttpServlet {
                 int parentContractId = Integer.parseInt(request.getParameter("parentContractId"));
                 String addendumReason = request.getParameter("addendumReason");
                 java.sql.Date startDate = java.sql.Date.valueOf(request.getParameter("startDate"));
+                
+                // Kiểm tra tuổi nhân viên tại thời điểm bắt đầu phụ lục (phải từ 16 tuổi trở lên)
+                dao.EmployeeProfileDAO epDAO = new dao.EmployeeProfileDAO();
+                model.EmployeeProfile ep = epDAO.getByUserId(userId);
+                if (ep != null && ep.getDob() != null) {
+                    java.time.LocalDate birth = ep.getDob().toLocalDate();
+                    java.time.LocalDate addendumStart = startDate.toLocalDate();
+                    if (java.time.Period.between(birth, addendumStart).getYears() < 16) {
+                        session.setAttribute("errorMsg", "Lỗi: Nhân viên chưa đủ 16 tuổi tại thời điểm bắt đầu phụ lục hợp đồng!");
+                        response.sendRedirect(request.getContextPath() + "/hr/employee-contracts?userId=" + userId);
+                        return;
+                    }
+                }
                 java.math.BigDecimal baseSalary = new java.math.BigDecimal(request.getParameter("baseSalary").replaceAll(",", ""));
                 
                 // Fields inherited from the parent contract (passed as hidden inputs)

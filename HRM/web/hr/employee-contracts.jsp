@@ -572,6 +572,7 @@
 </div>
 
 <script>
+const employeeDob = "${not empty empProfile && not empty empProfile.dob ? empProfile.dob : ''}";
 function viewHistoryModal(row) {
     var d = row.dataset;
     var year = d.start ? d.start.split('/')[2] : new Date().getFullYear();
@@ -747,6 +748,47 @@ document.addEventListener("DOMContentLoaded", function() {
     if (typeSel && startIn) {
         typeSel.addEventListener('change', autoCalculateEndDate);
         startIn.addEventListener('change', autoCalculateEndDate);
+    }
+
+    // Kiểm tra độ tuổi (phải từ 16 tuổi trở lên khi hợp đồng bắt đầu)
+    const createForm = document.querySelector('#createContractModal form');
+    if (createForm) {
+        createForm.addEventListener('submit', function(e) {
+            const startDateVal = this.querySelector('input[name="startDate"]').value;
+            if (employeeDob && startDateVal) {
+                const dob = new Date(employeeDob);
+                const start = new Date(startDateVal);
+                let age = start.getFullYear() - dob.getFullYear();
+                const m = start.getMonth() - dob.getMonth();
+                if (m < 0 || (m === 0 && start.getDate() < dob.getDate())) {
+                    age--;
+                }
+                if (age < 16) {
+                    e.preventDefault();
+                    alert('Lỗi: Nhân viên chưa đủ 16 tuổi tại thời điểm bắt đầu hợp đồng!');
+                }
+            }
+        });
+    }
+
+    const addendumForm = document.querySelector('#addendumModal form');
+    if (addendumForm) {
+        addendumForm.addEventListener('submit', function(e) {
+            const startDateVal = this.querySelector('input[name="startDate"]').value;
+            if (employeeDob && startDateVal) {
+                const dob = new Date(employeeDob);
+                const start = new Date(startDateVal);
+                let age = start.getFullYear() - dob.getFullYear();
+                const m = start.getMonth() - dob.getMonth();
+                if (m < 0 || (m === 0 && start.getDate() < dob.getDate())) {
+                    age--;
+                }
+                if (age < 16) {
+                    e.preventDefault();
+                    alert('Lỗi: Nhân viên chưa đủ 16 tuổi tại thời điểm bắt đầu phụ lục hợp đồng!');
+                }
+            }
+        });
     }
 });
 

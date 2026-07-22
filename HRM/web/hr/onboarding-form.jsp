@@ -429,7 +429,7 @@ body {
                   <span class="ocr-badge"><i class="fas fa-check"></i> OCR</span>
                 </c:if>
               </label>
-              <input type="date" name="dateOfBirth"
+              <input type="date" name="dateOfBirth" id="dateOfBirth"
                      value="<c:out value='${not empty formData.dateOfBirth ? formData.dateOfBirth : (not empty sessionScope.ocr_dob ? sessionScope.ocr_dob : "")}'/>">
             </div>
             <div class="ob-field">
@@ -515,6 +515,18 @@ body {
 
 <script>
 // Client-side validation cơ bản
+document.addEventListener("DOMContentLoaded", function() {
+  const dobInput = document.getElementById('dateOfBirth');
+  if (dobInput) {
+    const today = new Date();
+    const maxDate = new Date(today.getFullYear() - 16, today.getMonth(), today.getDate());
+    const yyyy = maxDate.getFullYear();
+    const mm = String(maxDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(maxDate.getDate()).padStart(2, '0');
+    dobInput.setAttribute('max', `${yyyy}-${mm}-${dd}`);
+  }
+});
+
 document.getElementById('onboardingForm').addEventListener('submit', function(e) {
   const fullName = document.getElementById('fullName').value.trim();
   const email    = document.getElementById('email').value.trim();
@@ -531,6 +543,24 @@ document.getElementById('onboardingForm').addEventListener('submit', function(e)
     document.getElementById('email').classList.add('error');
     document.getElementById('email').focus();
     return;
+  }
+  
+  const dobInput = document.getElementById('dateOfBirth');
+  if (dobInput && dobInput.value) {
+    const dobValue = new Date(dobInput.value);
+    const today = new Date();
+    let age = today.getFullYear() - dobValue.getFullYear();
+    const m = today.getMonth() - dobValue.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dobValue.getDate())) {
+      age--;
+    }
+    if (age < 16) {
+      e.preventDefault();
+      alert('Ứng viên phải từ 16 tuổi trở lên.');
+      dobInput.classList.add('error');
+      dobInput.focus();
+      return;
+    }
   }
 
   // Bổ sung hidden input mang giá trị action vì khi disable button, trình duyệt sẽ không gửi value của button đó lên server

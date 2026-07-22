@@ -73,6 +73,9 @@
         <c:if test="${param.error == 'save_failed'}">
             <div class="alert-error"><i class="fas fa-exclamation-circle"></i> Lưu thất bại. Vui lòng thử lại.</div>
         </c:if>
+        <c:if test="${param.error == 'under_age'}">
+            <div class="alert-error"><i class="fas fa-exclamation-circle"></i> Lưu thất bại. Nhân viên phải từ 16 tuổi trở lên!</div>
+        </c:if>
 
         <div class="content-card">
             <form action="${pageContext.request.contextPath}/hr/employee-edit" method="POST">
@@ -122,7 +125,7 @@
 
                     <div class="form-group">
                         <label class="form-label">Ngày sinh</label>
-                        <input type="date" class="form-control" name="dob"
+                        <input type="date" class="form-control" name="dob" id="dobInput"
                                value="${empProfile != null && empProfile.dob != null ? empProfile.dob : ''}" />
                     </div>
 
@@ -240,5 +243,40 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const dobInput = document.getElementById('dobInput');
+    if (dobInput) {
+        const today = new Date();
+        const maxDate = new Date(today.getFullYear() - 16, today.getMonth(), today.getDate());
+        const yyyy = maxDate.getFullYear();
+        const mm = String(maxDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(maxDate.getDate()).padStart(2, '0');
+        dobInput.setAttribute('max', `${yyyy}-${mm}-${dd}`);
+    }
+
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (dobInput && dobInput.value) {
+                const dobValue = new Date(dobInput.value);
+                const today = new Date();
+                let age = today.getFullYear() - dobValue.getFullYear();
+                const m = today.getMonth() - dobValue.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < dobValue.getDate())) {
+                    age--;
+                }
+                if (age < 16) {
+                    e.preventDefault();
+                    alert('Nhân viên phải từ 16 tuổi trở lên.');
+                    dobInput.focus();
+                    return;
+                }
+            }
+        });
+    }
+});
+</script>
 
 <jsp:include page="../footer.jsp" />

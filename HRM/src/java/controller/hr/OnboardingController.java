@@ -189,6 +189,13 @@ public class OnboardingController extends HttpServlet {
         if (r.getFullName() == null || r.getFullName().isEmpty()) return "Họ và tên không được để trống";
         if (r.getEmail() == null || r.getEmail().isEmpty()) return "Email không được để trống";
         if (!r.getEmail().contains("@")) return "Email không đúng định dạng";
+        if (r.getDateOfBirth() != null) {
+            java.time.LocalDate birth = r.getDateOfBirth().toLocalDate();
+            java.time.LocalDate now = java.time.LocalDate.now();
+            if (java.time.Period.between(birth, now).getYears() < 16) {
+                return "Ứng viên phải từ 16 tuổi trở lên";
+            }
+        }
         return null;
     }
 
