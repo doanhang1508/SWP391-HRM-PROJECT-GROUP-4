@@ -9,77 +9,221 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-footer, #chatWidget { display: none !important; }
+    footer, #chatWidget {
+        display: none !important;
+    }
 
-body {
-    background-color: #f1f5f9 !important;
-    font-family: 'Inter', sans-serif !important;
-    padding-top: 0 !important;
-    min-height: 100vh;
-    overflow-x: hidden;
-}
+    body {
+        background-color: #f1f5f9 !important;
+        font-family: 'Inter', sans-serif !important;
+        padding-top: 0 !important;
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
 
-/* ── Layout ── */
-.dashboard-wrapper { display: flex; min-height: calc(100vh - 64px); }
-.dash-main { flex: 1; min-width: 0; background: #f1f5f9; }
-.dash-content { padding: 28px 32px; display: flex; flex-direction: column; gap: 28px; }
+    /* ── Layout ── */
+    .dashboard-wrapper {
+        display: flex;
+        min-height: calc(100vh - 64px);
+    }
+    .dash-main {
+        flex: 1;
+        min-width: 0;
+        background: #f1f5f9;
+    }
+    .dash-content {
+        padding: 28px 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+    }
 
-/* ── Page Header ── */
-.dash-page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
-.dash-page-header-left { display: flex; flex-direction: column; gap: 4px; }
-.dash-breadcrumb { font-size: 0.78rem; color: #94a3b8; display: flex; align-items: center; gap: 6px; }
-.dash-breadcrumb a { color: #0d9488; text-decoration: none; }
-.dash-breadcrumb a:hover { text-decoration: underline; }
-.dash-page-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; letter-spacing: -0.5px; }
-.dash-role-badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 6px 14px; border-radius: 20px;
-    font-size: 0.8rem; font-weight: 700;
-    background: linear-gradient(135deg, #0d9488, #0369a1);
-    color: #fff; box-shadow: 0 2px 8px rgba(13,148,136,0.3);
-}
+    /* ── Page Header ── */
+    .dash-page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .dash-page-header-left {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .dash-breadcrumb {
+        font-size: 0.78rem;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .dash-breadcrumb a {
+        color: #0d9488;
+        text-decoration: none;
+    }
+    .dash-breadcrumb a:hover {
+        text-decoration: underline;
+    }
+    .dash-page-title {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.5px;
+    }
+    .dash-role-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #0d9488, #0369a1);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(13,148,136,0.3);
+    }
 
-/* ── Stat Cards ── */
-.dash-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
-.dash-stat-card {
-    background: #fff; border-radius: 16px; padding: 22px 24px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
-    display: flex; flex-direction: column; gap: 10px;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-.dash-stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
-.dash-stat-header { display: flex; justify-content: space-between; align-items: flex-start; }
-.dash-stat-title { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px; }
-.dash-stat-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
-.dash-stat-val { font-size: 2rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
-.dash-stat-change { font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 4px; }
-.dash-stat-change.up { color: #10b981; }
-.dash-stat-change.down { color: #ef4444; }
-.dash-stat-change.neutral { color: #94a3b8; }
+    /* ── Stat Cards ── */
+    .dash-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+    }
+    .dash-stat-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 22px 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .dash-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+    .dash-stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+    .dash-stat-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+    }
+    .dash-stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+    .dash-stat-val {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+    }
+    .dash-stat-change {
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .dash-stat-change.up {
+        color: #10b981;
+    }
+    .dash-stat-change.down {
+        color: #ef4444;
+    }
+    .dash-stat-change.neutral {
+        color: #94a3b8;
+    }
 
-.dash-stat-card.stat-warning { border-left: 4px solid #f59e0b; }
-.dash-stat-card.stat-warning .dash-stat-icon { background: #fef3c7; color: #d97706; }
-.dash-stat-card.stat-danger { border-left: 4px solid #ef4444; }
-.dash-stat-card.stat-danger .dash-stat-icon { background: #fee2e2; color: #dc2626; }
-.dash-stat-card.stat-success { border-left: 4px solid #10b981; }
-.dash-stat-card.stat-success .dash-stat-icon { background: #d1fae5; color: #059669; }
-.dash-stat-card.stat-teal { border-left: 4px solid #0d9488; }
-.dash-stat-card.stat-teal .dash-stat-icon { background: #ccfbf1; color: #0d9488; }
-.dash-stat-card.stat-purple { border-left: 4px solid #8b5cf6; }
-.dash-stat-card.stat-purple .dash-stat-icon { background: #ede9fe; color: #7c3aed; }
+    .dash-stat-card.stat-warning {
+        border-left: 4px solid #f59e0b;
+    }
+    .dash-stat-card.stat-warning .dash-stat-icon {
+        background: #fef3c7;
+        color: #d97706;
+    }
+    .dash-stat-card.stat-danger {
+        border-left: 4px solid #ef4444;
+    }
+    .dash-stat-card.stat-danger .dash-stat-icon {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    .dash-stat-card.stat-success {
+        border-left: 4px solid #10b981;
+    }
+    .dash-stat-card.stat-success .dash-stat-icon {
+        background: #d1fae5;
+        color: #059669;
+    }
+    .dash-stat-card.stat-teal {
+        border-left: 4px solid #0d9488;
+    }
+    .dash-stat-card.stat-teal .dash-stat-icon {
+        background: #ccfbf1;
+        color: #0d9488;
+    }
+    .dash-stat-card.stat-purple {
+        border-left: 4px solid #8b5cf6;
+    }
+    .dash-stat-card.stat-purple .dash-stat-icon {
+        background: #ede9fe;
+        color: #7c3aed;
+    }
 
-/* ── Charts ── */
-.dash-charts-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; }
-@media (max-width: 1100px) { .dash-charts-grid { grid-template-columns: 1fr; } }
+    /* ── Charts ── */
+    .dash-charts-grid {
+        display: grid;
+        grid-template-columns: 1.6fr 1fr;
+        gap: 20px;
+    }
+    @media (max-width: 1100px) {
+        .dash-charts-grid {
+            grid-template-columns: 1fr;
+        }
+    }
 
-.dash-card {
-    background: #fff; border-radius: 16px; padding: 24px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
-}
-.dash-card-header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-.dash-card-title { font-size: 0.95rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 8px; }
+    .dash-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+    }
+    .dash-card-header {
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .dash-card-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
 
-@media (max-width: 768px) { .dash-content { padding: 20px 16px; } }
+    @media (max-width: 768px) {
+        .dash-content {
+            padding: 20px 16px;
+        }
+    }
 </style>
 
 <div class="dashboard-wrapper">
@@ -141,6 +285,14 @@ body {
                     <div class="dash-stat-val">0</div>
                     <div class="dash-stat-change neutral">Chờ xem xét</div>
                 </div>
+                <div class="dash-stat-card stat-teal" onclick="window.location.href = '${pageContext.request.contextPath}/hr/shift-schedule'" style="cursor:pointer;">
+                    <div class="dash-stat-header">
+                        <span class="dash-stat-title">Xếp Lịch Ca Trưởng Phòng</span>
+                        <div class="dash-stat-icon"><i class="fas fa-calendar-alt"></i></div>
+                    </div>
+                    <div class="dash-stat-val" style="font-size:1.1rem;">Lịch Ca</div>
+                    <div class="dash-stat-change neutral">Click để xếp ca</div>
+                </div>
             </div>
 
             <%-- Director Charts --%>
@@ -153,8 +305,8 @@ body {
                         <c:choose>
                             <c:when test="${kpiHasData}">
                                 <canvas id="kpiChart"></canvas>
-                            </c:when>
-                            <c:otherwise>
+                                </c:when>
+                                <c:otherwise>
                                 <div style="display:flex; height:100%; align-items:center; justify-content:center; color:#94a3b8;">Chưa có dữ liệu KPI</div>
                             </c:otherwise>
                         </c:choose>
@@ -168,8 +320,8 @@ body {
                         <c:choose>
                             <c:when test="${turnoverHasData}">
                                 <canvas id="turnoverChart"></canvas>
-                            </c:when>
-                            <c:otherwise>
+                                </c:when>
+                                <c:otherwise>
                                 <div style="display:flex; height:100%; align-items:center; justify-content:center; color:#94a3b8;">Chưa có dữ liệu nghỉ việc</div>
                             </c:otherwise>
                         </c:choose>
@@ -183,35 +335,35 @@ body {
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+                    document.addEventListener('DOMContentLoaded', function () {
     <c:if test="${kpiHasData}">
-    new Chart(document.getElementById('kpiChart').getContext('2d'), {
-        type: 'line',
-        data: {
-            labels: [${kpiLabels}],
-            datasets: [
-                { label: 'Điểm trung bình KPI', data: [${kpiScores}],
-                  borderColor:'#0d9488', backgroundColor:'rgba(13,148,136,0.1)', fill:true, tension:0.4 }
-            ]
-        },
-        options: { responsive:true, maintainAspectRatio:false }
-    });
+                        new Chart(document.getElementById('kpiChart').getContext('2d'), {
+                            type: 'line',
+                            data: {
+                                labels: [${kpiLabels}],
+                                datasets: [
+                                    {label: 'Điểm trung bình KPI', data: [${kpiScores}],
+                                        borderColor: '#0d9488', backgroundColor: 'rgba(13,148,136,0.1)', fill: true, tension: 0.4}
+                                ]
+                            },
+                            options: {responsive: true, maintainAspectRatio: false}
+                        });
     </c:if>
 
     <c:if test="${turnoverHasData}">
-    new Chart(document.getElementById('turnoverChart').getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: [${turnoverLabels}],
-            datasets: [{ label: 'Turnover Rate (%)', data:[${turnoverRates}], backgroundColor:'#f59e0b', borderRadius: 8 }]
-        },
-        options: { 
-            responsive:true, maintainAspectRatio:false,
-            scales: { y: { beginAtZero: true, max: 100 } }
-        }
-    });
+                        new Chart(document.getElementById('turnoverChart').getContext('2d'), {
+                            type: 'bar',
+                            data: {
+                                labels: [${turnoverLabels}],
+                                datasets: [{label: 'Turnover Rate (%)', data: [${turnoverRates}], backgroundColor: '#f59e0b', borderRadius: 8}]
+                            },
+                            options: {
+                                responsive: true, maintainAspectRatio: false,
+                                scales: {y: {beginAtZero: true, max: 100}}
+                            }
+                        });
     </c:if>
-});
+                    });
 </script>
 
 <jsp:include page="../footer.jsp" />

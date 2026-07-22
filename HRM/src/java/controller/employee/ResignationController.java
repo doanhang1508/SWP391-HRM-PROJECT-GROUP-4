@@ -17,12 +17,12 @@ import dao.EmployeeProfileDAO;
 import dao.notificationDAO;
 
 /**
- * ResignationController — Nhân viên tự nộp đơn xin nghỉ việc.
- * URL: /employee/resignation
- * Role: Employee (roleId = 7)
+ * ResignationController — Nhân viên tự nộp đơn xin nghỉ việc. URL:
+ * /employee/resignation Role: Employee (roleId = 7), HR Staff (roleId = 5)
  *
- * GET:  Load danh sách đơn đã nộp của nhân viên hiện tại → forward resignation-form.jsp
- * POST: Validate & insert đơn mới (status = PENDING) → redirect GET (PRG pattern)
+ * GET: Load danh sách đơn đã nộp của nhân viên hiện tại → forward
+ * resignation-form.jsp POST: Validate & insert đơn mới (status = PENDING) →
+ * redirect GET (PRG pattern)
  */
 @WebServlet(name = "ResignationController", urlPatterns = {"/employee/resignation"})
 public class ResignationController extends HttpServlet {
@@ -35,7 +35,6 @@ public class ResignationController extends HttpServlet {
     }
 
     // ── Access Control ─────────────────────────────────────────────────────────
-
     private boolean checkAccess(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
         HttpSession session = req.getSession(false);
@@ -44,7 +43,8 @@ public class ResignationController extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/login");
             return false;
         }
-        if (user.getRoleId() != 7) {
+        // Cho phép Employee (7) và HR Staff (5) — cả hai đều là nhân viên có thể xin nghỉ việc
+        if (user.getRoleId() != 7 && user.getRoleId() != 5) {
             resp.sendRedirect(req.getContextPath() + "/dashboard");
             return false;
         }
@@ -52,11 +52,12 @@ public class ResignationController extends HttpServlet {
     }
 
     // ── GET: hiển thị form + lịch sử ─────────────────────────────────────────
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        if (!checkAccess(req, resp)) return;
+        if (!checkAccess(req, resp)) {
+            return;
+        }
 
         HttpSession session = req.getSession(false);
         User user = (User) session.getAttribute("currentUser");
@@ -75,11 +76,12 @@ public class ResignationController extends HttpServlet {
     }
 
     // ── POST: nộp đơn mới ─────────────────────────────────────────────────────
-
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        if (!checkAccess(req, resp)) return;
+        if (!checkAccess(req, resp)) {
+            return;
+        }
 
         req.setCharacterEncoding("UTF-8");
         HttpSession session = req.getSession(false);
@@ -96,9 +98,9 @@ public class ResignationController extends HttpServlet {
                     resignationDAO.updateStatus(id, "CANCELLED", "PENDING", 0, null, null);
                     session.setAttribute("successMessage", "Đã hủy đơn xin nghỉ việc.");
                     new notificationDAO().create(user.getUserId(), "system", "Đã hủy đơn xin nghỉ việc",
-                        "Bạn đã hủy đơn xin nghỉ việc #" + id + ".", "/employee/resignation");
+                            "Bạn đã hủy đơn xin nghỉ việc #" + id + ".", "/employee/resignation");
                     new notificationDAO().createForRoles(new int[]{2, 5}, "system", "Nhân viên đã hủy đơn xin nghỉ việc",
-                        user.getFullName() + " đã hủy đơn xin nghỉ việc #" + id + ".", "/hr/resignation-approval");
+                            user.getFullName() + " đã hủy đơn xin nghỉ việc #" + id + ".", "/hr/resignation-approval");
                 } else {
                     session.setAttribute("errorMessage", "Không thể hủy đơn này.");
                 }
@@ -123,7 +125,7 @@ public class ResignationController extends HttpServlet {
                             session.setAttribute("successMessage", "Đã gửi yêu cầu rút đơn. Vui lòng chờ HR phê duyệt.");
                             new notificationDAO().create(user.getUserId(), "system", "Yêu cầu rút đơn", "Yêu cầu rút đơn xin nghỉ việc của bạn đã được gửi tới HR.", "/employee/resignation");
                             new notificationDAO().createForRoles(new int[]{2, 5}, "system", "Yêu cầu rút đơn nghỉ việc",
-                                user.getFullName() + " đã gửi yêu cầu rút đơn xin nghỉ việc #" + id + ".", "/hr/resignation-approval");
+                                    user.getFullName() + " đã gửi yêu cầu rút đơn xin nghỉ việc #" + id + ".", "/hr/resignation-approval");
                         } else {
                             session.setAttribute("errorMessage", "Đơn đã bị thay đổi, vui lòng tải lại trang.");
                         }
@@ -138,7 +140,7 @@ public class ResignationController extends HttpServlet {
             return;
         }
 
-        String reason          = req.getParameter("reason");
+        String reason = req.getParameter("reason");
         String desiredLastDateStr = req.getParameter("desiredLastDate");
 
         // ── Validation ──
@@ -178,15 +180,15 @@ public class ResignationController extends HttpServlet {
             if (success) {
                 session.setAttribute("successMessage", "Đơn xin nghỉ việc đã được gửi thành công. Vui lòng chờ HR xem xét.");
                 new notificationDAO().create(user.getUserId(), "system", "Đơn xin nghỉ việc đã được gửi",
-                    "Bạn đã gửi đơn xin nghỉ việc với ngày mong muốn nghỉ là " + desiredLastDateStr + ". Vui lòng chờ HR xem xét.",
-                    "/employee/resignation");
+                        "Bạn đã gửi đơn xin nghỉ việc với ngày mong muốn nghỉ là " + desiredLastDateStr + ". Vui lòng chờ HR xem xét.",
+                        "/employee/resignation");
                 new notificationDAO().createForRoles(new int[]{2, 5}, "system", "Đơn xin nghỉ việc mới",
-                    user.getFullName() + " đã gửi đơn xin nghỉ việc với ngày mong muốn nghỉ là " + desiredLastDateStr + ".",
-                    "/hr/resignation-approval");
+                        user.getFullName() + " đã gửi đơn xin nghỉ việc với ngày mong muốn nghỉ là " + desiredLastDateStr + ".",
+                        "/hr/resignation-approval");
             } else {
                 session.setAttribute("errorMessage",
-                    "Gửi đơn thất bại. Có thể bảng resignation_requests chưa tồn tại trong database. " +
-                    "Vui lòng liên hệ Admin chạy script resignation_migration.sql và thử lại.");
+                        "Gửi đơn thất bại. "
+                        + "Vui lòng liên hệ Admin hoặc thử lại.");
             }
 
         } catch (IllegalArgumentException e) {

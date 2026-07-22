@@ -11,39 +11,29 @@ import java.io.IOException;
 /**
  * AuthFilter — Bộ lọc xác thực và phân quyền URL.
  * <p>
- * Mapping URL đường dẫn:
- * /dashboard              → role 1-6 (management)
- * /admin/users            → role 1 (Admin only) — quản lý tài khoản
- * /admin/* (còn lại)      → role 1, 2 (Admin + HR Manager)
- * /hr/*                   → role 2, 5 (HR Manager + HR Staff)
- *   ngoại lệ: /hr/holiday (xem lịch nghỉ lễ) → GET mở cho mọi role đã đăng nhập;
- *             POST (thêm/sửa/xóa/sinh lịch) vẫn chỉ HR Manager/HR Staff
- * /accountant/*           → role 8 (Accountant only)
- * /employee/*             → mọi role đã đăng nhập
- * /editRolePermission     → role 1 (Admin only)
- * /role/*                 → role 1 (Admin only)
+ * Mapping URL đường dẫn: /dashboard → role 1-6 (management) /admin/users → role
+ * 1 (Admin only) — quản lý tài khoản /admin/* (còn lại) → role 1, 2 (Admin + HR
+ * Manager) /hr/* → role 2, 5 (HR Manager + HR Staff) ngoại lệ: /hr/holiday (xem
+ * lịch nghỉ lễ) → GET mở cho mọi role đã đăng nhập; POST (thêm/sửa/xóa/sinh
+ * lịch) vẫn chỉ HR Manager/HR Staff /accountant/* → role 8 (Accountant only)
+ * /employee/* → mọi role đã đăng nhập /editRolePermission → role 1 (Admin only)
+ * /role/* → role 1 (Admin only)
  * <p>
- * Role IDs:
- * 1 = Admin
- * 2 = HR Manager (Trưởng phòng nhân sự)
- * 3 = Factory Manager
- * 4 = Director
- * 5 = HR Staff
- * 6 = Department Manager
- * 7 = Employee
- * 8 = Accountant (Kế toán)
+ * Role IDs: 1 = Admin 2 = HR Manager (Trưởng phòng nhân sự) 3 = Factory Manager
+ * 4 = Director 5 = HR Staff 6 = Department Manager 7 = Employee 8 = Accountant
+ * (Kế toán)
  */
 public class AuthFilter implements Filter {
 
     // Role constants
-    private static final int ROLE_ADMIN       = 1;
-    private static final int ROLE_HR_MANAGER  = 2;
+    private static final int ROLE_ADMIN = 1;
+    private static final int ROLE_HR_MANAGER = 2;
     private static final int ROLE_FACTORY_MGR = 3;
-    private static final int ROLE_DIRECTOR    = 4;
-    private static final int ROLE_HR_STAFF    = 5;
-    private static final int ROLE_DEPT_MGR    = 6;
-    private static final int ROLE_EMPLOYEE    = 7;
-    private static final int ROLE_ACCOUNTANT  = 8;
+    private static final int ROLE_DIRECTOR = 4;
+    private static final int ROLE_HR_STAFF = 5;
+    private static final int ROLE_DEPT_MGR = 6;
+    private static final int ROLE_EMPLOYEE = 7;
+    private static final int ROLE_ACCOUNTANT = 8;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -52,8 +42,8 @@ public class AuthFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest servletRequest,
-                         ServletResponse servletResponse,
-                         FilterChain chain)
+            ServletResponse servletResponse,
+            FilterChain chain)
             throws IOException, ServletException {
 
         HttpServletRequest req = (HttpServletRequest) servletRequest;
@@ -137,6 +127,12 @@ public class AuthFilter implements Filter {
                     redirectToAppropriate(req, resp, roleId);
                     return;
                 }
+            } else if (path.equals("/hr/shift-schedule")) {
+                // Xếp lịch ca: HR Manager, HR Staff, và Director (Director xếp ca cho các trưởng phòng)
+                if (roleId != ROLE_HR_MANAGER && roleId != ROLE_HR_STAFF && roleId != ROLE_DIRECTOR) {
+                    redirectToAppropriate(req, resp, roleId);
+                    return;
+                }
             } else if (path.equals("/hr/holiday")) {
                 // Xem Lịch nghỉ lễ (GET): mở cho TOÀN BỘ nhân viên đã đăng nhập, mọi role.
                 // Thao tác ghi (POST: thêm/sửa/xóa/sinh lịch) vẫn chỉ dành riêng cho HR.
@@ -147,16 +143,16 @@ public class AuthFilter implements Filter {
                     }
                 }
                 // GET: không chặn, cho qua với mọi role đã đăng nhập.
-            } else if (path.startsWith("/hr/department") || path.startsWith("/hr/position") || 
-                       path.startsWith("/hr/contract-type") || path.startsWith("/hr/shifts") || 
-                       path.startsWith("/hr/allowance")) {
+            } else if (path.startsWith("/hr/department") || path.startsWith("/hr/position")
+                    || path.startsWith("/hr/contract-type") || path.startsWith("/hr/shifts")
+                    || path.startsWith("/hr/allowance")) {
                 // Các danh mục cấu hình vận hành cơ bản: CHỈ HR Staff (5) được phép truy cập
                 if (roleId != ROLE_HR_STAFF) {
                     redirectToAppropriate(req, resp, roleId);
                     return;
                 }
-            } else if (path.startsWith("/hr/salary-grade") || path.startsWith("/hr/reward-disciplines") || 
-                       path.startsWith("/hr/payroll-configs")) {
+            } else if (path.startsWith("/hr/salary-grade") || path.startsWith("/hr/reward-disciplines")
+                    || path.startsWith("/hr/payroll-configs")) {
                 // Các danh mục cấu hình chính sách lương, thưởng: CHỈ HR Manager (2) được phép truy cập
                 if (roleId != ROLE_HR_MANAGER) {
                     redirectToAppropriate(req, resp, roleId);
@@ -207,7 +203,6 @@ public class AuthFilter implements Filter {
 
         // ── 6. /employee/* → phải đăng nhập (mọi role đều xem được) ───────
         //    (Đã check currentUser != null ở bước 1, nên chỉ cho qua)
-
         // ── Tất cả điều kiện pass → tiếp tục chuỗi filter ─────────────────
         chain.doFilter(servletRequest, servletResponse);
     }
@@ -220,12 +215,12 @@ public class AuthFilter implements Filter {
     }
 
     /**
-     * Redirect người dùng về trang phù hợp với role của họ
-     * khi họ cố truy cập URL không được phép.
+     * Redirect người dùng về trang phù hợp với role của họ khi họ cố truy cập
+     * URL không được phép.
      */
     private void redirectToAppropriate(HttpServletRequest req,
-                                       HttpServletResponse resp,
-                                       int roleId) throws IOException {
+            HttpServletResponse resp,
+            int roleId) throws IOException {
         String ctx = req.getContextPath();
         if (roleId == ROLE_ACCOUNTANT) {
             resp.sendRedirect(ctx + "/accountant/payroll");
@@ -242,4 +237,4 @@ public class AuthFilter implements Filter {
     public void destroy() {
         // Không cần dọn dẹp
     }
-} 
+}
