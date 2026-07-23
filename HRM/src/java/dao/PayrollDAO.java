@@ -989,13 +989,13 @@ public class PayrollDAO {
 
             // ── Nền đóng BHXH (insuranceBase) ──
             // = lương cơ bản (từ hợp đồng) + phần phụ cấp is_bhxh_applied=1 + phần thưởng is_bhxh_applied=1
-            // Theo quy định: OT và thưởng KPI/năng suất KHÔNG tính vào nền BHXH.
+            // Theo quy định: OT KHÔNG tính vào nền BHXH.
             BigDecimal insuranceBase = baseSalary
                     .add(allowanceResult.bhxhBase)
                     .add(bonusBhxhAmount);
             BigDecimal insuranceAmount = calculateInsurance(insuranceBase);
 
-            // ── Miễn đóng BHXH khi nghỉ thai sản nữ toàn tháng (Điều 85 Luật BHXH 2014) ──
+            // ── Miễn đóng BHXH khi nghỉ thai sản nữ toàn tháng (Điều 85 Luật BHXH 2024) ──
             // Điều kiện: totalDays = 0 (không có ngày công thường) VÀ tất cả ngày nghỉ không lương
             // đều là thai sản nữ (FEMALE_MATERNITY_LEAVE_TYPE_ID = 3).
             // Thai sản nam (type_id = 6) đã bị loại bỏ khỏi hệ thống.
