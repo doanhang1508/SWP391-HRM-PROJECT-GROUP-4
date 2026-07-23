@@ -889,7 +889,7 @@ VALUES
 -- ── Profiles quản lý ──
 -- Format: (uid, dept_id, id_card, dob, gender, address, hire_date, tax_code, social_insurance_no, bank_account, bank_name, ct, sg, es, el)
 INSERT INTO employee_profiles (user_id,department_id,id_card,dob,gender,address,hire_date,tax_code,social_insurance_no,bank_account,bank_name,contract_type_id,salary_grade_id,employment_status_id,education_level_id) VALUES
-(10,2,'024940000010','1994-02-28',0,'Hà Nội',                 '2024-06-01','8012345710','0200001010','0011234510','VPBank',      3,2,2,2),
+(10,2,'024940000010','1994-02-28',0,'Hà Nội',                 '2023-08-15','8012345710','0200001010','0011234510','VPBank',      3,2,2,2),
 (14,3,'024820000014','1982-12-10',0,'Hai Bà Trưng, Hà Nội',  '2026-02-01','8012345714','0200001014','0011234514','Vietcombank', 2,1,2,1),
 (33,3,'024910000033','1991-07-15',0,'Cầu Giấy, Hà Nội',       '2026-03-01','8012345733','0200001033','0011234533','Vietcombank', 2,2,2,2); -- employment_status_id=4: Đã nghỉ việc
 
@@ -909,14 +909,14 @@ INSERT INTO employee_contracts (user_id, contract_type_id, position_id, departme
 -- user 4:  Quản đốc          | Vô thời hạn | Lương 12.000.000
 (4,  4, 4, 5, 2, '2020-06-01', NULL,         12000000, 'Active'),
 -- user 5:  Công nhân         | 1 năm       | Lương 5.000.000
-(5,  2, 9, 5, 4, '2026-02-15', '2026-01-15',  5000000, 'Active'),
+(5,  2, 9, 5, 4, '2026-02-15', '2027-02-15',  5000000, 'Active'),
 
--- user 10: HR Staff          | 3 năm       | Lương 10.000.000
-(10, 3, 8, 2, 2, '2024-06-01', '2026-08-10', 10000000, 'Active'),
+-- user 10: HR Staff          | 3 năm       | Lương 10.000.000 (Sắp hết hạn 15/08/2026)
+(10, 3, 8, 2, 2, '2023-08-15', '2026-08-15', 10000000, 'Active'),
 -- user 14: Kế toán trưởng   | 1 năm       | Lương 20.000.000
-(14, 2, 6, 3, 1, '2026-02-01', '2026-03-01', 20000000, 'Active'),
+(14, 2, 6, 3, 1, '2026-02-01', '2027-02-01', 20000000, 'Active'),
 -- user 33: Kế toán viên     | 1 năm       | Lương 10.000.000
-(33, 2, 7, 3, 2, '2026-03-01', '2026-07-25', 10000000, 'Active');
+(33, 2, 7, 3, 2, '2026-03-01', '2027-03-01', 10000000, 'Active');
 
 
 
