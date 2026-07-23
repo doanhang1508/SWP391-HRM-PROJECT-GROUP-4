@@ -46,8 +46,11 @@ public class HrTimeLeaveReportController extends HttpServlet {
         }
 
         User currentUser = (User) session.getAttribute("currentUser");
-        if (currentUser.getRoleId() != 2 && currentUser.getRoleId() != 5) {
+        int roleId = currentUser.getRoleId();
+        // 2 = HR Manager, 4 = Director, 5 = HR Staff, 1 = Admin
+        if (roleId != 1 && roleId != 2 && roleId != 4 && roleId != 5) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Bạn không có quyền truy cập trang này.");
+
             return;
         }
 
