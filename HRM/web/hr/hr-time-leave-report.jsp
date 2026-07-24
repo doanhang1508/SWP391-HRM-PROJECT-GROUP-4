@@ -161,7 +161,7 @@
                     <div class="col-lg-5">
                         <div class="chart-card">
                             <h6>
-                                <i class="fas fa-chart-pie" style="color:#7c3aed;"></i> Cơ cấu ngày nghỉ (Phép/Ốm/Thai sản)
+                                <i class="fas fa-chart-pie" style="color:#7c3aed;"></i> Cơ cấu ngày nghỉ (Phép/Ốm)
                             </h6>
                             <canvas id="chartLeaveBreakdown" height="220"></canvas>
                         </div>
@@ -196,7 +196,6 @@
                             <th class="text-center">Đi trễ (lần)</th>
                             <th class="text-center">Phép năm (ngày)</th>
                             <th class="text-center">Nghỉ ốm (ngày)</th>
-                            <th class="text-center">Nghỉ thai sản (ngày)</th>
                             <th class="text-center">Phép năm còn lại</th>
                         </tr>
                     </thead>
@@ -233,9 +232,6 @@
                                         </td>
                                         <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">
                                             <c:choose><c:when test="${r.sickLeaveDays > 0}"><fmt:formatNumber value="${r.sickLeaveDays}" pattern="#,##0.#"/></c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose>
-                                        </td>
-                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">
-                                            <c:choose><c:when test="${r.maternityLeaveDays > 0}"><fmt:formatNumber value="${r.maternityLeaveDays}" pattern="#,##0.#"/></c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose>
                                         </td>
                                         <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}"><span class="badge bg-success rounded-pill"><fmt:formatNumber value="${r.remainingAnnualLeave}" pattern="#,##0.#"/></span></td>
                                     </tr>
@@ -289,11 +285,10 @@
     const sundayOt   = [<c:forEach var="r" items="${chartDataList}">${r.sundayOtHrs},</c:forEach>];
     const holidayOt  = [<c:forEach var="r" items="${chartDataList}">${r.holidayOtHrs},</c:forEach>];
 
-    let totalAnnual = 0, totalSick = 0, totalMaternity = 0;
+    let totalAnnual = 0, totalSick = 0;
     <c:forEach var="r" items="${chartDataList}">
         totalAnnual += ${r.annualLeaveDays};
         totalSick += ${r.sickLeaveDays};
-        totalMaternity += ${r.maternityLeaveDays};
     </c:forEach>
 
     // Với số lượng nhân viên lớn, cột sẽ quá chật nếu ép vừa khung cố định.
@@ -334,10 +329,10 @@
     new Chart(document.getElementById('chartLeaveBreakdown'), {
         type: 'doughnut',
         data: {
-            labels: ['Phép năm', 'Nghỉ ốm', 'Thai sản'],
+            labels: ['Phép năm', 'Nghỉ ốm'],
             datasets: [{
-                data: [totalAnnual, totalSick, totalMaternity],
-                backgroundColor: ['#22c55e', '#f59e0b', '#ec4899']
+                data: [totalAnnual, totalSick],
+                backgroundColor: ['#22c55e', '#f59e0b']
             }]
         },
         options: {

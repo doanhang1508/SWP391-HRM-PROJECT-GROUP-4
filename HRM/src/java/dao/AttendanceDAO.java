@@ -1641,7 +1641,6 @@ public class AttendanceDAO {
         // month-specific data when it is present, otherwise retain approved leave requests.
         sql.append("GREATEST(IFNULL(lv.annual_leave_days, 0), SUM(CASE WHEN UPPER(a.status) IN ('LEAVE', 'ANNUAL_LEAVE') THEN 1 ELSE 0 END)) AS annual_leave_days, ");
         sql.append("GREATEST(IFNULL(lv.sick_leave_days, 0), SUM(CASE WHEN UPPER(a.status) = 'SICK_LEAVE' THEN 1 ELSE 0 END)) AS sick_leave_days, ");
-        sql.append("GREATEST(IFNULL(lv.maternity_leave_days, 0), SUM(CASE WHEN UPPER(a.status) = 'MATERNITY_LEAVE' THEN 1 ELSE 0 END)) AS maternity_leave_days, ");
         // Remaining Annual Leave
         sql.append("IFNULL(MAX_LV.max_days, 12) - GREATEST(IFNULL(ytd_lv.used_annual_leave_days, 0), IFNULL(att_ytd_lv.used_annual_leave_days, 0)) AS remaining_annual_leave ");
         
@@ -1654,8 +1653,7 @@ public class AttendanceDAO {
         sql.append("LEFT JOIN ( ")
            .append("  SELECT user_id, ")
            .append("         SUM(CASE WHEN leave_type_id = 1 THEN total_days ELSE 0 END) AS annual_leave_days, ")
-           .append("         SUM(CASE WHEN leave_type_id = 2 THEN total_days ELSE 0 END) AS sick_leave_days, ")
-           .append("         SUM(CASE WHEN leave_type_id = 3 THEN total_days ELSE 0 END) AS maternity_leave_days ") // Thai sản nữ (type_id=3); type_id=6 đã bị loại bỏ
+           .append("         SUM(CASE WHEN leave_type_id = 2 THEN total_days ELSE 0 END) AS sick_leave_days ")
            .append("  FROM leave_requests ")
            .append("  WHERE status IN ('Approved', 'Pending') ")
            .append("    AND MONTH(start_date) = ? AND YEAR(start_date) = ? ")
@@ -1684,7 +1682,7 @@ public class AttendanceDAO {
             sql.append(" AND COALESCE(ep.department_id, u.department_id) = ? ");
         }
         
-        sql.append("GROUP BY u.user_id, u.full_name, d.department_name, lv.annual_leave_days, lv.sick_leave_days, lv.maternity_leave_days, ytd_lv.used_annual_leave_days, att_ytd_lv.used_annual_leave_days, MAX_LV.max_days ");
+        sql.append("GROUP BY u.user_id, u.full_name, d.department_name, lv.annual_leave_days, lv.sick_leave_days, ytd_lv.used_annual_leave_days, att_ytd_lv.used_annual_leave_days, MAX_LV.max_days ");
         sql.append("ORDER BY u.full_name LIMIT ? OFFSET ?");
 
         DBContext dbContext = new DBContext();
@@ -1720,7 +1718,6 @@ public class AttendanceDAO {
                     s.setHolidayOtHrs(rs.getDouble("holiday_ot_hrs"));
                     s.setAnnualLeaveDays(rs.getDouble("annual_leave_days"));
                     s.setSickLeaveDays(rs.getDouble("sick_leave_days"));
-                    s.setMaternityLeaveDays(rs.getDouble("maternity_leave_days"));
                     s.setRemainingAnnualLeave(rs.getDouble("remaining_annual_leave"));
                     
                     list.add(s);

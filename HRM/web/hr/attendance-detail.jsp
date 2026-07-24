@@ -231,7 +231,7 @@
                                                                         <option value="HALFDAY" ${a.status == 'HALFDAY' ? 'selected' : ''}>HALFDAY</option>
                                                                         <option value="LEAVE" ${a.status == 'LEAVE' ? 'selected' : ''}>LEAVE</option>
                                                                         <option value="SICK_LEAVE" ${a.status == 'SICK_LEAVE' ? 'selected' : ''}>SICK_LEAVE</option>
-                                                                        <option value="MATERNITY_LEAVE" ${a.status == 'MATERNITY_LEAVE' ? 'selected' : ''}>MATERNITY_LEAVE</option>
+
                                                                     </select>
                                                                 </div>
                                                                 <div class="mb-3">

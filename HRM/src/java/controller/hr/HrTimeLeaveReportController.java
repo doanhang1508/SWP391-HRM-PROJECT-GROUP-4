@@ -182,7 +182,7 @@ public class HrTimeLeaveReportController extends HttpServlet {
             String[] columns = {
                 "Mã NV", "Họ Tên", "Phòng Ban", "Công chuẩn", "Công thực tế", 
                 "OT thường (h)", "OT CN (h)", "OT Lễ (h)", "Đi trễ (lần)", 
-                "Nghỉ phép năm (ngày)", "Nghỉ ốm (ngày)", "Nghỉ thai sản (ngày)", "Phép năm còn lại (ngày)"
+                "Nghỉ phép năm (ngày)", "Nghỉ ốm (ngày)", "Phép năm còn lại (ngày)"
             };
             
             for (int i = 0; i < columns.length; i++) {
@@ -245,12 +245,8 @@ public class HrTimeLeaveReportController extends HttpServlet {
                 c10.setCellStyle(currentNumStyle);
 
                 Cell c11 = row.createCell(11);
-                c11.setCellValue(r.getMaternityLeaveDays());
+                c11.setCellValue(r.getRemainingAnnualLeave());
                 c11.setCellStyle(currentNumStyle);
-
-                Cell c12 = row.createCell(12);
-                c12.setCellValue(r.getRemainingAnnualLeave());
-                c12.setCellStyle(currentNumStyle);
             }
             
             try (OutputStream out = response.getOutputStream()) {

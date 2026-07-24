@@ -20,7 +20,6 @@ public class AttendanceSummary {
     private double holidayOtHrs;
     private double annualLeaveDays;
     private double sickLeaveDays;
-    private double maternityLeaveDays;
     private double remainingAnnualLeave;
 
     public AttendanceSummary() {
@@ -162,13 +161,6 @@ public class AttendanceSummary {
         this.sickLeaveDays = sickLeaveDays;
     }
 
-    public double getMaternityLeaveDays() {
-        return maternityLeaveDays;
-    }
-
-    public void setMaternityLeaveDays(double maternityLeaveDays) {
-        this.maternityLeaveDays = maternityLeaveDays;
-    }
 
     public double getRemainingAnnualLeave() {
         return remainingAnnualLeave;

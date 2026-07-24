@@ -27,11 +27,6 @@ public class EmployeeLeaveController extends HttpServlet {
 
     private LeaveRequestDAO service;
 
-    /** leaveTypeId = 3: Nghỉ thai sản nữ. Thai sản nam (type_id = 6) đã bị loại bỏ. */
-    private static final int FEMALE_MATERNITY_LEAVE_TYPE_ID = 3;
-    /** leaveTypeId = 6: Nghỉ thai sản nam — đã bị loại bỏ khỏi hệ thống. */
-    private static final int REMOVED_MALE_MATERNITY_TYPE_ID = 6;
-
     @Override
     public void init() throws ServletException {
         service = new LeaveRequestDAOImpl();
@@ -58,32 +53,15 @@ public class EmployeeLeaveController extends HttpServlet {
         if ("calculateDays".equals(action)) {
             String startDateStr = request.getParameter("startDate");
             String endDateStr   = request.getParameter("endDate");
-            String leaveTypeStr = request.getParameter("leaveTypeId");
             try {
                 java.time.LocalDate startDate = java.time.LocalDate.parse(startDateStr);
                 java.time.LocalDate endDate   = java.time.LocalDate.parse(endDateStr);
-                int leaveTypeId = 0;
-                if (leaveTypeStr != null && !leaveTypeStr.isEmpty()) {
-                    leaveTypeId = Integer.parseInt(leaveTypeStr);
-                }
 
-                double days;
-                if (leaveTypeId == FEMALE_MATERNITY_LEAVE_TYPE_ID) {
-                    // Thai sản nữ: tính theo ngày lịch (bao gồm CN, T7, lễ)
-                    days = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1;
-                    if (days < 0) days = 0;
-                } else {
-                    days = service.calculateTotalLeaveDays(user.getUserId(), startDate, endDate);
-                }
+                double days = service.calculateTotalLeaveDays(user.getUserId(), startDate, endDate);
 
                 response.setContentType("application/json");
                 response.setCharacterEncoding("UTF-8");
                 response.getWriter().write("{\"days\": " + days + "}");
-                return;
-            } catch (NumberFormatException e) {
-                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                response.setContentType("application/json");
-                response.getWriter().write("{\"error\": \"Tham số leaveTypeId không hợp lệ.\"}");
                 return;
             } catch (Exception e) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -93,23 +71,12 @@ public class EmployeeLeaveController extends HttpServlet {
             }
         }
 
-        // ── Load danh sách loại nghỉ — lọc bỏ type 6 và type 3 với nam ──
+        // ── Load danh sách loại nghỉ — lọc bỏ type 6 ──
         List<LeaveType> allLeaveTypes = service.getAllLeaveTypes();
         java.util.List<LeaveType> filteredLeaveTypes = new java.util.ArrayList<>();
 
-        // Lấy giới tính nhân viên để lọc thai sản nữ
-        Integer gender = null;
-        try {
-            dao.EmployeeProfileDAO profileDAO = new dao.EmployeeProfileDAO();
-            model.EmployeeProfile profile = profileDAO.getByUserId(user.getUserId());
-            if (profile != null) gender = profile.getGender();
-        } catch (Exception ignored) {}
-
         for (LeaveType t : allLeaveTypes) {
-            if (t.getLeaveTypeId() == REMOVED_MALE_MATERNITY_TYPE_ID) continue; // Loại bỏ type 6
-            if (t.getLeaveTypeId() == FEMALE_MATERNITY_LEAVE_TYPE_ID && gender != null && gender == 1) {
-                continue; // Nam không thấy option thai sản nữ
-            }
+            if (t.getLeaveTypeId() == 6) continue; // Loại bỏ type 6
             filteredLeaveTypes.add(t);
         }
 
@@ -125,8 +92,6 @@ public class EmployeeLeaveController extends HttpServlet {
         request.setAttribute("leaveBalances", balances);
         request.setAttribute("leaveTypes", filteredLeaveTypes);
         request.setAttribute("leaveHistory", service.getLeaveHistoryByUserId(user.getUserId()));
-        // Truyền gender để JSP biết ẩn/hiện các label phù hợp
-        request.setAttribute("employeeGender", gender);
 
         request.getRequestDispatcher("/employee/employee-leave.jsp").forward(request, response);
     }
@@ -160,32 +125,10 @@ public class EmployeeLeaveController extends HttpServlet {
                 }
 
                 // ── Server-side: từ chối type 6 ──
-                if (leaveTypeId == REMOVED_MALE_MATERNITY_TYPE_ID) {
-                    session.setAttribute("errorMessage", "Loại nghỉ thai sản nam không còn được hỗ trợ.");
+                if (leaveTypeId == 6) {
+                    session.setAttribute("errorMessage", "Loại nghỉ này không còn được hỗ trợ.");
                     response.sendRedirect(request.getContextPath() + "/employee/leave");
                     return;
-                }
-
-                // ── Server-side: kiểm tra giới tính cho thai sản nữ ──
-                if (leaveTypeId == FEMALE_MATERNITY_LEAVE_TYPE_ID) {
-                    try {
-                        dao.EmployeeProfileDAO profileDAO = new dao.EmployeeProfileDAO();
-                        model.EmployeeProfile profile = profileDAO.getByUserId(user.getUserId());
-                        if (profile == null || profile.getGender() == null) {
-                            session.setAttribute("errorMessage", "Không thể gửi đơn nghỉ thai sản: thông tin giới tính chưa được cập nhật.");
-                            response.sendRedirect(request.getContextPath() + "/employee/leave");
-                            return;
-                        }
-                        if (profile.getGender() == 1) { // 1 = Nam
-                            session.setAttribute("errorMessage", "Chỉ nhân viên nữ được gửi đơn nghỉ thai sản.");
-                            response.sendRedirect(request.getContextPath() + "/employee/leave");
-                            return;
-                        }
-                    } catch (Exception e) {
-                        session.setAttribute("errorMessage", "Lỗi kiểm tra thông tin nhân viên: " + e.getMessage());
-                        response.sendRedirect(request.getContextPath() + "/employee/leave");
-                        return;
-                    }
                 }
 
                 LeaveRequest lr = new LeaveRequest();
@@ -197,13 +140,7 @@ public class EmployeeLeaveController extends HttpServlet {
                 // ── Server tính lại totalDays — không tin giá trị từ frontend ──
                 java.time.LocalDate startDate = lr.getStartDate().toLocalDate();
                 java.time.LocalDate endDate   = lr.getEndDate().toLocalDate();
-                double serverDays;
-                if (leaveTypeId == FEMALE_MATERNITY_LEAVE_TYPE_ID) {
-                    serverDays = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1;
-                    if (serverDays < 0) serverDays = 0;
-                } else {
-                    serverDays = service.calculateTotalLeaveDays(user.getUserId(), startDate, endDate);
-                }
+                double serverDays = service.calculateTotalLeaveDays(user.getUserId(), startDate, endDate);
                 lr.setTotalDays(serverDays);
                 lr.setReason(request.getParameter("reason"));
 

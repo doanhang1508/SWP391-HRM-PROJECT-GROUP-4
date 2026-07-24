@@ -512,7 +512,7 @@ public class ImportAttendanceController extends HttpServlet {
                     // swipeMap đã đọc ở bước 1. Không có cột "Ca làm việc" tường minh
                     // nên Ca làm việc được suy luận là ca có giờ bắt đầu gần nhất với
                     // giờ quẹt vào thực tế của từng ngày. Chế độ này KHÔNG phân biệt
-                    // được Nghỉ phép/Nghỉ ốm/Thai sản — mọi ngày có quẹt thẻ được ghi
+                    // được Nghỉ phép/Nghỉ ốm — mọi ngày có quẹt thẻ được ghi
                     // PRESENT, hoặc LATE nếu quẹt vào trễ hơn 15 phút so với giờ bắt
                     // đầu ca suy luận được.
                     if (allShifts.isEmpty()) {
@@ -713,9 +713,6 @@ public class ImportAttendanceController extends HttpServlet {
                                 break;
                             case "S":
                                 status = "SICK_LEAVE";
-                                break;
-                            case "M":
-                                status = "MATERNITY_LEAVE";
                                 break;
                             case "HALF":
                             case "HALFDAY":

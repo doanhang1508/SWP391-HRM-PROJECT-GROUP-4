@@ -458,88 +458,23 @@
                             const endDate = document.getElementById('endDate');
                             const totalDays = document.getElementById('totalDays');
 
-                            // Set min date to today
-                            const today = new Date().toISOString().split('T')[0];
-                            if (startDate) startDate.setAttribute('min', today);
-                            if (endDate) endDate.setAttribute('min', today);
-
-                            // leaveTypeId = 3: Nghỉ thai sản nữ
-                            const FEMALE_MATERNITY_TYPE = 3;
-
-                            function calcDays() {
-                                if (startDate && endDate && startDate.value && endDate.value) {
-                                    const startVal = startDate.value;
-                                    const endVal = endDate.value;
-                                    const leaveTypeId = leaveTypeSelect ? leaveTypeSelect.value : '';
-
-                                    // endDate min: luôn là startDate (không lock 6 tháng)
-                                    if (endDate) endDate.setAttribute('min', startVal);
-
-                                    const s = new Date(startVal);
-                                    const e = new Date(endVal);
-                                    if (e >= s) {
-                                        if (totalDays) totalDays.value = ""; // clear while loading
-                                        // Gửi leaveTypeId để server tính đúng (thai sản = ngày lịch)
-                                        fetch("${pageContext.request.contextPath}/employee/leave?action=calculateDays&startDate=" + startVal + "&endDate=" + endVal + (leaveTypeId ? "&leaveTypeId=" + leaveTypeId : ""))
-                                            .then(response => response.json())
-                                            .then(data => {
-                                                if (data && typeof data.days === 'number') {
-                                                    if (totalDays) totalDays.value = data.days;
-                                                }
-                                            })
-                                            .catch(err => {
-                                                console.error("Error fetching calculated days:", err);
-                                            });
-                                    }
-                                }
-                            }
-
-                            if (startDate) startDate.addEventListener('change', calcDays);
-                            if (endDate) endDate.addEventListener('change', calcDays);
-                            // Khi đổi loại nghỉ, tính lại số ngày
-                            if (leaveTypeSelect) leaveTypeSelect.addEventListener('change', calcDays);
-
-    // Leave Balances Map from backend
-    <%
-                                // Fallback scriptlet to force evaluation even if Tomcat caches the old Controller class
-                                dao.LeaveRequestDAO ls = new dao.LeaveRequestDAOImpl();
-                            model.User currentUser = (model.User) session.getAttribute("currentUser");
-                            java.util.Map < Integer, Double > bMap = new java.util.HashMap <> ();
-                            if (currentUser != null && request.getAttribute("leaveTypes") != null) {
-                                for (model.LeaveType t : (java.util.List < model.LeaveType >)request.getAttribute("leaveTypes")) {
-                                    try {
-                                        bMap.put(t.getLeaveTypeId(), ls.checkRemainingLeaveBalance(currentUser.getUserId(), t.getLeaveTypeId()));
-                                    } catch (Exception e) {
-                                        bMap.put(t.getLeaveTypeId(), 0.0);
-                                    }
-                                }
-                            }
-                            request.setAttribute("fallbackBalances", bMap);
-    %>
-    const leaveBalances = {
-        <c:forEach var="entry" items="${fallbackBalances}">
-            "${entry.key}": ${entry.value},
-        </c:forEach>
-    };
-
-                        const leaveTypeSelectBadge = document.getElementById('leaveTypeId');
-                        const dynamicBalanceText = document.getElementById('dynamicBalanceText');
-                        const annualLeaveBadge = document.getElementById('annualLeaveBadge');
-
-                        function toggleBadge() {
+                            // Set min d                        function toggleBadge() {
                             if (leaveTypeSelectBadge && dynamicBalanceText) {
                                 const typeId = parseInt(leaveTypeSelectBadge.value) || 0;
-                                // Thai sản nữ: không hiển thị số dư phép (không giới hạn ngày)
-                                if (typeId === 3) {
-                                    dynamicBalanceText.innerText = "Hưởng chế độ BHXH (không giới hạn số ngày)";
-                                    annualLeaveBadge.style.display = 'flex';
-                                } else if (typeId) {
+                                if (typeId) {
                                     const bal = leaveBalances[typeId];
                                     if (bal !== undefined && bal < 900) {
                                         dynamicBalanceText.innerText = bal + " ngày";
                                         annualLeaveBadge.style.display = 'flex';
                                     } else {
                                         dynamicBalanceText.innerText = "Không giới hạn / Theo quy định";
+                                        annualLeaveBadge.style.display = 'flex';
+                                    }
+                                } else {
+                                    annualLeaveBadge.style.display = 'none';
+                                }
+                            }
+                        }�nh";
                                         annualLeaveBadge.style.display = 'flex';
                                     }
                                 } else {
