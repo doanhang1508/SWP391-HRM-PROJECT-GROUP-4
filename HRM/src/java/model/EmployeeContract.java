@@ -30,6 +30,8 @@ public class EmployeeContract {
     private String signStatus;       // 'N/A', 'PENDING', 'SIGNED', 'REJECTED'
     private Timestamp signedAt;
     private String rejectReason;
+    private Integer signedBy;         // user_id của người đại diện công ty ký duyệt HĐ
+    private Date effectiveDate;        // Ngày hiệu lực thực tế của Phụ lục (có thể khác ngày ký)
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
@@ -120,6 +122,12 @@ public class EmployeeContract {
     public Timestamp getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Timestamp updatedAt) { this.updatedAt = updatedAt; }
 
+    public Integer getSignedBy() { return signedBy; }
+    public void setSignedBy(Integer signedBy) { this.signedBy = signedBy; }
+
+    public Date getEffectiveDate() { return effectiveDate; }
+    public void setEffectiveDate(Date effectiveDate) { this.effectiveDate = effectiveDate; }
+
     // === JOIN fields ===
 
     public String getContractTypeName() { return contractTypeName; }
@@ -165,6 +173,7 @@ public class EmployeeContract {
                 + ", userId=" + userId
                 + ", status=" + status
                 + ", docType=" + docType
+                + ", signedBy=" + signedBy
                 + ", baseSalary=" + baseSalary + "}";
     }
 }

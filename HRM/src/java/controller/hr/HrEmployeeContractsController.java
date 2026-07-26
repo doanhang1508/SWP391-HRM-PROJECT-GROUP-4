@@ -228,12 +228,8 @@ public class HrEmployeeContractsController extends HttpServlet {
             try {
                 int userId = Integer.parseInt(request.getParameter("userId"));
                 
-                // HR Manager (role 2) chỉ được duyệt, không được tạo hợp đồng
-                if (currentRoleId == 2) {
-                    session.setAttribute("errorMsg", "Lỗi: HR Manager không có quyền tạo hợp đồng. Chỉ HR Staff mới có quyền này.");
-                    response.sendRedirect(request.getContextPath() + "/hr/employee-contracts?userId=" + userId);
-                    return;
-                }
+                // Removed HR Manager block
+
                 if (currentRoleId == 5 && currentUser.getUserId() == userId) {
                     session.setAttribute("errorMsg", "Lỗi: HR Staff không được tự thao tác hợp đồng của chính mình.");
                     response.sendRedirect(request.getContextPath() + "/hr/employee-contracts?userId=" + userId);
@@ -271,6 +267,25 @@ public class HrEmployeeContractsController extends HttpServlet {
 
                 int salaryGradeId = Integer.parseInt(request.getParameter("salaryGradeId"));
 
+                // === FIX 10: Kiểm tra giới hạn loại hợp đồng theo BLLĐ 2019 ===
+                EmployeeContractDAO ecDAOCheck = new EmployeeContractDAO();
+                if (contractTypeId == 1) { // Thử việc
+                    int probCount = ecDAOCheck.countProbationContracts(userId);
+                    if (probCount > 0) {
+                        session.setAttribute("errorMsg", "Lỗi: Nhân viên này đã có hợp đồng thử việc trước đó. Theo BLLĐ 2019 Điều 25, chỉ được thử việc 1 lần.");
+                        response.sendRedirect(request.getContextPath() + "/hr/employee-contracts?userId=" + userId);
+                        return;
+                    }
+                } else if (contractTypeId == 2 || contractTypeId == 3) { // Có thời hạn
+                    int fixedCount = ecDAOCheck.countFixedTermContracts(userId);
+                    if (fixedCount >= 2) {
+                        session.setAttribute("errorMsg", "Lỗi: Nhân viên này đã ký đủ 2 lần hợp đồng có thời hạn. Theo BLLĐ 2019 Điều 20, phải chuyển sang hợp đồng Vô thời hạn (Loại 4).");
+                        response.sendRedirect(request.getContextPath() + "/hr/employee-contracts?userId=" + userId);
+                        return;
+                    }
+                }
+                // ===================================================================
+
                 EmployeeContract c = new EmployeeContract();
                 c.setUserId(userId);
                 c.setContractTypeId(contractTypeId);
@@ -281,10 +296,18 @@ public class HrEmployeeContractsController extends HttpServlet {
                 c.setEndDate(endDate);
                 c.setBaseSalary(baseSalary);
                 c.setTaxCalcType(taxCalcType);
+                // role 5 (HR Staff) → Pending (cần HR Manager duyệt)
+                // role 2 (HR Manager), 3 (Quản đốc), 6 (Trưởng phòng) → Active ngay
                 c.setStatus(currentRoleId == 5 ? "Pending" : "Active");
 
                 EmployeeContractDAO ecDAO = new EmployeeContractDAO();
                 ecDAO.insert(c);
+                
+                // FIX 2: Đảm bảo chỉ có 1 HĐ Active tại một thời điểm
+                // Nếu HĐ mới được tạo thẳng Active (không qua Pending), terminate HĐ cũ ngay
+                if ("Active".equals(c.getStatus()) && c.getContractId() > 0) {
+                    ecDAO.terminateOldActiveContracts(userId, c.getContractId());
+                }
                 
                 // Handle allowance checkboxes
                 
@@ -319,12 +342,8 @@ public class HrEmployeeContractsController extends HttpServlet {
             try {
                 int userId = Integer.parseInt(request.getParameter("userId"));
                 
-                // HR Manager (role 2) chỉ được duyệt, không được tạo phụ lục
-                if (currentRoleId == 2) {
-                    session.setAttribute("errorMsg", "Lỗi: HR Manager không có quyền tạo phụ lục hợp đồng.");
-                    response.sendRedirect(request.getContextPath() + "/hr/employee-contracts?userId=" + userId);
-                    return;
-                }
+                // Removed HR Manager addendum block
+
                 if (currentRoleId == 5 && currentUser.getUserId() == userId) {
                     session.setAttribute("errorMsg", "Lỗi: HR Staff không được tự tạo phụ lục cho chính mình.");
                     response.sendRedirect(request.getContextPath() + "/hr/employee-contracts?userId=" + userId);
@@ -333,6 +352,9 @@ public class HrEmployeeContractsController extends HttpServlet {
 
                 int parentContractId = Integer.parseInt(request.getParameter("parentContractId"));
                 String addendumReason = request.getParameter("addendumReason");
+                String effectiveDateStr = request.getParameter("effectiveDate");
+                java.sql.Date effectiveDate = (effectiveDateStr != null && !effectiveDateStr.trim().isEmpty())
+                    ? java.sql.Date.valueOf(effectiveDateStr) : null;
                 java.sql.Date startDate = java.sql.Date.valueOf(request.getParameter("startDate"));
                 
                 // Kiểm tra tuổi nhân viên tại thời điểm bắt đầu phụ lục (phải từ 16 tuổi trở lên)
@@ -368,15 +390,35 @@ public class HrEmployeeContractsController extends HttpServlet {
                 addendum.setTaxCalcType(taxCalcType);
                 addendum.setParentContractId(parentContractId);
                 addendum.setAddendumReason(addendumReason);
+                addendum.setEffectiveDate(effectiveDate);
                 addendum.setDocType("ADDENDUM");
                 addendum.setSignStatus("PENDING");
+                
+                // FIX 3: HR Staff tạo phụ lục → Pending (cần HR Manager duyệt trước khi NV ký)
+                // HR Manager/Quản đốc tạo phụ lục → Active ngay (tự phê duyệt)
+                addendum.setStatus(currentRoleId == 5 ? "Pending" : "Active");
 
                 EmployeeContractDAO ecDAO = new EmployeeContractDAO();
                 ecDAO.insertAddendum(addendum);
                 
+                // FIX 3: Gửi thông báo cho HR Manager khi HR Staff tạo phụ lục chờ duyệt
+                if (currentRoleId == 5) {
+                    dao.UserDAO uDao = new dao.UserDAO();
+                    java.util.List<model.User> managers = uDao.searchUsers("", 2);
+                    dao.notificationDAO notifDao = new dao.notificationDAO();
+                    for (model.User m : managers) {
+                        notifDao.create(m.getUserId(), "contract", "Yêu cầu duyệt phụ lục hợp đồng",
+                            "HR Staff " + currentUser.getFullName() + " vừa tạo phụ lục hợp đồng (Chờ duyệt) cho nhân viên ID " + userId
+                            + (addendumReason != null && !addendumReason.isBlank() ? ". Lý do: " + addendumReason : "") + ".",
+                            "/hr/contract-approval");
+                    }
+                }
+                
                 // Get the generated contractId for the addendum to insert allowances
                 
-                session.setAttribute("successMsg", "Đã tạo phụ lục Hợp đồng. Vui lòng chờ nhân viên xác nhận!");
+                session.setAttribute("successMsg", currentRoleId == 5
+                    ? "Đã tạo phụ lục Hợp đồng (Chờ HR Manager duyệt)!"
+                    : "Đã tạo phụ lục Hợp đồng. Vui lòng chờ nhân viên xác nhận!");
                 response.sendRedirect(request.getContextPath() + "/hr/employee-contracts?userId=" + userId);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -394,7 +436,7 @@ public class HrEmployeeContractsController extends HttpServlet {
                 int targetUserId = Integer.parseInt(request.getParameter("userId"));
                 
                 EmployeeContractDAO ecDAO = new EmployeeContractDAO();
-                if (ecDAO.approveContract(contractId, targetUserId)) {
+                if (ecDAO.approveContract(contractId, targetUserId, currentUser.getUserId())) {
                     session.setAttribute("successMsg", "Đã phê duyệt hợp đồng thành công!");
                 } else {
                     session.setAttribute("errorMsg", "Phê duyệt thất bại. Hợp đồng có thể đã bị xóa.");

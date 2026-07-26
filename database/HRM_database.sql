@@ -235,6 +235,8 @@ CREATE TABLE employee_contracts (
     salary_grade_id  INT           NOT NULL,
     start_date            DATE          NOT NULL,
     end_date              DATE          NULL,
+    effective_date        DATE          NULL
+                         COMMENT 'Ngày hiệu lực thực tế của Phụ lục (có thể khác ngày ký và start_date)',
     actual_end_date       DATE          NULL
                          COMMENT 'Ngày thực tế chấm dứt hợp đồng (do nghỉ việc / sa thải) — khác với end_date theo lịch',
     termination_reason    VARCHAR(255)  NULL
@@ -249,12 +251,14 @@ CREATE TABLE employee_contracts (
                      COMMENT 'Nếu là Phụ lục thì trỏ về contract_id của hợp đồng gốc',
     addendum_reason  VARCHAR(255) NULL
                      COMMENT 'Lý do tạo phụ lục: Tăng lương, Điều chuyển phòng ban, Thăng tiến...',
-    status           VARCHAR(50)   NOT NULL DEFAULT 'Active'
-                     COMMENT 'Active, Expired, Terminated',
+    status           ENUM('Active','Pending','Expired','Terminated','Rejected') NOT NULL DEFAULT 'Pending'
+                     COMMENT 'Trạng thái hợp đồng',
     sign_status      ENUM('N/A','PENDING','SIGNED','REJECTED') NOT NULL DEFAULT 'N/A'
                      COMMENT 'N/A=Hợp đồng gốc (không cần ký online), PENDING=Chờ nhân viên xác nhận, SIGNED=Đã xác nhận, REJECTED=Từ chối',
     signed_at        TIMESTAMP NULL DEFAULT NULL
                      COMMENT 'Thời điểm nhân viên bấm Xác nhận hoặc Từ chối',
+    signed_by        INT NULL DEFAULT NULL
+                     COMMENT 'user_id của người đại diện công ty ký/duyệt HĐ (HR Manager, Giám đốc)',
     reject_reason    VARCHAR(255) NULL
                      COMMENT 'Lý do nhân viên từ chối ký phụ lục',
     created_at       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -265,8 +269,10 @@ CREATE TABLE employee_contracts (
     CONSTRAINT fk_contract_dept FOREIGN KEY (department_id)    REFERENCES departments(department_id)             ON DELETE SET NULL,
     CONSTRAINT fk_contract_sg   FOREIGN KEY (salary_grade_id)  REFERENCES salary_grades(salary_grade_id)         ON DELETE RESTRICT,
     CONSTRAINT fk_ec_parent     FOREIGN KEY (parent_contract_id) REFERENCES employee_contracts(contract_id)       ON DELETE SET NULL,
+    CONSTRAINT fk_contract_signed_by FOREIGN KEY (signed_by)   REFERENCES users(user_id)                         ON DELETE SET NULL,
     INDEX idx_ec_user_status    (user_id, status),
-    INDEX idx_ec_parent         (parent_contract_id)
+    INDEX idx_ec_parent         (parent_contract_id),
+    INDEX idx_ec_effective_date (effective_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng dependents đã được đơn giản hoá: chỉ lưu số lượng người phụ thuộc
