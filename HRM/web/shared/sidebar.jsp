@@ -962,6 +962,12 @@
                     </a>
                 </li>
                 <li class="sidebar-item">
+                    <a href="${pageContext.request.contextPath}/manager/shift-schedule"
+                       class="sidebar-link ${param.activeMenu eq 'shift-schedule' ? 'active' : ''}">
+                        <i class="fas fa-calendar-alt"></i> Xếp lịch ca
+                    </a>
+                </li>
+                <li class="sidebar-item">
                     <a href="${pageContext.request.contextPath}/manager/leave"
                        class="sidebar-link ${param.activeMenu eq 'leave' ? 'active' : ''}">
                         <i class="fas fa-calendar-check"></i> Duyệt

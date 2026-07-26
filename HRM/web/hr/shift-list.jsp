@@ -341,7 +341,7 @@
                                                             </c:when>
                                                             <c:otherwise>Tất cả phòng ban</c:otherwise>
                                                         </c:choose>
-                                                    </span>
+                                                    </span> 
                                                 </td>
                                                 <td><span class="time-d">${s.startTime}</span><span class="time-a"><i
                                                             class="fas fa-arrow-right"></i></span><span

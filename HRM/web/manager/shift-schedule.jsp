@@ -146,10 +146,19 @@ body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-top: 0 !im
                 <h1><i class="fas fa-calendar-alt" style="color:#d97706;margin-right:10px;"></i>Xếp Lịch Ca</h1>
                 <div class="page-breadcrumb">
                     <a href="${pageContext.request.contextPath}/dashboard">Dashboard</a>
-                    &gt; Xếp lịch ca công nhân
+                    &gt; Xếp lịch ca phòng ban / xưởng
                 </div>
             </div>
-            <div class="role-badge"><i class="fas fa-hard-hat"></i> Quản đốc xưởng</div>
+            <c:choose>
+                <c:when test="${sessionScope.currentUser.roleId == 6}">
+                    <div class="role-badge" style="background: linear-gradient(135deg, #4f46e5, #3730a3); box-shadow: 0 2px 8px rgba(79,70,229,0.3);">
+                        <i class="fas fa-user-tie"></i> Trưởng phòng ban
+                    </div>
+                </c:when>
+                <c:otherwise>
+                    <div class="role-badge"><i class="fas fa-hard-hat"></i> Quản đốc xưởng</div>
+                </c:otherwise>
+            </c:choose>
         </div>
 
         <%-- Alerts --%>
@@ -167,23 +176,23 @@ body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-top: 0 !im
                     <div class="card-panel-icon" style="background:rgba(217,119,6,0.1);color:#d97706;">
                         <i class="fas fa-user-clock"></i>
                     </div>
-                    Gán Ca Cho Công Nhân
+                    Gán Ca Cho Nhân Viên
                 </div>
             </div>
 
             <%-- Ghi chú OT --%>
             <div class="ot-hint">
                 <i class="fas fa-info-circle"></i>
-                <span>Tăng ca (OT) do quản đốc phân sẽ được tự động hiển thị dưới dạng <strong>Ca hành chính</strong> (ban ngày) hoặc <strong>Ca 3 (Đêm)</strong> (ban đêm) dựa trên khung giờ.</span>
+                <span>Tăng ca (OT) do quản lý phân sẽ được tự động hiển thị dưới dạng <strong>Ca hành chính</strong> (ban ngày) hoặc <strong>Ca 3 (Đêm)</strong> (ban đêm) dựa trên khung giờ.</span>
             </div>
 
             <form method="POST" action="${pageContext.request.contextPath}/manager/shift-schedule?action=assign"
                   class="assign-form">
                 <div class="row g-3 align-items-end">
                     <div class="col-md-3">
-                        <label class="form-label">Công nhân</label>
+                        <label class="form-label">Nhân viên</label>
                         <select id="workerSelect" name="userId" class="form-select" required>
-                            <option value="">-- Chọn công nhân --</option>
+                            <option value="">-- Chọn nhân viên --</option>
                             <c:forEach var="w" items="${workers}">
                                 <option value="${w.userId}">${w.fullName}</option>
                             </c:forEach>
@@ -238,7 +247,7 @@ body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding-top: 0 !im
                 <table class="sched-tbl">
                     <thead>
                         <tr>
-                            <th class="emp-header">Công nhân</th>
+                            <th class="emp-header">Nhân viên</th>
                             <% for (int d = 0; d < 7; d++) {
                                 boolean isToday = weekDates[d].equals(today); %>
                             <th class="day-header <%= isToday ? "today-col" : "" %>">

@@ -42,6 +42,7 @@ import java.util.Map;
 public class ShiftScheduleController extends HttpServlet {
 
     private static final int ROLE_SUPERVISOR = 3;
+    private static final int ROLE_DEPT_MANAGER = 6;
 
     private ShiftDAO shiftService;
     private ShiftAssignmentDAO assignmentService;
@@ -66,8 +67,8 @@ public class ShiftScheduleController extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/login");
             return;
         }
-        // Chỉ Supervisor (role 3) mới được xếp ca
-        if (user.getRoleId() != ROLE_SUPERVISOR) {
+        // Cho phép Supervisor (role 3) và Department Manager (role 6)
+        if (user.getRoleId() != ROLE_SUPERVISOR && user.getRoleId() != ROLE_DEPT_MANAGER) {
             resp.sendRedirect(req.getContextPath() + "/dashboard");
             return;
         }
@@ -93,7 +94,7 @@ public class ShiftScheduleController extends HttpServlet {
             resp.sendRedirect(req.getContextPath() + "/login");
             return;
         }
-        if (user.getRoleId() != ROLE_SUPERVISOR) {
+        if (user.getRoleId() != ROLE_SUPERVISOR && user.getRoleId() != ROLE_DEPT_MANAGER) {
             resp.sendRedirect(req.getContextPath() + "/dashboard");
             return;
         }
@@ -172,6 +173,13 @@ public class ShiftScheduleController extends HttpServlet {
             return;
         }
 
+        User currentManager = getCurrentUser(req);
+        User targetWorker = userDAO.getById(userId);
+        if (targetWorker == null || currentManager == null || targetWorker.getDepartmentId() != currentManager.getDepartmentId()) {
+            redirectSchedule(req, resp, "error", "Bạn không có quyền xếp lịch ca cho nhân viên ngoài phòng ban.");
+            return;
+        }
+
         java.time.LocalTime startTime = java.time.LocalTime.of(18, 0);
         java.time.LocalTime endTime;
         java.time.LocalTime breakStart = null;
@@ -191,8 +199,7 @@ public class ShiftScheduleController extends HttpServlet {
             return;
         }
 
-        // Create a custom shift for OT so it saves the actual times, but hides from HR
-        // Manager
+        // Create a custom shift for OT so it saves the actual times, but hides from HR Manager
         int shiftId = shiftService.findOrCreateCustomShift(startTime, endTime, breakStart, breakEnd, shiftName);
 
         if (to.isBefore(from)) {
@@ -202,8 +209,7 @@ public class ShiftScheduleController extends HttpServlet {
 
         int inserted = assignmentService.batchAssign(userId, shiftId, from, to);
         if (inserted > 0) {
-            User manager = getCurrentUser(req);
-            String managerName = manager != null ? manager.getFullName() : "Quản đốc";
+            String managerName = currentManager.getFullName();
             new dao.notificationDAO().create(userId, "shift",
                     "Bạn được xếp lịch làm việc mới",
                     managerName + " đã xếp " + inserted + " ca (" + shiftName + ") cho bạn từ "
@@ -224,11 +230,20 @@ public class ShiftScheduleController extends HttpServlet {
             redirectSchedule(req, resp, "error", "ID không hợp lệ");
             return;
         }
+
+        User currentManager = getCurrentUser(req);
         Integer assignedUserId = assignmentService.getAssignmentUserId(id);
+        if (assignedUserId != null && currentManager != null) {
+            User targetWorker = userDAO.getById(assignedUserId);
+            if (targetWorker == null || targetWorker.getDepartmentId() != currentManager.getDepartmentId()) {
+                redirectSchedule(req, resp, "error", "Bạn không có quyền xóa lịch làm việc của nhân viên ngoài phòng ban.");
+                return;
+            }
+        }
+
         boolean ok = assignmentService.deleteAssignment(id);
-        if (ok && assignedUserId != null) {
-            User manager = getCurrentUser(req);
-            String managerName = manager != null ? manager.getFullName() : "Quản đốc";
+        if (ok && assignedUserId != null && currentManager != null) {
+            String managerName = currentManager.getFullName();
             new dao.notificationDAO().create(assignedUserId, "shift",
                     "Lịch làm việc của bạn đã bị xóa",
                     managerName + " đã xóa một lịch làm việc đã xếp cho bạn.",

@@ -23,10 +23,10 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 
 /**
- * ShiftController â€” Manages SHIFT DEFINITIONS and DEPARTMENT-SHIFT MAPPING.
+ * ShiftController ” Manages SHIFT DEFINITIONS and DEPARTMENT-SHIFT MAPPING.
  *
  * URL  : /hr/shifts
- * Role : 2 (HR Manager) â€” HR Manager táº¡o/sá»­a/xoÃ¡/toggle ca; gÃ¡n ca máº·c Ä‘á»‹nh cho phÃ²ng ban.
+ * Role : 2 (HR Manager) 
  *
  * Use Case Diagram:
  *   Actor: HR Manager
@@ -36,8 +36,6 @@ import java.util.List;
  *   - Assign Default to Dept â†’ POST action=assignDept
  *   - View Shift List      â†’ GET (default)
  *
- * Viá»‡c Xáº¾P CA (gÃ¡n ca cho cÃ´ng nhÃ¢n) thuá»™c vá» Supervisor (role 3),
- * Ä‘Æ°á»£c xá»­ lÃ½ bá»Ÿi controller.manager.ShiftScheduleController (/manager/shift-schedule).
  */
 @WebServlet(name = "ShiftController", urlPatterns = {"/hr/shifts"})
 public class ShiftController extends HttpServlet {
