@@ -121,6 +121,12 @@ public class AuthFilter implements Filter {
                     redirectToAppropriate(req, resp, roleId);
                     return;
                 }
+            } else if (path.equals("/hr/report")) {
+                // Báo cáo thống kê hợp đồng: Admin, HR Manager, HR Staff, Director được xem
+                if (roleId != ROLE_ADMIN && roleId != ROLE_HR_MANAGER && roleId != ROLE_HR_STAFF && roleId != ROLE_DIRECTOR) {
+                    redirectToAppropriate(req, resp, roleId);
+                    return;
+                }
             } else if (path.equals("/hr/master-payroll-report")) {
                 // Báo cáo bảng lương tổng hợp: Admin, HR Manager, Director được xem
                 if (roleId != ROLE_ADMIN && roleId != ROLE_HR_MANAGER && roleId != ROLE_DIRECTOR) {

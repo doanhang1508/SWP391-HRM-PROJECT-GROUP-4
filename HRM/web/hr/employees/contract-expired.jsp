@@ -67,6 +67,7 @@
         text-decoration: none;
         font-size: 0.8rem;
     }
+    .btn-action:hover { opacity: 0.85; transition: opacity 0.2s; }
 </style>
 
 <div class="expired-layout">
@@ -108,8 +109,11 @@
                                 </c:otherwise>
                             </c:choose>
                         </td>
-                        <td>
-                            <a href="${pageContext.request.contextPath}/hr/employee-contracts?userId=${c.userId}" class="btn-action">Xem hợp đồng</a>
+                        <td style="display: flex; gap: 6px; align-items: center;">
+                            <a href="${pageContext.request.contextPath}/hr/employee-contracts?userId=${c.userId}" 
+                               class="btn-action" style="background:#2563eb;">Xem HĐ</a>
+                            <a href="${pageContext.request.contextPath}/hr/employee-contracts?userId=${c.userId}" 
+                               class="btn-action" style="background:#16a34a;" title="Tạo hợp đồng gia hạn cho nhân viên này">Gia hạn</a>
                         </td>
                     </tr>
                 </c:forEach>

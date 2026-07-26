@@ -174,7 +174,7 @@ public class ShiftScheduleController extends HttpServlet {
         }
 
         User currentManager = getCurrentUser(req);
-        User targetWorker = userDAO.getById(userId);
+        User targetWorker = userDAO.getUserById(userId);
         if (targetWorker == null || currentManager == null || targetWorker.getDepartmentId() != currentManager.getDepartmentId()) {
             redirectSchedule(req, resp, "error", "Bạn không có quyền xếp lịch ca cho nhân viên ngoài phòng ban.");
             return;
@@ -234,7 +234,7 @@ public class ShiftScheduleController extends HttpServlet {
         User currentManager = getCurrentUser(req);
         Integer assignedUserId = assignmentService.getAssignmentUserId(id);
         if (assignedUserId != null && currentManager != null) {
-            User targetWorker = userDAO.getById(assignedUserId);
+            User targetWorker = userDAO.getUserById(assignedUserId);
             if (targetWorker == null || targetWorker.getDepartmentId() != currentManager.getDepartmentId()) {
                 redirectSchedule(req, resp, "error", "Bạn không có quyền xóa lịch làm việc của nhân viên ngoài phòng ban.");
                 return;

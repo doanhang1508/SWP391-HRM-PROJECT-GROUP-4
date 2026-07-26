@@ -30,6 +30,7 @@ public class ResignationSchedulerListener implements ServletContextListener {
         try {
             processExpiredContracts();
             processNoticePeriodEnds();
+            notifyExpiringProbation();
         } catch (Exception e) {
             System.err.println("[Scheduler] Lỗi khi chạy tác vụ hàng ngày: " + e.getMessage());
         }
@@ -76,6 +77,37 @@ public class ResignationSchedulerListener implements ServletContextListener {
             }
         } catch (Exception e) {
             System.err.println("[Scheduler] processNoticePeriodEnds error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Gửi thông báo cho HR Staff và HR Manager khi hợp đồng thử việc sắp hết hạn trong 7 ngày.
+     * Theo BLLĐ 2019 Điều 25: phải thông báo kết quả thử việc trước khi hết hạn.
+     */
+    public static void notifyExpiringProbation() {
+        String sql = "SELECT ec.contract_id, ec.user_id, ec.end_date, u.full_name " +
+                     "FROM employee_contracts ec " +
+                     "JOIN users u ON ec.user_id = u.user_id " +
+                     "WHERE ec.status = 'Active' " +
+                     "  AND ec.contract_type_id = 1 " +
+                     "  AND ec.end_date IS NOT NULL " +
+                     "  AND ec.end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
+        try (Connection conn = new DBContext().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            dao.notificationDAO notifDao = new dao.notificationDAO();
+            while (rs.next()) {
+                String employeeName = rs.getString("full_name");
+                java.sql.Date endDate = rs.getDate("end_date");
+                String msg = "Hợp đồng thử việc của " + employeeName + " sẽ hết hạn vào " + endDate
+                           + ". Cần ký hợp đồng chính thức hoặc thông báo kết quả thử việc (BLLĐ 2019 Điều 25).";
+                notifDao.createForRoles(new int[]{2, 5}, "contract",
+                    "⚠️ Hợp đồng thử việc sắp hết hạn: " + employeeName, msg,
+                    "/hr/contract-expired");
+                System.out.println("[Scheduler] Đã gửi cảnh báo thử việc hết hạn cho: " + employeeName);
+            }
+        } catch (Exception e) {
+            System.err.println("[Scheduler] notifyExpiringProbation error: " + e.getMessage());
         }
     }
 

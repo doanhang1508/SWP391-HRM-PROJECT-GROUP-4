@@ -388,8 +388,10 @@ public class ImportAttendanceController extends HttpServlet {
                     empCode = empCode.trim().toUpperCase();
 
                     Cell timeCell = row.getCell(3); // Column 3: Giờ
-                    if (timeCell == null)
+                    if (timeCell == null || timeCell.getCellType() == CellType.BLANK) {
+                        errors.add("Dòng " + (row.getRowNum() + 1) + ": Nhân viên [" + empCode + "] bị thiếu Thời gian chấm công (Cột Thời gian bị trống).");
                         continue;
+                    }
 
                     java.util.Date dateTime = null;
                     if (timeCell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(timeCell)) {
@@ -417,20 +419,28 @@ public class ImportAttendanceController extends HttpServlet {
                         }
                     }
 
-                    if (dateTime != null) {
-                        java.util.Calendar cal = java.util.Calendar.getInstance();
-                        cal.setTime(dateTime);
-                        LocalDate date = LocalDate.of(cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH) + 1, cal.get(java.util.Calendar.DAY_OF_MONTH));
-                        if (date.getMonthValue() != month || date.getYear() != year) {
-                            skippedSwipeCount++;
-                            continue;
+                    if (dateTime == null) {
+                        String timeStr = getStringCell(row, 3);
+                        if (timeStr == null || timeStr.trim().isEmpty()) {
+                            errors.add("Dòng " + (row.getRowNum() + 1) + ": Nhân viên [" + empCode + "] bị thiếu Thời gian chấm công (Cột Thời gian bị trống).");
+                        } else {
+                            errors.add("Dòng " + (row.getRowNum() + 1) + ": Nhân viên [" + empCode + "] định dạng Thời gian [" + timeStr + "] không hợp lệ.");
                         }
-                        Time time = new Time(dateTime.getTime());
-
-                        swipeMap.computeIfAbsent(empCode, k -> new java.util.HashMap<>())
-                                .computeIfAbsent(date, k -> new java.util.ArrayList<>())
-                                .add(time);
+                        continue;
                     }
+
+                    java.util.Calendar cal = java.util.Calendar.getInstance();
+                    cal.setTime(dateTime);
+                    LocalDate date = LocalDate.of(cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH) + 1, cal.get(java.util.Calendar.DAY_OF_MONTH));
+                    if (date.getMonthValue() != month || date.getYear() != year) {
+                        skippedSwipeCount++;
+                        continue;
+                    }
+                    Time time = new Time(dateTime.getTime());
+
+                    swipeMap.computeIfAbsent(empCode, k -> new java.util.HashMap<>())
+                            .computeIfAbsent(date, k -> new java.util.ArrayList<>())
+                            .add(time);
                 }
                 if (skippedSwipeCount > 0) {
                     skippedRows.add("Đã bỏ qua " + skippedSwipeCount + " swipe log không thuộc Tháng "

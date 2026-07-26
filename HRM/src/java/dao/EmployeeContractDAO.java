@@ -54,6 +54,12 @@ public class EmployeeContractDAO {
         c.setCreatedAt(rs.getTimestamp("created_at"));
         c.setUpdatedAt(rs.getTimestamp("updated_at"));
 
+        try { 
+            int sb = rs.getInt("signed_by"); 
+            c.setSignedBy(rs.wasNull() ? null : sb); 
+        } catch(SQLException e) {}
+        try { c.setEffectiveDate(rs.getDate("effective_date")); } catch(SQLException e) {}
+
         // JOIN fields (có thể null nếu query không join)
         try { c.setContractTypeName(rs.getString("type_name")); } catch (SQLException e) {}
         try { c.setPositionName(rs.getString("position_name")); } catch (SQLException e) {}
@@ -144,10 +150,10 @@ public class EmployeeContractDAO {
                      "WHERE ec.user_id = ? " +
                      "  AND ec.status IN ('Active', 'Terminated', 'Expired') " +
                      "  AND ec.sign_status IN ('SIGNED', 'N/A') " +
-                     "  AND ec.start_date <= ? " +
+                     "  AND COALESCE(ec.effective_date, ec.start_date) <= ? " +
                      "  AND (ec.end_date IS NULL OR ec.end_date >= ?) " +
                      "  AND (ec.actual_end_date IS NULL OR ec.actual_end_date >= ?) " +
-                     "ORDER BY ec.start_date DESC, ec.contract_id DESC " +
+                     "ORDER BY COALESCE(ec.effective_date, ec.start_date) DESC, ec.contract_id DESC " +
                      "LIMIT 1";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -177,7 +183,7 @@ public class EmployeeContractDAO {
                      "LEFT JOIN positions p ON ec.position_id = p.position_id " +
                      "LEFT JOIN departments d ON ec.department_id = d.department_id " +
                      "LEFT JOIN salary_grades sg ON ec.salary_grade_id = sg.salary_grade_id " +
-                     "WHERE ec.user_id = ? AND ec.sign_status = 'PENDING' " +
+                     "WHERE ec.user_id = ? AND ec.sign_status = 'PENDING' AND ec.status = 'Active' " +
                      "ORDER BY ec.created_at DESC";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -422,7 +428,7 @@ public class EmployeeContractDAO {
         String sql = "INSERT INTO employee_contracts " +
                      "(user_id, contract_type_id, position_id, department_id, salary_grade_id, " +
                      " start_date, end_date, base_salary, tax_calc_type, status, doc_type, sign_status) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'CONTRACT', 'PENDING')";
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'CONTRACT', 'N/A')";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, c.getUserId());
@@ -522,8 +528,8 @@ public class EmployeeContractDAO {
         String sql = "INSERT INTO employee_contracts " +
                      "(user_id, contract_type_id, position_id, department_id, salary_grade_id, " +
                      " start_date, end_date, base_salary, tax_calc_type, " +
-                     " doc_type, parent_contract_id, addendum_reason, status, sign_status) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ADDENDUM', ?, ?, 'Active', 'PENDING')";
+                     " doc_type, parent_contract_id, addendum_reason, status, sign_status, effective_date) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ADDENDUM', ?, ?, ?, 'PENDING', ?)";
         try (Connection conn = DBContext.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, c.getUserId());
@@ -539,6 +545,9 @@ public class EmployeeContractDAO {
             if (c.getParentContractId() != null) ps.setInt(10, c.getParentContractId());
             else ps.setNull(10, java.sql.Types.INTEGER);
             ps.setString(11, c.getAddendumReason());
+            ps.setString(12, c.getStatus() != null ? c.getStatus() : "Active");
+            if (c.getEffectiveDate() != null) ps.setDate(13, c.getEffectiveDate());
+            else ps.setNull(13, java.sql.Types.DATE);
 
             int rows = ps.executeUpdate();
             if (rows > 0) {
@@ -585,6 +594,46 @@ public class EmployeeContractDAO {
                 // Đóng (Terminate) các hợp đồng đang Active cũ của nhân viên này
                 String sqlTerminateOld = "UPDATE employee_contracts SET status = 'Terminated' " +
                                          "WHERE user_id = ? AND status = 'Active' AND contract_id != ?";
+                try (PreparedStatement ps3 = conn.prepareStatement(sqlTerminateOld)) {
+                    ps3.setInt(1, userId);
+                    ps3.setInt(2, contractId);
+                    ps3.executeUpdate();
+                }
+                return true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Duyệt hợp đồng Pending → Active, ghi nhận người duyệt.
+     */
+    public boolean approveContract(int contractId, int userId, int approvedByUserId) {
+        String sqlUpdate = "UPDATE employee_contracts SET status = 'Active', signed_by = ? " +
+                           "WHERE contract_id = ? AND user_id = ? AND status = 'Pending'";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sqlUpdate)) {
+            ps.setInt(1, approvedByUserId);
+            ps.setInt(2, contractId);
+            ps.setInt(3, userId);
+            int rows = ps.executeUpdate();
+            if (rows > 0) {
+                // Cập nhật employee_profiles
+                String sqlProfile = "UPDATE employee_profiles ep " +
+                                    "JOIN employee_contracts ec ON ec.contract_id = ? " +
+                                    "SET ep.contract_type_id = ec.contract_type_id, " +
+                                    "    ep.salary_grade_id  = ec.salary_grade_id " +
+                                    "WHERE ep.user_id = ?";
+                try (PreparedStatement ps2 = conn.prepareStatement(sqlProfile)) {
+                    ps2.setInt(1, contractId);
+                    ps2.setInt(2, userId);
+                    ps2.executeUpdate();
+                }
+                // Đóng hợp đồng Active cũ
+                String sqlTerminateOld = "UPDATE employee_contracts SET status = 'Terminated' " +
+                                         "WHERE user_id = ? AND status = 'Active' AND doc_type = 'CONTRACT' AND contract_id != ?";
                 try (PreparedStatement ps3 = conn.prepareStatement(sqlTerminateOld)) {
                     ps3.setInt(1, userId);
                     ps3.setInt(2, contractId);
@@ -652,6 +701,72 @@ public class EmployeeContractDAO {
             e.printStackTrace();
         }
         return false;
+    }
+
+    // =========================================================================
+    // WRITE: Terminate hợp đồng cũ khi tạo HĐ mới Active
+    // =========================================================================
+
+    /**
+     * Terminate tất cả hợp đồng CONTRACT đang Active của nhân viên, trừ contractId mới nhất.
+     * Gọi sau khi tạo hợp đồng gốc mới với status='Active'.
+     */
+    public int terminateOldActiveContracts(int userId, int exceptContractId) {
+        String sql = "UPDATE employee_contracts SET status = 'Terminated' " +
+                     "WHERE user_id = ? AND status = 'Active' AND doc_type = 'CONTRACT' AND contract_id != ?";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, exceptContractId);
+            return ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    // =========================================================================
+    // READ: Đếm số lần ký hợp đồng theo loại (BLLĐ 2019)
+    // =========================================================================
+
+    /**
+     * Đếm số lần đã ký hợp đồng thử việc (contractTypeId=1).
+     * Theo BLLĐ 2019 Điều 25: chỉ được thử việc 1 lần.
+     */
+    public int countProbationContracts(int userId) {
+        String sql = "SELECT COUNT(*) FROM employee_contracts " +
+                     "WHERE user_id = ? AND contract_type_id = 1 " +
+                     "AND status NOT IN ('Rejected') AND doc_type = 'CONTRACT'";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    /**
+     * Đếm số lần đã ký hợp đồng có thời hạn (contractTypeId 2, 3).
+     * Theo BLLĐ 2019 Điều 20: tối đa 2 lần, sau đó phải ký vô thời hạn.
+     */
+    public int countFixedTermContracts(int userId) {
+        String sql = "SELECT COUNT(*) FROM employee_contracts " +
+                     "WHERE user_id = ? AND contract_type_id IN (2, 3) " +
+                     "AND status NOT IN ('Rejected') AND doc_type = 'CONTRACT'";
+        try (Connection conn = DBContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 
     // =========================================================================
