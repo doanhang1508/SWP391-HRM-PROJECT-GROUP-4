@@ -1636,6 +1636,8 @@ public class AttendanceDAO {
         sql.append("SUM(CASE WHEN DAYOFWEEK(a.work_date) = 1 AND h.holiday_date IS NULL THEN IFNULL(a.overtime_hrs, 0) ELSE 0 END) AS sunday_ot_hrs, ");
         // Holiday OT
         sql.append("SUM(CASE WHEN h.holiday_date IS NOT NULL THEN IFNULL(a.overtime_hrs, 0) ELSE 0 END) AS holiday_ot_hrs, ");
+        // Absent (Unpaid Leave)
+        sql.append("SUM(CASE WHEN UPPER(a.status) IN ('A', 'ABSENT', 'UNPAID_LEAVE') THEN 1 ELSE 0 END) AS absent_days, ");
         // Leaves
         // Excel imports carry leave codes on each attendance day.  Prefer this
         // month-specific data when it is present, otherwise retain approved leave requests.
@@ -1716,6 +1718,7 @@ public class AttendanceDAO {
                     s.setRegularOtHrs(rs.getDouble("regular_ot_hrs"));
                     s.setSundayOtHrs(rs.getDouble("sunday_ot_hrs"));
                     s.setHolidayOtHrs(rs.getDouble("holiday_ot_hrs"));
+                    s.setAbsentDays(rs.getInt("absent_days"));
                     s.setAnnualLeaveDays(rs.getDouble("annual_leave_days"));
                     s.setSickLeaveDays(rs.getDouble("sick_leave_days"));
                     s.setRemainingAnnualLeave(rs.getDouble("remaining_annual_leave"));

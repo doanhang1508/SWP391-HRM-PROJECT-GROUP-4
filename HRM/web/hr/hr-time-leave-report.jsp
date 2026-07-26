@@ -190,6 +190,7 @@
                             <th>Họ Tên</th>
                             <th class="text-center">Công chuẩn</th>
                             <th class="text-center">Công thực tế</th>
+                            <th class="text-center">Nghỉ không phép</th>
                             <th class="text-center">OT thường (h)</th>
                             <th class="text-center">OT CN (h)</th>
                             <th class="text-center">OT Lễ (h)</th>
@@ -217,6 +218,9 @@
                                         </td>
                                         <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">${r.standardWorkDays}</td>
                                         <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}"><span class="badge bg-primary rounded-pill"><fmt:formatNumber value="${r.actualWorkDays}" maxFractionDigits="1"/></span></td>
+                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">
+                                            <c:choose><c:when test="${r.absentDays > 0}"><span class="badge bg-secondary rounded-pill">${r.absentDays}</span></c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose>
+                                        </td>
                                         <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">
                                             <c:choose><c:when test="${r.regularOtHrs > 0}"><span class="badge bg-info text-dark rounded-pill"><fmt:formatNumber value="${r.regularOtHrs}" pattern="#,##0.#"/></span></c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose>
                                         </td>

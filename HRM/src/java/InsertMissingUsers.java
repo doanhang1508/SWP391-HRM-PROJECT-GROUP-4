@@ -13,7 +13,6 @@ public class InsertMissingUsers {
              PreparedStatement check = conn.prepareStatement(checkSql);
              PreparedStatement insert = conn.prepareStatement(insertSql)) {
             insertIfMissing(check, insert, 21, "NV0021", "Ngô Văn Ốm", "nv0021@test.com", "0123456021");
-            insertIfMissing(check, insert, 27, "NV0027", "Vũ Thị Thai Sản", "nv0027@test.com", "0123456027");
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);

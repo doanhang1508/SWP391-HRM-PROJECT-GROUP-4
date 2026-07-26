@@ -722,7 +722,6 @@ INSERT INTO shifts (shift_id, shift_name, start_time, end_time, break_start, bre
 INSERT INTO leave_types (leave_type_id, type_name, description, paid_leave, max_days_per_year) VALUES
 (1, 'Nghỉ phép năm',           'Nghỉ phép theo quy định',                 1, 12),
 (2, 'Nghỉ ốm (Hưởng BHXH)',    'Nghỉ ốm hưởng chế độ BHXH',               0, NULL),
-(3, 'Nghỉ thai sản',           'Chế độ thai sản nữ theo quy định',       0, NULL),
 (4, 'Nghỉ việc riêng có lương','Nghỉ việc riêng vẫn tính lương',          1, NULL),
 (5, 'Nghỉ không lương',        'Nghỉ không hưởng lương',                  0, NULL);
 -- Note: Thai sản nam (leave_type_id = 6) đã bị loại bỏ khỏi hệ thống (migration 2026-07-23).
@@ -731,13 +730,9 @@ INSERT INTO leave_types (leave_type_id, type_name, description, paid_leave, max_
 -- Luật BHXH 2014/2024: Nghỉ ốm 75%, Thai sản nữ 100%
 -- Business rule tạm thời của project:
 --   Nghỉ ốm (type 2): sickBenefit = insuranceBase / 24 × 75% × số ngày nghỉ ốm
---   Thai sản nữ (type 3): maternityBenefit = insuranceBase (không chia 24, không nhân ngày)
 --   TODO: Thay thế bằng mức bình quân lương đóng BHXH 6 tháng trước khi nghỉ.
--- Rate của type 3 hiện không được dùng trong tính toán (maternityBenefit = insuranceBase trực tiếp).
--- Giữ lại trong DB để phục vụ báo cáo và audit.
 INSERT INTO leave_insurance_rates (leave_type_id, insurance_rate_percent, description, effective_from) VALUES
-(2, 75.00,  'Nghỉ ốm: Hưởng 75% mức tiền lương đóng BHXH',   '2026-01-01'),
-(3, 100.00, 'Nghỉ thai sản nữ: Rate lưu trữ (business rule: maternityBenefit = insuranceBase)', '2026-01-01');
+(2, 75.00,  'Nghỉ ốm: Hưởng 75% mức tiền lương đóng BHXH',   '2026-01-01');
 
 -- ── 12. Reward Disciplines ──
 -- is_bhxh_applied: 1=cộng vào nền BHXH, 0=không (thưởng KPI/năng suất luôn = 0)
@@ -883,8 +878,7 @@ INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,depar
 -- ImportAttendanceController diễn giải phần số trong mã NVxxxx là users.user_id.
 INSERT INTO users (user_id, username, password, full_name, email, phone, role_id, status)
 VALUES
-    (21, 'NV0021', '$2a$12$9rsQL.viVSSU3uxAqO4aI.LVVYSyc6i1BaZSvrF5SPnAKijaaMmFK', 'Ngô Văn Ốm', 'nv0021@test.com', '0123456021', 7, 1),
-    (27, 'NV0027', '$2a$12$9rsQL.viVSSU3uxAqO4aI.LVVYSyc6i1BaZSvrF5SPnAKijaaMmFK', 'Vũ Thị Thai Sản', 'nv0027@test.com', '0123456027', 7, 1);
+    (21, 'NV0021', '$2a$12$9rsQL.viVSSU3uxAqO4aI.LVVYSyc6i1BaZSvrF5SPnAKijaaMmFK', 'Ngô Văn Ốm', 'nv0021@test.com', '0123456021', 7, 1);
 
 -- ── Profiles quản lý ──
 -- Format: (uid, dept_id, id_card, dob, gender, address, hire_date, tax_code, social_insurance_no, bank_account, bank_name, ct, sg, es, el)
