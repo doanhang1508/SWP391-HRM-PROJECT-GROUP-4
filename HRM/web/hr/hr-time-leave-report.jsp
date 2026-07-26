@@ -211,33 +211,33 @@
                             </c:when>
                             <c:otherwise>
                                 <c:forEach var="r" items="${reportList}">
-                                    <tr style="${r.lateCount >= 3 ? 'background-color: #fee2e2;' : ''}">
-                                        <td style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}"><strong>NV${r.userId}</strong></td>
-                                        <td style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">
+                                    <tr>
+                                        <td><strong>NV${r.userId}</strong></td>
+                                        <td>
                                             <div style="font-weight: 600;">${r.userName}</div>
                                         </td>
-                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">${r.standardWorkDays}</td>
-                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}"><span class="badge bg-primary rounded-pill"><fmt:formatNumber value="${r.actualWorkDays}" maxFractionDigits="1"/></span></td>
-                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">
+                                        <td class="text-center">${r.standardWorkDays}</td>
+                                        <td class="text-center"><span class="badge bg-primary rounded-pill"><fmt:formatNumber value="${r.actualWorkDays}" maxFractionDigits="1"/></span></td>
+                                        <td class="text-center">
                                             <c:choose><c:when test="${r.absentDays > 0}"><span class="badge bg-secondary rounded-pill">${r.absentDays}</span></c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose>
                                         </td>
-                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">
+                                        <td class="text-center">
                                             <c:choose><c:when test="${r.regularOtHrs > 0}"><span class="badge bg-info text-dark rounded-pill"><fmt:formatNumber value="${r.regularOtHrs}" pattern="#,##0.#"/></span></c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose>
                                         </td>
-                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">
+                                        <td class="text-center">
                                             <c:choose><c:when test="${r.sundayOtHrs > 0}"><span class="badge bg-warning text-dark rounded-pill"><fmt:formatNumber value="${r.sundayOtHrs}" pattern="#,##0.#"/></span></c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose>
                                         </td>
-                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">
+                                        <td class="text-center">
                                             <c:choose><c:when test="${r.holidayOtHrs > 0}"><span class="badge bg-danger rounded-pill"><fmt:formatNumber value="${r.holidayOtHrs}" pattern="#,##0.#"/></span></c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose>
                                         </td>
-                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}"><span class="badge ${r.lateCount >= 3 ? 'bg-danger' : 'bg-warning text-dark'} rounded-pill">${r.lateCount}</span></td>
-                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">
+                                        <td class="text-center"><span class="badge ${r.lateCount >= 3 ? 'bg-danger' : 'bg-warning text-dark'} rounded-pill">${r.lateCount}</span></td>
+                                        <td class="text-center">
                                             <c:choose><c:when test="${r.annualLeaveDays > 0}"><fmt:formatNumber value="${r.annualLeaveDays}" pattern="#,##0.#"/></c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose>
                                         </td>
-                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}">
+                                        <td class="text-center">
                                             <c:choose><c:when test="${r.sickLeaveDays > 0}"><fmt:formatNumber value="${r.sickLeaveDays}" pattern="#,##0.#"/></c:when><c:otherwise><span class="text-muted">-</span></c:otherwise></c:choose>
                                         </td>
-                                        <td class="text-center" style="${r.lateCount >= 3 ? 'background-color: transparent;' : ''}"><span class="badge bg-success rounded-pill"><fmt:formatNumber value="${r.remainingAnnualLeave}" pattern="#,##0.#"/></span></td>
+                                        <td class="text-center"><span class="badge bg-success rounded-pill"><fmt:formatNumber value="${r.remainingAnnualLeave}" pattern="#,##0.#"/></span></td>
                                     </tr>
                                 </c:forEach>
                             </c:otherwise>
