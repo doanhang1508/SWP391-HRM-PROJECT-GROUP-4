@@ -503,7 +503,7 @@
                                     <span id="modalGross">0 ₫</span>
                                 </div>
                                 <div class="d-flex justify-content-between mt-2" style="font-size: 0.88rem;">
-                                    <span class="text-muted">Trợ cấp bảo hiểm (ốm/thai sản):</span>
+                                    <span class="text-muted">Trợ cấp bảo hiểm (nghỉ ốm):</span>
                                     <span class="fw-semibold text-success" id="modalInsuranceBenefit">+ 0 ₫</span>
                                 </div>
                             </div>

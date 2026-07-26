@@ -822,7 +822,7 @@
                             <option value="Nghỉ ốm">Nghỉ ốm</option>
                             <option value="Nghỉ phép năm">Nghỉ phép năm</option>
                             <option value="Nghỉ không lương">Nghỉ không lương</option>
-                            <option value="Nghỉ thai sản">Nghỉ thai sản</option>
+
                             <option value="Khác">Khác</option>
                         </select>
                     </div>

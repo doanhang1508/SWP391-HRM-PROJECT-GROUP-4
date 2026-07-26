@@ -522,7 +522,7 @@ public class ImportAttendanceController extends HttpServlet {
                     // swipeMap đã đọc ở bước 1. Không có cột "Ca làm việc" tường minh
                     // nên Ca làm việc được suy luận là ca có giờ bắt đầu gần nhất với
                     // giờ quẹt vào thực tế của từng ngày. Chế độ này KHÔNG phân biệt
-                    // được Nghỉ phép/Nghỉ ốm/Thai sản — mọi ngày có quẹt thẻ được ghi
+                    // được Nghỉ phép/Nghỉ ốm — mọi ngày có quẹt thẻ được ghi
                     // PRESENT, hoặc LATE nếu quẹt vào trễ hơn 15 phút so với giờ bắt
                     // đầu ca suy luận được.
                     if (allShifts.isEmpty()) {
@@ -614,7 +614,7 @@ public class ImportAttendanceController extends HttpServlet {
                 // Read the "GIỜ OT THEO NGÀY" grid when it exists.  OT must stay on its
                 // real date so the report can split regular, Sunday and holiday hours.
                 java.util.Map<String, java.util.Map<Integer, Double>> dailyOvertime =
-                        extractDailyOvertime(sheet0);
+                        extractDailyOvertime(sheet0, daysRow);
 
                 int startDataRow = daysRow.getRowNum() + 1;
                 for (int r = startDataRow; r <= sheet0.getLastRowNum(); r++) {
@@ -724,9 +724,6 @@ public class ImportAttendanceController extends HttpServlet {
                             case "S":
                                 status = "SICK_LEAVE";
                                 break;
-                            case "M":
-                                status = "MATERNITY_LEAVE";
-                                break;
                             case "HALF":
                             case "HALFDAY":
                             case "H":
@@ -792,7 +789,7 @@ public class ImportAttendanceController extends HttpServlet {
      * Expected structure: a title containing "GIO OT", then a row with employee
      * codes and day numbers, followed by one row per employee.
      */
-    private java.util.Map<String, java.util.Map<Integer, Double>> extractDailyOvertime(Sheet sheet) {
+    private java.util.Map<String, java.util.Map<Integer, Double>> extractDailyOvertime(Sheet sheet, Row daysRow) {
         java.util.Map<String, java.util.Map<Integer, Double>> result = new java.util.HashMap<>();
         int titleRowIndex = -1;
         for (int r = 0; r <= sheet.getLastRowNum(); r++) {
@@ -810,7 +807,7 @@ public class ImportAttendanceController extends HttpServlet {
             return result;
         }
 
-        Row header = sheet.getRow(titleRowIndex + 1);
+        Row header = daysRow;
         java.util.Map<Integer, Integer> dayByColumn = new java.util.HashMap<>();
         for (int c = 0; c < header.getLastCellNum(); c++) {
             Double day = getNumericCell(header, c);

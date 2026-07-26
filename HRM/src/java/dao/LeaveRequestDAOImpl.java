@@ -16,13 +16,8 @@ import java.util.HashMap;
 
 import java.util.Arrays;
 
-public class LeaveRequestDAOImpl implements LeaveRequestDAO {
 
-    /**
-     * leaveTypeId = 3: Nghỉ thai sản nữ.
-     * Thai sản nam (type_id = 6) đã bị loại bỏ khỏi hệ thống.
-     */
-    private static final int FEMALE_MATERNITY_LEAVE_TYPE_ID = 3;
+public class LeaveRequestDAOImpl implements LeaveRequestDAO {
 
     @Override
     public List<LeaveType> getAllLeaveTypes() {
@@ -367,8 +362,7 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
     // ═══════════════════════════════════════════════════════════════
 
     /**
-     * Tính số ngày nghỉ của các loại nghỉ dựa trên lịch phân ca (không bao gồm thai sản nữ).
-     * Dùng {@link #calculateTotalLeaveDays(int, LocalDate, LocalDate, int)} cho loại nghỉ cụ thể.
+     * Tính số ngày nghỉ của các loại nghỉ dựa trên lịch phân ca.
      */
     @Override
     public double calculateTotalLeaveDays(int userId, LocalDate startDate, LocalDate endDate) {
@@ -385,29 +379,6 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
         }
         
         return workingDays.size();
-    }
-
-    /**
-     * Tính số ngày nghỉ theo loại nghỉ.
-     *
-     * <p>Quy tắc:
-     * <ul>
-     *   <li>Thai sản nữ (leaveTypeId = 3): tính theo ngày lịch (bao gồm T7, CN, ngày lễ,
-     *       ngày chưa phân ca). Theo Luật BHXH, nghỉ thai sản tính theo ngày dương lịch,
-     *       không phụ thuộc lịch làm việc.</li>
-     *   <li>Các loại khác: tính theo ngày được phân ca (giữ nguyên logic cũ).</li>
-     * </ul>
-     *
-     * @param leaveTypeId  Loại nghỉ — quyết định cách tính
-     */
-    public double calculateTotalLeaveDays(int userId, LocalDate startDate, LocalDate endDate, int leaveTypeId) {
-        if (startDate == null || endDate == null || startDate.isAfter(endDate)) return 0;
-        if (leaveTypeId == FEMALE_MATERNITY_LEAVE_TYPE_ID) {
-            // Thai sản nữ: tính theo ngày lịch (bao gồm cả CN, T7, ngày lễ, ngày chưa phân ca)
-            return java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1;
-        }
-        // Các loại khác: giữ logic phân ca
-        return calculateTotalLeaveDays(userId, startDate, endDate);
     }
 
     @Override
@@ -440,8 +411,7 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
         LocalDate startDate = request.getStartDate().toLocalDate();
         LocalDate endDate   = request.getEndDate().toLocalDate();
 
-        // ── Không cho phép thai sản nam (type_id = 6) ──
-        // Thai sản nam đã bị loại bỏ khỏi hệ thống.
+        // ── Không cho phép type 6 (không còn được hỗ trợ) ──
         if (leaveTypeId == 6) {
             throw new Exception("Loại nghỉ này không còn được hỗ trợ. Vui lòng liên hệ bộ phận nhân sự.");
         }
@@ -465,18 +435,6 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
                     }
                 }
             }
-
-            // ── Kiểm tra giới tính cho thai sản nữ ──
-            // gender: 1 = Nam, 0 = Nữ, null = chưa cập nhật (theo model.EmployeeProfile)
-            if (leaveTypeId == FEMALE_MATERNITY_LEAVE_TYPE_ID) {
-                Integer gender = profile.getGender();
-                if (gender == null) {
-                    throw new Exception("Không thể gửi đơn nghỉ thai sản: thông tin giới tính chưa được cập nhật. Vui lòng cập nhật hồ sơ nhân viên trước.");
-                }
-                if (gender == 1) { // 1 = Nam
-                    throw new Exception("Chỉ nhân viên nữ được gửi đơn nghỉ thai sản.");
-                }
-            }
         }
 
         // ── Validation ngày cơ bản ──
@@ -488,15 +446,11 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
         }
 
         // ── Tính số ngày nghỉ — server tự tính lại, không tin frontend ──
-        double calculatedDays = calculateTotalLeaveDays(request.getUserId(), startDate, endDate, leaveTypeId);
+        double calculatedDays = calculateTotalLeaveDays(request.getUserId(), startDate, endDate);
 
-        if (leaveTypeId != FEMALE_MATERNITY_LEAVE_TYPE_ID) {
-            // Các loại khác: bắt buộc phải có lịch phân ca trong khoảng thời gian này
-            if (calculatedDays <= 0) {
-                throw new Exception("Bạn không có lịch làm việc nào trong khoảng thời gian này để xin nghỉ.");
-            }
+        if (calculatedDays <= 0) {
+            throw new Exception("Bạn không có lịch làm việc nào trong khoảng thời gian này để xin nghỉ.");
         }
-        // Thai sản nữ: calculatedDays = ngày lịch, luôn > 0 (viên startDate <= endDate)
 
         // Cập nhật lại totalDays theo giá trị server tính
         request.setTotalDays(calculatedDays);
@@ -507,7 +461,6 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
         }
 
         // ── Kiểm tra số dư phép (chỉ với loại có giới hạn) ──
-        // Thai sản nữ (maxDaysPerYear = NULL) → bỏ qua, không giới hạn
         LeaveType type = this.getLeaveTypeById(leaveTypeId);
         if (type != null && (type.getLeaveTypeId() == 1 || type.getMaxDaysPerYear() != null)) {
             double remaining = checkRemainingLeaveBalance(request.getUserId(), leaveTypeId);
@@ -900,12 +853,6 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
             e.printStackTrace();
         }
 
-        // Constant hằng số nhận diện nghỉ thai sản nữ (type_id = 3).
-        // Thai sản nam (type_id = 6) đã bị loại bỏ — không đưa vào set này.
-        // Đối với nghiệp vụ payroll, thai sản nữ không yêu cầu ShiftAssignment để
-        // được công nhận là ngày nghỉ không lương cần trừ khỏi lương.
-        final int FEMALE_MATERNITY_ID = FEMALE_MATERNITY_LEAVE_TYPE_ID;
-
         // Fallback flag: nếu không có shift assignment nào, dùng tất cả ngày làm việc
         // bình thường (T2-T7, không CN, không lễ) cho các loại khác.
         boolean noShiftAssigned = assignedDates.isEmpty();
@@ -926,24 +873,13 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
                     LocalDate effectiveStart = leaveStart.isBefore(firstDayOfMonth) ? firstDayOfMonth : leaveStart;
                     LocalDate effectiveEnd   = leaveEnd.isAfter(lastDayOfMonth)     ? lastDayOfMonth  : leaveEnd;
 
-                    // Thai sản nữ: không cần shift assignment — BHXH trả đủ cho mọi
-                    // ngày làm việc trong kỳ nghỉ (Điều 34 Luật BHXH 2014).
-                    // Nghỉ ốm và loại khác: giữ yêu cầu shift assignment (+ fallback khi rỗng).
-                    boolean isFemalMaternity = (leaveTypeId == FEMALE_MATERNITY_ID);
-
                     LocalDate current = effectiveStart;
                     while (!current.isAfter(effectiveEnd)) {
                         boolean isSunday  = current.getDayOfWeek() == DayOfWeek.SUNDAY;
                         boolean isHoliday = activeHolidayDates.contains(current);
-                        boolean isWorkDay;
-                        if (isFemalMaternity) {
-                            // Thai sản nữ: tính tất cả ngày làm việc, bỏ qua shift assignment
-                            isWorkDay = !isSunday && !isHoliday;
-                        } else {
-                            // Nghỉ ốm / loại khác: cần có shift assignment (hoặc fallback)
-                            isWorkDay = (noShiftAssigned || assignedDates.contains(current))
-                                    && !isSunday && !isHoliday;
-                        }
+                        // Nghỉ ốm / loại khác: cần có shift assignment (hoặc fallback)
+                        boolean isWorkDay = (noShiftAssigned || assignedDates.contains(current))
+                                && !isSunday && !isHoliday;
                         if (isWorkDay) {
                             unpaidLeaveMap.put(current, leaveTypeId);
                         }

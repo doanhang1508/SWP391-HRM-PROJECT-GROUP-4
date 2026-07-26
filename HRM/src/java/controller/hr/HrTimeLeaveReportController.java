@@ -80,6 +80,7 @@ public class HrTimeLeaveReportController extends HttpServlet {
         int standardWorkDays = holidayDAO.getPayrollStandardWorkDays(month, year);
         for (AttendanceSummary s : reportList) {
             s.setStandardWorkDays(standardWorkDays);
+            s.setActualWorkDays(standardWorkDays - s.getAbsentDays());
         }
 
         // Dữ liệu đầy đủ (không phân trang) dành riêng cho biểu đồ, để biểu đồ phản ánh
@@ -87,6 +88,7 @@ public class HrTimeLeaveReportController extends HttpServlet {
         List<AttendanceSummary> chartDataList = attendanceDAO.getAdvancedAttendanceSummary(month, year, departmentId, 0, Integer.MAX_VALUE);
         for (AttendanceSummary s : chartDataList) {
             s.setStandardWorkDays(standardWorkDays);
+            s.setActualWorkDays(standardWorkDays - s.getAbsentDays());
         }
 
         List<Department> departments = departmentDAO.getAll();
@@ -143,6 +145,7 @@ public class HrTimeLeaveReportController extends HttpServlet {
         int standardWorkDays = holidayDAO.getPayrollStandardWorkDays(month, year);
         for (AttendanceSummary s : list) {
             s.setStandardWorkDays(standardWorkDays);
+            s.setActualWorkDays(standardWorkDays - s.getAbsentDays());
         }
         
         String fileName = "Bao_Cao_Tong_Hop_Cong_Phep_M" + month + "_Y" + year + ".xlsx";
@@ -181,8 +184,8 @@ public class HrTimeLeaveReportController extends HttpServlet {
             Row headerRow = sheet.createRow(0);
             String[] columns = {
                 "Mã NV", "Họ Tên", "Phòng Ban", "Công chuẩn", "Công thực tế", 
-                "OT thường (h)", "OT CN (h)", "OT Lễ (h)", "Đi trễ (lần)", 
-                "Nghỉ phép năm (ngày)", "Nghỉ ốm (ngày)", "Nghỉ thai sản (ngày)", "Phép năm còn lại (ngày)"
+                "Nghỉ không phép (ngày)", "OT thường (h)", "OT CN (h)", "OT Lễ (h)", "Đi trễ (lần)", 
+                "Nghỉ phép năm (ngày)", "Nghỉ ốm (ngày)", "Phép năm còn lại (ngày)"
             };
             
             for (int i = 0; i < columns.length; i++) {
@@ -221,31 +224,31 @@ public class HrTimeLeaveReportController extends HttpServlet {
                 c4.setCellStyle(currentNumStyle);
 
                 Cell c5 = row.createCell(5);
-                c5.setCellValue(r.getRegularOtHrs());
+                c5.setCellValue(r.getAbsentDays());
                 c5.setCellStyle(currentNumStyle);
 
                 Cell c6 = row.createCell(6);
-                c6.setCellValue(r.getSundayOtHrs());
+                c6.setCellValue(r.getRegularOtHrs());
                 c6.setCellStyle(currentNumStyle);
 
                 Cell c7 = row.createCell(7);
-                c7.setCellValue(r.getHolidayOtHrs());
+                c7.setCellValue(r.getSundayOtHrs());
                 c7.setCellStyle(currentNumStyle);
 
                 Cell c8 = row.createCell(8);
-                c8.setCellValue(r.getLateCount());
-                if(currentStyle != null) c8.setCellStyle(currentStyle);
+                c8.setCellValue(r.getHolidayOtHrs());
+                c8.setCellStyle(currentNumStyle);
 
                 Cell c9 = row.createCell(9);
-                c9.setCellValue(r.getAnnualLeaveDays());
-                c9.setCellStyle(currentNumStyle);
+                c9.setCellValue(r.getLateCount());
+                if(currentStyle != null) c9.setCellStyle(currentStyle);
 
                 Cell c10 = row.createCell(10);
-                c10.setCellValue(r.getSickLeaveDays());
+                c10.setCellValue(r.getAnnualLeaveDays());
                 c10.setCellStyle(currentNumStyle);
 
                 Cell c11 = row.createCell(11);
-                c11.setCellValue(r.getMaternityLeaveDays());
+                c11.setCellValue(r.getSickLeaveDays());
                 c11.setCellStyle(currentNumStyle);
 
                 Cell c12 = row.createCell(12);
