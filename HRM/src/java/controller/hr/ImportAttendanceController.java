@@ -604,7 +604,7 @@ public class ImportAttendanceController extends HttpServlet {
                 // Read the "GIỜ OT THEO NGÀY" grid when it exists.  OT must stay on its
                 // real date so the report can split regular, Sunday and holiday hours.
                 java.util.Map<String, java.util.Map<Integer, Double>> dailyOvertime =
-                        extractDailyOvertime(sheet0);
+                        extractDailyOvertime(sheet0, daysRow);
 
                 int startDataRow = daysRow.getRowNum() + 1;
                 for (int r = startDataRow; r <= sheet0.getLastRowNum(); r++) {
@@ -779,7 +779,7 @@ public class ImportAttendanceController extends HttpServlet {
      * Expected structure: a title containing "GIO OT", then a row with employee
      * codes and day numbers, followed by one row per employee.
      */
-    private java.util.Map<String, java.util.Map<Integer, Double>> extractDailyOvertime(Sheet sheet) {
+    private java.util.Map<String, java.util.Map<Integer, Double>> extractDailyOvertime(Sheet sheet, Row daysRow) {
         java.util.Map<String, java.util.Map<Integer, Double>> result = new java.util.HashMap<>();
         int titleRowIndex = -1;
         for (int r = 0; r <= sheet.getLastRowNum(); r++) {
@@ -797,7 +797,7 @@ public class ImportAttendanceController extends HttpServlet {
             return result;
         }
 
-        Row header = sheet.getRow(titleRowIndex + 1);
+        Row header = daysRow;
         java.util.Map<Integer, Integer> dayByColumn = new java.util.HashMap<>();
         for (int c = 0; c < header.getLastCellNum(); c++) {
             Double day = getNumericCell(header, c);
