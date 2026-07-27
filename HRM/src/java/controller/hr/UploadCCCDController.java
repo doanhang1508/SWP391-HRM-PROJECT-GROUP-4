@@ -194,16 +194,26 @@ public class UploadCCCDController extends HttpServlet {
     // Regex Parsers cho CCCD Việt Nam
     // =========================================================================
 
-    /** Số CCCD: 12 chữ số (hoặc CMND 9 chữ số) */
+    /** Số CCCD: Ưu tiên lấy dãy 12 chữ số liên tục */
     private String extractId(String text) {
-        // Ưu tiên tìm số sau "Số/" hoặc "No."
-        Matcher m = Pattern.compile("(?i)(?:Số|No)[./:\\s]+(\\d{9}|\\d{12})").matcher(text);
-        if (m.find()) return m.group(1).trim();
-        // Fallback: số 12 chữ số đứng một mình
-        m = Pattern.compile("\\b(\\d{12})\\b").matcher(text);
+        // Loại bỏ khoảng trắng giữa các chữ số nếu OCR đọc thành "036 305 006 123"
+        String cleanText = text.replaceAll("(?<=\\d)\\s+(?=\\d)", "");
+        
+        // Tìm chuỗi 12 chữ số
+        Matcher m = Pattern.compile("\\b(\\d{12})\\b").matcher(cleanText);
         if (m.find()) return m.group(1);
-        m = Pattern.compile("\\b(\\d{9})\\b").matcher(text);
+        
+        // Fallback: Tìm số đứng sau "Số" hoặc "No"
+        m = Pattern.compile("(?i)(?:Số|No)[./:\\s]*(\\d+)").matcher(cleanText);
+        if (m.find()) {
+            String val = m.group(1);
+            if (val.length() >= 9) return val;
+        }
+        
+        // Fallback: 9 chữ số
+        m = Pattern.compile("\\b(\\d{9})\\b").matcher(cleanText);
         if (m.find()) return m.group(1);
+        
         return "";
     }
 
@@ -245,10 +255,55 @@ public class UploadCCCDController extends HttpServlet {
         return "";
     }
 
-    /** Nơi thường trú: lấy đến hết dòng */
+    /** Nơi thường trú: Lấy sạch toàn bộ địa chỉ qua nhiều dòng */
     private String extractAddress(String text) {
-        Matcher m = Pattern.compile("(?i)(?:N[oơ]i\\s*th[uư][oờ]ng\\s*tr[uú]|Place\\s*of\\s*residence)[:\\s]+([^\\n\\r]+)").matcher(text);
-        if (m.find()) return m.group(1).trim();
+        if (text == null || text.isEmpty()) return "";
+
+        // Tìm từ khóa Nơi thường trú / Place of residence
+        Pattern p = Pattern.compile("(?i)(?:N[oơ]i\\s*th[uư][oờ]ng\\s*tr[uú]|Place\\s*of\\s*residence)");
+        Matcher m = p.matcher(text);
+
+        String addressPart = "";
+        if (m.find()) {
+            addressPart = text.substring(m.end()).trim();
+        } else {
+            Matcher mAddr = Pattern.compile("(?i)\\b(Xóm|Thôn|Số|Đường|Phường|Xã|Thị trấn|Quận|Huyện|Thành phố|Tỉnh)\\b.*", Pattern.DOTALL).matcher(text);
+            if (mAddr.find()) {
+                addressPart = mAddr.group(0);
+            }
+        }
+
+        if (!addressPart.isEmpty()) {
+            String[] lines = addressPart.split("[\\r\\n]+");
+            StringBuilder sb = new StringBuilder();
+            for (String line : lines) {
+                String l = line.trim();
+                if (l.isEmpty()) continue;
+                
+                // Loại bỏ cụm nhãn rác tiếng Anh nếu có ở đầu dòng
+                l = l.replaceAll("(?i)^[/.:\\s]*Place\\s*of\\s*residence[./:\\s]*", "").trim();
+                l = l.replaceAll("(?i)^[/.:\\s]+", "").trim();
+
+                // Chỉ dừng nếu thực sự đụng phần Đặc điểm nhận dạng hoặc ngày hết hạn (ở mặt sau)
+                if (Pattern.compile("(?i)^(Đặc\\s*điểm|Personal\\s*identification|Nơi\\s*cấp)").matcher(l).find()) {
+                    break;
+                }
+                
+                if (!l.isEmpty()) {
+                    if (sb.length() > 0) sb.append(" ");
+                    sb.append(l);
+                }
+            }
+            String finalAddr = sb.toString().replaceAll("\\s+", " ").trim();
+            // Lọc bỏ rác Date of expiry / Có giá trị đến (và ngày tháng đi kèm nếu có)
+            finalAddr = finalAddr.replaceAll("(?i)Date\\s*of\\s*expiry", "");
+            finalAddr = finalAddr.replaceAll("(?i)C[oó]\\s*gi[aá]\\s*tr[iị]\\s*[đd][ếe]n", "");
+            finalAddr = finalAddr.replaceAll("(?i)\\b\\d{2}/\\d{2}/\\d{4}\\b", ""); // xóa ngày tháng nếu bị dính
+            // Thay dấu chấm đứng cạnh chữ/số thành dấu phẩy (vd: Xóm 04. Hoành Sơn -> Xóm 04, Hoành Sơn)
+            finalAddr = finalAddr.replaceAll("(?<=\\w)\\.\\s*", ", ");
+            return finalAddr.replaceAll("\\s+", " ").replaceAll("^[.,/\\s]+", "").replaceAll(",\\s*,", ",").trim();
+        }
+
         return "";
     }
 
