@@ -98,7 +98,6 @@ public class HrPayrollController extends HttpServlet {
         if (roleId == 5) { // HR Staff
             switch (action) {
                 case "generateDraft" -> generateDraft(request, response);
-                case "updateDraft" -> updateDraft(request, response);
                 case "submit" -> submitForApproval(request, response);
                 default -> {
                     session.setAttribute("errorMessage", "Hành động không được phép cho HR Staff.");
@@ -262,73 +261,7 @@ public class HrPayrollController extends HttpServlet {
         }
     }
 
-    /**
-     * TASK 2: HR chỉ nhập overtime, allowance, bonus, deduction.
-     * Insurance và Tax được hệ thống tự động tính lại trong PayrollDAO.updatePayrollDraft().
-     */
-    private void updateDraft(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-        String idStr = request.getParameter("payrollId");
-        if (idStr == null || idStr.isBlank()) {
-            request.getSession().setAttribute("errorMessage", "Không tìm thấy ID bảng lương.");
-            response.sendRedirect(request.getContextPath() + "/hr/payroll");
-            return;
-        }
 
-        try {
-            int payrollId = Integer.parseInt(idStr);
-            Payroll current = payrollDAO.getById(payrollId);
-            if (current == null) {
-                request.getSession().setAttribute("errorMessage", "Bảng lương không tồn tại.");
-                response.sendRedirect(request.getContextPath() + "/hr/payroll");
-                return;
-            }
-
-            if (!"Draft".equals(current.getStatus()) && !"Rejected".equals(current.getStatus())) {
-                request.getSession().setAttribute("errorMessage", "Chỉ được phép sửa bảng lương ở trạng thái Draft hoặc Rejected.");
-                response.sendRedirect(request.getContextPath() + "/hr/payroll?month=" + current.getMonth() + "&year=" + current.getYear());
-                return;
-            }
-
-            double workingDays = Double.parseDouble(request.getParameter("workingDays"));
-            BigDecimal overtimeAmount = new BigDecimal(request.getParameter("overtimeAmount").replaceAll(",", ""));
-            BigDecimal allowanceAmount = new BigDecimal(request.getParameter("allowanceAmount").replaceAll(",", ""));
-            BigDecimal bonusAmount = new BigDecimal(request.getParameter("bonusAmount").replaceAll(",", ""));
-            BigDecimal deductionAmount = new BigDecimal(request.getParameter("deductionAmount").replaceAll(",", ""));
-
-            if (workingDays < 0) {
-                request.getSession().setAttribute("errorMessage", "Số ngày làm việc không được âm.");
-                response.sendRedirect(request.getContextPath() + "/hr/payroll?action=edit&id=" + payrollId);
-                return;
-            }
-            if (overtimeAmount.compareTo(BigDecimal.ZERO) < 0 || allowanceAmount.compareTo(BigDecimal.ZERO) < 0
-                || bonusAmount.compareTo(BigDecimal.ZERO) < 0 || deductionAmount.compareTo(BigDecimal.ZERO) < 0) {
-                request.getSession().setAttribute("errorMessage", "Các số tiền không được là số âm.");
-                response.sendRedirect(request.getContextPath() + "/hr/payroll?action=edit&id=" + payrollId);
-                return;
-            }
-
-            Payroll updateModel = new Payroll();
-            updateModel.setPayrollId(payrollId);
-            updateModel.setWorkingDays(workingDays);
-            updateModel.setOvertimeAmount(overtimeAmount);
-            updateModel.setAllowanceAmount(allowanceAmount);
-            updateModel.setBonusAmount(bonusAmount);
-            updateModel.setDeductionAmount(deductionAmount);
-            // Insurance và Tax sẽ được tự động tính trong PayrollDAO.updatePayrollDraft()
-
-            boolean success = payrollDAO.updatePayrollDraft(updateModel);
-            if (success) {
-                request.getSession().setAttribute("successMessage", "Cập nhật bảng lương nháp thành công. Bảo hiểm và Thuế TNCN đã được tính toán lại tự động.");
-            } else {
-                request.getSession().setAttribute("errorMessage", "Cập nhật thất bại. Vui lòng kiểm tra lại dữ liệu.");
-            }
-            response.sendRedirect(request.getContextPath() + "/hr/payroll?month=" + current.getMonth() + "&year=" + current.getYear());
-        } catch (NumberFormatException e) {
-            request.getSession().setAttribute("errorMessage", "Dữ liệu nhập vào không đúng định dạng số.");
-            response.sendRedirect(request.getContextPath() + "/hr/payroll?action=edit&id=" + idStr);
-        }
-    }
 
     /**
      * TASK 2: AJAX endpoint — tính toán preview (insurance, tax, gross, net) khi HR thay đổi giá trị.
