@@ -82,6 +82,14 @@ public class HrKpiCycleController extends HttpServlet {
                 Date deadline = Date.valueOf(deadlineStr);
                 int templateId = Integer.parseInt(templateIdStr);
 
+                // Validate: Hạn tự đánh giá của NV không được là ngày trong quá khứ
+                java.time.LocalDate today = java.time.LocalDate.now();
+                java.time.LocalDate deadlineLocalDate = deadline.toLocalDate();
+                if (deadlineLocalDate.isBefore(today)) {
+                    response.sendRedirect(request.getContextPath() + "/hr/kpi-cycles?error=deadline_past");
+                    return;
+                }
+
                 KpiCycle cycle = new KpiCycle(0, name, startDate, endDate, deadline, templateId, status,
                         new Timestamp(System.currentTimeMillis()), user.getUserId(), new Timestamp(System.currentTimeMillis()));
 

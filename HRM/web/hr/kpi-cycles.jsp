@@ -46,7 +46,15 @@
     </c:if>
     <c:if test="${param.error != null}">
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-circle me-2"></i> Thao tác không thành công. Vui lòng kiểm tra lại dữ liệu.
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <c:choose>
+                <c:when test="${param.error == 'deadline_past'}">
+                    Hạn tự đánh giá của nhân viên không được là ngày trong quá khứ.
+                </c:when>
+                <c:otherwise>
+                    Thao tác không thành công. Vui lòng kiểm tra lại dữ liệu.
+                </c:otherwise>
+            </c:choose>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     </c:if>
@@ -223,6 +231,9 @@
                     <div class="mb-3">
                         <label for="deadline" class="form-label fw-bold">Hạn tự đánh giá của NV <span class="text-danger">*</span></label>
                         <input type="date" class="form-control px-3 py-2" id="deadline" name="deadline" required style="border-radius: 8px;" />
+                        <div class="form-text text-muted">
+                            <i class="fas fa-info-circle me-1"></i>Hạn tự đánh giá không được là ngày trong quá khứ.
+                        </div>
                     </div>
 
                     <div class="mb-3">
@@ -247,10 +258,35 @@
     const quarterSelect = document.getElementById('quarterSelect');
     const startDateInput = document.getElementById('startDate');
     const endDateInput   = document.getElementById('endDate');
+    const deadlineInput  = document.getElementById('deadline');
     const cycleNameInput = document.getElementById('cycleName');
+    const createCycleModal = document.getElementById('createCycleModal');
+    const createForm     = createCycleModal ? createCycleModal.querySelector('form') : null;
+
+    // Build today string in YYYY-MM-DD format (local timezone)
+    const now = new Date();
+    const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+
+    // Set min date for deadline input to prevent selecting past dates in HTML5 datepicker
+    if (deadlineInput) {
+        deadlineInput.setAttribute('min', todayStr);
+    }
+
+    // Client-side form submit validation
+    if (createForm) {
+        createForm.addEventListener('submit', function(e) {
+            if (deadlineInput && deadlineInput.value) {
+                if (deadlineInput.value < todayStr) {
+                    e.preventDefault();
+                    alert('Hạn tự đánh giá của nhân viên không được là ngày trong quá khứ.');
+                    deadlineInput.focus();
+                    return false;
+                }
+            }
+        });
+    }
 
     // Build quarter options for current year and next year
-    const now  = new Date();
     const currentYear = now.getFullYear();
     const years = [currentYear, currentYear + 1];
 
