@@ -1109,7 +1109,11 @@ public class KpiDAO {
                 ps.setInt(4, cycle.getCreatedBy());
                 ps.executeUpdate();
                 try (ResultSet rs = ps.getGeneratedKeys()) {
-                    if (rs.next()) evalId = rs.getInt(1);
+                    if (rs.next()) {
+                        evalId = rs.getInt(1);
+                        // Record status history for INITIAL -> DRAFT creation
+                        insertStatusHistory(new KpiStatusHistory(0, evalId, "INITIAL", "DRAFT", cycle.getCreatedBy(), null, "Khởi tạo đánh giá KPI (Bản nháp)"));
+                    }
                 }
             } catch (SQLException e) {
                 // Duplicate key or other error for this employee: skip silently
@@ -1152,7 +1156,7 @@ public class KpiDAO {
             "LEFT JOIN users m ON e.manager_id = m.user_id " +
             "JOIN kpi_cycles c ON e.cycle_id = c.cycle_id " +
             "LEFT JOIN departments d ON u.department_id = d.department_id " +
-            "WHERE e.status = 'APPROVED' "
+            "WHERE 1=1 "
         );
 
         List<Object> params = new ArrayList<>();

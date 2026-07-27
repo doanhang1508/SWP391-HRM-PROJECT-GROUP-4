@@ -172,8 +172,14 @@
                                                 <c:when test="${eval.status == 'APPROVED'}">
                                                     <span class="badge-status bg-success-subtle text-success">Đã phê duyệt</span>
                                                 </c:when>
+                                                <c:when test="${eval.status == 'SUBMITTED'}">
+                                                    <span class="badge-status bg-info-subtle text-info">Đã nộp</span>
+                                                </c:when>
+                                                <c:when test="${eval.status == 'REJECTED'}">
+                                                    <span class="badge-status bg-danger-subtle text-danger">Từ chối</span>
+                                                </c:when>
                                                 <c:otherwise>
-                                                    <span class="badge-status bg-warning-subtle text-warning">Nháp</span>
+                                                    <span class="badge-status bg-warning-subtle text-warning">Bản nháp</span>
                                                 </c:otherwise>
                                             </c:choose>
                                         </td>
