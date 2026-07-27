@@ -890,6 +890,33 @@ public class LeaveRequestDAOImpl implements LeaveRequestDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
+        // ── FALLBACK: đọc attendance.status = 'SICK_LEAVE' cho những ngày chưa có leave_request ──
+        // Khi HR import Excel với mã "S" (SICK_LEAVE) mà nhân viên chưa nộp đơn nghỉ ốm,
+        // hệ thống vẫn phải tính BHXH cho những ngày đó (leaveTypeId = 2: Nghỉ ốm hưởng BHXH).
+        String sqlAttSick = "SELECT a.work_date FROM attendance a " +
+                            "WHERE a.user_id = ? " +
+                            "  AND MONTH(a.work_date) = ? AND YEAR(a.work_date) = ? " +
+                            "  AND UPPER(a.status) = 'SICK_LEAVE' " +
+                            "  AND DAYOFWEEK(a.work_date) != 1 " +
+                            "  AND NOT EXISTS (" +
+                            "      SELECT 1 FROM holidays h WHERE h.holiday_date = a.work_date AND h.status = 1)";
+        try (Connection c2 = DBContext.getConnection();
+             PreparedStatement ps2 = c2.prepareStatement(sqlAttSick)) {
+            ps2.setInt(1, employeeId);
+            ps2.setInt(2, month);
+            ps2.setInt(3, year);
+            try (ResultSet rs2 = ps2.executeQuery()) {
+                while (rs2.next()) {
+                    LocalDate sickDate = rs2.getDate("work_date").toLocalDate();
+                    // putIfAbsent: ưu tiên leave_request nếu đã có, tránh ghi đè
+                    unpaidLeaveMap.putIfAbsent(sickDate, 2); // 2 = Nghỉ ốm hưởng BHXH
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
         return unpaidLeaveMap;
     }
 }
