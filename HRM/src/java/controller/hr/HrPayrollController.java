@@ -73,7 +73,6 @@ public class HrPayrollController extends HttpServlet {
         switch (action) {
             case "list" -> showList(request, response);
             case "edit" -> showEditForm(request, response);
-            case "exportExcel" -> exportExcel(request, response);
             case "recalculate" -> recalculatePreview(request, response);
             case "details_json" -> getPayslipDetailsJson(request, response);
             default -> response.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -531,6 +530,12 @@ public class HrPayrollController extends HttpServlet {
         }
     }
 
+    private String escapeHtml(String val) {
+        if (val == null) return "";
+        return val.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                  .replace("\"", "&quot;").replace("'", "&#39;");
+    }
+
     private void submitForApproval(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         String idStr = request.getParameter("payrollId");
@@ -583,133 +588,7 @@ public class HrPayrollController extends HttpServlet {
         }
     }
 
-    private void exportExcel(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-        int month = getParamOrDefault(request, "month", getCurrentMonth());
-        int year = getParamOrDefault(request, "year", getCurrentYear());
 
-        List<Payroll> list = payrollDAO.getPayrollsWithNames(month, year);
-
-        String fileName = "BangLuong_Thang" + month + "_" + year + ".xls";
-        response.setContentType("application/vnd.ms-excel; charset=UTF-8");
-        response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
-        response.setCharacterEncoding("UTF-8");
-
-        try (PrintWriter writer = response.getWriter()) {
-            writer.println("<html xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:x=\"urn:schemas-microsoft-com:office:excel\" xmlns=\"http://www.w3.org/TR/REC-html40\">");
-            writer.println("<head>");
-            writer.println("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">");
-            writer.println("<!--[if gte mso 9]>");
-            writer.println("<xml>");
-            writer.println(" <x:ExcelWorkbook>");
-            writer.println("  <x:ExcelWorksheets>");
-            writer.println("   <x:ExcelWorksheet>");
-            writer.println("    <x:Name>Bảng Lương Tháng " + month + "-" + year + "</x:Name>");
-            writer.println("    <x:WorksheetOptions>");
-            writer.println("     <x:DisplayGridlines/>");
-            writer.println("    </x:WorksheetOptions>");
-            writer.println("   </x:ExcelWorksheet>");
-            writer.println("  </x:ExcelWorksheets>");
-            writer.println(" </x:ExcelWorkbook>");
-            writer.println("</xml>");
-            writer.println("<![endif]-->");
-            writer.println("<style>");
-            writer.println("  body { font-family: 'Segoe UI', Arial, sans-serif; }");
-            writer.println("  .title-row { font-size: 16pt; font-weight: bold; color: #1e293b; text-align: center; height: 40px; }");
-            writer.println("  th { background-color: #6366f1; color: #ffffff; font-weight: bold; border: 0.5pt solid #cbd5e1; text-align: center; vertical-align: middle; height: 30px; font-size: 10pt; }");
-            writer.println("  td { border: 0.5pt solid #e2e8f0; vertical-align: middle; height: 25px; font-size: 10pt; }");
-            writer.println("  .number-format { mso-number-format: \"\\#\\,\\#\\#0\"; text-align: right; }");
-            writer.println("  .status-draft { background-color: #f1f5f9; color: #475569; text-align: center; font-weight: bold; }");
-            writer.println("  .status-pending { background-color: #fef3c7; color: #d97706; text-align: center; font-weight: bold; }");
-            writer.println("  .status-approved { background-color: #d1fae5; color: #059669; text-align: center; font-weight: bold; }");
-            writer.println("  .status-rejected { background-color: #fee2e2; color: #b91c1c; text-align: center; font-weight: bold; }");
-            writer.println("  .status-paid { background-color: #dbeafe; color: #2563eb; text-align: center; font-weight: bold; }");
-            writer.println("  .total-val { font-weight: bold; background-color: #f8fafc; mso-number-format: \"\\#\\,\\#\\#0\"; text-align: right; }");
-            writer.println("</style>");
-            writer.println("</head><body>");
-            writer.println("<table>");
-            writer.println("  <tr><td colspan=\"16\" class=\"title-row\">BẢNG LƯƠNG CHI TIẾT NHÂN VIÊN</td></tr>");
-            writer.println("  <tr><td colspan=\"16\" style=\"text-align:center;color:#64748b\">Kỳ lương: Tháng " + month + " năm " + year + "</td></tr>");
-            writer.println("</table>");
-            writer.println("<table><thead><tr>");
-            writer.println("  <th>STT</th><th>Mã NV</th><th>Họ và tên</th><th>Tháng</th><th>Năm</th>");
-            writer.println("  <th>Lương cơ bản</th><th>Ngày công</th><th>Tiền tăng ca</th><th>Phụ cấp</th>");
-            writer.println("  <th>Thưởng</th><th>Khấu trừ</th><th>Bảo hiểm</th><th>Thuế TNCN</th>");
-            writer.println("  <th>Lương Gross</th><th>Lương Net</th><th>Trạng thái</th>");
-            writer.println("</tr></thead><tbody>");
-
-            BigDecimal totalBase = BigDecimal.ZERO, totalOT = BigDecimal.ZERO, totalAllowance = BigDecimal.ZERO;
-            BigDecimal totalBonus = BigDecimal.ZERO, totalDeduction = BigDecimal.ZERO, totalInsurance = BigDecimal.ZERO;
-            BigDecimal totalTax = BigDecimal.ZERO, totalGross = BigDecimal.ZERO, totalNet = BigDecimal.ZERO;
-            double totalWorkDays = 0;
-            int stt = 1;
-
-            for (Payroll p : list) {
-                if (p.getBaseSalary() != null) totalBase = totalBase.add(p.getBaseSalary());
-                totalWorkDays += p.getWorkingDays();
-                if (p.getOvertimeAmount() != null) totalOT = totalOT.add(p.getOvertimeAmount());
-                if (p.getAllowanceAmount() != null) totalAllowance = totalAllowance.add(p.getAllowanceAmount());
-                if (p.getBonusAmount() != null) totalBonus = totalBonus.add(p.getBonusAmount());
-                if (p.getDeductionAmount() != null) totalDeduction = totalDeduction.add(p.getDeductionAmount());
-                if (p.getInsuranceAmount() != null) totalInsurance = totalInsurance.add(p.getInsuranceAmount());
-                if (p.getTaxAmount() != null) totalTax = totalTax.add(p.getTaxAmount());
-                if (p.getGrossSalary() != null) totalGross = totalGross.add(p.getGrossSalary());
-                if (p.getNetSalary() != null) totalNet = totalNet.add(p.getNetSalary());
-
-                String statusText = p.getStatus() != null ? p.getStatus() : "";
-                String statusClass = "";
-                if ("Draft".equalsIgnoreCase(statusText)) statusClass = "status-draft";
-                else if ("Pending".equalsIgnoreCase(statusText)) statusClass = "status-pending";
-                else if ("Approved".equalsIgnoreCase(statusText)) statusClass = "status-approved";
-                else if ("Rejected".equalsIgnoreCase(statusText)) statusClass = "status-rejected";
-                else if ("Paid".equalsIgnoreCase(statusText)) statusClass = "status-paid";
-
-                writer.println("<tr>");
-                writer.println("  <td style=\"text-align:center\">" + stt++ + "</td>");
-                writer.println("  <td style=\"text-align:center\">" + p.getUserId() + "</td>");
-                writer.println("  <td>" + escapeHtml(p.getFullName()) + "</td>");
-                writer.println("  <td style=\"text-align:center\">" + p.getMonth() + "</td>");
-                writer.println("  <td style=\"text-align:center\">" + p.getYear() + "</td>");
-                writer.println("  <td class=\"number-format\">" + formatNum(p.getBaseSalary()) + "</td>");
-                writer.println("  <td style=\"text-align:center\">" + p.getWorkingDays() + "</td>");
-                writer.println("  <td class=\"number-format\">" + formatNum(p.getOvertimeAmount()) + "</td>");
-                writer.println("  <td class=\"number-format\">" + formatNum(p.getAllowanceAmount()) + "</td>");
-                writer.println("  <td class=\"number-format\">" + formatNum(p.getBonusAmount()) + "</td>");
-                writer.println("  <td class=\"number-format\">" + formatNum(p.getDeductionAmount()) + "</td>");
-                writer.println("  <td class=\"number-format\">" + formatNum(p.getInsuranceAmount()) + "</td>");
-                writer.println("  <td class=\"number-format\">" + formatNum(p.getTaxAmount()) + "</td>");
-                writer.println("  <td class=\"number-format\">" + formatNum(p.getGrossSalary()) + "</td>");
-                writer.println("  <td class=\"number-format\">" + formatNum(p.getNetSalary()) + "</td>");
-                writer.println("  <td class=\"" + statusClass + "\">" + statusText + "</td>");
-                writer.println("</tr>");
-            }
-
-            writer.println("<tr><td colspan=\"3\" style=\"font-weight:bold;text-align:center\">TỔNG CỘNG</td>");
-            writer.println("  <td></td><td></td>");
-            writer.println("  <td class=\"total-val\">" + totalBase.toPlainString() + "</td>");
-            writer.println("  <td style=\"text-align:center;font-weight:bold\">" + totalWorkDays + "</td>");
-            writer.println("  <td class=\"total-val\">" + totalOT.toPlainString() + "</td>");
-            writer.println("  <td class=\"total-val\">" + totalAllowance.toPlainString() + "</td>");
-            writer.println("  <td class=\"total-val\">" + totalBonus.toPlainString() + "</td>");
-            writer.println("  <td class=\"total-val\">" + totalDeduction.toPlainString() + "</td>");
-            writer.println("  <td class=\"total-val\">" + totalInsurance.toPlainString() + "</td>");
-            writer.println("  <td class=\"total-val\">" + totalTax.toPlainString() + "</td>");
-            writer.println("  <td class=\"total-val\">" + totalGross.toPlainString() + "</td>");
-            writer.println("  <td class=\"total-val\">" + totalNet.toPlainString() + "</td>");
-            writer.println("  <td></td></tr>");
-            writer.println("</tbody></table></body></html>");
-        }
-    }
-
-    private String escapeHtml(String val) {
-        if (val == null) return "";
-        return val.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                  .replace("\"", "&quot;").replace("'", "&#39;");
-    }
-
-    private String formatNum(BigDecimal val) {
-        return val != null ? val.toPlainString() : "0";
-    }
 
     private void hrApprove(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
