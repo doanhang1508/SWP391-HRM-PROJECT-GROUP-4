@@ -720,7 +720,7 @@ INSERT INTO education_levels (education_level_id, level_name) VALUES
 
 -- ── 10. Shifts ──
 INSERT INTO shifts (shift_id, shift_name, start_time, end_time, break_start, break_end, is_night_shift, coefficient, working_days) VALUES
-(1, 'Ca Hành Chính','07:30:00','17:30:00','11:00:00','13:00:00', 0, 1.00,'2,3,4,5,6,7'),
+(1, 'Ca Hành Chính','08:00:00','17:30:00','12:00:00','13:30:00', 0, 1.00,'2,3,4,5,6,7'),
 (2, 'Ca Đêm 1', '18:00:00','20:00:00', NULL,       NULL,        1, 1.50,'2,3,4,5,6,7'),
 (3, 'Ca Đêm 2', '18:00:00','22:00:00', '20:00:00', '20:30:00', 1, 1.50,'2,3,4,5,6,7');
 
@@ -728,6 +728,7 @@ INSERT INTO shifts (shift_id, shift_name, start_time, end_time, break_start, bre
 INSERT INTO leave_types (leave_type_id, type_name, description, paid_leave, max_days_per_year) VALUES
 (1, 'Nghỉ phép năm',           'Nghỉ phép theo quy định',                 1, 12),
 (2, 'Nghỉ ốm (Hưởng BHXH)',    'Nghỉ ốm hưởng chế độ BHXH',               0, NULL),
+(3, 'Nghỉ thai sản nữ',        'Nghỉ thai sản hưởng chế độ BHXH',          0, NULL),
 (4, 'Nghỉ việc riêng có lương','Nghỉ việc riêng vẫn tính lương',          1, NULL),
 (5, 'Nghỉ không lương',        'Nghỉ không hưởng lương',                  0, NULL);
 -- Note: Thai sản nam (leave_type_id = 6) đã bị loại bỏ khỏi hệ thống (migration 2026-07-23).
@@ -738,7 +739,8 @@ INSERT INTO leave_types (leave_type_id, type_name, description, paid_leave, max_
 --   Nghỉ ốm (type 2): sickBenefit = insuranceBase / 24 × 75% × số ngày nghỉ ốm
 --   TODO: Thay thế bằng mức bình quân lương đóng BHXH 6 tháng trước khi nghỉ.
 INSERT INTO leave_insurance_rates (leave_type_id, insurance_rate_percent, description, effective_from) VALUES
-(2, 75.00,  'Nghỉ ốm: Hưởng 75% mức tiền lương đóng BHXH',   '2026-01-01');
+(2, 75.00,  'Nghỉ ốm: Hưởng 75% mức tiền lương đóng BHXH',   '2026-01-01'),
+(3, 100.00, 'Nghỉ thai sản nữ: Hưởng 100% mức tiền lương đóng BHXH', '2026-01-01');
 
 -- ── 12. Reward Disciplines ──
 -- is_bhxh_applied: 1=cộng vào nền BHXH, 0=không (thưởng KPI/năng suất luôn = 0)
@@ -884,7 +886,8 @@ INSERT INTO users (user_id,username,password,full_name,email,phone,role_id,depar
 -- ImportAttendanceController diễn giải phần số trong mã NVxxxx là users.user_id.
 INSERT INTO users (user_id, username, password, full_name, email, phone, role_id, status)
 VALUES
-    (21, 'NV0021', '$2a$12$9rsQL.viVSSU3uxAqO4aI.LVVYSyc6i1BaZSvrF5SPnAKijaaMmFK', 'Ngô Văn Ốm', 'nv0021@test.com', '0123456021', 7, 1);
+    (21, 'NV0021', '$2a$12$9rsQL.viVSSU3uxAqO4aI.LVVYSyc6i1BaZSvrF5SPnAKijaaMmFK', 'Ngô Văn Ốm', 'nv0021@test.com', '0123456021', 7, 1),
+    (27, 'NV0027', '$2a$12$9rsQL.viVSSU3uxAqO4aI.LVVYSyc6i1BaZSvrF5SPnAKijaaMmFK', 'Nguyễn Thị Thai Sản', 'nv0027@test.com', '0123456027', 7, 1);
 
 -- ── Profiles quản lý ──
 -- Format: (uid, dept_id, id_card, dob, gender, address, hire_date, tax_code, social_insurance_no, bank_account, bank_name, ct, sg, es, el)
