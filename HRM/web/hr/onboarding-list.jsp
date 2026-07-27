@@ -72,6 +72,20 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);}
 .abtn-edit:hover{background:var(--navy);color:#fff;}
 .abtn-submit{background:#eff6ff;color:var(--blue);}
 .abtn-submit:hover{background:var(--blue);color:#fff;}
+.abtn-view{background:#f0fdf4;color:var(--success);}
+.abtn-view:hover{background:var(--success);color:#fff;}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:#fff;border-radius:18px;padding:32px;width:100%;max-width:560px;box-shadow:0 24px 60px rgba(0,0,0,.18);position:relative;max-height:90vh;overflow-y:auto;}
+.modal-title{font-family:'Be Vietnam Pro',sans-serif;font-size:1.15rem;font-weight:800;color:var(--navy);margin:0 0 20px;display:flex;align-items:center;gap:10px;}
+.modal-close{position:absolute;top:16px;right:16px;background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:1rem;color:var(--muted);display:flex;align-items:center;justify-content:center;}
+.modal-close:hover{background:var(--danger);color:#fff;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.info-item label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);display:block;margin-bottom:4px;}
+.info-item span{font-size:.9rem;font-weight:600;color:var(--navy);}
+.info-item.full{grid-column:1/-1;}
 
 /* Alert */
 .alert{padding:12px 16px;border-radius:10px;font-size:.85rem;font-weight:600;margin-bottom:20px;display:flex;align-items:center;gap:10px;}
@@ -190,14 +204,23 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);}
               </c:when>
               <c:otherwise>
                 <c:forEach var="r" items="${requests}" varStatus="loop">
-                  <c:set var="avColors" value="linear-gradient(135deg,#667eea,#764ba2),linear-gradient(135deg,#f093fb,#f5576c),linear-gradient(135deg,#4facfe,#00f2fe),linear-gradient(135deg,#43e97b,#38f9d7),linear-gradient(135deg,#fa709a,#fee140)"/>
-                  <tr>
+                  <tr
+                    data-name="<c:out value='${r.fullName}'/>"
+                    data-email="<c:out value='${r.email}'/>"
+                    data-phone="<c:out value='${r.phone}'/>"
+                    data-cccd="<c:out value='${r.cccdNumber}'/>"
+                    data-dept="<c:out value='${not empty r.departmentName ? r.departmentName : "—"}'/>"
+                    data-pos="<c:out value='${not empty r.positionName ? r.positionName : "—"}'/>"
+                    data-dob="<fmt:formatDate value='${r.dateOfBirth}' pattern='dd/MM/yyyy'/>"
+                    data-address="<c:out value='${not empty r.address ? r.address : "—"}'/>"
+                    data-status="${r.status}"
+                    data-created="<fmt:formatDate value='${r.createdAt}' pattern='dd/MM/yyyy HH:mm'/>"
+                    data-reject="<c:out value='${not empty r.rejectReason ? r.rejectReason : ""}'/>"
+                  >
                     <td style="color:var(--muted);font-weight:700;font-size:.8rem;">${String.format('%02d', loop.index + 1)}</td>
                     <td>
                       <div class="emp-cell">
-                        <div class="emp-av" style="background:${loop.index % 2 == 0 ? 'linear-gradient(135deg,#667eea,#764ba2)' : 'linear-gradient(135deg,#4facfe,#00f2fe)'};">
-                          <c:out value="${r.initial}"/>
-                        </div>
+                        <div class="emp-av" style="background:${loop.index % 2 == 0 ? 'linear-gradient(135deg,#667eea,#764ba2)' : 'linear-gradient(135deg,#4facfe,#00f2fe)'};"><c:out value="${r.initial}"/></div>
                         <div>
                           <div style="font-weight:700;color:var(--navy);"><c:out value="${r.fullName}"/></div>
                           <div style="font-size:.75rem;color:var(--muted);"><c:out value="${r.phone}"/></div>
@@ -219,6 +242,10 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);}
                     </td>
                     <td>
                       <div class="act-btns">
+                        <%-- Nút XEM CHI TIẾT: hiện cho tất cả trạng thái --%>
+                        <button onclick="openDetail(this.closest('tr'))" class="abtn abtn-view">
+                          <i class="fas fa-eye"></i> Xem
+                        </button>
                         <c:if test="${r.status=='DRAFT' || r.status=='REJECTED'}">
                           <a href="${pageContext.request.contextPath}/hr/onboarding/edit?id=${r.id}" class="abtn abtn-edit">
                             <i class="fas fa-edit"></i> Sửa
@@ -227,11 +254,6 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);}
                         <c:if test="${r.status=='REJECTED'}">
                           <span style="font-size:.75rem;color:var(--danger);padding:4px 8px;background:#fef2f2;border-radius:6px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.rejectReason}">
                             <i class="fas fa-info-circle"></i> <c:out value="${r.rejectReason}"/>
-                          </span>
-                        </c:if>
-                        <c:if test="${r.status=='PENDING' || r.status=='APPROVED'}">
-                          <span style="font-size:.78rem;color:var(--muted);padding:4px 8px;">
-                            <i class="fas fa-lock"></i> Đã gửi
                           </span>
                         </c:if>
                       </div>
@@ -254,6 +276,60 @@ body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);}
               <div id="pageNumbers" style="display: flex; gap: 4px;"></div>
               <button class="btn-page" id="btnNextPage" onclick="nextPage()"><i class="fas fa-chevron-right"></i></button>
           </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CHI TIẾT YÊU CẦU -->
+<div class="modal-overlay" id="detailModal" onclick="if(event.target===this)closeDetail()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeDetail()"><i class="fas fa-times"></i></button>
+    <h3 class="modal-title"><i class="fas fa-user-clock" style="color:var(--teal);"></i> Chi Tiết Yêu Cầu Onboarding</h3>
+    <div class="info-grid">
+      <div class="info-item full">
+        <label>Họ và tên</label>
+        <span id="d-name" style="font-size:1.05rem;"></span>
+      </div>
+      <div class="info-item">
+        <label>Email</label>
+        <span id="d-email"></span>
+      </div>
+      <div class="info-item">
+        <label>Số điện thoại</label>
+        <span id="d-phone"></span>
+      </div>
+      <div class="info-item">
+        <label>Số CCCD</label>
+        <span id="d-cccd"></span>
+      </div>
+      <div class="info-item">
+        <label>Ngày sinh</label>
+        <span id="d-dob"></span>
+      </div>
+      <div class="info-item">
+        <label>Phòng ban</label>
+        <span id="d-dept"></span>
+      </div>
+      <div class="info-item">
+        <label>Chức vụ</label>
+        <span id="d-pos"></span>
+      </div>
+      <div class="info-item">
+        <label>Trạng thái</label>
+        <span id="d-status"></span>
+      </div>
+      <div class="info-item">
+        <label>Ngày tạo</label>
+        <span id="d-created"></span>
+      </div>
+      <div class="info-item full" id="d-reject-wrap" style="display:none;">
+        <label>Lý do từ chối</label>
+        <span id="d-reject" style="color:var(--danger);"></span>
+      </div>
+      <div class="info-item full">
+        <label>Địa chỉ</label>
+        <span id="d-address"></span>
       </div>
     </div>
   </div>
@@ -346,6 +422,47 @@ function updatePagination() {
 function goToPage(page) { currentPage = page; updatePagination(); }
 function prevPage() { if (currentPage > 1) { currentPage--; updatePagination(); } }
 function nextPage() { const totalPages = Math.ceil(filteredRows.length / itemsPerPage); if (currentPage < totalPages) { currentPage++; updatePagination(); } }
+
+// ── Modal Chi Tiết ──────────────────────────────────────
+const statusLabel = { DRAFT:'Bản nháp', PENDING:'Chờ duyệt', APPROVED:'Đã duyệt', REJECTED:'Từ chối' };
+const statusColor = { DRAFT:'#475569', PENDING:'#1d4ed8', APPROVED:'#16a34a', REJECTED:'#dc2626' };
+
+function openDetail(row) {
+    const d = row.dataset;
+    document.getElementById('d-name').textContent    = d.name    || '—';
+    document.getElementById('d-email').textContent   = d.email   || '—';
+    document.getElementById('d-phone').textContent   = d.phone   || '—';
+    document.getElementById('d-cccd').textContent    = d.cccd    || '—';
+    document.getElementById('d-dob').textContent     = d.dob     || '—';
+    document.getElementById('d-dept').textContent    = d.dept    || '—';
+    document.getElementById('d-pos').textContent     = d.pos     || '—';
+    document.getElementById('d-address').textContent = d.address || '—';
+    document.getElementById('d-created').textContent = d.created || '—';
+
+    const st = d.status || '';
+    document.getElementById('d-status').innerHTML =
+        '<span style="background:' + (st==='APPROVED'?'#f0fdf4':st==='PENDING'?'#eff6ff':st==='REJECTED'?'#fef2f2':'#f1f5f9') +
+        ';color:' + (statusColor[st]||'#475569') +
+        ';padding:4px 12px;border-radius:20px;font-size:.8rem;font-weight:700;">' +
+        (statusLabel[st]||st) + '</span>';
+
+    const rejectWrap = document.getElementById('d-reject-wrap');
+    if (d.reject && d.reject.trim() !== '') {
+        document.getElementById('d-reject').textContent = d.reject;
+        rejectWrap.style.display = '';
+    } else {
+        rejectWrap.style.display = 'none';
+    }
+    document.getElementById('detailModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDetail() {
+    document.getElementById('detailModal').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
 </script>
 
 <jsp:include page="../footer.jsp" />
