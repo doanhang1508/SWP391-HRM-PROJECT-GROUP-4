@@ -536,7 +536,6 @@
                                                         <c:if test="${sessionScope.currentUser.roleId == 5}">
                                                             <c:choose>
                                                                 <c:when test="${p.status == 'Draft' || p.status == 'Rejected'}">
-                                                                    <a href="${pageContext.request.contextPath}/hr/payroll?action=edit&id=${p.payrollId}" class="btn-a btn-edit" title="Chỉnh sửa"><i class="fas fa-edit"></i> Sửa</a>
                                                                     <form action="${pageContext.request.contextPath}/hr/payroll" method="POST" style="display:inline;" onsubmit="showConfirmModal(event, 'Bạn có chắc muốn gửi duyệt bảng lương của nhân viên này?');">
                                                                         <input type="hidden" name="action" value="submit">
                                                                         <input type="hidden" name="payrollId" value="${p.payrollId}">

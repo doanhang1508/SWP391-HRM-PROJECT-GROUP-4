@@ -35,7 +35,7 @@
                         </option>
                     </c:forEach>
                 </select>
-                <c:if test="${sessionScope.currentUser.roleId == 1 || sessionScope.currentUser.roleId == 2 || sessionScope.currentUser.roleId == 4}">
+                <c:if test="${sessionScope.currentUser.roleId == 1 || sessionScope.currentUser.roleId == 4}">
                     <div class="form-check form-switch ms-3 mb-0 text-nowrap">
                         <input class="form-check-input" type="checkbox" name="viewAll" id="viewAllSwitch" value="true" <c:if test="${viewAll}">checked</c:if> onchange="this.form.submit()">
                         <label class="form-check-label fw-bold" for="viewAllSwitch">Xem toàn bộ công ty</label>

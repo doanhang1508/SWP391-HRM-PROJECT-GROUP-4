@@ -64,8 +64,8 @@ public class HrPayrollController extends HttpServlet {
             action = "list";
         }
 
-        if ("edit".equals(action) && roleId != 5) {
-            session.setAttribute("errorMessage", "Bạn không có quyền thực hiện hành động này.");
+        if ("edit".equals(action)) {
+            session.setAttribute("errorMessage", "Chức năng chỉnh sửa bảng lương trực tiếp đã bị vô hiệu hóa.");
             response.sendRedirect(request.getContextPath() + "/hr/payroll");
             return;
         }
