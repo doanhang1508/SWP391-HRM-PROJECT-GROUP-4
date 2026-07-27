@@ -12,8 +12,13 @@ import jakarta.servlet.http.HttpSession;
 import model.OnboardingRequest;
 import model.User;
 
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
 import java.io.IOException;
 import java.sql.Date;
+import java.util.Hashtable;
 
 /**
  * Controller phía HR Staff cho luồng Onboarding
@@ -96,6 +101,16 @@ public class OnboardingController extends HttpServlet {
             if (dupErr != null) {
                 prepareForm(req, r);
                 req.setAttribute("error", dupErr);
+                req.getRequestDispatcher("/hr/onboarding-form.jsp").forward(req, resp);
+                return;
+            }
+
+            // ── Kiểm tra MX record email (chỉ khi submit PENDING, không check DRAFT) ──
+            if (!isDraft && !isEmailDomainValid(r.getEmail())) {
+                prepareForm(req, r);
+                req.setAttribute("error",
+                    "⚠️ Email '" + r.getEmail() + "' có domain không hợp lệ hoặc không thể nhận thư. "
+                    + "Vui lòng kiểm tra lại địa chỉ email trước khi gửi duyệt.");
                 req.getRequestDispatcher("/hr/onboarding-form.jsp").forward(req, resp);
                 return;
             }
@@ -227,5 +242,36 @@ public class OnboardingController extends HttpServlet {
         if (s == null) return null;
         String t = s.trim();
         return t.isEmpty() ? null : t;
+    }
+
+    /**
+     * Kiểm tra domain email có MX record hợp lệ không.
+     * MX record = Mail Exchange record: bản ghi DNS cho biết domain có nhận email không.
+     * Ví dụ: gmail.com → có MX → hợp lệ
+     *        gmal.com  → không có MX → cảnh báo ngay cho HR Staff
+     *
+     * Lưu ý: MX check chỉ xác nhận domain có khả năng nhận mail,
+     * không đảm bảo 100% địa chỉ cụ thể tồn tại (vd: xyz@gmail.com).
+     * Nhưng đã loại được phần lớn lỗi typo domain (gmal, yahooo, v.v.)
+     */
+    private boolean isEmailDomainValid(String email) {
+        if (email == null || !email.contains("@")) return false;
+        String domain = email.substring(email.lastIndexOf('@') + 1).trim();
+        if (domain.isEmpty()) return false;
+        try {
+            Hashtable<String, String> env = new Hashtable<>();
+            env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
+            env.put("com.sun.jndi.dns.timeout.initial", "3000"); // timeout 3 giây
+            env.put("com.sun.jndi.dns.timeout.retries", "1");
+            DirContext ctx = new InitialDirContext(env);
+            Attributes attrs = ctx.getAttributes("dns:/" + domain, new String[]{"MX"});
+            Attribute mx = attrs.get("MX");
+            ctx.close();
+            return mx != null && mx.size() > 0;
+        } catch (Exception e) {
+            // Không lookup được DNS → domain không tồn tại hoặc không có MX
+            System.out.println("[EmailDomainCheck] Domain '" + domain + "' không có MX record: " + e.getMessage());
+            return false;
+        }
     }
 }
