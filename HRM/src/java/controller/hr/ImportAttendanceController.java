@@ -370,7 +370,10 @@ public class ImportAttendanceController extends HttpServlet {
             }
 
             if (isRawLogFormat(sheet)) {
-                // 1. Group swipe logs from Sheet 1 ("Chi Tiết Chấm Công")
+                // =========================================================================
+                // NHÁNH A: ĐỊNH DẠNG MA TRẬN 31 NGÀY (CÓ 2 SHEET)
+                // =========================================================================
+                // 1. Group swipe logs from Sheet 1 ("Chi Tiết Chấm Công")/455
                 java.util.Map<String, java.util.Map<LocalDate, List<Time>>> swipeMap = new java.util.HashMap<>();
                 int skippedSwipeCount = 0;
                 for (Row row : sheet) {
@@ -448,7 +451,7 @@ public class ImportAttendanceController extends HttpServlet {
                 }
 
                 // 2. Parse Sheet 0 ("Bảng Công") to get employee profiles, shifts, and daily
-                // statuses
+                // statuses 480-497 801-
                 Sheet sheet0 = wb.getSheetAt(0);
 
                 // ── Kiểm tra Tháng/Năm ghi trong tiêu đề file so với Tháng/Năm đã chọn ──
@@ -558,8 +561,8 @@ public class ImportAttendanceController extends HttpServlet {
 
                         for (java.util.Map.Entry<LocalDate, List<Time>> dayEntry : empEntry.getValue().entrySet()) {
                             LocalDate workLocalDate = dayEntry.getKey();
-                            List<Time> swipes = dayEntry.getValue();
-                            if (swipes == null || swipes.isEmpty()) {
+                            List<Time> swipes = dayEntry.getValue();///lay danh sach quet the
+                            if (swipes == null || swipes.isEmpty()) {//neu co quet the
                                 continue;
                             }
                             java.util.Collections.sort(swipes);
@@ -617,7 +620,7 @@ public class ImportAttendanceController extends HttpServlet {
                         extractDailyOvertime(sheet0, daysRow);
 
                 int startDataRow = daysRow.getRowNum() + 1;
-                for (int r = startDataRow; r <= sheet0.getLastRowNum(); r++) {
+                for (int r = startDataRow; r <= sheet0.getLastRowNum(); r++) {//duyet tung nhan vien
                     Row row = sheet0.getRow(r);
                     if (row == null || isRowEmpty(row))
                         continue;
@@ -681,7 +684,7 @@ public class ImportAttendanceController extends HttpServlet {
                         continue;
                     }
 
-                    for (java.util.Map.Entry<Integer, Integer> entry : colToDayMap.entrySet()) {
+                    for (java.util.Map.Entry<Integer, Integer> entry : colToDayMap.entrySet()) {// duyet ngang 31 cot
                         int colIdx = entry.getKey();
                         int day = entry.getValue();
 
@@ -695,7 +698,7 @@ public class ImportAttendanceController extends HttpServlet {
                             continue;
                         }
 
-                        LocalDate workLocalDate = LocalDate.of(year, month, day);
+                        LocalDate workLocalDate = LocalDate.of(year, month, day);// ngay lam viec cot 6
                         Date workDate = Date.valueOf(workLocalDate);
 
                         Attendance a = new Attendance();
@@ -704,7 +707,7 @@ public class ImportAttendanceController extends HttpServlet {
                         a.setWorkDate(workDate);
 
                         String status = "ABSENT";
-                        switch (statusChar) {
+                        switch (statusChar) {// dich chu cai
                             case "P":
                                 status = "PRESENT";
                                 break;
@@ -754,7 +757,7 @@ public class ImportAttendanceController extends HttpServlet {
                             a.setCheckOut(null);
                         }
 
-                        double dailyOtHrs = dailyOvertime
+                        double dailyOtHrs = dailyOvertime//Thò rổ OT (đã hút ở đáy bảng) để gán cho ngày hôm nay
                                 .getOrDefault(empCode, java.util.Collections.emptyMap())
                                 .getOrDefault(day, 0.0);
                         a.setOvertimeHrs(dailyOtHrs);
@@ -763,8 +766,11 @@ public class ImportAttendanceController extends HttpServlet {
                     }
                 }
             } else {
+                // =========================================================================
+                // NHÁNH B: ĐỊNH DẠNG DANH SÁCH DỌC 13 CỘT (CHỈ 1 SHEET)
+                // =========================================================================
                 // 13-column format
-                for (Row row : sheet) {
+                for (Row row : sheet) {// duyệt từ sheet 0
                     if (row.getRowNum() < 3)
                         continue; // Bỏ qua 3 dòng đầu (headers)
                     if (isRowEmpty(row))
@@ -776,7 +782,7 @@ public class ImportAttendanceController extends HttpServlet {
                         } else {
                             skippedRows.add("Dòng " + (row.getRowNum() + 1) + " bị bỏ qua (dòng tổng hợp/header)");
                         }
-                    } catch (Exception e) {
+                    } catch (Exception e) {// dòng nào có lỗi thì ghi log
                         errors.add("Dòng " + (row.getRowNum() + 1) + ": " + e.getMessage());
                     }
                 }
@@ -792,14 +798,14 @@ public class ImportAttendanceController extends HttpServlet {
     private java.util.Map<String, java.util.Map<Integer, Double>> extractDailyOvertime(Sheet sheet, Row daysRow) {
         java.util.Map<String, java.util.Map<Integer, Double>> result = new java.util.HashMap<>();
         int titleRowIndex = -1;
-        for (int r = 0; r <= sheet.getLastRowNum(); r++) {
+        for (int r = 0; r <= sheet.getLastRowNum(); r++) {// xac dinh day bang
             Row row = sheet.getRow(r);
             if (row == null) {
                 continue;
             }
             String firstCell = getStringCell(row, 0);
             if (firstCell != null && removeAccents(firstCell).toUpperCase().contains("GIO_OT")) {
-                titleRowIndex = r;
+                titleRowIndex = r;// chot toa do day bang
                 break;
             }
         }
@@ -808,7 +814,7 @@ public class ImportAttendanceController extends HttpServlet {
         }
 
         Row header = daysRow;
-        java.util.Map<Integer, Integer> dayByColumn = new java.util.HashMap<>();
+        java.util.Map<Integer, Integer> dayByColumn = new java.util.HashMap<>();// dung thuoc ngam toa do
         for (int c = 0; c < header.getLastCellNum(); c++) {
             Double day = getNumericCell(header, c);
             if (day != null && day >= 1 && day <= 31 && day == Math.floor(day)) {
@@ -933,8 +939,7 @@ public class ImportAttendanceController extends HttpServlet {
             return null; // dòng tổng hợp / header — không phải lỗi
         }
 
-        // 1. Mã NV (Cột 1)
-        String employeeCode = secondCell;
+        String employeeCode = secondCell;// ma nhan vien cot 2
         employeeCode = employeeCode.trim();
 
         User user = null;
@@ -1018,7 +1023,7 @@ public class ImportAttendanceController extends HttpServlet {
                 && !checkIn.equalsIgnoreCase("BLANK") && isValidTime(checkIn.trim())) {
             if (checkIn.trim().length() == 5)
                 checkIn = checkIn.trim() + ":00";
-            a.setCheckIn(Time.valueOf(checkIn.trim()));
+            a.setCheckIn(Time.valueOf(checkIn.trim()));// gio vao
         } else {
             a.setCheckIn(null);
         }
@@ -1028,7 +1033,7 @@ public class ImportAttendanceController extends HttpServlet {
                 && !checkOut.equalsIgnoreCase("BLANK") && isValidTime(checkOut.trim())) {
             if (checkOut.trim().length() == 5)
                 checkOut = checkOut.trim() + ":00";
-            a.setCheckOut(Time.valueOf(checkOut.trim()));
+            a.setCheckOut(Time.valueOf(checkOut.trim()));//gio ra
         } else {
             a.setCheckOut(null);
         }
@@ -1055,7 +1060,7 @@ public class ImportAttendanceController extends HttpServlet {
             normStatus = normStatus.substring(0, normStatus.indexOf(",")).trim();
         }
 
-        switch (normStatus) {
+        switch (normStatus) {// dich sang tieng anh
             case "P":
             case "CO MAT":
                 a.setStatus("PRESENT");
@@ -1082,7 +1087,7 @@ public class ImportAttendanceController extends HttpServlet {
 
         Cell otCell = row.getCell(11);
         if (otCell != null && otCell.getCellType() == CellType.NUMERIC) {
-            a.setOvertimeHrs(otCell.getNumericCellValue());
+            a.setOvertimeHrs(otCell.getNumericCellValue());//lấy OT
         } else {
             String otStr = getStringCell(row, 11);
             if (otStr != null && !otStr.trim().isEmpty() && !otStr.equalsIgnoreCase("BLANK")) {

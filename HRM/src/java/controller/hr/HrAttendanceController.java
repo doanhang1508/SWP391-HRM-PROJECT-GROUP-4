@@ -104,7 +104,7 @@ public class HrAttendanceController extends HttpServlet {
         List<Department> departments = departmentDAO.getAll();
         request.setAttribute("departments", departments);
         
-        int totalRecords = attendanceDAO.countAdvancedAttendanceSummary(month, year, departmentId);
+        int totalRecords = attendanceDAO.countAdvancedAttendanceSummary(month, year, departmentId);// đếm có bao nhiêu nhân sự thỏa mãn điều kiện
         int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
         if (page > totalPages && totalPages > 0) page = totalPages;
         int offset = (page - 1) * pageSize;
