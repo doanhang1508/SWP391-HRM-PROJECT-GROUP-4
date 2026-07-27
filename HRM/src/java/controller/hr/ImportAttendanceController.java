@@ -370,6 +370,9 @@ public class ImportAttendanceController extends HttpServlet {
             }
 
             if (isRawLogFormat(sheet)) {
+                // =========================================================================
+                // NHÁNH A: ĐỊNH DẠNG MA TRẬN 31 NGÀY (CÓ 2 SHEET)
+                // =========================================================================
                 // 1. Group swipe logs from Sheet 1 ("Chi Tiết Chấm Công")
                 java.util.Map<String, java.util.Map<LocalDate, List<Time>>> swipeMap = new java.util.HashMap<>();
                 int skippedSwipeCount = 0;
@@ -763,6 +766,9 @@ public class ImportAttendanceController extends HttpServlet {
                     }
                 }
             } else {
+                // =========================================================================
+                // NHÁNH B: ĐỊNH DẠNG DANH SÁCH DỌC 13 CỘT (CHỈ 1 SHEET)
+                // =========================================================================
                 // 13-column format
                 for (Row row : sheet) {
                     if (row.getRowNum() < 3)

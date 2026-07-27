@@ -80,7 +80,7 @@ public class HrTimeLeaveReportController extends HttpServlet {
         int standardWorkDays = holidayDAO.getPayrollStandardWorkDays(month, year);
         for (AttendanceSummary s : reportList) {
             s.setStandardWorkDays(standardWorkDays);
-            s.setActualWorkDays(standardWorkDays - s.getAbsentDays());
+            s.setActualWorkDays(standardWorkDays - s.getAbsentDays() - s.getSickLeaveDays());
         }
 
         // Dữ liệu đầy đủ (không phân trang) dành riêng cho biểu đồ, để biểu đồ phản ánh
@@ -88,7 +88,7 @@ public class HrTimeLeaveReportController extends HttpServlet {
         List<AttendanceSummary> chartDataList = attendanceDAO.getAdvancedAttendanceSummary(month, year, departmentId, 0, Integer.MAX_VALUE);
         for (AttendanceSummary s : chartDataList) {
             s.setStandardWorkDays(standardWorkDays);
-            s.setActualWorkDays(standardWorkDays - s.getAbsentDays());
+            s.setActualWorkDays(standardWorkDays - s.getAbsentDays() - s.getSickLeaveDays());
         }
 
         List<Department> departments = departmentDAO.getAll();
@@ -145,7 +145,7 @@ public class HrTimeLeaveReportController extends HttpServlet {
         int standardWorkDays = holidayDAO.getPayrollStandardWorkDays(month, year);
         for (AttendanceSummary s : list) {
             s.setStandardWorkDays(standardWorkDays);
-            s.setActualWorkDays(standardWorkDays - s.getAbsentDays());
+            s.setActualWorkDays(standardWorkDays - s.getAbsentDays() - s.getSickLeaveDays());
         }
         
         String fileName = "Bao_Cao_Tong_Hop_Cong_Phep_M" + month + "_Y" + year + ".xlsx";
@@ -155,14 +155,28 @@ public class HrTimeLeaveReportController extends HttpServlet {
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("Bao Cao Cong Phep");
             
-            // Header Style
-            CellStyle headerStyle = workbook.createCellStyle();
-            headerStyle.setFillForegroundColor(IndexedColors.TEAL.getIndex());
-            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            // Basic styles
             Font headerFont = workbook.createFont();
             headerFont.setColor(IndexedColors.WHITE.getIndex());
             headerFont.setBold(true);
+            
+            // Header Style Default
+            CellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFillForegroundColor(IndexedColors.TEAL.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             headerStyle.setFont(headerFont);
+
+            // Header Style - Company Paid
+            CellStyle headerCtyStyle = workbook.createCellStyle();
+            headerCtyStyle.setFillForegroundColor(IndexedColors.LIGHT_GREEN.getIndex());
+            headerCtyStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerCtyStyle.setFont(headerFont);
+
+            // Header Style - BHXH Paid
+            CellStyle headerBhxhStyle = workbook.createCellStyle();
+            headerBhxhStyle.setFillForegroundColor(IndexedColors.LIGHT_ORANGE.getIndex());
+            headerBhxhStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerBhxhStyle.setFont(headerFont);
             
             // Warning Style (Red text for Late >= 3)
             CellStyle warningStyle = workbook.createCellStyle();
@@ -183,16 +197,25 @@ public class HrTimeLeaveReportController extends HttpServlet {
             
             Row headerRow = sheet.createRow(0);
             String[] columns = {
-                "Mã NV", "Họ Tên", "Phòng Ban", "Công chuẩn", "Công thực tế", 
-                "Nghỉ không phép (ngày)", "OT thường (h)", "OT CN (h)", "OT Lễ (h)", "Đi trễ (lần)", 
-                "Nghỉ phép năm (ngày)", "Nghỉ ốm (ngày)", "Phép năm còn lại (ngày)"
+                "Mã NV", "Họ Tên", "Phòng Ban", "Công chuẩn", "Công thực tế (Cty trả 100%)", 
+                "Nghỉ phép năm (Cty trả 100%)", "Nghỉ ốm (BHXH trả 75%)", "Nghỉ không phép (0 lương)", 
+                "OT thường (h)", "OT CN (h)", "OT Lễ (h)", "Đi trễ (lần)", "Phép năm còn lại (ngày)"
             };
             
             for (int i = 0; i < columns.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(columns[i]);
-                cell.setCellStyle(headerStyle);
-                sheet.setColumnWidth(i, 4500);
+                
+                // Color coding headers
+                if (i == 4 || i == 5) {
+                    cell.setCellStyle(headerCtyStyle); // Company paid
+                } else if (i == 6) {
+                    cell.setCellStyle(headerBhxhStyle); // BHXH paid
+                } else {
+                    cell.setCellStyle(headerStyle); // Default
+                }
+                
+                sheet.setColumnWidth(i, 6000);
             }
             
             int rowNum = 1;
@@ -219,39 +242,39 @@ public class HrTimeLeaveReportController extends HttpServlet {
                 c3.setCellValue(r.getStandardWorkDays());
                 if(currentStyle != null) c3.setCellStyle(currentStyle);
 
-                Cell c4 = row.createCell(4);
+                Cell c4 = row.createCell(4); // Công thực tế
                 c4.setCellValue(r.getActualWorkDays());
                 c4.setCellStyle(currentNumStyle);
 
-                Cell c5 = row.createCell(5);
-                c5.setCellValue(r.getAbsentDays());
+                Cell c5 = row.createCell(5); // Nghỉ phép năm
+                c5.setCellValue(r.getAnnualLeaveDays());
                 c5.setCellStyle(currentNumStyle);
 
-                Cell c6 = row.createCell(6);
-                c6.setCellValue(r.getRegularOtHrs());
+                Cell c6 = row.createCell(6); // Nghỉ ốm
+                c6.setCellValue(r.getSickLeaveDays());
                 c6.setCellStyle(currentNumStyle);
 
-                Cell c7 = row.createCell(7);
-                c7.setCellValue(r.getSundayOtHrs());
+                Cell c7 = row.createCell(7); // Nghỉ không phép
+                c7.setCellValue(r.getAbsentDays());
                 c7.setCellStyle(currentNumStyle);
 
-                Cell c8 = row.createCell(8);
-                c8.setCellValue(r.getHolidayOtHrs());
+                Cell c8 = row.createCell(8); // OT thường
+                c8.setCellValue(r.getRegularOtHrs());
                 c8.setCellStyle(currentNumStyle);
 
-                Cell c9 = row.createCell(9);
-                c9.setCellValue(r.getLateCount());
-                if(currentStyle != null) c9.setCellStyle(currentStyle);
+                Cell c9 = row.createCell(9); // OT CN
+                c9.setCellValue(r.getSundayOtHrs());
+                c9.setCellStyle(currentNumStyle);
 
-                Cell c10 = row.createCell(10);
-                c10.setCellValue(r.getAnnualLeaveDays());
+                Cell c10 = row.createCell(10); // OT lễ
+                c10.setCellValue(r.getHolidayOtHrs());
                 c10.setCellStyle(currentNumStyle);
 
-                Cell c11 = row.createCell(11);
-                c11.setCellValue(r.getSickLeaveDays());
-                c11.setCellStyle(currentNumStyle);
+                Cell c11 = row.createCell(11); // Đi trễ
+                c11.setCellValue(r.getLateCount());
+                if(currentStyle != null) c11.setCellStyle(currentStyle);
 
-                Cell c12 = row.createCell(12);
+                Cell c12 = row.createCell(12); // Phép năm còn lại
                 c12.setCellValue(r.getRemainingAnnualLeave());
                 c12.setCellStyle(currentNumStyle);
             }
